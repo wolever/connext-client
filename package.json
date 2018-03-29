@@ -1,0 +1,55 @@
+{
+  "name": "ethcalate-client",
+  "version": "1.0.0",
+  "description": "Containerized state channels",
+  "main": "src/index.js",
+  "scripts": {
+    "build": "babel src --out-dir build"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ConnextProject/ethcalate-client.git"
+  },
+  "files": [
+    "build",
+    "src"
+  ],
+  "standard": {
+    "ignore": [
+      "build/**"
+    ]
+  },
+  "keywords": [
+    "payment channels",
+    "state channels",
+    "Ethereum",
+    "web3",
+    "scaling",
+    "blockchain",
+    "connext",
+    "ethcalate"
+  ],
+  "author": "Arjun Bhuptani, <arjun@connext.network>",
+  "contributors": [
+    "Rahul Sethuram <rahul@connext.network>",
+    "Layne Haber <layne@connext.network>"
+  ],
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/ConnextProject/ethcalate-client/issues"
+  },
+  "homepage": "https://github.com/ConnextProject/ethcalate-client#readme",
+  "devDependencies": {
+    "@ahmadnassri/babel-build-all": "*",
+    "babel-plugin-add-module-exports": "*",
+    "babel-plugin-transform-runtime": "^6.23.0",
+    "babel-polyfill": "^6.26.0",
+    "babel-preset-env": "^1.6.1",
+    "babel-register": "*",
+    "standard": "^10.0.3"
+  },
+  "dependencies": {
+    "axios": "^0.16.2",
+    "check-types": "^7.3.0"
+  }
+}
