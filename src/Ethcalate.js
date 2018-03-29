@@ -6,6 +6,8 @@ module.exports = class Ethcalate {
   constructor (contractAddress, abi) {
     this.contract = web3.eth.contract(abi).at(contractAddress)
     this.account = web3.eth.accounts[0]
+    //TO DO: Figure out API URL
+    //this.apiUrl
   }
 
   async openChannel (destination, stake, challenge) {
@@ -18,11 +20,55 @@ module.exports = class Ethcalate {
     return result
   }
 
-  // async createCustomer (email) {
-  //   check.assert.string(email, 'No email provided')
-  //   const response = await axios.post(`${this.apiUrl}/customer/${email}`)
-  //   return response.data
-  // }
+  async updatePhone (phone) {
+    check.assert.string(phone, 'No phone number provided')
+    const response = await axios.post(`${this.apiUrl}/updatePhone`, {
+      address: this.account,
+      phone: phone
+    })
+    return response.data
+  }
+
+  async getChannelStatus (channelID) {
+    check.assert.string(channelID, 'No channelID provided')
+    const response = await axios.post(`${this.apiUrl}/getChannelStatus`, {
+      channelID
+    })
+    return response.data
+  }
+
+  async getUpdates (channelID, nonce) {
+    check.assert.string(channelID, 'No phone number provided')
+    if(!nonce) {nonce = 0}
+    const statusResponse = await axios.post(`${this.apiUrl}/getChannelStatus`, {
+      channelID
+    })
+    if (statusResponse.data.status != open) {
+      console.log("Status: " + statusResponse.data.status)
+    }
+
+    const response = await axios.get(`${this.apiUrl}/state`, {
+      channelID,
+      nonce
+    })
+    return {data: response.data, status: statusResponse.data.status}
+  }
+
+  async getChannels () {
+    const response = await axios.post(`${this.apiUrl}/getChannels`, {
+      address: this.account
+    })
+    return response.data
+  }
+
+  async getChannelID (counterparty) {
+    check.assert.string(counterparty, 'No counterparty account provided')
+    const response = await axios.post(`${this.apiUrl}/getChannelID`, {
+      address1: this.account,
+      address2: counterparty
+    })
+    return response.data
+  }
 
   // async getKey (email, password) {
   //   check.assert.string(email, 'No email provided')
