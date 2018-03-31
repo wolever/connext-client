@@ -21,8 +21,6 @@ const ethcalate = Ethcalate(contractAddress, abi)
 
 ## Using the Ethcalate Package
 
-Explain how to run the automated tests for this system
-
 ### openChannel(destination, stake, challenge)
 
 This function creates a new bidirectional payment channel between the `msg.sender` (taken implicitly), and the `destination` provided. The `stake` specifies the stake in ETH the sender is willing to put up for the channel, and `challenge` is the length of the challenge period in seconds.
