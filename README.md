@@ -4,12 +4,6 @@ Ethcalate creates containerized state channels for dapps. This repository contai
 This repository is designed to be used in conjunction with the Ethcalate Hub and pre-deployed contracts.
 
 ## Getting Started
-These instructions will get you a copy of the project up and running on your local machine for development and testing purposes. See deployment for notes on how to deploy the project on a live system.
-
-```
-Give examples
-```
-
 ### Installing
 
 To get started, you can clone this repository or download the Ethcalate package via npm.
