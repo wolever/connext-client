@@ -1,7 +1,7 @@
 # ethcalate-client
-Ethcalate creates containerized state channels for dapps. This repository contains the client-side code for installing and using Ethcalate services within your decentralized application.
+[Ethcalate](http://ethcalate.network) creates containerized state channels for dapps. This repository contains the client-side code for installing and using Ethcalate services within your decentralized application.
 
-This repository is designed to be used in conjunction with the Ethcalate Hub and pre-deployed contracts.
+This repository is designed to be used in conjunction with the Ethcalate Hub and [pre-deployed contracts](https://github.com/ConnextProject/ethcalate-2waypayment).
 
 ## Getting Started
 ### Installing
