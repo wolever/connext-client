@@ -2,10 +2,8 @@
   "name": "ethcalate-client",
   "version": "1.0.0",
   "description": "Containerized state channels",
-  "main": "src/index.js",
-  "scripts": {
-    "build": "babel src --out-dir build"
-  },
+  "main": "index.js",
+  "scripts": {},
   "repository": {
     "type": "git",
     "url": "git+https://github.com/ConnextProject/ethcalate-client.git"
@@ -29,9 +27,9 @@
     "connext",
     "ethcalate"
   ],
-  "author": "Arjun Bhuptani, <arjun@connext.network>",
+  "author": "Rahul Sethuram <rahul@connext.network>",
   "contributors": [
-    "Rahul Sethuram <rahul@connext.network>",
+    "Arjun Bhuptani, <arjun@connext.network>",
     "Layne Haber <layne@connext.network>"
   ],
   "license": "MIT",
@@ -40,16 +38,11 @@
   },
   "homepage": "https://github.com/ConnextProject/ethcalate-client#readme",
   "devDependencies": {
-    "@ahmadnassri/babel-build-all": "*",
-    "babel-plugin-add-module-exports": "*",
-    "babel-plugin-transform-runtime": "^6.23.0",
-    "babel-polyfill": "^6.26.0",
-    "babel-preset-env": "^1.6.1",
-    "babel-register": "*",
     "standard": "^10.0.3"
   },
   "dependencies": {
     "axios": "^0.16.2",
-    "check-types": "^7.3.0"
+    "check-types": "^7.3.0",
+    "truffle-contract": "^3.0.4"
   }
 }
