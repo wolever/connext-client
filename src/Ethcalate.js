@@ -1,23 +1,192 @@
 const axios = require('axios')
 const check = require('check-types')
-const web3 = require('./Web3')
+const getWeb3 = require('../web3')
+const contract = require('truffle-contract')
+const abi = require('ethereumjs-abi')
+const artifacts = require('../../../build/contracts/ChannelManager.json')
 
 module.exports = class Ethcalate {
-  constructor (contractAddress, abi) {
-    this.contract = web3.eth.contract(abi).at(contractAddress)
-    this.account = web3.eth.accounts[0]
-    //TO DO: Figure out API URL
-    //this.apiUrl
+  constructor (contractAddress, apiUrl) {
+    if (contractAddress) {
+      this.contractAddress = contractAddress
+    } else {
+      this.contractAddress = '0xb1ef1bca2117b99edee5abc90ec2024f603ee59b'
+    }
+    if (apiUrl) {
+      this.apiUrl = apiUrl
+    } else {
+      this.apiUrl = 'https://api.ethcalate.network'
+    }
   }
 
-  async openChannel (destination, stake, challenge) {
-    check.assert.string(destination, 'No counterparty address provided')
-    check.assert.string(stake, 'No initial deposit provided')
-    check.assert.integer(challenge, 'No challenge timer provided')
-    let result = await this.contract.methods.openChannel(destination, challenge).send({from: this.account, value: web3.utils.toWei(stake,'ether')})
-    if(result.error) return result.error
-    console.log(result)
+  async initContract () {
+    // init web3
+    const result = await getWeb3
+    this.web3 = result.web3
+
+    // init channel manager
+    const ChannelManager = contract(artifacts)
+    ChannelManager.setProvider(this.web3.currentProvider)
+    ChannelManager.defaults({ from: this.web3.eth.accounts[0] })
+
+    // init instance
+    let channelManager
+    if (this.contractAddress) {
+      channelManager = await ChannelManager.at(this.contractAddress)
+    } else {
+      channelManager = await ChannelManager.deployed()
+    }
+    this.channelManager = channelManager
+  }
+
+  async openChannel ({ to, depositInEth, challenge }) {
+    if (!this.channelManager) {
+      throw new Error('Please call initContract()')
+    }
+    check.assert.string(to, 'No counterparty address provided')
+    check.assert.string(depositInEth, 'No initial deposit provided')
+    check.assert.string(challenge, 'No challenge timer provided')
+
+    const result = await this.channelManager.openChannel(to, challenge, {
+      from: this.account,
+      value: this.web3.toWei(depositInEth, 'ether')
+    })
     return result
+  }
+
+  async joinChannel ({ channelId, depositInEth }) {
+    if (!this.channelManager) {
+      throw new Error('Please call initContract()')
+    }
+    check.assert.string(channelId, 'No channelId provided')
+    check.assert.string(depositInEth, 'No initial deposit provided')
+
+    const result = await this.channelManager.joinChannel(channelId, {
+      value: this.web3.toWei(depositInEth, 'ether')
+    })
+    return result
+  }
+
+  async signTx ({ channelId, nonce, balanceA, balanceB }) {
+    // fingerprint = keccak256(channelId, nonce, balanceA, balanceB)
+    let hash = abi
+      .soliditySHA3(
+        ['bytes32', 'uint256', 'uint256', 'uint256'],
+        [channelId, nonce, balanceA, balanceB]
+      )
+      .toString('hex')
+    hash = `0x${hash}`
+    const sig = new Promise((resolve, reject) => {
+      this.web3.eth.sign(this.web3.eth.accounts[0], hash, (error, result) => {
+        if (error) {
+          reject(error)
+        } else {
+          resolve(result)
+        }
+      })
+    })
+    return sig
+  }
+
+  async updateState ({
+    channelId,
+    nonce,
+    balanceA,
+    balanceB,
+    isAgentA // bool, if false, is AgentB
+  }) {
+    if (!this.channelManager) {
+      throw new Error('Please call initContract()')
+    }
+
+    const sig = await this.signTx({ channelId, nonce, balanceA, balanceB })
+
+    // set variables based on who signed it
+    const sigA = isAgentA ? sig : ''
+    const sigB = !isAgentA ? sig : ''
+    const requireSigA = isAgentA
+    const requireSigB = !isAgentA
+
+    const response = await axios.post(`${this.apiUrl}/state`, {
+      channelId,
+      nonce,
+      balanceA,
+      balanceB,
+      sigA,
+      sigB,
+      requireSigA,
+      requireSigB
+    })
+    return response.data
+  }
+
+  async startChallengePeriod (channelId) {
+    if (!this.channelManager) {
+      throw new Error('Please call initContract()')
+    }
+    let response = await axios.get(`${this.apiUrl}/channel/${channelId}`)
+    let { channel } = response.data
+    let sig
+    if (channel.agentA === this.web3.eth.accounts[0]) {
+      // need sigB
+      sig = 'sigB'
+    } else if (channel.agentB === this.web3.eth.accounts[0]) {
+      // need sigA
+      sig = 'sigA'
+    } else {
+      throw new Error('Not my channel')
+    }
+
+    response = await axios.get(
+      `${this.apiUrl}/channel/${channelId}/latest?sig=${sig}`
+    )
+    channel = response.data.channel
+
+    const latestCountersignedTransction = channel.transactions[0]
+    if (latestCountersignedTransction) {
+      const {
+        nonce,
+        balanceA,
+        balanceB,
+        sigA,
+        sigB
+      } = latestCountersignedTransction
+      const signedTx = await this.signTx({
+        channelId,
+        nonce,
+        balanceA,
+        balanceB
+      })
+      if (sig === 'sigA') {
+        // ours is sigB
+        await this.channelManager.startChallenge(
+          channelId,
+          nonce,
+          balanceA,
+          balanceB,
+          sigA,
+          signedTx
+        )
+      } else {
+        // ours is sigA
+        await this.channelManager.startChallenge(
+          channelId,
+          nonce,
+          balanceA,
+          balanceB,
+          signedTx,
+          sigB
+        )
+      }
+    } else {
+      // no countersigned transactions
+    }
+  }
+
+  async closeChannel (channelId) {
+    console.log('channelId: ', channelId)
+    const res = await this.channelManager.closeChannel(channelId)
+    console.log('res: ', res)
   }
 
   async updatePhone (phone) {
@@ -29,159 +198,49 @@ module.exports = class Ethcalate {
     return response.data
   }
 
-  async getChannelStatus (channelID) {
-    check.assert.string(channelID, 'No channelID provided')
-    const response = await axios.post(`${this.apiUrl}/getChannelStatus`, {
-      channelID
-    })
+  async getChannel (channelId) {
+    check.assert.string(channelId, 'No channelId provided')
+    const response = await axios.get(`${this.apiUrl}/channel/${channelId}`)
     return response.data
   }
 
-  async getUpdates (channelID, nonce) {
-    check.assert.string(channelID, 'No phone number provided')
-    if(!nonce) {nonce = 0}
-    const statusResponse = await axios.post(`${this.apiUrl}/getChannelStatus`, {
-      channelID
-    })
-    if (statusResponse.data.status != open) {
-      console.log("Status: " + statusResponse.data.status)
+  async getMyChannels () {
+    const response = await axios.get(
+      `${this.apiUrl}/channel?address=${this.account}`
+    )
+    if (response.data) {
+      return response.data.channels.map(channel => {
+        channel.depositA = this.web3.fromWei(channel.depositA, 'ether')
+        channel.depositB = this.web3.fromWei(channel.depositB, 'ether')
+
+        // if balances dont exist from stateUpdate, balance = deposit
+        const latestTransaction = channel.transactions[0]
+        if (latestTransaction) {
+          channel.balanceA = this.web3.fromWei(
+            latestTransaction.balanceA,
+            'ether'
+          )
+          channel.balanceB = this.web3.fromWei(
+            latestTransaction.balanceB,
+            'ether'
+          )
+        } else {
+          channel.balanceA = channel.depositA
+          channel.balanceB = channel.depositB
+        }
+        return channel
+      })
+    } else {
+      return []
     }
-
-    const response = await axios.get(`${this.apiUrl}/state`, {
-      channelID,
-      nonce
-    })
-    return {data: response.data, status: statusResponse.data.status}
   }
 
-  async getChannels () {
-    const response = await axios.post(`${this.apiUrl}/getChannels`, {
-      address: this.account
-    })
+  async getChannelByAddresses (agentA, agentB) {
+    check.assert.string(agentA, 'No agentA account provided')
+    check.assert.string(agentB, 'No agentB account provided')
+    const response = await axios.get(
+      `${this.apiUrl}/channel/${agentA}/${agentB}`
+    )
     return response.data
   }
-
-  async getChannelID (counterparty) {
-    check.assert.string(counterparty, 'No counterparty account provided')
-    const response = await axios.post(`${this.apiUrl}/getChannelID`, {
-      address1: this.account,
-      address2: counterparty
-    })
-    return response.data
-  }
-
-  // async getKey (email, password) {
-  //   check.assert.string(email, 'No email provided')
-  //   check.assert.string(password, 'No password provided')
-  //   const response = await axios.post(`${this.apiUrl}/key`, {
-  //     key: email,
-  //     secret: password
-  //   })
-  //   return response.data
-  // }
-
-  // async newToken () {
-  //   const token = {
-  //     cardnumber: '',
-  //     provider: 'VISA',
-  //     currency: 'usd',
-  //     firstname: '',
-  //     lastname: '',
-  //     month: '',
-  //     year: '',
-  //     cvv: '',
-  //     addr1: '',
-  //     addr2: '',
-  //     zip: '',
-  //     country: ''
-  //   }
-  //   return token
-  // }
-
-  // async tokenize (token) {
-  //   check.assert.object(token, 'Invalid token information')
-  //   const response = await this.authorizedRequest.post(
-  //     `${this.apiUrl}/tokenize`,
-  //     { token }
-  //   )
-  //   return response.data
-  // }
-
-  // async chargeCard (token, amount, emailAddress) {
-  //   check.assert.object(token, 'Check card information')
-  //   check.assert.string(token.cvv, 'Check card information')
-  //   check.assert.positive(amount, 'Provide valid amount')
-  //   check.assert.string(
-  //     emailAddress,
-  //     'Provide valid email address for customer'
-  //   )
-
-  //   const response = await this.authorizedRequest.post(
-  //     `${this.apiUrl}/charge`,
-  //     {
-  //       token,
-  //       amount,
-  //       emailAddress
-  //     }
-  //   )
-  //   return response.data
-  // }
-
-  // async chargeVenmo ({
-  //   amount,
-  //   customerEmail,
-  //   venmoHandle,
-  //   payerAddress,
-  //   tokenContractAddress
-  // }) {
-  //   check.assert.positive(amount, 'Provide valid amount')
-  //   check.assert.string(
-  //     customerEmail,
-  //     'Provide valid email address for customer'
-  //   )
-  //   check.assert.string(venmoHandle, 'Provide valid Venmo handle for customer')
-  //   check.assert.string(payerAddress, 'Provide valid merchant payer address')
-  //   check.assert.string(
-  //     tokenContractAddress,
-  //     'Provide valid token contract address'
-  //   )
-
-  //   const response = await this.authorizedRequest.post(`${this.apiUrl}/venmo`, {
-  //     amount,
-  //     customerEmail,
-  //     venmoHandle,
-  //     payerAddress,
-  //     tokenContractAddress
-  //   })
-  //   return response.data
-  // }
-
-  // async getEthBalance (vaultAddress) {
-  //   check.assert.string(
-  //     vaultAddress,
-  //     'Provide valid ethereum address for vault address'
-  //   )
-
-  //   const response = await this.authorizedRequest.get(
-  //     `${this.apiUrl}/vault/${vaultAddress}/balance`
-  //   )
-  //   return response.data
-  // }
-
-  // async getTokenBalance (vaultAddress, tokenContractAddress) {
-  //   check.assert.string(
-  //     vaultAddress,
-  //     'Provide valid ethereum address for vault address'
-  //   )
-
-  //   check.assert.string(
-  //     tokenContractAddress,
-  //     'Provide valid ethereum address for token contract'
-  //   )
-
-  //   const response = await this.authorizedRequest.get(
-  //     `${this.apiUrl}/vault/${vaultAddress}/balance/${tokenContractAddress}`
-  //   )
-  //   return response.data
-  // }
 }
