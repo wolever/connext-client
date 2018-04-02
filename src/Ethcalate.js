@@ -88,15 +88,27 @@ module.exports = class Ethcalate {
     return sig
   }
 
-  async updateState ({
-    channelId,
-    nonce,
-    balanceA,
-    balanceB,
-    isAgentA // bool, if false, is AgentB
-  }) {
+  async updateState ({ channelId, balanceA, balanceB }) {
     if (!this.channelManager) {
       throw new Error('Please call initContract()')
+    }
+
+    let response = await axios.get(`${this.apiUrl}/channel/${channelId}`)
+    let { channel } = response.data
+    let isAgentA
+    if (channel.agentA === this.web3.eth.accounts[0]) {
+      isAgentA = true
+    } else if (channel.agentB === this.web3.eth.accounts[0]) {
+      // need sigA
+      isAgentA = false
+    } else {
+      throw new Error('Not my channel')
+    }
+
+    let nonce = 1
+    const latestTransaction = channel.transaction[0]
+    if (latestTransaction) {
+      nonce = latestTransaction.nonce + 1
     }
 
     const sig = await this.signTx({ channelId, nonce, balanceA, balanceB })
@@ -107,7 +119,7 @@ module.exports = class Ethcalate {
     const requireSigA = isAgentA
     const requireSigB = !isAgentA
 
-    const response = await axios.post(`${this.apiUrl}/state`, {
+    response = await axios.post(`${this.apiUrl}/state`, {
       channelId,
       nonce,
       balanceA,
@@ -239,7 +251,7 @@ module.exports = class Ethcalate {
     check.assert.string(agentA, 'No agentA account provided')
     check.assert.string(agentB, 'No agentB account provided')
     const response = await axios.get(
-      `${this.apiUrl}/channel/${agentA}/${agentB}`
+      `${this.apiUrl}/channel/a/${agentA}/b/${agentB}`
     )
     return response.data
   }
