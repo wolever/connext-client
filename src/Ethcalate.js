@@ -39,29 +39,29 @@ module.exports = class Ethcalate {
     this.channelManager = channelManager
   }
 
-  async openChannel ({ to, depositInEth, challenge }) {
+  async openChannel ({ to, depositInWei, challenge }) {
     if (!this.channelManager) {
       throw new Error('Please call initContract()')
     }
     check.assert.string(to, 'No counterparty address provided')
-    check.assert.string(depositInEth, 'No initial deposit provided')
+    check.assert.string(depositInWei, 'No initial deposit provided')
     check.assert.string(challenge, 'No challenge timer provided')
 
     const result = await this.channelManager.openChannel(to, challenge, {
-      value: this.web3.toWei(depositInEth, 'ether')
+      value: depositInWei
     })
     return result
   }
 
-  async joinChannel ({ channelId, depositInEth }) {
+  async joinChannel ({ channelId, depositInWei }) {
     if (!this.channelManager) {
       throw new Error('Please call initContract()')
     }
     check.assert.string(channelId, 'No channelId provided')
-    check.assert.string(depositInEth, 'No initial deposit provided')
+    check.assert.string(depositInWei, 'No initial deposit provided')
 
     const result = await this.channelManager.joinChannel(channelId, {
-      value: this.web3.toWei(depositInEth, 'ether')
+      value: depositInWei
     })
     return result
   }
