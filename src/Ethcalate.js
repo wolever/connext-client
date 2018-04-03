@@ -203,7 +203,7 @@ module.exports = class Ethcalate {
   async updatePhone (phone) {
     check.assert.string(phone, 'No phone number provided')
     const response = await axios.post(`${this.apiUrl}/updatePhone`, {
-      address: this.account,
+      address: this.web3.eth.accounts[0],
       phone: phone
     })
     return response.data
@@ -217,7 +217,7 @@ module.exports = class Ethcalate {
 
   async getMyChannels () {
     const response = await axios.get(
-      `${this.apiUrl}/channel?address=${this.account}`
+      `${this.apiUrl}/channel?address=${this.web3.eth.accounts[0]}`
     )
     if (response.data) {
       return response.data.channels.map(channel => {
