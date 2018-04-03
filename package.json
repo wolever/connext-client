@@ -1,6 +1,6 @@
 {
   "name": "ethcalate",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Containerized state channels",
   "main": "dist/index.js",
   "scripts": {
