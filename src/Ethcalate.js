@@ -48,7 +48,6 @@ module.exports = class Ethcalate {
     check.assert.string(challenge, 'No challenge timer provided')
 
     const result = await this.channelManager.openChannel(to, challenge, {
-      from: this.account,
       value: this.web3.toWei(depositInEth, 'ether')
     })
     return result
