@@ -1,16 +1,18 @@
 {
-  "name": "ethcalate-client",
+  "name": "ethcalate",
   "version": "1.1.0",
   "description": "Containerized state channels",
-  "main": "index.js",
-  "scripts": {},
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "babel src -d dist"
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/ConnextProject/ethcalate-client.git"
   },
   "files": [
-    "build",
-    "src"
+    "dist",
+    "artifacts"
   ],
   "standard": {
     "ignore": [
@@ -38,6 +40,10 @@
   },
   "homepage": "https://github.com/ConnextProject/ethcalate-client#readme",
   "devDependencies": {
+    "babel-cli": "^6.26.0",
+    "babel-plugin-transform-runtime": "^6.23.0",
+    "babel-preset-env": "^1.6.1",
+    "babel-preset-react": "^6.24.1",
     "standard": "^10.0.3"
   },
   "dependencies": {

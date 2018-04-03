@@ -1,9 +1,9 @@
 const axios = require('axios')
 const check = require('check-types')
-const getWeb3 = require('../web3')
+const getWeb3 = require('./web3')
 const contract = require('truffle-contract')
 const abi = require('ethereumjs-abi')
-const artifacts = require('../../../build/contracts/ChannelManager.json')
+const artifacts = require('../artifacts/ChannelManager.json')
 
 module.exports = class Ethcalate {
   constructor (contractAddress, apiUrl) {
