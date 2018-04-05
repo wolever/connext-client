@@ -31,11 +31,11 @@ npm install ethcalate --save
 ```
 
 ### Instantiating
-The client is instantiated to talk to the deployed contract and Hub:
+The client is instantiated to talk to the deployed contract and Hub. The constructor takes one parameter, a web3 instance.
 
 ```
 const Ethcalate = require('ethcalate')
-const ethcalate = new Ethcalate()
+const ethcalate = new Ethcalate(web3)
 ```
 
 ## Using the Ethcalate Package
