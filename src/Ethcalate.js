@@ -73,15 +73,34 @@ module.exports = class Ethcalate {
       )
       .toString('hex')
     hash = `0x${hash}`
-    const sig = new Promise((resolve, reject) => {
-      this.web3.eth.sign(this.web3.eth.accounts[0], hash, (error, result) => {
-        if (error) {
-          reject(error)
-        } else {
+    console.log('hash: ', hash)
+
+    const sig = await new Promise((resolve, reject) => {
+      this.web3.currentProvider.sendAsync(
+        {
+          method: 'eth_signTypedData',
+          params: [
+            [
+              {
+                type: 'bytes32',
+                name: 'hash',
+                value: hash
+              }
+            ],
+            this.web3.eth.accounts[0]
+          ],
+          from: this.web3.eth.accounts[0]
+        },
+        function (err, result) {
+          if (err) reject(err)
+          if (result.error) {
+            reject(result.error.message)
+          }
           resolve(result)
         }
-      })
+      )
     })
+    console.log('sig: ', sig)
     return sig
   }
 
@@ -108,13 +127,29 @@ module.exports = class Ethcalate {
       nonce = latestTransaction.nonce + 1
     }
 
-    const sig = await this.signTx({ channelId, nonce, balanceA, balanceB })
+    const { result } = await this.signTx({
+      channelId,
+      nonce,
+      balanceA,
+      balanceB
+    })
 
     // set variables based on who signed it
-    const sigA = isAgentA ? sig : ''
-    const sigB = !isAgentA ? sig : ''
+    const sigA = isAgentA ? result : ''
+    const sigB = !isAgentA ? result : ''
     const requireSigA = isAgentA
     const requireSigB = !isAgentA
+
+    console.log(
+      channelId,
+      nonce,
+      balanceA,
+      balanceB,
+      sigA,
+      sigB,
+      requireSigA,
+      requireSigB
+    )
 
     const response = await axios.post(
       `${this.apiUrl}/channel/id/${channelId}/state`,
