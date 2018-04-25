@@ -101,7 +101,7 @@ module.exports = class Ethcalate {
       )
     })
     console.log('sig: ', sig)
-    return sig
+    return sig.result
   }
 
   async updateState ({ channelId, balanceA, balanceB }) {
@@ -127,7 +127,7 @@ module.exports = class Ethcalate {
       nonce = latestTransaction.nonce + 1
     }
 
-    const { result } = await this.signTx({
+    const result = await this.signTx({
       channelId,
       nonce,
       balanceA,
