@@ -1,41 +1,56 @@
+// drizzle adds--maybe import conditionally?
 const axios = require('axios')
 const check = require('check-types')
 const contract = require('truffle-contract')
 const abi = require('ethereumjs-abi')
 const artifacts = require('../artifacts/ChannelManager.json')
+const tokenAbi = require('human-standard-token-abi')
 
 module.exports = class Ethcalate {
-  constructor (web3, contractAddress, apiUrl) {
+  constructor (web3, contractAddress, apiUrl, drizzle) {
     this.web3 = web3
     if (contractAddress) {
       this.contractAddress = contractAddress
     } else {
-      this.contractAddress = '0xd91a2f283d698f28e5b9d153a97caee80ace5951'
+      this.contractAddress = '0xa41811a8b16b54d8b17d629d74bdca9ef8283207'
     }
     if (apiUrl) {
       this.apiUrl = apiUrl
     } else {
       this.apiUrl = 'https://api.ethcalate.network'
     }
+
+    if (drizzle) {
+      this.drizzle = drizzle
+    } else {
+      this.drizzle = null
+    }
   }
 
   async initContract () {
-    // init channel manager
-    const ChannelManager = contract(artifacts)
-    ChannelManager.setProvider(this.web3.currentProvider)
-    ChannelManager.defaults({ from: this.web3.eth.accounts[0] })
-
-    // init instance
-    let channelManager
-    if (this.contractAddress) {
-      channelManager = await ChannelManager.at(this.contractAddress)
+    const accounts = await this.web3.eth.getAccounts()
+    this.accounts = accounts
+    if (this.drizzle) {
+      // drizzle has already inited the contracts
+      this.channelManager = this.drizzle.contracts.ChannelManager
     } else {
-      channelManager = await ChannelManager.deployed()
+      // init channel manager
+      const ChannelManager = contract(artifacts)
+      ChannelManager.setProvider(this.web3.currentProvider)
+      ChannelManager.defaults({ from: accounts[0] })
+
+      // init instance
+      let channelManager
+      if (this.contractAddress) {
+        channelManager = await ChannelManager.at(this.contractAddress)
+      } else {
+        channelManager = await ChannelManager.deployed()
+      }
+      this.channelManager = channelManager
     }
-    this.channelManager = channelManager
   }
 
-  async openChannel ({ to, depositInWei, challenge }) {
+  async openChannel ({ to, tokenContract, depositInWei, challenge }) {
     if (!this.channelManager) {
       throw new Error('Please call initContract()')
     }
@@ -43,25 +58,123 @@ module.exports = class Ethcalate {
     check.assert.string(depositInWei, 'No initial deposit provided')
     check.assert.string(challenge, 'No challenge timer provided')
 
-    const result = await this.channelManager.openChannel(to, challenge, {
-      value: depositInWei,
-      from: this.web3.eth.accounts[0]
-    })
-    return result
+    const accounts = await this.web3.eth.getAccounts()
+    const token = new this.web3.eth.Contract(tokenAbi, tokenContract)
+    const contractAddress = this.drizzle
+      ? this.channelManager._address
+      : this.channelManager.address
+
+    if (tokenContract) {
+      await token.methods
+        .approve(contractAddress, depositInWei)
+        .send({ from: accounts[0] })
+    }
+
+    if (this.drizzle) {
+      console.log(this.channelManager.methods)
+      let stackId
+      if (tokenContract) {
+        stackId = this.channelManager.methods.openChannel.cacheSend(
+          to,
+          tokenContract,
+          depositInWei,
+          challenge,
+          {
+            from: accounts[0]
+          }
+        )
+      } else {
+        stackId = this.channelManager.methods.openChannel.cacheSend(
+          to,
+          0,
+          0,
+          challenge,
+          {
+            from: accounts[0],
+            value: depositInWei
+          }
+        )
+      }
+      return stackId // in drizzle state, search for tx by stackId to get status
+    } else {
+      let result
+      if (tokenContract) {
+        result = await this.channelManager.openChannel(
+          to,
+          tokenContract,
+          depositInWei,
+          challenge,
+          {
+            from: accounts[0]
+          }
+        )
+      } else {
+        result = await this.channelManager.openChannel(to, 0, 0, challenge, {
+          from: accounts[0],
+          value: depositInWei
+        })
+      }
+      return result
+    }
   }
 
-  async joinChannel ({ channelId, depositInWei }) {
+  async joinChannel ({ channelId, tokenContract, depositInWei }) {
     if (!this.channelManager) {
       throw new Error('Please call initContract()')
     }
     check.assert.string(channelId, 'No channelId provided')
     check.assert.string(depositInWei, 'No initial deposit provided')
 
-    const result = await this.channelManager.joinChannel(channelId, {
-      value: depositInWei,
-      from: this.web3.eth.accounts[0]
-    })
-    return result
+    const accounts = await this.web3.eth.getAccounts()
+    const contractAddress = this.drizzle
+      ? this.channelManager._address
+      : this.channelManager.address
+
+    if (tokenContract && parseInt(tokenContract) !== 0) {
+      const token = new this.web3.eth.Contract(tokenAbi, tokenContract)
+      await token.methods
+        .approve(contractAddress, depositInWei)
+        .send({ from: accounts[0] })
+    }
+    if (this.drizzle) {
+      let stackId
+      if (tokenContract && parseInt(tokenContract) !== 0) {
+        stackId = this.channelManager.methods.joinChannel.cacheSend(
+          channelId,
+          depositInWei,
+          {
+            from: accounts[0]
+          }
+        )
+      } else {
+        stackId = this.channelManager.methods.joinChannel.cacheSend(
+          channelId,
+          0,
+          {
+            from: accounts[0],
+            value: depositInWei
+          }
+        )
+      }
+      return stackId
+    } else {
+      let result
+      if (tokenContract && parseInt(tokenContract !== 0)) {
+        result = await this.channelManager.joinChannel(
+          channelId,
+          depositInWei,
+          {
+            from: accounts[0]
+          }
+        )
+      } else {
+        result = await this.channelManager.joinChannel(channelId, 0, {
+          from: accounts[0],
+          value: depositInWei
+        })
+      }
+      return result
+    }
   }
 
   async signTx ({ channelId, nonce, balanceA, balanceB }) {
@@ -87,9 +200,9 @@ module.exports = class Ethcalate {
                 value: hash
               }
             ],
-            this.web3.eth.accounts[0]
+            this.accounts[0]
           ],
-          from: this.web3.eth.accounts[0]
+          from: this.accounts[0]
         },
         function (err, result) {
           if (err) reject(err)
@@ -112,10 +225,11 @@ module.exports = class Ethcalate {
     let { channel } = await this.getChannel(channelId)
 
     // find out who needs to sign
+    const accounts = await this.web3.eth.getAccounts()
     let isAgentA
-    if (channel.agentA === this.web3.eth.accounts[0]) {
+    if (channel.agentA === accounts[0].toLowerCase()) {
       isAgentA = true
-    } else if (channel.agentB === this.web3.eth.accounts[0]) {
+    } else if (channel.agentB === accounts[0].toLowerCase()) {
       isAgentA = false
     } else {
       throw new Error('Not my channel')
@@ -127,16 +241,12 @@ module.exports = class Ethcalate {
       nonce = latestTransaction.nonce + 1
     }
 
-    const result = await this.signTx({
-      channelId,
-      nonce,
-      balanceA,
-      balanceB
-    })
+    const sig = await this.signTx({ channelId, nonce, balanceA, balanceB })
+    console.log('updateState().sig:', sig)
 
     // set variables based on who signed it
-    const sigA = isAgentA ? result : ''
-    const sigB = !isAgentA ? result : ''
+    const sigA = isAgentA ? sig : ''
+    const sigB = !isAgentA ? sig : ''
     const requireSigA = isAgentA
     const requireSigB = !isAgentA
 
@@ -163,6 +273,7 @@ module.exports = class Ethcalate {
         requireSigB
       }
     )
+    console.log('updateState returns:', response.data)
     return response.data
   }
 
@@ -170,10 +281,23 @@ module.exports = class Ethcalate {
     if (!this.channelManager) {
       throw new Error('Please call initContract()')
     }
-    await this.channelManager.startChallenge(channelId, {
-      from: this.web3.eth.accounts[0],
-      gas: 3000000
-    })
+
+    const accounts = await this.web3.eth.getAccounts()
+    if (this.drizzle) {
+      const stackId = this.channelManager.methods.startChallenge.cacheSend(
+        channelId,
+        {
+          from: accounts[0],
+          gas: 3000000
+        }
+      )
+      return stackId
+    } else {
+      await this.channelManager.startChallenge(channelId, {
+        from: accounts[0],
+        gas: 3000000
+      })
+    }
   }
 
   async updateOnChain (channelId, txId) {
@@ -182,10 +306,11 @@ module.exports = class Ethcalate {
     }
     let { channel } = await this.getChannel(channelId)
     let sig
-    if (channel.agentA === this.web3.eth.accounts[0]) {
+    const accounts = await this.web3.eth.getAccounts()
+    if (channel.agentA === accounts[0].toLowerCase()) {
       // need sigB
       sig = 'sigB'
-    } else if (channel.agentB === this.web3.eth.accounts[0]) {
+    } else if (channel.agentB === accounts[0].toLowerCase()) {
       // need sigA
       sig = 'sigA'
     } else {
@@ -204,26 +329,52 @@ module.exports = class Ethcalate {
     })
     if (sig === 'sigA') {
       // ours is sigB
-      await this.channelManager.updateState(
-        channelId,
-        nonce,
-        balanceA,
-        balanceB,
-        sigA,
-        signedTx,
-        { from: this.web3.eth.accounts[0] }
-      )
+      if (this.drizzle) {
+        const stackId = this.channelManager.methods.updateState.cacheSend(
+          channelId,
+          nonce,
+          balanceA,
+          balanceB,
+          sigA,
+          signedTx,
+          { from: accounts[0] }
+        )
+        return stackId
+      } else {
+        await this.channelManager.updateState(
+          channelId,
+          nonce,
+          balanceA,
+          balanceB,
+          sigA,
+          signedTx,
+          { from: accounts[0] }
+        )
+      }
     } else {
       // ours is sigA
-      await this.channelManager.updateState(
-        channelId,
-        nonce,
-        balanceA,
-        balanceB,
-        signedTx,
-        sigB,
-        { from: this.web3.eth.accounts[0] }
-      )
+      if (this.drizzle) {
+        const stackId = this.channelManager.methods.updateState.cacheSend(
+          channelId,
+          nonce,
+          balanceA,
+          balanceB,
+          signedTx,
+          sigB,
+          { from: accounts[0] }
+        )
+        return stackId
+      } else {
+        await this.channelManager.updateState(
+          channelId,
+          nonce,
+          balanceA,
+          balanceB,
+          signedTx,
+          sigB,
+          { from: accounts[0] }
+        )
+      }
     }
   }
 
@@ -233,34 +384,52 @@ module.exports = class Ethcalate {
     }
 
     check.assert.string(channelId, 'No channelId provided')
-    const { data } = await axios.post(
-      `${this.apiUrl}/channel/id/${channelId}/update`
-    )
-    return data
+    const res = await this.getChannel(channelId)
+    console.log('channel.status:', res.channel.status)
+    if (res.channel.status !== 'closed') {
+      const { data } = await axios.post(
+        `${this.apiUrl}/channel/id/${channelId}/update`
+      )
+      return data
+    }
   }
 
   async closeChannel (channelId) {
     console.log('channel.id:', channelId)
-    console.log('from:', this.web3.eth.accounts[0])
-    await this.channelManager.closeChannel(channelId, {
-      from: this.web3.eth.accounts[0],
-      gas: 3000000
-    })
+    const accounts = await this.web3.eth.getAccounts()
+    console.log('from:', accounts[0])
+    if (this.drizzle) {
+      const stackId = this.channelManager.methods.closeChannel.cacheSend(
+        channelId,
+        {
+          from: accounts[0],
+          gas: 3000000
+        }
+      )
+      return stackId
+    } else {
+      await this.channelManager.closeChannel(channelId, {
+        from: accounts[0],
+        gas: 3000000
+      })
+    }
   }
 
   async updatePhone (phone) {
+    const accounts = await this.web3.eth.getAccounts()
     check.assert.string(phone, 'No phone number provided')
     const response = await axios.post(`${this.apiUrl}/phone`, {
-      address: this.web3.eth.accounts[0],
+      address: accounts[0].toLowerCase(),
       phone: phone
     })
     return response.data
   }
 
   async updateName (name) {
+    const accounts = await this.web3.eth.getAccounts()
     check.assert.string(name, 'No name provided')
     const response = await axios.post(`${this.apiUrl}/name`, {
-      address: this.web3.eth.accounts[0],
+      address: accounts[0].toLowerCase(),
       name: name
     })
     return response.data
@@ -320,7 +489,9 @@ module.exports = class Ethcalate {
       throw new Error('Please call initContract()')
     }
 
-    let apiUrl = `${this.apiUrl}/channel?address=${this.web3.eth.accounts[0]}`
+    const accounts = await this.web3.eth.getAccounts()
+
+    let apiUrl = `${this.apiUrl}/channel?address=${accounts[0]}`
     apiUrl = status ? `${apiUrl}&status=${status}` : apiUrl
 
     const response = await axios.get(apiUrl)
@@ -343,8 +514,10 @@ module.exports = class Ethcalate {
   }
 
   async getMyDetails () {
-    const account = this.web3.eth.accounts[0]
-    const response = await axios.get(`${this.apiUrl}/user/address/${account}`)
+    const accounts = await this.web3.eth.getAccounts()
+    const response = await axios.get(
+      `${this.apiUrl}/user/address/${accounts[0]}`
+    )
     return response.data
   }
 
@@ -358,8 +531,9 @@ module.exports = class Ethcalate {
       throw new Error('Please call initContract()')
     }
 
+    const accounts = await this.web3.eth.getAccounts()
     const response = await axios.get(
-      `${this.apiUrl}/channel?b=${this.web3.eth.accounts[0]}&status=open`
+      `${this.apiUrl}/channel?b=${accounts[0]}&status=open`
     )
     if (response.data) {
       return response.data.channels.map(channel => {
