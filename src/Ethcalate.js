@@ -38,6 +38,14 @@ module.exports = class Ethcalate {
       const ChannelManager = contract(artifacts)
       ChannelManager.setProvider(this.web3.currentProvider)
       ChannelManager.defaults({ from: accounts[0] })
+      if (typeof ChannelManager.currentProvider.sendAsync !== 'function') {
+        ChannelManager.currentProvider.sendAsync = function () {
+          return ChannelManager.currentProvider.send.apply(
+            ChannelManager.currentProvider,
+            arguments
+          )
+        }
+      }
 
       // init instance
       let channelManager
