@@ -93,6 +93,24 @@ module.exports = class Ethcalate {
     // post to listener, returns ID for VC, then send the opening certs
   }
 
+  async sendOpeningCerts (virtualChannelId, cert) {
+    if (!this.channelManager) {
+      throw new Error('Please call initContract()')
+    }
+
+    check.assert.string(virtualChannelId, 'No virtual channel id provided')
+    check.assert.string(cert, 'No cert provided')
+
+    const response = await axios.post(
+      `${this.apiUrl}/virtualchannel/${virtualChannelId}/cert/open`,
+      {
+        sig: cert,
+        from: this.accounts[0]
+      }
+    )
+    return response
+  }
+
   recoverSignerFromOpeningCerts (sig, { id, agentA, agentB, ingrid }) {
     if (!this.channelManager) {
       throw new Error('Please call initContract()')
