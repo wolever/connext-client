@@ -5,6 +5,7 @@ const contract = require('truffle-contract')
 const abi = require('ethereumjs-abi')
 const artifacts = require('../artifacts/ChannelManager.json')
 const tokenAbi = require('human-standard-token-abi')
+const util = require('ethereumjs-util')
 
 module.exports = class Ethcalate {
   constructor (web3, contractAddress, apiUrl, drizzle) {
@@ -59,13 +60,15 @@ module.exports = class Ethcalate {
   }
 
   async createOpeningCerts (
-    { agentA, agentB, ingrid },
-    ethSignInsteadOfPersonal
+    { id, agentA, agentB, ingrid },
+    unlockedAccountPresent = false
   ) {
     // errs
     if (!this.channelManager) {
       throw new Error('Please call initContract()')
     }
+
+    check.assert.string(id, 'No virtual channel id provided')
     check.assert.string(agentA, 'No agentA provided')
     check.assert.string(agentB, 'No agentB provided')
     check.assert.string(ingrid, 'No ingrid provided')
@@ -73,13 +76,15 @@ module.exports = class Ethcalate {
     // generate data hash
     const hash = this.web3.utils.soliditySha3(
       { type: 'string', value: 'opening' },
+      { type: 'string', value: id },
       { type: 'address', value: agentA },
       { type: 'address', value: agentB },
       { type: 'address', value: ingrid }
     )
+
     // sign hash
     let sig
-    if (ethSignInsteadOfPersonal) {
+    if (unlockedAccountPresent) {
       sig = await this.web3.eth.sign(hash, this.accounts[0])
     } else {
       sig = await this.web3.eth.personal.sign(hash, this.accounts[0])
@@ -88,6 +93,7 @@ module.exports = class Ethcalate {
     // post to listener, returns ID for VC, then send the opening certs
   }
 
+<<<<<<< HEAD
   async createVirtualChannel ({
     agentA,
     agentB,
@@ -95,6 +101,50 @@ module.exports = class Ethcalate {
     depositInWei,
     validity
   }) {
+=======
+  recoverSignerFromOpeningCerts (sig, { id, agentA, agentB, ingrid }) {
+    if (!this.channelManager) {
+      throw new Error('Please call initContract()')
+    }
+
+    check.assert.string(sig, 'No signature provided')
+    check.assert.string(id, 'No virtual channel id provided')
+    check.assert.string(agentA, 'No agentA provided')
+    check.assert.string(agentB, 'No agentB provided')
+    check.assert.string(ingrid, 'No ingrid provided')
+
+    // generate fingerprint
+    let fingerprint = this.web3.utils.soliditySha3(
+      { type: 'string', value: 'opening' },
+      { type: 'string', value: id },
+      { type: 'address', value: agentA },
+      { type: 'address', value: agentB },
+      { type: 'address', value: ingrid }
+    )
+
+    fingerprint = util.toBuffer(fingerprint)
+
+    // NEED THIS FOR GANACHE, MIGHT NOT NEED IN PROD
+    const prefix = Buffer.from('\x19Ethereum Signed Message:\n')
+    const prefixedMsg = util.sha3(
+      Buffer.concat([
+        prefix,
+        Buffer.from(String(fingerprint.length)),
+        fingerprint
+      ])
+    )
+    /// ////////////////////////////////////////////
+
+    const res = util.fromRpcSig(sig)
+    const pubKey = util.ecrecover(prefixedMsg, res.v, res.r, res.s)
+    const addrBuf = util.pubToAddress(pubKey)
+    const addr = util.bufferToHex(addrBuf)
+
+    return addr
+  }
+
+  async createVirtualChannel (params) {
+>>>>>>> 0dda13a62a9ba560e92682efcd3b1dad5fe77875
     if (!this.channelManager) {
       throw new Error('Please call initContract()')
     }
