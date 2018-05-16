@@ -58,7 +58,6 @@ module.exports = class Ethcalate {
     }
   }
 
-<<<<<<< HEAD
   async sendOpeningCerts (params) {
     // errs
     if (!this.channelManager) {
@@ -83,20 +82,6 @@ module.exports = class Ethcalate {
     check.assert.string(params.to, 'No counterparty address provided')
     check.assert.string(params.depositInWei, 'No initial deposit provided')
     check.assert.string(params.validity, 'No channel validity time provided')
-=======
-  /**
-   * Called by client when virtual channel requested with B via Ingrid
-   */
-  async requestVirtualChannel ({ to, tokencontract, depositInWei, validity }) {
-    // errs
-    if (!this.channel) {
-      throw new Error('Please call initContract()')
-    }
-    check.assert.string(to, 'No counterparty address provided')
-    check.assert.string(depositInWei, 'No initial deposit provided')
-    check.assert.string(validity, 'No channel validity time provided')
-    // generate channel struct
->>>>>>> 43ea4088bd1fd74cdf91deb3c68935735edaab9a
   }
 
   async openChannel ({ to, tokenContract, depositInWei, challenge }) {
