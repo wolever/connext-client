@@ -58,23 +58,33 @@ module.exports = class Ethcalate {
     }
   }
 
-  /**
-   * Called by client when virtual channel requested with B via Ingrid
-   */
-  async sendOpeningCerts (params) {
+  async createOpeningCerts (
+    { agentA, agentB, ingrid },
+    ethSignInsteadOfPersonal
+  ) {
     // errs
     if (!this.channelManager) {
       throw new Error('Please call initContract()')
     }
-    check.assert.string(params.agentB, 'No counterparty address provided')
-    check.assert.string(params.depositInWei, 'No initial deposit provided')
-    check.assert.string(params.validity, 'No channel validity time provided')
+    check.assert.string(agentA, 'No agentA provided')
+    check.assert.string(agentB, 'No agentB provided')
+    check.assert.string(ingrid, 'No ingrid provided')
 
     // generate data hash
-    const hash = this.web3.utils.soliditySha3(params)
+    const hash = this.web3.utils.soliditySha3(
+      { type: 'string', value: 'opening' },
+      { type: 'address', value: agentA },
+      { type: 'address', value: agentB },
+      { type: 'address', value: ingrid }
+    )
     // sign hash
-    const sig = await this.web3.eth.personal.sign(hash, this.accounts[0])
-    console.log(sig)
+    let sig
+    if (ethSignInsteadOfPersonal) {
+      sig = await this.web3.eth.sign(hash, this.accounts[0])
+    } else {
+      sig = await this.web3.eth.personal.sign(hash, this.accounts[0])
+    }
+    return sig
     // post to listener, returns ID for VC, then send the opening certs
   }
 
