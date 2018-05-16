@@ -50,19 +50,30 @@ module.exports = class Ethcalate {
     }
   }
 
-  /**
-   * Called by client when virtual channel requested with B via Ingrid
-   */
-  async requestVirtualChannel({ to, tokencontract, depositInWei, validity }) {
+  async sendOpeningCerts (params) {
     // errs
-    if (!this.channel) {
+    if (!this.channelManager) {
       throw new Error('Please call initContract()')
     }
-    check.assert.string(to, 'No counterparty address provided')
-    check.assert.string(depositInWei, 'No initial deposit provided')
-    check.assert.string(validity, 'No channel validity time provided')
-    // generate channel struct
-    
+    check.assert.string(params.to, 'No counterparty address provided')
+    check.assert.string(params.depositInWei, 'No initial deposit provided')
+    check.assert.string(params.validity, 'No channel validity time provided')
+
+    // generate data hash
+    const hash = this.web3.utils.soliditySha3(params)
+    // sign hash
+    const sig = await this.web3.eth.personal.sign(hash, this.accounts[0])
+    console.log(sig)
+    // post to listener, returns ID for VC, then send the opening certs
+  }
+
+  async createVirtualChannel (params) {
+    if (!this.channelManager) {
+      throw new Error('Please call initContract()')
+    }
+    check.assert.string(params.to, 'No counterparty address provided')
+    check.assert.string(params.depositInWei, 'No initial deposit provided')
+    check.assert.string(params.validity, 'No channel validity time provided')
   }
 
   async openChannel ({ to, tokenContract, depositInWei, challenge }) {
