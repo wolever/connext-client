@@ -5,6 +5,7 @@ const contract = require('truffle-contract')
 const abi = require('ethereumjs-abi')
 const artifacts = require('../artifacts/ChannelManager.json')
 const tokenAbi = require('human-standard-token-abi')
+const util = require('ethereumjs-util')
 
 module.exports = class Ethcalate {
   constructor (web3, contractAddress, apiUrl, drizzle) {
@@ -56,6 +57,150 @@ module.exports = class Ethcalate {
       }
       this.channelManager = channelManager
     }
+  }
+
+  async createOpeningCerts (
+    { id, agentA, agentB, ingrid },
+    unlockedAccountPresent = false
+  ) {
+    // errs
+    if (!this.channelManager) {
+      throw new Error('Please call initContract()')
+    }
+
+    check.assert.string(id, 'No virtual channel id provided')
+    check.assert.string(agentA, 'No agentA provided')
+    check.assert.string(agentB, 'No agentB provided')
+    check.assert.string(ingrid, 'No ingrid provided')
+
+    // generate data hash
+    const hash = this.web3.utils.soliditySha3(
+      { type: 'string', value: 'opening' },
+      { type: 'string', value: id },
+      { type: 'address', value: agentA },
+      { type: 'address', value: agentB },
+      { type: 'address', value: ingrid }
+    )
+
+    // sign hash
+    let sig
+    if (unlockedAccountPresent) {
+      sig = await this.web3.eth.sign(hash, this.accounts[0])
+    } else {
+      sig = await this.web3.eth.personal.sign(hash, this.accounts[0])
+    }
+    return sig
+    // post to listener, returns ID for VC, then send the opening certs
+  }
+
+  async sendOpeningCerts (virtualChannelId, cert) {
+    if (!this.channelManager) {
+      throw new Error('Please call initContract()')
+    }
+
+    check.assert.string(virtualChannelId, 'No virtual channel id provided')
+    check.assert.string(cert, 'No cert provided')
+
+    const response = await axios.post(
+      `${this.apiUrl}/virtualchannel/${virtualChannelId}/cert/open`,
+      {
+        sig: cert,
+        from: this.accounts[0]
+      }
+    )
+    return response
+  }
+
+  recoverSignerFromOpeningCerts (sig, { id, agentA, agentB, ingrid }) {
+    if (!this.channelManager) {
+      throw new Error('Please call initContract()')
+    }
+
+    check.assert.string(sig, 'No signature provided')
+    check.assert.string(id, 'No virtual channel id provided')
+    check.assert.string(agentA, 'No agentA provided')
+    check.assert.string(agentB, 'No agentB provided')
+    check.assert.string(ingrid, 'No ingrid provided')
+
+    // generate fingerprint
+    let fingerprint = this.web3.utils.soliditySha3(
+      { type: 'string', value: 'opening' },
+      { type: 'string', value: id },
+      { type: 'address', value: agentA },
+      { type: 'address', value: agentB },
+      { type: 'address', value: ingrid }
+    )
+
+    fingerprint = util.toBuffer(fingerprint)
+
+    // NEED THIS FOR GANACHE, MIGHT NOT NEED IN PROD
+    const prefix = Buffer.from('\x19Ethereum Signed Message:\n')
+    const prefixedMsg = util.sha3(
+      Buffer.concat([
+        prefix,
+        Buffer.from(String(fingerprint.length)),
+        fingerprint
+      ])
+    )
+    /// ////////////////////////////////////////////
+
+    const res = util.fromRpcSig(sig)
+    const pubKey = util.ecrecover(prefixedMsg, res.v, res.r, res.s)
+    const addrBuf = util.pubToAddress(pubKey)
+    const addr = util.bufferToHex(addrBuf)
+
+    return addr
+  }
+
+  async createVirtualChannel ({
+    agentA,
+    agentB,
+    depositInWei,
+    ingrid,
+    validity
+  }) {
+    if (!this.channelManager) {
+      throw new Error('Please call initContract()')
+    }
+    check.assert.string(agentB, 'No counterparty address provided')
+    check.assert.string(depositInWei, 'No initial deposit provided')
+    check.assert.string(validity, 'No channel validity time provided')
+
+    // ideally should get these ledger channel ids from contract
+    let subchanAtoI, subchanBtoI
+    try {
+      subchanAtoI = await this.getChannelByAddresses(agentA, ingrid)
+      subchanBtoI = await this.getChannelByAddresses(agentB, ingrid)
+    } catch (e) {
+      console.log(e)
+    }
+    // TO DO:
+    if (!subchanAtoI) {
+      console.log('Missing AI Ledger Channel, using fake')
+      subchanAtoI = '0x00a'
+    }
+    if (!subchanBtoI) {
+      console.log('Missing BI Ledger Channel, using fake')
+      subchanBtoI = '0x00b'
+    }
+
+    // build channel
+    let res
+    try {
+      res = await axios.post(`${this.apiUrl}/virtualchannel`, {
+        agentA,
+        agentB,
+        depositA: depositInWei,
+        ingrid,
+        subchanAtoI,
+        subchanBtoI,
+        validity
+      }) // response should be vc-id
+      console.log('VC id:', res.data.id)
+    } catch (e) {
+      console.log(e)
+    }
+    return res
   }
 
   async openChannel ({ to, tokenContract, depositInWei, challenge }) {
