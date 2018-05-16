@@ -58,12 +58,15 @@ module.exports = class Ethcalate {
     }
   }
 
+  /**
+   * Called by client when virtual channel requested with B via Ingrid
+   */
   async sendOpeningCerts (params) {
     // errs
     if (!this.channelManager) {
       throw new Error('Please call initContract()')
     }
-    check.assert.string(params.to, 'No counterparty address provided')
+    check.assert.string(params.agentB, 'No counterparty address provided')
     check.assert.string(params.depositInWei, 'No initial deposit provided')
     check.assert.string(params.validity, 'No channel validity time provided')
 
@@ -75,13 +78,37 @@ module.exports = class Ethcalate {
     // post to listener, returns ID for VC, then send the opening certs
   }
 
-  async createVirtualChannel (params) {
+  async createVirtualChannel ({
+    agentA,
+    agentB,
+    tokencontract,
+    depositInWei,
+    validity
+  }) {
     if (!this.channelManager) {
       throw new Error('Please call initContract()')
     }
-    check.assert.string(params.to, 'No counterparty address provided')
-    check.assert.string(params.depositInWei, 'No initial deposit provided')
-    check.assert.string(params.validity, 'No channel validity time provided')
+    check.assert.string(agentB, 'No counterparty address provided')
+    check.assert.string(depositInWei, 'No initial deposit provided')
+    check.assert.string(validity, 'No channel validity time provided')
+    // channel info
+    const ingrid = this.accounts[0]
+    // ideally should get these ledger channel ids from contract
+    const subchanAtoI = await this.getChannelByAddresses(agentA, ingrid)
+    const subchanBtoI = await this.getChannelByAddresses(agentB, ingrid)
+
+    // build channel
+    const response = await axios.post(`${this.apiUrl}/virtualchannel`, {
+      agentA,
+      agentB,
+      depositInWei,
+      ingrid,
+      subchanAtoI,
+      subchanBtoI,
+      validity
+    }) // response should be vc-id
+    console.log(response)
+    return response
   }
 
   async openChannel ({ to, tokenContract, depositInWei, challenge }) {
