@@ -93,15 +93,6 @@ module.exports = class Ethcalate {
     // post to listener, returns ID for VC, then send the opening certs
   }
 
-<<<<<<< HEAD
-  async createVirtualChannel ({
-    agentA,
-    agentB,
-    tokencontract,
-    depositInWei,
-    validity
-  }) {
-=======
   recoverSignerFromOpeningCerts (sig, { id, agentA, agentB, ingrid }) {
     if (!this.channelManager) {
       throw new Error('Please call initContract()')
@@ -144,7 +135,6 @@ module.exports = class Ethcalate {
   }
 
   async createVirtualChannel (params) {
->>>>>>> 0dda13a62a9ba560e92682efcd3b1dad5fe77875
     if (!this.channelManager) {
       throw new Error('Please call initContract()')
     }
