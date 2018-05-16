@@ -332,41 +332,15 @@ module.exports = class Ethcalate {
 
   async signTx ({ channelId, nonce, balanceA, balanceB }) {
     // fingerprint = keccak256(channelId, nonce, balanceA, balanceB)
-    let hash = abi
-      .soliditySHA3(
-        ['bytes32', 'uint256', 'uint256', 'uint256'],
-        [channelId, nonce, balanceA, balanceB]
-      )
-      .toString('hex')
-    hash = `0x${hash}`
-    console.log('hash: ', hash)
-
-    const sig = await new Promise((resolve, reject) => {
-      this.web3.currentProvider.sendAsync(
-        {
-          method: 'eth_signTypedData',
-          params: [
-            [
-              {
-                type: 'bytes32',
-                name: 'hash',
-                value: hash
-              }
-            ],
-            this.accounts[0]
-          ],
-          from: this.accounts[0]
-        },
-        function (err, result) {
-          if (err) reject(err)
-          if (result.error) {
-            reject(result.error.message)
-          }
-          resolve(result)
-        }
-      )
-    })
-    console.log('sig: ', sig)
+    const hash = this.web3.utils.soliditySha3(
+      { type: 'string', value: channelId },
+      { type: 'uint256', value: nonce },
+      { type: 'uint256', value: balanceA },
+      { type: 'uint256', value: balanceB }
+    )
+    // sign the hash
+    const sig = await this.web3.eth.personal.sign(hash, this.accounts[0])
+    console.log('sig:', sig)
     return sig.result
   }
 
