@@ -134,15 +134,20 @@ module.exports = class Ethcalate {
     return addr
   }
 
-  async createVirtualChannel (params) {
+  async createVirtualChannel ({
+    agentA,
+    agentB,
+    depositInWei,
+    ingrid,
+    validity
+  }) {
     if (!this.channelManager) {
       throw new Error('Please call initContract()')
     }
     check.assert.string(agentB, 'No counterparty address provided')
     check.assert.string(depositInWei, 'No initial deposit provided')
     check.assert.string(validity, 'No channel validity time provided')
-    // channel info
-    const ingrid = this.accounts[0]
+
     // ideally should get these ledger channel ids from contract
     const subchanAtoI = await this.getChannelByAddresses(agentA, ingrid)
     const subchanBtoI = await this.getChannelByAddresses(agentB, ingrid)
