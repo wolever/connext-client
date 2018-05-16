@@ -149,21 +149,40 @@ module.exports = class Ethcalate {
     check.assert.string(validity, 'No channel validity time provided')
 
     // ideally should get these ledger channel ids from contract
-    const subchanAtoI = await this.getChannelByAddresses(agentA, ingrid)
-    const subchanBtoI = await this.getChannelByAddresses(agentB, ingrid)
+    let subchanAtoI, subchanBtoI
+    try {
+      subchanAtoI = await this.getChannelByAddresses(agentA, ingrid)
+      subchanBtoI = await this.getChannelByAddresses(agentB, ingrid)
+    } catch (e) {
+      console.log(e)
+    }
+    // TO DO:
+    if (!subchanAtoI) {
+      console.log('Missing AI Ledger Channel, using fake')
+      subchanAtoI = '0x00a'
+    }
+    if (!subchanBtoI) {
+      console.log('Missing BI Ledger Channel, using fake')
+      subchanBtoI = '0x00b'
+    }
 
     // build channel
-    const response = await axios.post(`${this.apiUrl}/virtualchannel`, {
-      agentA,
-      agentB,
-      depositInWei,
-      ingrid,
-      subchanAtoI,
-      subchanBtoI,
-      validity
-    }) // response should be vc-id
-    console.log(response)
-    return response
+    let res
+    try {
+      res = await axios.post(`${this.apiUrl}/virtualchannel`, {
+        agentA,
+        agentB,
+        depositA: depositInWei,
+        ingrid,
+        subchanAtoI,
+        subchanBtoI,
+        validity
+      }) // response should be vc-id
+      console.log('VC id:', res.data.id)
+    } catch (e) {
+      console.log(e)
+    }
+    return res
   }
 
   async openChannel ({ to, tokenContract, depositInWei, challenge }) {
