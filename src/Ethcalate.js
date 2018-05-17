@@ -688,4 +688,13 @@ module.exports = class Ethcalate {
     )
     return response.data
   }
+
+  async getVirtualChannelByAddresses (agentA, agentB) {
+    check.assert.string(agentA, 'No agentA account provided')
+    check.assert.string(agentB, 'No agentB account provided')
+    const response = await axios.get(
+      `${this.apiUrl}/virtualchannel/a/${agentA}/b/${agentB}`
+    )
+    return response.data
+  }
 }
