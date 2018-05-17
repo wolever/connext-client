@@ -562,6 +562,14 @@ module.exports = class Ethcalate {
     return response.data
   }
 
+  async getVirtualChannel (channelId) {
+    check.assert.string(channelId, 'No channelId provided')
+    const response = await axios.get(
+      `${this.apiUrl}/virtualchannel/id/${channelId}`
+    )
+    return response.data
+  }
+
   async getChannel (channelId) {
     check.assert.string(channelId, 'No channelId provided')
     const response = await axios.get(`${this.apiUrl}/channel/id/${channelId}`)
