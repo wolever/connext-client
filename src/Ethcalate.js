@@ -13,7 +13,7 @@ module.exports = class Ethcalate {
     if (contractAddress) {
       this.contractAddress = contractAddress
     } else {
-      this.contractAddress = '0xa41811a8b16b54d8b17d629d74bdca9ef8283207'
+      this.contractAddress = '0xB241c06Cf09F7E5C74092D08C68dfEb024a34b14'
     }
     if (apiUrl) {
       this.apiUrl = apiUrl
