@@ -1,7 +1,7 @@
-# ethcalate-client
-[Ethcalate](http://ethcalate.network) creates containerized state channels for dapps. This repository contains the client-side code for installing and using Ethcalate services within your decentralized application.
+# connext-client
+[Connext](http://connext.network) creates containerized state channels for dapps. This repository contains the client-side code for installing and using Connext services within your decentralized application.
 
-This repository is designed to be used in conjunction with the Ethcalate Hub and [pre-deployed contracts](https://github.com/ConnextProject/ethcalate-2waypayment).
+This repository is designed to be used in conjunction with the Connext Hub and [pre-deployed contracts](https://github.com/ConnextProject/ethcalate-2waypayment).
 
 ## Getting Started
 ### Prerequesites
@@ -38,7 +38,7 @@ const Ethcalate = require('ethcalate')
 const ethcalate = new Ethcalate(web3)
 ```
 
-## Using the Ethcalate Package
+## Using the Connext Package
 
 ### async openChannel({ to, depositInEth, challenge })
 
