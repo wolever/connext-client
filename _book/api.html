@@ -1,0 +1,420 @@
+
+<!DOCTYPE HTML>
+<html lang="" >
+    <head>
+        <meta charset="UTF-8">
+        <meta content="text/html; charset=utf-8" http-equiv="Content-Type">
+        <title>API Referece · GitBook</title>
+        <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+        <meta name="description" content="">
+        <meta name="generator" content="GitBook 3.2.2">
+        
+        
+        
+    
+    <link rel="stylesheet" href="gitbook/style.css">
+
+    
+            
+                
+                <link rel="stylesheet" href="gitbook/gitbook-plugin-highlight/website.css">
+                
+            
+                
+                <link rel="stylesheet" href="gitbook/gitbook-plugin-search/search.css">
+                
+            
+                
+                <link rel="stylesheet" href="gitbook/gitbook-plugin-fontsettings/website.css">
+                
+            
+        
+
+    
+
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+
+        
+    
+    
+    <meta name="HandheldFriendly" content="true"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <link rel="apple-touch-icon-precomposed" sizes="152x152" href="gitbook/images/apple-touch-icon-precomposed-152.png">
+    <link rel="shortcut icon" href="gitbook/images/favicon.ico" type="image/x-icon">
+
+    
+    <link rel="next" href="api.html" />
+    
+    
+    <link rel="prev" href="start.html" />
+    
+
+    </head>
+    <body>
+        
+<div class="book">
+    <div class="book-summary">
+        
+            
+<div id="book-search-input" role="search">
+    <input type="text" placeholder="Type to search" />
+</div>
+
+            
+                <nav role="navigation">
+                
+
+
+<ul class="summary">
+    
+    
+
+    
+
+    
+        
+        <li class="header">connext-client</li>
+        
+        
+    
+        <li class="chapter " data-level="1.1" data-path="./">
+            
+                <a href="./">
+            
+                    
+                    Introduction
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.2" data-path="start.html">
+            
+                <a href="start.html">
+            
+                    
+                    Getting Started
+            
+                </a>
+            
+
+            
+        </li>
+    
+
+    
+        
+        <li class="divider"></li>
+        
+        
+    
+        <li class="chapter active" data-level="2.1" data-path="api.html">
+            
+                <a href="api.html">
+            
+                    
+                    API Referece
+            
+                </a>
+            
+
+            
+            <ul class="articles">
+                
+    
+        <li class="chapter " data-level="2.1.1" data-path="api.html">
+            
+                <a href="api.html#new_module_Ethcalate--Ethcalate_new">
+            
+                    
+                    constructor
+            
+                </a>
+            
+
+            
+        </li>
+    
+
+            </ul>
+            
+        </li>
+    
+
+    
+
+    <li class="divider"></li>
+
+    <li>
+        <a href="https://www.gitbook.com" target="blank" class="gitbook-link">
+            Published with GitBook
+        </a>
+    </li>
+</ul>
+
+
+                </nav>
+            
+        
+    </div>
+
+    <div class="book-body">
+        
+            <div class="body-inner">
+                
+                    
+
+<div class="book-header" role="navigation">
+    
+
+    <!-- Title -->
+    <h1>
+        <i class="fa fa-circle-o-notch fa-spin"></i>
+        <a href="." >API Referece</a>
+    </h1>
+</div>
+
+
+
+
+                    <div class="page-wrapper" tabindex="-1" role="main">
+                        <div class="page-inner">
+                            
+<div id="book-search-results">
+    <div class="search-noresults">
+    
+                                <section class="normal markdown-section">
+                                
+                                <p><br>
+<br>
+<br></p>
+<p><a id="module_Ethcalate"></a></p>
+<h2 id="ethcalate">Ethcalate</h2>
+<ul>
+<li><a href="#module_Ethcalate">Ethcalate</a><ul>
+<li><a href="#exp_module_Ethcalate--Ethcalate">Ethcalate</a> &#x23CF;<ul>
+<li><a href="#new_module_Ethcalate--Ethcalate_new">new Ethcalate(web3, contractAddress, apiURL, drizzle)</a></li>
+<li><a href="#module_Ethcalate--Ethcalate+initContract">.initContract()</a></li>
+<li><a href="#module_Ethcalate--Ethcalate+createOpeningCerts">.createOpeningCerts(virtualChannelOptions, unlockedAccountPresent)</a> &#x21D2;</li>
+<li><a href="#module_Ethcalate--Ethcalate+sendOpeningCerts">.sendOpeningCerts(virtualChannelId, cert)</a> &#x21D2;</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<p><br>
+<br>
+<br></p>
+<p><a id="exp_module_Ethcalate--Ethcalate"></a></p>
+<h3 id="ethcalate-&#x23CF;kind-global-class-of-ethcalate">Ethcalate &#x23CF;<strong>Kind</strong>: global class of <a href="#module_Ethcalate"><code>Ethcalate</code></a></h3>
+<p><br>
+<br>
+<br></p>
+<p><a id="new_module_Ethcalate--Ethcalate_new"></a></p>
+<h4 id="new-ethcalateweb3-contractaddress-apiurl-drizzleinstantiates-connext-class">new Ethcalate(web3, contractAddress, apiURL, drizzle)Instantiates connext class.</h4>
+<table>
+<thead>
+<tr>
+<th>Param</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>web3</td>
+<td><code>Web3</code></td>
+<td>the web3 instance used.</td>
+</tr>
+<tr>
+<td>contractAddress</td>
+<td><code>String</code></td>
+<td>the contract used within the channels. Optional - used for dev.</td>
+</tr>
+<tr>
+<td>apiURL</td>
+<td><code>String</code></td>
+<td>the url of the hub API. Optional - used for dev.</td>
+</tr>
+<tr>
+<td>drizzle</td>
+<td><code>Drizzle</code></td>
+<td>Drizzle context, optional. If using, should pass in the web3 object from drizzle in the web3 param.</td>
+</tr>
+</tbody>
+</table>
+<p><br>
+<br>
+<br></p>
+<p><a id="module_Ethcalate--Ethcalate+initContract"></a></p>
+<h4 id="ethcalateinitcontractinstantiates-the-channel-manager-contract-using-the-web3-instance-or-the-drizzle-context">ethcalate.initContract()Instantiates the channel manager contract using the web3 instance, or the drizzle context.</h4>
+<p>Sets the ChannelManager to a truffle wrapped contract, and sets the default account as accounts[0]</p>
+<p><strong>Kind</strong>: instance method of <a href="#exp_module_Ethcalate--Ethcalate"><code>Ethcalate</code></a>  </p>
+<p><br>
+<br>
+<br></p>
+<p><a id="module_Ethcalate--Ethcalate+createOpeningCerts"></a></p>
+<h4 id="ethcalatecreateopeningcertsvirtualchanneloptions-unlockedaccountpresent-&#x21D2;generates-the-opening-certificates-for-requested-virtual-channels">ethcalate.createOpeningCerts(virtualChannelOptions, unlockedAccountPresent) &#x21D2;Generates the opening certificates for requested virtual channels</h4>
+<p><strong>Kind</strong>: instance method of <a href="#exp_module_Ethcalate--Ethcalate"><code>Ethcalate</code></a><br><strong>Returns</strong>: signature of virtual channel data  </p>
+<table>
+<thead>
+<tr>
+<th>Param</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>virtualChannelOptions</td>
+<td><code>Object</code></td>
+<td></td>
+</tr>
+<tr>
+<td>virtualChannelOptions.id</td>
+<td><code>String</code></td>
+<td>virtual channel identifier</td>
+</tr>
+<tr>
+<td>virtualChannelOptions.agentA</td>
+<td><code>String</code></td>
+<td>virtual channel agent A</td>
+</tr>
+<tr>
+<td>virtualChannelOptions.agentB</td>
+<td><code>String</code></td>
+<td>virtual channel agent B</td>
+</tr>
+<tr>
+<td>unlockedAccountPresent</td>
+<td><code>Boolean</code></td>
+</tr>
+</tbody>
+</table>
+<p><br>
+<br>
+<br></p>
+<p><a id="module_Ethcalate--Ethcalate+sendOpeningCerts"></a></p>
+<h4 id="ethcalatesendopeningcertsvirtualchannelid-cert-&#x21D2;sends-the-opening-certifications-to-the-hub-from-the-default-web3-account">ethcalate.sendOpeningCerts(virtualChannelId, cert) &#x21D2;Sends the opening certifications to the hub from the default web3 account.</h4>
+<p><strong>Kind</strong>: instance method of <a href="#exp_module_Ethcalate--Ethcalate"><code>Ethcalate</code></a><br><strong>Returns</strong>: response from the hub upon recieving the certs.  </p>
+<table>
+<thead>
+<tr>
+<th>Param</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>virtualChannelId</td>
+<td><code>string</code></td>
+<td></td>
+</tr>
+<tr>
+<td>cert</td>
+<td><code>string</code></td>
+<td>signature generated from the sendOpeningCerts method.</td>
+</tr>
+</tbody>
+</table>
+
+                                
+                                </section>
+                            
+    </div>
+    <div class="search-results">
+        <div class="has-results">
+            
+            <h1 class="search-results-title"><span class='search-results-count'></span> results matching "<span class='search-query'></span>"</h1>
+            <ul class="search-results-list"></ul>
+            
+        </div>
+        <div class="no-results">
+            
+            <h1 class="search-results-title">No results matching "<span class='search-query'></span>"</h1>
+            
+        </div>
+    </div>
+</div>
+
+                        </div>
+                    </div>
+                
+            </div>
+
+            
+                
+                <a href="start.html" class="navigation navigation-prev " aria-label="Previous page: Getting Started">
+                    <i class="fa fa-angle-left"></i>
+                </a>
+                
+                
+                <a href="api.html#new_module_Ethcalate--Ethcalate_new" class="navigation navigation-next " aria-label="Next page: constructor">
+                    <i class="fa fa-angle-right"></i>
+                </a>
+                
+            
+        
+    </div>
+
+    <script>
+        var gitbook = gitbook || [];
+        gitbook.push(function() {
+            gitbook.page.hasChanged({"page":{"title":"API Referece","level":"2.1","depth":1,"next":{"title":"constructor","level":"2.1.1","depth":2,"anchor":"#new_module_Ethcalate--Ethcalate_new","path":"api.md","ref":"api.md#new_module_Ethcalate--Ethcalate_new","articles":[]},"previous":{"title":"Getting Started","level":"1.2","depth":1,"path":"start.md","ref":"start.md","articles":[]},"dir":"ltr"},"config":{"plugins":["livereload"],"root":"./docs","styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"},"pluginsConfig":{"livereload":{},"highlight":{},"search":{},"lunr":{"maxIndexSize":1000000,"ignoreSpecialCharacters":false},"sharing":{"facebook":true,"twitter":true,"google":false,"weibo":false,"instapaper":false,"vk":false,"all":["facebook","google","twitter","weibo","instapaper"]},"fontsettings":{"theme":"white","family":"sans","size":2},"theme-default":{"styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"},"showLevel":false}},"theme":"default","pdf":{"pageNumbers":true,"fontSize":12,"fontFamily":"Arial","paperSize":"a4","chapterMark":"pagebreak","pageBreaksBefore":"/","margin":{"right":62,"left":62,"top":56,"bottom":56}},"structure":{"langs":"LANGS.md","readme":"intro.md","glossary":"GLOSSARY.md","summary":"toc.md"},"variables":{},"gitbook":"3.2.2"},"file":{"path":"api.md","mtime":"2018-06-08T18:33:47.000Z","type":"markdown"},"gitbook":{"version":"3.2.2","time":"2018-06-08T18:33:48.120Z"},"basePath":".","book":{"language":""}});
+        });
+    </script>
+</div>
+
+        
+    <script src="gitbook/gitbook.js"></script>
+    <script src="gitbook/theme.js"></script>
+    
+        
+        <script src="gitbook/gitbook-plugin-livereload/plugin.js"></script>
+        
+    
+        
+        <script src="gitbook/gitbook-plugin-search/search-engine.js"></script>
+        
+    
+        
+        <script src="gitbook/gitbook-plugin-search/search.js"></script>
+        
+    
+        
+        <script src="gitbook/gitbook-plugin-lunr/lunr.min.js"></script>
+        
+    
+        
+        <script src="gitbook/gitbook-plugin-lunr/search-lunr.js"></script>
+        
+    
+        
+        <script src="gitbook/gitbook-plugin-sharing/buttons.js"></script>
+        
+    
+        
+        <script src="gitbook/gitbook-plugin-fontsettings/fontsettings.js"></script>
+        
+    
+
+    </body>
+</html>
+

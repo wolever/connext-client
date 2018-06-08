@@ -7,7 +7,20 @@ const artifacts = require('../artifacts/ChannelManager.json')
 const tokenAbi = require('human-standard-token-abi')
 const util = require('ethereumjs-util')
 
-module.exports = class Ethcalate {
+/**
+ * @class
+ * @alias module:Ethcalate
+ */
+
+class Ethcalate {
+  /**
+   * Instantiates connext class.
+   *
+   * @param {Web3} web3 - the web3 instance used.
+   * @param {String} contractAddress - the contract used within the channels. Optional - used for dev.
+   * @param {String} apiURL - the url of the hub API. Optional - used for dev.
+   * @param {Drizzle} drizzle - Drizzle context, optional. If using, should pass in the web3 object from drizzle in the web3 param.
+   */
   constructor (web3, contractAddress, apiUrl, drizzle) {
     this.web3 = web3
     if (contractAddress) {
@@ -28,6 +41,11 @@ module.exports = class Ethcalate {
     }
   }
 
+  /**
+   * Instantiates the channel manager contract using the web3 instance, or the drizzle context.
+   * Sets the ChannelManager to a truffle wrapped contract, and sets the default account as accounts[0]
+   *
+   */
   async initContract () {
     const accounts = await this.web3.eth.getAccounts()
     this.accounts = accounts
@@ -59,6 +77,15 @@ module.exports = class Ethcalate {
     }
   }
 
+  /**
+   * Generates the opening certificates for requested virtual channels
+   * @param {Object} virtualChannelOptions
+   * @param {String} virtualChannelOptions.id virtual channel identifier
+   * @param {String} virtualChannelOptions.agentA virtual channel agent A
+   * @param {String} virtualChannelOptions.agentB virtual channel agent B
+   * @param {Boolean} unlockedAccountPresent
+   * @returns signature of virtual channel data
+   */
   async createOpeningCerts (
     { id, agentA, agentB, ingrid },
     unlockedAccountPresent = false
@@ -93,6 +120,12 @@ module.exports = class Ethcalate {
     // post to listener, returns ID for VC, then send the opening certs
   }
 
+  /**
+   * Sends the opening certifications to the hub from the default web3 account.
+   * @param {string} virtualChannelId
+   * @param {string} cert signature generated from the sendOpeningCerts method.
+   * @returns response from the hub upon recieving the certs.
+   */
   async sendOpeningCerts (virtualChannelId, cert) {
     if (!this.channelManager) {
       throw new Error('Please call initContract()')
@@ -715,3 +748,8 @@ module.exports = class Ethcalate {
     return response.data
   }
 }
+
+/**
+ * @module
+ */
+module.exports = Ethcalate
