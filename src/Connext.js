@@ -137,8 +137,71 @@ class ConnextClient {
     return { result, lcId } // probably dont need lcID
   }
 
+  async withdraw () {
+    if (!this.ledgerChannel) {
+      throw new Error('Please call initContract().')
+    }
+
+    // get lc
+    const lc = this.getLedgerChannel({ agentA: this.accounts[0] })
+
+    // generate state update from latest I-signed state
+    // with fast close flag
+
+    // send to ingrid to countersign
+  }
+
+  async withdrawFinal () {}
+
+  async checkpoint () {
+    if (!this.ledgerChannel) {
+      throw new Error('Please call initContract()')
+    }
+    // get ledger channel id
+    const lcID = this.getLedgerChannelId()
+
+    // get latest state update
+  }
+
   // HELPER FUNCTIONS
-  async getLedgerChannel ({ agentA }) {
+  async getLatestLedgerStateUpdate ({ ledgerChannelId, sig }) {
+    check.assert.match(
+      ledgerChannelId,
+      regexExpessions.bytes32,
+      'No ledgerChannelId provided'
+    )
+    check.assert.array(sig, 'No sig(s) provided')
+
+    const response = await axios.get(
+      `${this.apiUrl}/channel/id/${ledgerChannelId}/latest?sig=${sig}`
+    )
+    return response.data
+  }
+
+  async getLedgerChannelId () {
+    const response = await axios.get(
+      `${this.apiUrl}/ledgerchannel?a=${this.accounts[0]}&b=${this.ingridAddress}`
+    )
+    if (response.data.data.ledgerChannel.id) {
+      return response.data.data.ledgerChannel.id
+    } else {
+      return null
+    }
+  }
+
+  async getLedgerChannel ({ ledgerChannelId }) {
+    check.assert.match(
+      ledgerChannelId,
+      regexExpessions.bytes32,
+      `No ledgerChannelId provided ${ledgerChannelId}`
+    )
+    const response = await axios.get(
+      `${this.apiUrl}/ledgerchannel/${ledgerChannelId}`
+    )
+    return response.data.data.ledgerChannel
+  }
+
+  async getLedgerChannelByAddress ({ agentA }) {
     check.assert.match(
       agentA,
       regexExpressions.address,
