@@ -1,3 +1,3 @@
-const Connext = require("./Connext");
+const Connext = require('./Connext')
 
-module.exports = Connext;
+module.exports = Connext
