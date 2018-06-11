@@ -1,5 +1,3 @@
-// const Ethcalate = require('./Ethcalate')
-const Connext = require('./Connext')
+const Connext = require("./Connext");
 
-// module.exports = Ethcalate
-module.exports = Connext
+module.exports = Connext;
