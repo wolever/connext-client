@@ -15,6 +15,10 @@ validate.validators.isBN = value => {
 }
 
 // regEx for checking inputs
+/**
+ * Regexs for validating function in inputs
+ * @constant {Object}
+ */
 const regexExpessions = {
   address: '^(0x)?[0-9a-fA-F]{40}$',
   bytes32: '^(0x)?[0-9a-fA-F]{64}$',
@@ -61,18 +65,21 @@ export class Connext {
 
   // WALLET FUNCTIONS
   /**
-   * Called by the viewer.
-   *
    * Opens a ledger channel with ingridAddress and bonds initialDeposit.
-   * Requests a challenge timer from ingrid
+   * Requests a challenge timer for the ledger channel from ingrid.
+   *
    * Use web3 to call openLC function on ledgerChannel.
    *
    * @example
    * // get a BN
    * const deposit = web3.utils.toBN(10000)
    * await connext.register(deposit)
+   * Ingrid will open with 0 balance, and can call the deposit function to
+   * add deposits based on user needs.
+   *
+   * @throws Will throw an error if initContract has not been called.
    * @param {BigNumber} initialDeposit deposit in wei
-   * @returns result of calling openLedgerChannel on the channelManager instance.
+   * @returns {String} result of calling openLedgerChannel on the channelManager instance.
    */
   async register (initialDeposit) {
     validate.single(initialDeposit, { presence: true, isBN: true })
@@ -85,6 +92,8 @@ export class Connext {
    * // get a BN
    * const deposit = web3.utils.toBN(10000)
    * await connext.deposit(deposit)
+   * Add a deposit to an existing ledger channel. Calls contract function "deposit".
+   * @throws Will throw an error if initContract has not been called.
    * @param {BigNumber} depositInWei - Value of the deposit.
    */
   async deposit (depositInWei) {
@@ -94,75 +103,102 @@ export class Connext {
   }
 
   /**
-   * Withdraw bonded funds from channel.
+   * Withdraw bonded funds from ledger channel with ingrid. All virtual channels must be closed before a ledger channel can be closed.
    *
-   * Generates the state update from the latest ingrid signed state with fast-close flag.
-   * State update is sent to Ingrid to countersign if correct.
+   * Generates the state update from the latest ingrid signed state with fast-close flag. Ingrid should countersign if the state update matches what she has signed previously, and the channel will fast close by calling consensusCloseChannel on the Channel Manager contract.
+   *
+   * If the state update doesn't match what Ingrid previously signed, then updateLCState is called with the latest state and a challenge flag.
    *
    * @example
    * const success = await connext.withdraw()
    * @returns {boolean} Returns true if successfully withdrawn, false if challenge process commences.
+   * @throws Will throw an error if initContract has not been called.
+   * @returns {String} Flag indicating whether the channel was consensus-closed or if lc was challenge-closed.
    */
   async withdraw () {}
 
   /**
-   * Withdraw bonded funds from channel
+   * Withdraw bonded funds from ledger channel after a channel is challenge-closed after the challenge period expires by calling withdrawFinal using Web3.
    *
-   * This function is only used if `withdraw()` returned false and is in a challenge state.
-   * The challenge timer on the LC challenge must be expired before this function can be called.
-   *
-   * @example
-   * const success = await connext.withdraw()
-   * if (!success) {
-   *   // wait out challenge timer
-   *   await connext.withdrawFinal()
-   * }
+   * Looks up LC by the account address of the client-side user.
+   * @throws Will throw an error if initContract has not been called.
    */
   async withdrawFinal () {}
 
   /**
-   * Sync latest signed updated with chain.
+   * Sync signed state updates with chain.
    *
-   * @example
-   * await connext.checkpoint()
+   * Generates client signature on latest Ingrid-signed state update, and uses web3 to call updateLCState on the contract without challenge flag.
+   *
+   * @throws Will throw an error if initContract has not been called.
    */
   async checkpoint () {}
 
   /**
+   * Opens a virtual channel between to and caller with Ingrid as the hub. Both users must have a ledger channel open with ingrid.
+   *
+   * If there is no deposit provided, then 100% of the ledger channel balance is added to VC deposit.
+   *
+   * Sends a proposed LC update for countersigning that updates the VCRootHash of the ledger channel state.
+   *
+   * This proposed LC update (termed LC0 throughout documentation) serves as the opening certificate for the virtual channel.
    *
    * @param {Object} params - The method object.
-   * @param params.to eth address to wallet.
-   * @param params.deposit optional
+   * @param {String} params.to Wallet address to wallet for agentB in virtual channel
+   * @param {BigNumber} params.deposit User deposit for VC, in wei. Optional.
+   * @throws Will throw an error if initContract has not been called.
    *
    */
-  openChannel ({ to, deposit }) {}
+  openChannel ({ to, deposit = null }) {}
 
   /**
+   * Joins virtual channel by VC ID with a deposit of 0 (unidirectional channels).
+   * Sends opening cert (VC0) to message queue, so it is accessible by Ingrid and Watchers.
    *
    * @param {int} vcId - The method object.
+   * @throws Will throw an error if initContract has not been called.
    */
   joinChannel (vcId) {}
 
   /**
-   * Update Balance
-   * @param {Object} params - The method object.
-   * @param params.vcId address of virtual channel.
-   * @param params.balance new balance diff sent
+   * Updates virtual channel balance by provided ID.
    *
+   * Increments the nonce and generates a signed state update, which is then posted to the hub/watcher.
+   * @param {Object} params - The method object.
+   * @param {Int} params.vcId ID of virtual channel.
+   * @param {BigNumber} params.balance virtual channel balance
+   * @returns {Object} Result of message posting.
    */
   updateBalance ({ vcId, balance }) {}
 
   /**
-   * Close one channel
+   * Closes specified virtual channel using latest double signed update.
+   *
+   * Generates a decomposed LC update containing the updated balances and VCRoot to Ingrid from latest
+   * double signed VC update.
+   *
    * @param {Object} params - The method object.
-   * @param params.vcIds virtual channel address.
-   * @param params.balance new balance diff sent
+   * @param {Integer} params.vcId virtual channel ID
+   */
+  fastCloseChannel ({ vcId }) {}
+
+  /**
+   * Closes a ledger channel with Ingrid.
+   *
+   * Retrieves decomposed LC updates from Ingrid, and countersign updates if needed (i.e. if they are recieving funds).
+   *
+   * Settle VC is called on chain for each vcID if Ingrid does not provide decomposed state updates, and closeVirtualChannel is called for each vcID.
+   *
+   * @param {Object} params - Array of objects containing { vcId, balance, nonce, signature }
+   * @param {Integer[]} params.vcId Array of all virtual channel IDs that must closed before LC can close.
+   * @param {BigNumber} params.balance virtual channel balance
+   * @param {String} params.signature client signature of the closing state update for the virtual channel
    */
   closeChannel ({ vcId, balance, nonce, signature }) {}
 
   /**
    * Close many channels
-   * @param {Array} params - Array of objects containing { vcId, balance, nonce, signature }
+   * @param {Array} channels - Array of virtual channel IDs to close
    */
   closeChannels (channels) {}
 
@@ -170,7 +206,15 @@ export class Connext {
   /**
    * Returns the LC state update fingerprint.
    * @param {Object} hashParams Object containing state update data to be hashed.
-   *
+   * @param {Integer} hashParams.isCloseFlag 0 if not closing LC, 1 if closing LC state update.
+   * @param {Integer} hashParams.nonce The nonce of the proposed ledger channel state update.
+   * @param {Integer} hashParams.openVCs Number of VCs open in the ledger channel with agentA, using Ingrid as an intermediary.
+   * @param {String} hashParams.vcRootHash Indicates which VCs are open in LC.
+   * @param {String} hashParams.agentA Address of agentA in the ledger channel.
+   * @param {String} hashParams.agentB Address of agentB in the ledger channel. Defaults to Ingrid.
+   * @param {BigNumber} hashParams.balanceA Balance of agentA in ledger channel in Wei.
+   * @param {BigNumber} hashParams.balanceB Balance of agentB in ledger channel in Wei.
+   * @returns {String} Hash of the input data if validated.
    */
   static createLCStateUpdateFingerprint ({
     isCloseFlag,
@@ -218,13 +262,25 @@ export class Connext {
       { type: 'uint256', value: balanceA },
       { type: 'uint256', value: balanceB }
     )
+
+    return hash
   }
 
   /**
    * Signs and generates state update for ledger channel.
    *
    * If an unlocked account is present (i.e. automated client or Ingrid signing), then normal signing instead of personal signing is used.
-   * @returns signature of inputs
+   * @param {Object} params Object containing state update data to be hashed.
+   * @param {Integer} params.isCloseFlag 0 if not closing LC, 1 if closing LC state update. Defaults to 0.
+   * @param {Integer} params.nonce The nonce of the proposed ledger channel state update.
+   * @param {Integer} params.openVCs Number of VCs open in the ledger channel with agentA, using Ingrid as an intermediary.
+   * @param {String} params.vcRootHash Indicates which VCs are open in LC.
+   * @param {String} params.agentA Address of agentA in the ledger channel.
+   * @param {String} params.agentB Address of agentB in the ledger channel. Defaults to Ingrid.
+   * @param {BigNumber} params.balanceA Balance of agentA in ledger channel in Wei.
+   * @param {BigNumber} params.balanceB Balance of agentB in ledger channel in Wei.
+   * @param {Boolean} params.unlockedAccountPresent True if there is an automated signing account (e.g. Ingrid). Defaults to false.
+   * @returns {Object} Result of sending state update to Ingrid
    */
   async createLCStateUpdate ({
     isCloseFlag = 0, // default isnt close LC
@@ -239,18 +295,26 @@ export class Connext {
   }) {}
 
   // HELPER FUNCTIONS
+  /**
+   *
+   * @param {Object} params Method Object
+   * @param {Integer} params.ledgerChannelId ID of the ledger channel you are looking to retrieve a state update for.
+   * @param {String[]} params.sig Signature that should be on the state update.
+   * @returns {Object} Returns the result of requesting the latest signed state from the Watcher.
+   */
   async getLatestLedgerStateUpdate ({ ledgerChannelId, sig }) {}
 
   /**
    * Helper function to retrieve lcID.
-   * @returns the lcID for agentA = accounts[0] and ingrid
+   * @returns {Integer|null} the lcID for agentA = accounts[0] and ingrid if exists, or null.
    */
   async getLedgerChannelId () {}
 
   /**
    * Requests the ledger channel object by ledger channel id.
    * @param {Object} params Object containing the ledger channel id
-   * @returns the ledger channel object.
+   * @param {Integer} params.ledgerChannelId Ledger channel ID in database.
+   * @returns {Object} the ledger channel object.
    */
   async getLedgerChannel ({ ledgerChannelId }) {}
 
@@ -258,8 +322,8 @@ export class Connext {
    * Requests the ledger channel open between Ingrid and the provided address from the watcher.
    *
    * @param {Object} params
-   * @param params.agentA is the address of the agentA in the ledger channel.
-   * @returns ledger channels open with Ingrid and agentA (only one).
+   * @param {String} params.agentA Address of the agentA in the ledger channel.
+   * @returns {Object} Ledger channel open with Ingrid and agentA (only one allowed) if exists, or null.
    */
   async getLedgerChannelByAddress ({ agentA }) {}
 
@@ -268,7 +332,9 @@ export class Connext {
    * Ingrid should also set and store lcID.
    *
    * Called in register() function
-   * @returns the ledger channel timer period in seconds.
+   * @returns {Integer} the ledger channel timer period in seconds.
    */
   async getLedgerChannelChallengeTimer () {}
 }
+
+module.exports = Connext

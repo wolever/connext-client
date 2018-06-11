@@ -4,7 +4,7 @@
     <head>
         <meta charset="UTF-8">
         <meta content="text/html; charset=utf-8" http-equiv="Content-Type">
-        <title>API Referece · GitBook</title>
+        <title>Connext · GitBook</title>
         <meta http-equiv="X-UA-Compatible" content="IE=edge" />
         <meta name="description" content="">
         <meta name="generator" content="GitBook 3.2.2">
@@ -129,7 +129,7 @@
                 <a href="api.html">
             
                     
-                    API Referece
+                    Connext
             
                 </a>
             
@@ -156,7 +156,7 @@
                 <a href="api.html#Connext+initContract">
             
                     
-                    initContract
+                    .initContract
             
                 </a>
             
@@ -169,7 +169,7 @@
                 <a href="api.html#Connext+register">
             
                     
-                    register
+                    .register
             
                 </a>
             
@@ -182,7 +182,7 @@
                 <a href="api.html#Connext+deposit">
             
                     
-                    deposit
+                    .deposit
             
                 </a>
             
@@ -195,7 +195,7 @@
                 <a href="api.html#Connext+withdraw">
             
                     
-                    withdraw
+                    .withdraw
             
                 </a>
             
@@ -208,7 +208,7 @@
                 <a href="api.html#Connext+withdrawFinal">
             
                     
-                    withdrawFinal
+                    .withdrawFinal
             
                 </a>
             
@@ -221,7 +221,7 @@
                 <a href="api.html#Connext+checkpoint">
             
                     
-                    checkpoint
+                    .checkpoint
             
                 </a>
             
@@ -234,7 +234,7 @@
                 <a href="api.html#Connext+openChannel">
             
                     
-                    openChannel
+                    .openChannel
             
                 </a>
             
@@ -247,7 +247,7 @@
                 <a href="api.html#Connext+joinChannel">
             
                     
-                    joinChannel
+                    .joinChannel
             
                 </a>
             
@@ -260,7 +260,7 @@
                 <a href="api.html#Connext+updateBalance">
             
                     
-                    updateBalance
+                    .updateBalance
             
                 </a>
             
@@ -270,10 +270,10 @@
     
         <li class="chapter " data-level="2.1.11" data-path="api.html">
             
-                <a href="api.html#Connext+closeChannel">
+                <a href="api.html#Connext+fastCloseChannel">
             
                     
-                    closeChannel
+                    .fastCloseChannel
             
                 </a>
             
@@ -283,10 +283,10 @@
     
         <li class="chapter " data-level="2.1.12" data-path="api.html">
             
-                <a href="api.html#Connext+closeChannels">
+                <a href="api.html#Connext+closeChannel">
             
                     
-                    closeChannels
+                    .closeChannel
             
                 </a>
             
@@ -299,7 +299,7 @@
                 <a href="api.html#Connext+createLCStateUpdate">
             
                     
-                    createLCStateUpdate
+                    .createLCStateUpdate
             
                 </a>
             
@@ -309,10 +309,10 @@
     
         <li class="chapter " data-level="2.1.14" data-path="api.html">
             
-                <a href="api.html#Connext+getLedgerChannelId">
+                <a href="api.html#Connext+getLatestLedgerStateUpdate">
             
                     
-                    getLedgerChannelId
+                    .getLatestLedgerStateUpdate
             
                 </a>
             
@@ -322,10 +322,10 @@
     
         <li class="chapter " data-level="2.1.15" data-path="api.html">
             
-                <a href="api.html#Connext+getLedgerChannel">
+                <a href="api.html#Connext+getLedgerChannelId">
             
                     
-                    getLedgerChannel
+                    .getLedgerChannelId
             
                 </a>
             
@@ -335,10 +335,10 @@
     
         <li class="chapter " data-level="2.1.16" data-path="api.html">
             
-                <a href="api.html#Connext+getLedgerChannelByAddress">
+                <a href="api.html#Connext+getLedgerChannel">
             
                     
-                    getLedgerChannelByAddress
+                    .getLedgerChannel
             
                 </a>
             
@@ -348,10 +348,36 @@
     
         <li class="chapter " data-level="2.1.17" data-path="api.html">
             
+                <a href="api.html#Connext+getLedgerChannelByAddress">
+            
+                    
+                    .getLedgerChannelByAddress
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="2.1.18" data-path="api.html">
+            
                 <a href="api.html#Connext+getLedgerChannelChallengeTimer">
             
                     
-                    getLedgerChannelChallengeTimer
+                    .getLedgerChannelChallengeTimer
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="2.1.19" data-path="api.html">
+            
+                <a href="api.html#Connext.createLCStateUpdateFingerprint">
+            
+                    
+                    .createLCStateUpdateFingerprint
             
                 </a>
             
@@ -394,7 +420,7 @@
     <!-- Title -->
     <h1>
         <i class="fa fa-circle-o-notch fa-spin"></i>
-        <a href="." >API Referece</a>
+        <a href="." >Connext</a>
     </h1>
 </div>
 
@@ -413,32 +439,33 @@
 <br>
 <br></p>
 <p><a id="Connext"></a></p>
-<h2 id="connextclass-representing-an-instance-of-a-connext-client">ConnextClass representing an instance of a Connext client.</h2>
+<h2 id="connextclass-to-create-and-manage-state-channel-payment-hubs">ConnextClass to create and manage state channel payment hubs.</h2>
 <p><strong>Kind</strong>: global class  </p>
 <ul>
 <li><a href="#Connext">Connext</a><ul>
-<li><a href="#new_Connext_new">new exports.Connext(params)</a></li>
+<li><a href="#new_Connext_new">new Connext(params)</a></li>
 <li><em>instance</em><ul>
 <li><a href="#Connext+initContract">.initContract()</a></li>
-<li><a href="#Connext+register">.register(initialDeposit)</a> &#x21D2;</li>
+<li><a href="#Connext+register">.register(initialDeposit)</a> &#x21D2; String</li>
 <li><a href="#Connext+deposit">.deposit(depositInWei)</a></li>
-<li><a href="#Connext+withdraw">.withdraw()</a></li>
+<li><a href="#Connext+withdraw">.withdraw()</a> &#x21D2; String</li>
 <li><a href="#Connext+withdrawFinal">.withdrawFinal()</a></li>
 <li><a href="#Connext+checkpoint">.checkpoint()</a></li>
 <li><a href="#Connext+openChannel">.openChannel(params)</a></li>
 <li><a href="#Connext+joinChannel">.joinChannel(vcId)</a></li>
-<li><a href="#Connext+updateBalance">.updateBalance(params)</a></li>
+<li><a href="#Connext+updateBalance">.updateBalance(params)</a> &#x21D2; Object</li>
+<li><a href="#Connext+fastCloseChannel">.fastCloseChannel(params)</a></li>
 <li><a href="#Connext+closeChannel">.closeChannel(params)</a></li>
-<li><a href="#Connext+closeChannels">.closeChannels(params)</a></li>
-<li><a href="#Connext+createLCStateUpdate">.createLCStateUpdate()</a> &#x21D2;</li>
-<li><a href="#Connext+getLedgerChannelId">.getLedgerChannelId()</a> &#x21D2;</li>
-<li><a href="#Connext+getLedgerChannel">.getLedgerChannel(params)</a> &#x21D2;</li>
-<li><a href="#Connext+getLedgerChannelByAddress">.getLedgerChannelByAddress(params)</a> &#x21D2;</li>
-<li><a href="#Connext+getLedgerChannelChallengeTimer">.getLedgerChannelChallengeTimer()</a> &#x21D2;</li>
+<li><a href="#Connext+createLCStateUpdate">.createLCStateUpdate(params)</a> &#x21D2; Object</li>
+<li><a href="#Connext+getLatestLedgerStateUpdate">.getLatestLedgerStateUpdate(params)</a> &#x21D2; Object</li>
+<li><a href="#Connext+getLedgerChannelId">.getLedgerChannelId()</a> &#x21D2; Integer | null</li>
+<li><a href="#Connext+getLedgerChannel">.getLedgerChannel(params)</a> &#x21D2; Object</li>
+<li><a href="#Connext+getLedgerChannelByAddress">.getLedgerChannelByAddress(params)</a> &#x21D2; Object</li>
+<li><a href="#Connext+getLedgerChannelChallengeTimer">.getLedgerChannelChallengeTimer()</a> &#x21D2; Integer</li>
 </ul>
 </li>
 <li><em>static</em><ul>
-<li><a href="#Connext.createLCStateUpdateFingerprint">.createLCStateUpdateFingerprint(hashParams)</a></li>
+<li><a href="#Connext.createLCStateUpdateFingerprint">.createLCStateUpdateFingerprint(hashParams)</a> &#x21D2; String</li>
 </ul>
 </li>
 </ul>
@@ -448,7 +475,7 @@
 <br>
 <br></p>
 <p><a id="new_Connext_new"></a></p>
-<h3 id="new-exportsconnextparamscreate-an-instance-of-the-connext-client">new exports.Connext(params)Create an instance of the Connext client.</h3>
+<h3 id="new-connextparamsspecify-parameters-for-the-connext-class-ingrids-address-url-and-the-watcher-url-are-by-default-set-to-work-with-connexts-hub-infrastructure-and-contracts">new Connext(params)Specify parameters for the Connext class. Ingrid&apos;s address, URL and the watcher URL are by default set to work with Connext&apos;s hub infrastructure and contracts.</h3>
 <table>
 <thead>
 <tr>
@@ -471,22 +498,17 @@
 <tr>
 <td>params.ingridAddress</td>
 <td>String</td>
-<td>Eth address of intermediary .</td>
+<td>Address of hub (Ingrid).</td>
 </tr>
 <tr>
 <td>params.watcherUrl</td>
 <td>String</td>
-<td>Url of watcher server.</td>
+<td>URL of watcher server.</td>
 </tr>
 <tr>
 <td>params.ingridUrl</td>
 <td>String</td>
-<td>Url of intermediary server.</td>
-</tr>
-<tr>
-<td>params.drizzleContext</td>
-<td>Drizzle</td>
-<td>the drizzle context (optional).</td>
+<td>URL of intermediary server.</td>
 </tr>
 </tbody>
 </table>
@@ -502,11 +524,15 @@ can be called through the client package or it will throw an error.</p>
 <br>
 <br></p>
 <p><a id="Connext+register"></a></p>
-<h3 id="connextregisterinitialdeposit-&#x21D2;called-by-the-viewer">connext.register(initialDeposit) &#x21D2;Called by the viewer.</h3>
-<p>Opens a ledger channel with ingridAddress and bonds initialDeposit.
-Requests a challenge timer from ingrid
-Use web3 to call openLC function on ledgerChannel.</p>
-<p><strong>Kind</strong>: instance method of <a href="#Connext"><code>Connext</code></a><br><strong>Returns</strong>: result of calling openLedgerChannel on the channelManager instance.  </p>
+<h3 id="connextregisterinitialdeposit-&#x21D2;-stringopens-a-ledger-channel-with-ingridaddress-and-bonds-initialdeposit">connext.register(initialDeposit) &#x21D2; StringOpens a ledger channel with ingridAddress and bonds initialDeposit.</h3>
+<p>Requests a challenge timer for the ledger channel from ingrid.</p>
+<p>Use web3 to call openLC function on ledgerChannel.</p>
+<p>Ingrid will open with 0 balance, and can call the deposit function to
+add deposits based on user needs.</p>
+<p><strong>Kind</strong>: instance method of <a href="#Connext"><code>Connext</code></a><br><strong>Returns</strong>: String - result of calling openLedgerChannel on the channelManager instance.<br><strong>Throws</strong>:</p>
+<ul>
+<li>Will throw an error if initContract has not been called.</li>
+</ul>
 <table>
 <thead>
 <tr>
@@ -527,8 +553,11 @@ Use web3 to call openLC function on ledgerChannel.</p>
 <br>
 <br></p>
 <p><a id="Connext+deposit"></a></p>
-<h3 id="connextdepositdepositinweiadd-a-deposit-to-an-existing-ledger-channel-calls-contract-function-deposit">connext.deposit(depositInWei)Add a deposit to an existing ledger channel. Calls contract function &quot;deposit&quot;</h3>
-<p><strong>Kind</strong>: instance method of <a href="#Connext"><code>Connext</code></a>  </p>
+<h3 id="connextdepositdepositinweiadd-a-deposit-to-an-existing-ledger-channel-calls-contract-function-deposit">connext.deposit(depositInWei)Add a deposit to an existing ledger channel. Calls contract function &quot;deposit&quot;.</h3>
+<p><strong>Kind</strong>: instance method of <a href="#Connext"><code>Connext</code></a><br><strong>Throws</strong>:</p>
+<ul>
+<li>Will throw an error if initContract has not been called.</li>
+</ul>
 <table>
 <thead>
 <tr>
@@ -549,27 +578,45 @@ Use web3 to call openLC function on ledgerChannel.</p>
 <br>
 <br></p>
 <p><a id="Connext+withdraw"></a></p>
-<h3 id="connextwithdrawwithdraw-bonded-funds-from-channel">connext.withdraw()Withdraw bonded funds from channel.</h3>
-<p>Generates the state update from the latest ingrid signed state with fast-close flag.</p>
-<p>State update is sent to Ingrid to countersign if correct.</p>
-<p><strong>Kind</strong>: instance method of <a href="#Connext"><code>Connext</code></a>  </p>
+<h3 id="connextwithdraw-&#x21D2;-stringwithdraw-bonded-funds-from-ledger-channel-with-ingrid-all-virtual-channels-must-be-closed-before-a-ledger-channel-can-be-closed">connext.withdraw() &#x21D2; StringWithdraw bonded funds from ledger channel with ingrid. All virtual channels must be closed before a ledger channel can be closed.</h3>
+<p>Generates the state update from the latest ingrid signed state with fast-close flag. Ingrid should countersign if the state update matches what she has signed previously, and the channel will fast close by calling consensusCloseChannel on the Channel Manager contract.</p>
+<p>If the state update doesn&apos;t match what Ingrid previously signed, then updateLCState is called with the latest state and a challenge flag.</p>
+<p><strong>Kind</strong>: instance method of <a href="#Connext"><code>Connext</code></a><br><strong>Returns</strong>: String - Flag indicating whether the channel was consensus-closed or if lc was challenge-closed.<br><strong>Throws</strong>:</p>
+<ul>
+<li>Will throw an error if initContract has not been called.</li>
+</ul>
 <p><br>
 <br>
 <br></p>
 <p><a id="Connext+withdrawFinal"></a></p>
-<h3 id="connextwithdrawfinalwithdraw-bonded-funds-from-channel">connext.withdrawFinal()Withdraw bonded funds from channel</h3>
-<p><strong>Kind</strong>: instance method of <a href="#Connext"><code>Connext</code></a>  </p>
+<h3 id="connextwithdrawfinalwithdraw-bonded-funds-from-ledger-channel-after-a-channel-is-challenge-closed-after-the-challenge-period-expires-by-calling-withdrawfinal-using-web3">connext.withdrawFinal()Withdraw bonded funds from ledger channel after a channel is challenge-closed after the challenge period expires by calling withdrawFinal using Web3.</h3>
+<p>Looks up LC by the account address of the client-side user.</p>
+<p><strong>Kind</strong>: instance method of <a href="#Connext"><code>Connext</code></a><br><strong>Throws</strong>:</p>
+<ul>
+<li>Will throw an error if initContract has not been called.</li>
+</ul>
 <p><br>
 <br>
 <br></p>
 <p><a id="Connext+checkpoint"></a></p>
-<h3 id="connextcheckpointsync-signed-updated-with-chain">connext.checkpoint()Sync signed updated with chain</h3>
-<p><strong>Kind</strong>: instance method of <a href="#Connext"><code>Connext</code></a>  </p>
+<h3 id="connextcheckpointsync-signed-state-updates-with-chain">connext.checkpoint()Sync signed state updates with chain.</h3>
+<p>Generates client signature on latest Ingrid-signed state update, and uses web3 to call updateLCState on the contract without challenge flag.</p>
+<p><strong>Kind</strong>: instance method of <a href="#Connext"><code>Connext</code></a><br><strong>Throws</strong>:</p>
+<ul>
+<li>Will throw an error if initContract has not been called.</li>
+</ul>
 <p><br>
 <br>
 <br></p>
 <p><a id="Connext+openChannel"></a></p>
-<h3 id="connextopenchannelparamskind-instance-method-of-connext">connext.openChannel(params)<strong>Kind</strong>: instance method of <a href="#Connext"><code>Connext</code></a></h3>
+<h3 id="connextopenchannelparamsopens-a-virtual-channel-between-to-and-caller-with-ingrid-as-the-hub-both-users-must-have-a-ledger-channel-open-with-ingrid">connext.openChannel(params)Opens a virtual channel between to and caller with Ingrid as the hub. Both users must have a ledger channel open with ingrid.</h3>
+<p>If there is no deposit provided, then 100% of the ledger channel balance is added to VC deposit.</p>
+<p>Sends a proposed LC update for countersigning that updates the VCRootHash of the ledger channel state.</p>
+<p>This proposed LC update (termed LC0 throughout documentation) serves as the opening certificate for the virtual channel.</p>
+<p><strong>Kind</strong>: instance method of <a href="#Connext"><code>Connext</code></a><br><strong>Throws</strong>:</p>
+<ul>
+<li>Will throw an error if initContract has not been called.</li>
+</ul>
 <table>
 <thead>
 <tr>
@@ -586,13 +633,13 @@ Use web3 to call openLC function on ledgerChannel.</p>
 </tr>
 <tr>
 <td>params.to</td>
-<td></td>
-<td>eth address to wallet.</td>
+<td>String</td>
+<td>Wallet address to wallet for agentB in virtual channel</td>
 </tr>
 <tr>
 <td>params.deposit</td>
-<td></td>
-<td>optional</td>
+<td>BigNumber</td>
+<td>User deposit for VC, in wei. Optional.</td>
 </tr>
 </tbody>
 </table>
@@ -600,7 +647,12 @@ Use web3 to call openLC function on ledgerChannel.</p>
 <br>
 <br></p>
 <p><a id="Connext+joinChannel"></a></p>
-<h3 id="connextjoinchannelvcidkind-instance-method-of-connext">connext.joinChannel(vcId)<strong>Kind</strong>: instance method of <a href="#Connext"><code>Connext</code></a></h3>
+<h3 id="connextjoinchannelvcidjoins-virtual-channel-by-vc-id-with-a-deposit-of-0-unidirectional-channels">connext.joinChannel(vcId)Joins virtual channel by VC ID with a deposit of 0 (unidirectional channels).</h3>
+<p>Sends opening cert (VC0) to message queue, so it is accessible by Ingrid and Watchers.</p>
+<p><strong>Kind</strong>: instance method of <a href="#Connext"><code>Connext</code></a><br><strong>Throws</strong>:</p>
+<ul>
+<li>Will throw an error if initContract has not been called.</li>
+</ul>
 <table>
 <thead>
 <tr>
@@ -621,7 +673,42 @@ Use web3 to call openLC function on ledgerChannel.</p>
 <br>
 <br></p>
 <p><a id="Connext+updateBalance"></a></p>
-<h3 id="connextupdatebalanceparamsupdate-balance">connext.updateBalance(params)Update Balance</h3>
+<h3 id="connextupdatebalanceparams-&#x21D2;-objectupdates-virtual-channel-balance-by-provided-id">connext.updateBalance(params) &#x21D2; ObjectUpdates virtual channel balance by provided ID.</h3>
+<p>Increments the nonce and generates a signed state update, which is then posted to the hub/watcher.</p>
+<p><strong>Kind</strong>: instance method of <a href="#Connext"><code>Connext</code></a><br><strong>Returns</strong>: Object - Result of message posting.  </p>
+<table>
+<thead>
+<tr>
+<th>Param</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>params</td>
+<td>Object</td>
+<td>The method object.</td>
+</tr>
+<tr>
+<td>params.vcId</td>
+<td>Int</td>
+<td>ID of virtual channel.</td>
+</tr>
+<tr>
+<td>params.balance</td>
+<td>BigNumber</td>
+<td>virtual channel balance</td>
+</tr>
+</tbody>
+</table>
+<p><br>
+<br>
+<br></p>
+<p><a id="Connext+fastCloseChannel"></a></p>
+<h3 id="connextfastclosechannelparamscloses-specified-virtual-channel-using-latest-double-signed-update">connext.fastCloseChannel(params)Closes specified virtual channel using latest double signed update.</h3>
+<p>Generates a decomposed LC update containing the updated balances and VCRoot to Ingrid from latest
+double signed VC update.</p>
 <p><strong>Kind</strong>: instance method of <a href="#Connext"><code>Connext</code></a>  </p>
 <table>
 <thead>
@@ -639,13 +726,8 @@ Use web3 to call openLC function on ledgerChannel.</p>
 </tr>
 <tr>
 <td>params.vcId</td>
-<td></td>
-<td>address of virtual channel.</td>
-</tr>
-<tr>
-<td>params.balance</td>
-<td></td>
-<td>new balance diff sent</td>
+<td>Integer</td>
+<td>virtual channel ID</td>
 </tr>
 </tbody>
 </table>
@@ -653,7 +735,9 @@ Use web3 to call openLC function on ledgerChannel.</p>
 <br>
 <br></p>
 <p><a id="Connext+closeChannel"></a></p>
-<h3 id="connextclosechannelparamsclose-one-channel">connext.closeChannel(params)Close one channel</h3>
+<h3 id="connextclosechannelparamscloses-a-ledger-channel-with-ingrid">connext.closeChannel(params)Closes a ledger channel with Ingrid.</h3>
+<p>Retrieves decomposed LC updates from Ingrid, and countersign updates if needed (i.e. if they are recieving funds).</p>
+<p>Settle VC is called on chain for each vcID if Ingrid does not provide decomposed state updates, and closeVirtualChannel is called for each vcID.</p>
 <p><strong>Kind</strong>: instance method of <a href="#Connext"><code>Connext</code></a>  </p>
 <table>
 <thead>
@@ -667,26 +751,32 @@ Use web3 to call openLC function on ledgerChannel.</p>
 <tr>
 <td>params</td>
 <td>Object</td>
-<td>The method object.</td>
+<td>Array of objects containing { vcId, balance, nonce, signature }</td>
 </tr>
 <tr>
-<td>params.vcIds</td>
-<td></td>
-<td>virtual channel address.</td>
+<td>params.vcId</td>
+<td>Array.&lt;Integer&gt;</td>
+<td>Array of all virtual channel IDs that must closed before LC can close.</td>
 </tr>
 <tr>
 <td>params.balance</td>
-<td></td>
-<td>new balance diff sent</td>
+<td>BigNumber</td>
+<td>virtual channel balance</td>
+</tr>
+<tr>
+<td>params.signature</td>
+<td>String</td>
+<td>client signature of the closing state update for the virtual channel</td>
 </tr>
 </tbody>
 </table>
 <p><br>
 <br>
 <br></p>
-<p><a id="Connext+closeChannels"></a></p>
-<h3 id="connextclosechannelsparamsclose-many-channels">connext.closeChannels(params)Close many channels</h3>
-<p><strong>Kind</strong>: instance method of <a href="#Connext"><code>Connext</code></a>  </p>
+<p><a id="Connext+createLCStateUpdate"></a></p>
+<h3 id="connextcreatelcstateupdateparams-&#x21D2;-objectsigns-and-generates-state-update-for-ledger-channel">connext.createLCStateUpdate(params) &#x21D2; ObjectSigns and generates state update for ledger channel.</h3>
+<p>If an unlocked account is present (i.e. automated client or Ingrid signing), then normal signing instead of personal signing is used.</p>
+<p><strong>Kind</strong>: instance method of <a href="#Connext"><code>Connext</code></a><br><strong>Returns</strong>: Object - Result of sending state update to Ingrid  </p>
 <table>
 <thead>
 <tr>
@@ -698,30 +788,100 @@ Use web3 to call openLC function on ledgerChannel.</p>
 <tbody>
 <tr>
 <td>params</td>
-<td>Array</td>
-<td>Array of objects containing { vcId, balance, nonce, signature }</td>
+<td>Object</td>
+<td>Object containing state update data to be hashed.</td>
+</tr>
+<tr>
+<td>params.isCloseFlag</td>
+<td>Integer</td>
+<td>0 if not closing LC, 1 if closing LC state update. Defaults to 0.</td>
+</tr>
+<tr>
+<td>params.nonce</td>
+<td>Integer</td>
+<td>The nonce of the proposed ledger channel state update.</td>
+</tr>
+<tr>
+<td>params.openVCs</td>
+<td>Integer</td>
+<td>Number of VCs open in the ledger channel with agentA, using Ingrid as an intermediary.</td>
+</tr>
+<tr>
+<td>params.vcRootHash</td>
+<td>String</td>
+<td>Indicates which VCs are open in LC.</td>
+</tr>
+<tr>
+<td>params.agentA</td>
+<td>String</td>
+<td>Address of agentA in the ledger channel.</td>
+</tr>
+<tr>
+<td>params.agentB</td>
+<td>String</td>
+<td>Address of agentB in the ledger channel. Defaults to Ingrid.</td>
+</tr>
+<tr>
+<td>params.balanceA</td>
+<td>BigNumber</td>
+<td>Balance of agentA in ledger channel in Wei.</td>
+</tr>
+<tr>
+<td>params.balanceB</td>
+<td>BigNumber</td>
+<td>Balance of agentB in ledger channel in Wei.</td>
+</tr>
+<tr>
+<td>params.unlockedAccountPresent</td>
+<td>Boolean</td>
+<td>True if there is an automated signing account (e.g. Ingrid). Defaults to false.</td>
 </tr>
 </tbody>
 </table>
 <p><br>
 <br>
 <br></p>
-<p><a id="Connext+createLCStateUpdate"></a></p>
-<h3 id="connextcreatelcstateupdate-&#x21D2;signs-and-generates-state-update-for-ledger-channel">connext.createLCStateUpdate() &#x21D2;Signs and generates state update for ledger channel.</h3>
-<p>If an unlocked account is present (i.e. automated client or Ingrid signing), then normal signing instead of personal signing is used.</p>
-<p><strong>Kind</strong>: instance method of <a href="#Connext"><code>Connext</code></a><br><strong>Returns</strong>: signature of inputs  </p>
+<p><a id="Connext+getLatestLedgerStateUpdate"></a></p>
+<h3 id="connextgetlatestledgerstateupdateparams-&#x21D2;-objectkind-instance-method-of-connext">connext.getLatestLedgerStateUpdate(params) &#x21D2; Object<strong>Kind</strong>: instance method of <a href="#Connext"><code>Connext</code></a></h3>
+<p><strong>Returns</strong>: Object - Returns the result of requesting the latest signed state from the Watcher.  </p>
+<table>
+<thead>
+<tr>
+<th>Param</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>params</td>
+<td>Object</td>
+<td>Method Object</td>
+</tr>
+<tr>
+<td>params.ledgerChannelId</td>
+<td>Integer</td>
+<td>ID of the ledger channel you are looking to retrieve a state update for.</td>
+</tr>
+<tr>
+<td>params.sig</td>
+<td>Array.&lt;String&gt;</td>
+<td>Signature that should be on the state update.</td>
+</tr>
+</tbody>
+</table>
 <p><br>
 <br>
 <br></p>
 <p><a id="Connext+getLedgerChannelId"></a></p>
-<h3 id="connextgetledgerchannelid-&#x21D2;helper-function-to-retrieve-lcid">connext.getLedgerChannelId() &#x21D2;Helper function to retrieve lcID.</h3>
-<p><strong>Kind</strong>: instance method of <a href="#Connext"><code>Connext</code></a><br><strong>Returns</strong>: the lcID for agentA = accounts[0] and ingrid  </p>
+<h3 id="connextgetledgerchannelid-&#x21D2;-integer--nullhelper-function-to-retrieve-lcid">connext.getLedgerChannelId() &#x21D2; Integer | nullHelper function to retrieve lcID.</h3>
+<p><strong>Kind</strong>: instance method of <a href="#Connext"><code>Connext</code></a><br><strong>Returns</strong>: Integer | null - the lcID for agentA = accounts[0] and ingrid if exists, or null.  </p>
 <p><br>
 <br>
 <br></p>
 <p><a id="Connext+getLedgerChannel"></a></p>
-<h3 id="connextgetledgerchannelparams-&#x21D2;requests-the-ledger-channel-object-by-ledger-channel-id">connext.getLedgerChannel(params) &#x21D2;Requests the ledger channel object by ledger channel id.</h3>
-<p><strong>Kind</strong>: instance method of <a href="#Connext"><code>Connext</code></a><br><strong>Returns</strong>: the ledger channel object.  </p>
+<h3 id="connextgetledgerchannelparams-&#x21D2;-objectrequests-the-ledger-channel-object-by-ledger-channel-id">connext.getLedgerChannel(params) &#x21D2; ObjectRequests the ledger channel object by ledger channel id.</h3>
+<p><strong>Kind</strong>: instance method of <a href="#Connext"><code>Connext</code></a><br><strong>Returns</strong>: Object - the ledger channel object.  </p>
 <table>
 <thead>
 <tr>
@@ -736,14 +896,19 @@ Use web3 to call openLC function on ledgerChannel.</p>
 <td>Object</td>
 <td>Object containing the ledger channel id</td>
 </tr>
+<tr>
+<td>params.ledgerChannelId</td>
+<td>Integer</td>
+<td>Ledger channel ID in database.</td>
+</tr>
 </tbody>
 </table>
 <p><br>
 <br>
 <br></p>
 <p><a id="Connext+getLedgerChannelByAddress"></a></p>
-<h3 id="connextgetledgerchannelbyaddressparams-&#x21D2;requests-the-ledger-channel-open-between-ingrid-and-the-provided-address-from-the-watcher">connext.getLedgerChannelByAddress(params) &#x21D2;Requests the ledger channel open between Ingrid and the provided address from the watcher.</h3>
-<p><strong>Kind</strong>: instance method of <a href="#Connext"><code>Connext</code></a><br><strong>Returns</strong>: ledger channels open with Ingrid and agentA (only one).  </p>
+<h3 id="connextgetledgerchannelbyaddressparams-&#x21D2;-objectrequests-the-ledger-channel-open-between-ingrid-and-the-provided-address-from-the-watcher">connext.getLedgerChannelByAddress(params) &#x21D2; ObjectRequests the ledger channel open between Ingrid and the provided address from the watcher.</h3>
+<p><strong>Kind</strong>: instance method of <a href="#Connext"><code>Connext</code></a><br><strong>Returns</strong>: Object - Ledger channel open with Ingrid and agentA (only one allowed) if exists, or null.  </p>
 <table>
 <thead>
 <tr>
@@ -760,8 +925,8 @@ Use web3 to call openLC function on ledgerChannel.</p>
 </tr>
 <tr>
 <td>params.agentA</td>
-<td></td>
-<td>is the address of the agentA in the ledger channel.</td>
+<td>String</td>
+<td>Address of the agentA in the ledger channel.</td>
 </tr>
 </tbody>
 </table>
@@ -769,16 +934,16 @@ Use web3 to call openLC function on ledgerChannel.</p>
 <br>
 <br></p>
 <p><a id="Connext+getLedgerChannelChallengeTimer"></a></p>
-<h3 id="connextgetledgerchannelchallengetimer-&#x21D2;returns-channel-timer-for-the-ledger-channel">connext.getLedgerChannelChallengeTimer() &#x21D2;Returns channel timer for the ledger channel.</h3>
+<h3 id="connextgetledgerchannelchallengetimer-&#x21D2;-integerreturns-channel-timer-for-the-ledger-channel">connext.getLedgerChannelChallengeTimer() &#x21D2; IntegerReturns channel timer for the ledger channel.</h3>
 <p>Ingrid should also set and store lcID.</p>
 <p>Called in register() function</p>
-<p><strong>Kind</strong>: instance method of <a href="#Connext"><code>Connext</code></a><br><strong>Returns</strong>: the ledger channel timer period in seconds.  </p>
+<p><strong>Kind</strong>: instance method of <a href="#Connext"><code>Connext</code></a><br><strong>Returns</strong>: Integer - the ledger channel timer period in seconds.  </p>
 <p><br>
 <br>
 <br></p>
 <p><a id="Connext.createLCStateUpdateFingerprint"></a></p>
-<h3 id="connextcreatelcstateupdatefingerprinthashparamsreturns-the-lc-state-update-fingerprint">Connext.createLCStateUpdateFingerprint(hashParams)Returns the LC state update fingerprint.</h3>
-<p><strong>Kind</strong>: static method of <a href="#Connext"><code>Connext</code></a>  </p>
+<h3 id="connextcreatelcstateupdatefingerprinthashparams-&#x21D2;-stringreturns-the-lc-state-update-fingerprint">Connext.createLCStateUpdateFingerprint(hashParams) &#x21D2; StringReturns the LC state update fingerprint.</h3>
+<p><strong>Kind</strong>: static method of <a href="#Connext"><code>Connext</code></a><br><strong>Returns</strong>: String - Hash of the input data if validated.  </p>
 <table>
 <thead>
 <tr>
@@ -793,8 +958,54 @@ Use web3 to call openLC function on ledgerChannel.</p>
 <td>Object</td>
 <td>Object containing state update data to be hashed.</td>
 </tr>
+<tr>
+<td>hashParams.isCloseFlag</td>
+<td>Integer</td>
+<td>0 if not closing LC, 1 if closing LC state update.</td>
+</tr>
+<tr>
+<td>hashParams.nonce</td>
+<td>Integer</td>
+<td>The nonce of the proposed ledger channel state update.</td>
+</tr>
+<tr>
+<td>hashParams.openVCs</td>
+<td>Integer</td>
+<td>Number of VCs open in the ledger channel with agentA, using Ingrid as an intermediary.</td>
+</tr>
+<tr>
+<td>hashParams.vcRootHash</td>
+<td>String</td>
+<td>Indicates which VCs are open in LC.</td>
+</tr>
+<tr>
+<td>hashParams.agentA</td>
+<td>String</td>
+<td>Address of agentA in the ledger channel.</td>
+</tr>
+<tr>
+<td>hashParams.agentB</td>
+<td>String</td>
+<td>Address of agentB in the ledger channel. Defaults to Ingrid.</td>
+</tr>
+<tr>
+<td>hashParams.balanceA</td>
+<td>BigNumber</td>
+<td>Balance of agentA in ledger channel in Wei.</td>
+</tr>
+<tr>
+<td>hashParams.balanceB</td>
+<td>BigNumber</td>
+<td>Balance of agentB in ledger channel in Wei.</td>
+</tr>
 </tbody>
 </table>
+<p><br>
+<br>
+<br></p>
+<p><a id="regexExpessions"></a></p>
+<h2 id="regexexpessions--objectregexs-for-validating-function-in-inputs">regexExpessions : ObjectRegexs for validating function in inputs</h2>
+<p><strong>Kind</strong>: global constant  </p>
 
                                 
                                 </section>
@@ -838,7 +1049,7 @@ Use web3 to call openLC function on ledgerChannel.</p>
     <script>
         var gitbook = gitbook || [];
         gitbook.push(function() {
-            gitbook.page.hasChanged({"page":{"title":"API Referece","level":"2.1","depth":1,"next":{"title":"constructor","level":"2.1.1","depth":2,"anchor":"#new_Connext_new","path":"api.md","ref":"api.md#new_Connext_new","articles":[]},"previous":{"title":"Getting Started","level":"1.2","depth":1,"path":"start.md","ref":"start.md","articles":[]},"dir":"ltr"},"config":{"plugins":["livereload"],"root":"./docs","styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"},"pluginsConfig":{"livereload":{},"highlight":{},"search":{},"lunr":{"maxIndexSize":1000000,"ignoreSpecialCharacters":false},"sharing":{"facebook":true,"twitter":true,"google":false,"weibo":false,"instapaper":false,"vk":false,"all":["facebook","google","twitter","weibo","instapaper"]},"fontsettings":{"theme":"white","family":"sans","size":2},"theme-default":{"styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"},"showLevel":false}},"theme":"default","pdf":{"pageNumbers":true,"fontSize":12,"fontFamily":"Arial","paperSize":"a4","chapterMark":"pagebreak","pageBreaksBefore":"/","margin":{"right":62,"left":62,"top":56,"bottom":56}},"structure":{"langs":"LANGS.md","readme":"intro.md","glossary":"GLOSSARY.md","summary":"toc.md"},"variables":{},"gitbook":"3.2.2"},"file":{"path":"api.md","mtime":"2018-06-11T18:08:44.000Z","type":"markdown"},"gitbook":{"version":"3.2.2","time":"2018-06-11T18:08:45.366Z"},"basePath":".","book":{"language":""}});
+            gitbook.page.hasChanged({"page":{"title":"Connext","level":"2.1","depth":1,"next":{"title":"constructor","level":"2.1.1","depth":2,"anchor":"#new_Connext_new","path":"api.md","ref":"api.md#new_Connext_new","articles":[]},"previous":{"title":"Getting Started","level":"1.2","depth":1,"path":"start.md","ref":"start.md","articles":[]},"dir":"ltr"},"config":{"plugins":["livereload"],"root":"./docs","styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"},"pluginsConfig":{"livereload":{},"highlight":{},"search":{},"lunr":{"maxIndexSize":1000000,"ignoreSpecialCharacters":false},"sharing":{"facebook":true,"twitter":true,"google":false,"weibo":false,"instapaper":false,"vk":false,"all":["facebook","google","twitter","weibo","instapaper"]},"fontsettings":{"theme":"white","family":"sans","size":2},"theme-default":{"styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"},"showLevel":false}},"theme":"default","pdf":{"pageNumbers":true,"fontSize":12,"fontFamily":"Arial","paperSize":"a4","chapterMark":"pagebreak","pageBreaksBefore":"/","margin":{"right":62,"left":62,"top":56,"bottom":56}},"structure":{"langs":"LANGS.md","readme":"intro.md","glossary":"GLOSSARY.md","summary":"toc.md"},"variables":{},"gitbook":"3.2.2"},"file":{"path":"api.md","mtime":"2018-06-11T20:59:00.000Z","type":"markdown"},"gitbook":{"version":"3.2.2","time":"2018-06-11T20:59:01.523Z"},"basePath":".","book":{"language":""}});
         });
     </script>
 </div>
