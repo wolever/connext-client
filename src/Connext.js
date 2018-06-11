@@ -67,6 +67,10 @@ export class Connext {
    * Requests a challenge timer from ingrid
    * Use web3 to call openLC function on ledgerChannel.
    *
+   * @example
+   * // get a BN
+   * const deposit = web3.utils.toBN(10000)
+   * await connext.register(deposit)
    * @param {BigNumber} initialDeposit deposit in wei
    * @returns result of calling openLedgerChannel on the channelManager instance.
    */
@@ -76,28 +80,51 @@ export class Connext {
 
   /**
    * Add a deposit to an existing ledger channel. Calls contract function "deposit"
+   *
+   * @example
+   * // get a BN
+   * const deposit = web3.utils.toBN(10000)
+   * await connext.deposit(deposit)
    * @param {BigNumber} depositInWei - Value of the deposit.
    */
   async deposit (depositInWei) {
     validate.single(initialDeposit, { presence: true, isBN: true })
+    // find ledger channel by mine and ingrids address
+    // call LC method
   }
 
   /**
    * Withdraw bonded funds from channel.
    *
    * Generates the state update from the latest ingrid signed state with fast-close flag.
-   *
    * State update is sent to Ingrid to countersign if correct.
+   *
+   * @example
+   * const success = await connext.withdraw()
+   * @returns {boolean} Returns true if successfully withdrawn, false if challenge process commences.
    */
   async withdraw () {}
 
   /**
    * Withdraw bonded funds from channel
+   *
+   * This function is only used if `withdraw()` returned false and is in a challenge state.
+   * The challenge timer on the LC challenge must be expired before this function can be called.
+   *
+   * @example
+   * const success = await connext.withdraw()
+   * if (!success) {
+   *   // wait out challenge timer
+   *   await connext.withdrawFinal()
+   * }
    */
   async withdrawFinal () {}
 
   /**
-   * Sync signed updated with chain
+   * Sync latest signed updated with chain.
+   *
+   * @example
+   * await connext.checkpoint()
    */
   async checkpoint () {}
 
