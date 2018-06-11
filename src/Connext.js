@@ -15,10 +15,6 @@ validate.validators.isBN = value => {
 }
 
 // regEx for checking inputs
-/**
- * Regexs for validating function in inputs
- * @constant {Object}
- */
 const regexExpessions = {
   address: '^(0x)?[0-9a-fA-F]{40}$',
   bytes32: '^(0x)?[0-9a-fA-F]{64}$',
