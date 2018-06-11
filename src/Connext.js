@@ -29,9 +29,8 @@ const regexExpessions = {
 /**
  *
  * Class representing an instance of a Connext client.
- *
  */
-export class Connext {
+class Connext {
   /**
    *
    * Create an instance of the Connext client.
