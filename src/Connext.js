@@ -25,13 +25,13 @@ const regexExpessions = {
 /**
  *
  * Class representing an instance of a Connext client.
- *
  */
-export class Connext {
+class Connext {
   /**
    *
    * Create an instance of the Connext client.
    *
+   * @constructor
    * @example
    * const Connext = require('connext')
    * const connext = new Connext(web3)
