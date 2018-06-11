@@ -181,9 +181,25 @@ export class Connext {
    * })
    * @param {Object} params - The method object.
    * @param {Number} params.channelId ID of channel.
-   * @param {BigNumber} params.balance CVhannel balance in Wei.
+   * @param {BigNumber} params.balance Channel balance in Wei (of "A" party).
+   * @returns {String} Returns signature of balance update.
    */
   async updateBalance ({ channelId, balance }) {}
+
+  /**
+   * Verifies signature on balance update and co-signs update.
+   *
+   * In the unidirectional scheme, this function is called by the "B" party only.
+   * Signature is posted to the hub/watcher.
+   * @param {Object} params - The method object.
+   * @param {Number} params.channelId ID of channel.
+   * @param {BigNumber} params.balance Channel balance in Wei (of "A" party).
+   * @param {String} params.sig Signature received from "A" party to be verified before co-signing.
+   * @returns {String} Returns signature of balance update.
+   */
+  async cosignBalanceUpdate ({ channelId, balance, sig }) {
+    // check sig
+  }
 
   /**
    * Closes specified channel using latest double signed update.
