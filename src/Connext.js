@@ -1,10 +1,18 @@
 const axios = require('axios')
-const check = require('check-types')
-const contract = require('truffle-contract')
 const abi = require('ethereumjs-abi')
-const artifacts = require('../artifacts/ChannelManager.json')
+const channelManagerAbi = require('../artifacts/ChannelManagerAbi.json')
 const tokenAbi = require('human-standard-token-abi')
 const util = require('ethereumjs-util')
+const Web3 = require('web3')
+const validate = require('validate')
+
+validate.validators.isBN = value => {
+  if (Web3.utils.isBN(value)) {
+    return null
+  } else {
+    return 'Is not BN.'
+  }
+}
 
 // regEx for checking inputs
 /**
@@ -18,54 +26,41 @@ const regexExpessions = {
   booleanInt: '^(0|1)$'
 }
 
-/** Class to create and manage state channel payment hubs. */
-class Connext {
-  // TO DO:
-  // - do we need a drizzle client?
-
+/**
+ *
+ * Class representing an instance of a Connext client.
+ *
+ */
+export class Connext {
   /**
-   * Specify parameters for the Connext class. Ingrid's address, URL and the watcher URL are by default set to work with Connext's hub infrastructure and contracts.
+   *
+   * Create an instance of the Connext client.
+   *
+   * @example
+   * const Connext = require('connext')
+   * const connext = new Connext(web3)
    * @param {Object} params - The constructor object.
    * @param {Web3} params.web3 - the web3 instance.
-   * @param {String} params.ingridAddress Address of hub (Ingrid).
-   * @param {String} params.watcherUrl URL of watcher server.
-   * @param {String} params.ingridUrl URL of intermediary server.
+   * @param {String} params.ingridAddress Eth address of intermediary (defaults to Connext hub).
+   * @param {String} params.watcherUrl Url of watcher server (defaults to Connext hub).
+   * @param {String} params.ingridUrl Url of intermediary server (defaults to Connext hub).
+   * @param {String} params.contractAddress Address of deployed contract (defaults to latest deployed contract).
    */
-  constructor ({ web3, ingridAddress, watcherUrl, ingridUrl }) {
-    this.web3 = web3
+  constructor ({
+    web3,
+    ingridAddress = '',
+    watcherUrl = '',
+    ingridUrl = '',
+    contractAddress = ''
+  }) {
+    this.web3 = new Web3(web3.currentProvider) // convert legacy web3 0.x to 1.x
     this.ingridAddress = ingridAddress
     this.watcherUrl = watcherUrl
     this.ingridUrl = ingridUrl
-  }
-
-  /**
-   * Initializes the ledger channel manager contract.
-   *
-   * Must be called before any state updates, channel functions, dispute functions, or contract methods
-   * can be called through the client package or it will throw an error.
-   *
-   */
-  async initContract () {
-    const accounts = await this.web3.eth.getAccounts()
-    this.accounts = accounts
-    // init ledger channel and channel manager?
-    const ChannelManager = contract(artifacts)
-    ChannelManager.setProvider(this.web3.currentProvider)
-    ChannelManager.defaults({ from: accounts[0] })
-    if (typeof ChannelManager.currentProvider.sendAsync !== 'function') {
-      ChannelManager.currentProvider.send.apply(
-        ChannelManager.currentProvider,
-        arguments
-      )
-    }
-    // init instance
-    let channelManager
-    if (this.contractAddress) {
-      channelManager = await ChannelManager.at(this.contractAddress)
-    } else {
-      channelManager = await ChannelManager.deployed()
-    }
-    this.channelManager = channelManager
+    this.channelManagerInstance = new this.web3.eth.Contract(
+      channelManagerAbi,
+      contractAddress
+    )
   }
 
   // WALLET FUNCTIONS
@@ -83,35 +78,7 @@ class Connext {
    * @returns {String} result of calling openLedgerChannel on the channelManager instance.
    */
   async register (initialDeposit) {
-    if (!this.channelManager) {
-      throw new Error('Please call initContract().')
-    }
-    check.assert.match(
-      initialDeposit,
-      regexExpressions.positive,
-      'No initial deposit provided.'
-    )
-    // get challenge timer from ingrid
-    const challenge = this.getLedgerChannelChallengeTimer()
-
-    // TO DO: Determine how much ingrid should join with
-    // Alternatively, Ingrid calls deposit function (?)
-    // Also, reconfigure constructor to accept configurable challenge time
-
-    // open lc with ingrid
-    const result = this.channelManager.openLedgerChannel(
-      this.accounts[0], // partyA
-      this.ingridAddress, // partyB
-      initialDeposit, // balanceA
-      0, // balanceB (Ingrid)
-      challenge, // not yet in constructor
-      {
-        from: this.accounts[0],
-        value: initialDeposit
-      }
-    )
-
-    return result
+    validate.single(initialDeposit, { presence: true, isBN: true })
   }
 
   /**
@@ -120,30 +87,7 @@ class Connext {
    * @param {BigNumber} depositInWei - Value of the deposit.
    */
   async deposit (depositInWei) {
-    if (!this.channelManager) {
-      throw new Error('Please call initContract().')
-    }
-    check.assert.match(
-      depositInWei,
-      regexExpressions.positive,
-      'No deposit provided.'
-    )
-    // get ledger channel id for user
-    const lc = this.getLedgerChannel(this.accounts[0]) // why tho
-    // call deposit fn on contract
-    let result
-    if (this.drizzleContext) {
-      result = this.channelManager.methods.deposit.cacheSend(this.accounts[0], {
-        from: this.accounts[0],
-        value: depositInWei
-      })
-    } else {
-      result = await this.channelManager.deposit(this.accounts[0], {
-        from: this.accounts[0],
-        value: depositInWei
-      })
-    }
-    return { result, lcId } // probably dont need lcID
+    validate.single(initialDeposit, { presence: true, isBN: true })
   }
 
   /**
@@ -156,51 +100,7 @@ class Connext {
   * @throws Will throw an error if initContract has not been called.
   * @returns {String} Flag indicating whether the channel was consensus-closed or if lc was challenge-closed.
   */
-  async withdraw () {
-    if (!this.channelManager) {
-      throw new Error('Please call initContract().')
-    }
-
-    // get latest i signed update
-    const lc = await this.getLedgerChannelByAddress({
-      agentA: this.accounts[0]
-    })
-    const sigs = [
-      lc.transactions[lc.transactions.length - 1].sigA,
-      lc.transactions[lc.transactions.length - 1].sigB
-    ]
-    // const state = this.getLatestLedgerStateUpdate({ lc.})
-
-    // generate state update from latest I-signed state
-    // with fast close flag
-    const closeSig = await this.createLCStateUpdate({
-      isCloseFlag: 1,
-      nonce: lc.nonce,
-      openVCs: lc.openVCs,
-      vcRootHash: lc.vcRootHash,
-      agentA: lc.agentA,
-      balanceA: lc.balanceA,
-      balanceB: lc.balanceB
-    })
-    // send to ingrid to countersign
-    const response = await axios.post(
-      `${this.ingridUrl}/ledgerchannel/withdraw?channel=${lc.id}`,
-      {
-        sig: closeSig
-      }
-    )
-    let flag
-    if (response.data) {
-      // assume ingrid cosigned update
-      // call consensus close channel
-
-      flag = `Channel: ${lc.id} Fast Closed.`
-    } else {
-      // call updateLCState with latest state and challenge flag
-      flag = `Channel: ${lc.id} Challenged.`
-    }
-    return flag
-  }
+  async withdraw () {}
 
   /**
   * Withdraw bonded funds from ledger channel after a channel is challenge-closed after the challenge period expires by calling withdrawFinal using Web3.
@@ -217,14 +117,7 @@ class Connext {
   *
   * @throws Will throw an error if initContract has not been called.
   */
-  async checkpoint () {
-    if (!this.channelManager) {
-      throw new Error('Please call initContract()')
-    }
-    // get ledger channel id
-
-    // get latest state update
-  }
+  async checkpoint () {}
 
   /**
   * Opens a virtual channel between to and caller with Ingrid as the hub. Both users must have a ledger channel open with ingrid.
@@ -241,11 +134,7 @@ class Connext {
   * @throws Will throw an error if initContract has not been called.
   *
   */
-  openChannel ({ to, deposit = null }) {
-    if (!this.channelManager) {
-      throw new Error('Please call initContract()')
-    }
-  }
+  openChannel ({ to, deposit = null }) {}
 
   /**
   * Joins virtual channel by VC ID with a deposit of 0 (unidirectional channels).
@@ -291,6 +180,12 @@ class Connext {
   * @param {String} params.signature client signature of the closing state update for the virtual channel
   */
   closeChannel ({ vcId, balance, nonce, signature }) {}
+
+  /**
+   * Close many channels
+   * @param {Array} channels - Array of virtual channel IDs to close
+   */
+  closeChannels (channels) {}
 
   // SIGNATURE FUNCTIONS
   /**
@@ -382,55 +277,7 @@ class Connext {
     balanceA,
     balanceB,
     unlockedAccountPresent = false // true if hub or ingrid
-  }) {
-    // errs and validation
-    if (!this.channelManager) {
-      throw new Error('Please call initContract()')
-    }
-    check.assert.match(
-      isCloseFlag,
-      regexExpessions.booleanInt,
-      'No isClose indicator provided.'
-    )
-    check.assert.match(nonce, regexExpessions.positive, 'No nonce provided.')
-    check.assert.match(
-      openVCs,
-      regexExpessions.positive,
-      'No number of openVCs provided.'
-    )
-    check.assert.string(vcRootHash, 'No root hash provided') // TO DO: add to regexs
-    check.assert.match(agentA, regexExpessions.address, 'No partyA provided.')
-    check.assert.match(agentB, regexExpessions.address, 'No partyB provided')
-    check.assert.match(
-      balanceA,
-      regexExpessions.positive,
-      'No balanceA provided.'
-    )
-    check.assert.match(
-      balanceB,
-      regexExpessions.positive,
-      'No balanceB provided.'
-    ) // Can Ingrid have negative balances?
-
-    // sign hash
-    const hash = Ethcalate.createLCStateUpdateFingerprint({
-      isCloseFlag,
-      nonce,
-      openVCs,
-      vcRootHash,
-      agentA,
-      agentB,
-      balanceA,
-      balanceB
-    })
-    let sig
-    if (unlockedAccountPresent) {
-      sig = await this.web3.eth.sign(hash, this.accounts[0])
-    } else {
-      sig = await this.web3.eth.personal.sign(hash, this.accounts[0])
-    }
-    return sig
-  }
+  }) {}
 
   // HELPER FUNCTIONS
   /**
@@ -440,34 +287,13 @@ class Connext {
    * @param {String[]} params.sig Signature that should be on the state update.
    * @returns {Object} Returns the result of requesting the latest signed state from the Watcher.
    */
-  async getLatestLedgerStateUpdate ({ ledgerChannelId, sig }) {
-    check.assert.match(
-      ledgerChannelId,
-      regexExpessions.bytes32,
-      'No ledgerChannelId provided'
-    )
-    check.assert.array(sig, 'No sig(s) provided')
-
-    const response = await axios.get(
-      `${this.watcherUrl}/channel/id/${ledgerChannelId}/latest?sig=${sig}`
-    )
-    return response.data
-  }
+  async getLatestLedgerStateUpdate ({ ledgerChannelId, sig }) {}
 
   /**
    * Helper function to retrieve lcID.
    * @returns {Integer|null} the lcID for agentA = accounts[0] and ingrid if exists, or null.
    */
-  async getLedgerChannelId () {
-    const response = await axios.get(
-      `${this.watcherUrl}/ledgerchannel?a=${this.accounts[0]}&b=${this.ingridAddress}`
-    )
-    if (response.data.data.ledgerChannel.id) {
-      return response.data.data.ledgerChannel.id
-    } else {
-      return null
-    }
-  }
+  async getLedgerChannelId () {}
 
   /**
    * Requests the ledger channel object by ledger channel id.
@@ -475,17 +301,7 @@ class Connext {
    * @param {Integer} params.ledgerChannelId Ledger channel ID in database.
    * @returns {Object} the ledger channel object.
    */
-  async getLedgerChannel ({ ledgerChannelId }) {
-    check.assert.match(
-      ledgerChannelId,
-      regexExpessions.bytes32,
-      `No ledgerChannelId provided ${ledgerChannelId}`
-    )
-    const response = await axios.get(
-      `${this.watcherUrl}/ledgerchannel/${ledgerChannelId}`
-    )
-    return response.data.data.ledgerChannel
-  }
+  async getLedgerChannel ({ ledgerChannelId }) {}
 
   /**
    * Requests the ledger channel open between Ingrid and the provided address from the watcher.
@@ -494,21 +310,7 @@ class Connext {
    * @param {String} params.agentA Address of the agentA in the ledger channel.
    * @returns {Object} Ledger channel open with Ingrid and agentA (only one allowed) if exists, or null.
    */
-  async getLedgerChannelByAddress ({ agentA }) {
-    check.assert.match(
-      agentA,
-      regexExpressions.address,
-      'No agentA account provided.'
-    )
-    const response = await axios.get(
-      `${this.watcherUrl}/ledgerchannel?a=${agentA}&b=${this.ingridAddress}`
-    )
-    if (response.data.data.ledgerChannel[0]) {
-      return response.data.data.ledgerChannel[0]
-    } else {
-      return null
-    }
-  }
+  async getLedgerChannelByAddress ({ agentA }) {}
 
   /**
    * Returns channel timer for the ledger channel.
@@ -517,10 +319,7 @@ class Connext {
    * Called in register() function
    * @returns {Integer} the ledger channel timer period in seconds.
    */
-  async getLedgerChannelChallengeTimer () {
-    const response = await axios.get(`${this.ingridUrl}/lcTimer`)
-    return response.data
-  }
+  async getLedgerChannelChallengeTimer () {}
 }
 
 module.exports = Connext
