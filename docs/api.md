@@ -5,21 +5,6 @@ Class representing an instance of a Connext client.
 
 **Kind**: global class  
 
-* [Connext](#Connext)
-    * [new Connext(params)](#new_Connext_new)
-    * [.register(initialDeposit)](#Connext+register) ⇒ <code>String</code>
-    * [.deposit(depositInWei)](#Connext+deposit)
-    * [.withdraw()](#Connext+withdraw) ⇒ <code>boolean</code> \| <code>String</code>
-    * [.withdrawFinal()](#Connext+withdrawFinal)
-    * [.checkpoint()](#Connext+checkpoint)
-    * [.openChannel(params)](#Connext+openChannel)
-    * [.joinChannel(channelId)](#Connext+joinChannel)
-    * [.updateBalance(params)](#Connext+updateBalance) ⇒ <code>String</code>
-    * [.cosignBalanceUpdate(params)](#Connext+cosignBalanceUpdate) ⇒ <code>String</code>
-    * [.fastCloseChannel(channelId)](#Connext+fastCloseChannel)
-    * [.closeChannel(params)](#Connext+closeChannel)
-    * [.closeChannels(channels)](#Connext+closeChannels)
-
 <a name="new_Connext_new"></a>
 
 ### new Connext(params)
