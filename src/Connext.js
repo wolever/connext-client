@@ -1,7 +1,6 @@
 const axios = require('axios')
 const abi = require('ethereumjs-abi')
 const channelManagerAbi = require('../artifacts/ChannelManagerAbi.json')
-const tokenAbi = require('human-standard-token-abi')
 const util = require('ethereumjs-util')
 const Web3 = require('web3')
 const validate = require('validate')
@@ -45,14 +44,6 @@ validate.validators.isPositiveInt = value => {
   } else {
     return 'Is not a positive integer.'
   }
-}
-
-// regEx for checking inputs
-const regexExpessions = {
-  address: '^(0x)?[0-9a-fA-F]{40}$',
-  bytes32: '^(0x)?[0-9a-fA-F]{64}$',
-  positive: '^[0-9][0-9]*$',
-  booleanInt: '^(0|1)$'
 }
 
 /**
@@ -114,9 +105,33 @@ class Connext {
     const accounts = await this.web3.eth.getAccounts()
     const challenge = await this.getLedgerChannelChallengeTimer()
     // generate additional initial lc params
+    const nonce = 0
+    const openVCs = 0
+    const vcRootHash = '0x0'
+    const agentA = accounts[0]
+    const sig = this.createLCStateUpdate({
+      nonce,
+      openVCs,
+      vcRootHash,
+      agentA,
+      balanceA: initialDeposit,
+      balanceB
+    })
 
-    // should call openLC
-    // but contract function does not exist yet, talk to Nathan
+    // create LC on contract
+    // TO DO: better error handling here
+    const result = await this.channelManagerInstance.createLedgerChannel(
+      this.ingridAddress,
+      challenge,
+      {
+        from: this.accounts[0],
+        value: initialDeposit
+      }
+    )
+    console.log(result)
+    // ping ingrid
+    const response = this.requestJoinChannel({ sig, balanceA: initialDeposit })
+    return response
   }
 
   /**
@@ -533,6 +548,18 @@ class Connext {
 
   async getLedgerChannelChallengeTimer () {
     const response = await axios.post(`${this.ingridUrl}/ledgerchannel/timer`)
+    return response.data
+  }
+
+  async requestJoinChannel ({ sig, balanceA }) {
+    const accounts = await this.web3.eth.getAccounts()
+    const response = await axios.post(
+      `${this.ingridUrl}/ledgerchannel/join?a=${accounts[0]}`,
+      {
+        sig,
+        balanceA
+      }
+    )
     return response.data
   }
 }
