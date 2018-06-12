@@ -6,7 +6,7 @@
 
 * [Connext](api.md)
     * [constructor](api.md#new_Connext_new)
-    * [.register](api.md#connext-register-initialdeposit-string)
+    * [register](api.md#connext-register-initialdeposit-string)
     * [.deposit](api.md#connextdepositdepositinwei)
     * [.withdraw](api.md#connextwithdraw-⇒-boolean--string)
     * [.withdrawFinal](api.md#connextwithdrawfinal)
