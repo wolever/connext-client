@@ -31,7 +31,6 @@ class Connext {
    *
    * Create an instance of the Connext client.
    *
-   * @constructor
    * @example
    * const Connext = require('connext')
    * const connext = new Connext(web3)
