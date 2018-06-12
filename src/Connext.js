@@ -5,6 +5,7 @@ const tokenAbi = require('human-standard-token-abi')
 const util = require('ethereumjs-util')
 const Web3 = require('web3')
 const validate = require('validate')
+const Utils = require('./helpers/utils')
 
 validate.validators.isBN = value => {
   if (Web3.utils.isBN(value)) {
@@ -77,6 +78,19 @@ class Connext {
    */
   async register (initialDeposit) {
     validate.single(initialDeposit, { presence: true, isBN: true })
+    // get challenge timer from ingrid
+    const accounts = await this.web3.eth.getAccounts()
+    const challenge = await this.getLedgerChannelChallengeTimer()
+    // should call openLC
+    // but contract function does not exist yet, talk to Nathan
+    // const sigA = await this.createLCStateUpdate({
+    //   nonce: 0,
+    //   openVCs: 0,
+    //   vcRootHash: '0x0', // should i actually be creating a starting hash
+    //   agentA: accounts[0],
+    //   balanceA: initialDeposit,
+    //   balanceB: '0' // should ingrid join with 0 deposit
+    // })
   }
 
   /**
@@ -257,7 +271,45 @@ class Connext {
     agentB = this.ingridAddress, // defaults to ingrid
     balanceA,
     balanceB
-  }) {}
+  }) {
+    // validate params
+    check.assert.match(
+      isCloseFlag,
+      regexExpessions.booleanInt,
+      'No isCloseFlag provided.'
+    )
+    check.assert.integer(nonce, 'No nonce provided.')
+    check.assert.integer(openVCs, 'No number of open VCs provided.')
+    check.assert.string(vcRootHash, 'No vcRootHash provided.')
+    check.assert.match(
+      agentA,
+      regexExpessions.address,
+      'No agentA address provided.'
+    )
+    check.assert.match(
+      agentB,
+      regexExpessions.address,
+      'No agentB address provided.'
+    )
+    validate.single(balanceA, { presence: true, isBN: true })
+    validate.single(balanceB, { presence: true, isBN: true })
+    // generate state update to sign
+    const state = []
+    state.push(isCloseFlag)
+    state.push(nonce)
+    state.push(openVCs)
+    state.push(vcRootHash)
+    state.push(agentA)
+    state.push(agentB)
+    state.push(balanceA)
+    state.push(balanceB)
+
+    const hash = web3.sha3(Utils.marshallState(state), { encoding: 'hex' })
+
+    return hash
+  }
+
+  static recoverSignerFromLCStateUpdate () {}
 
   async createLCStateUpdate ({
     isCloseFlag = 0, // default isnt close LC
@@ -269,7 +321,54 @@ class Connext {
     balanceA,
     balanceB,
     unlockedAccountPresent = false // true if hub or ingrid
-  }) {}
+  }) {
+    // validate params
+    check.assert.match(
+      isCloseFlag,
+      regexExpessions.booleanInt,
+      'No isCloseFlag provided.'
+    )
+    check.assert.integer(nonce, 'No nonce provided.')
+    check.assert.integer(openVCs, 'No number of open VCs provided.')
+    check.assert.string(vcRootHash, 'No vcRootHash provided.')
+    check.assert.match(
+      agentA,
+      regexExpessions.address,
+      'No agentA address provided.'
+    )
+    check.assert.match(
+      agentB,
+      regexExpessions.address,
+      'No agentB address provided.'
+    )
+    validate.single(balanceA, { presence: true, isBN: true })
+    validate.single(balanceB, { presence: true, isBN: true })
+
+    // TO DO:
+    // additional validation to only allow clients to call correct state updates
+
+    // generate sig
+    const accounts = await this.web3.getAccounts()
+    // personal sign?
+    const hash = this.createLCStateUpdateFingerprint({
+      isCloseFlag,
+      nonce,
+      openVCs,
+      vcRootHash,
+      agentA,
+      agentB,
+      balanceA,
+      balanceB
+    })
+    const sig = await this.web3.eth.sign(hash, accounts[0])
+    return sig
+  }
+
+  static createVCStateUpdateFingerprint () {}
+
+  static recoverSignerFromVCStateUpdate () {}
+
+  async createVCStateUpdate () {}
 
   // HELPER FUNCTIONS
 
@@ -285,7 +384,10 @@ class Connext {
 
   async getLc ({ lcId }) {}
 
-  async getLedgerChannelChallengeTimer () {}
+  async getLedgerChannelChallengeTimer () {
+    const response = await axios.post(`${this.ingridUrl}/ledgerchannel/timer`)
+    return response.data
+  }
 }
 
 module.exports = Connext
