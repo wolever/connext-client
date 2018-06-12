@@ -363,6 +363,27 @@
 <p><a id="Connext"></a></p>
 <p></p><h2 id="connext">Connext</h2>Class representing an instance of a Connext client.<p></p>
 <p><strong>Kind</strong>: global class  </p>
+<ul>
+<li><a href="#Connext">Connext</a><ul>
+<li><a href="#new_Connext_new">new Connext(params)</a></li>
+<li><a href="#Connext+register">.register(initialDeposit)</a> &#x21D2; <code>String</code></li>
+<li><a href="#Connext+deposit">.deposit(depositInWei)</a></li>
+<li><a href="#Connext+withdraw">.withdraw()</a> &#x21D2; <code>boolean</code> | <code>String</code></li>
+<li><a href="#Connext+withdrawFinal">.withdrawFinal()</a></li>
+<li><a href="#Connext+checkpoint">.checkpoint()</a></li>
+<li><a href="#Connext+openChannel">.openChannel(params)</a></li>
+<li><a href="#Connext+joinChannel">.joinChannel(channelId)</a></li>
+<li><a href="#Connext+updateBalance">.updateBalance(params)</a> &#x21D2; <code>String</code></li>
+<li><a href="#Connext+cosignBalanceUpdate">.cosignBalanceUpdate(params)</a> &#x21D2; <code>String</code></li>
+<li><a href="#Connext+fastCloseChannel">.fastCloseChannel(channelId)</a></li>
+<li><a href="#Connext+closeChannel">.closeChannel(params)</a></li>
+<li><a href="#Connext+closeChannels">.closeChannels(channels)</a></li>
+</ul>
+</li>
+</ul>
+<p><br>
+<br>
+<br></p>
 <p><a id="new_Connext_new"></a></p>
 <p></p><h2 id="new-connextparams">new Connext(params)</h2>Create an instance of the Connext client.<p></p>
 <table>
@@ -803,7 +824,7 @@ double signed VC update.</p>
     <script>
         var gitbook = gitbook || [];
         gitbook.push(function() {
-            gitbook.page.hasChanged({"page":{"title":"Connext","level":"2.1","depth":1,"next":{"title":"constructor","level":"2.1.1","depth":2,"anchor":"#new_Connext_new","path":"api.md","ref":"api.md#new_Connext_new","articles":[]},"previous":{"title":"Getting Started","level":"1.2","depth":1,"path":"start.md","ref":"start.md","articles":[]},"dir":"ltr"},"config":{"plugins":["livereload"],"root":"./docs","styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"},"pluginsConfig":{"livereload":{},"highlight":{},"search":{},"lunr":{"maxIndexSize":1000000,"ignoreSpecialCharacters":false},"sharing":{"facebook":true,"twitter":true,"google":false,"weibo":false,"instapaper":false,"vk":false,"all":["facebook","google","twitter","weibo","instapaper"]},"fontsettings":{"theme":"white","family":"sans","size":2},"theme-default":{"styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"},"showLevel":false}},"theme":"default","pdf":{"pageNumbers":true,"fontSize":12,"fontFamily":"Arial","paperSize":"a4","chapterMark":"pagebreak","pageBreaksBefore":"/","margin":{"right":62,"left":62,"top":56,"bottom":56}},"structure":{"langs":"LANGS.md","readme":"intro.md","glossary":"GLOSSARY.md","summary":"toc.md"},"variables":{},"gitbook":"3.2.2"},"file":{"path":"api.md","mtime":"2018-06-11T23:15:13.000Z","type":"markdown"},"gitbook":{"version":"3.2.2","time":"2018-06-11T23:08:19.692Z"},"basePath":".","book":{"language":""}});
+            gitbook.page.hasChanged({"page":{"title":"Connext","level":"2.1","depth":1,"next":{"title":"constructor","level":"2.1.1","depth":2,"anchor":"#new_Connext_new","path":"api.md","ref":"api.md#new_Connext_new","articles":[]},"previous":{"title":"Getting Started","level":"1.2","depth":1,"path":"start.md","ref":"start.md","articles":[]},"dir":"ltr"},"config":{"plugins":["livereload"],"root":"./docs","styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"},"pluginsConfig":{"livereload":{},"highlight":{},"search":{},"lunr":{"maxIndexSize":1000000,"ignoreSpecialCharacters":false},"sharing":{"facebook":true,"twitter":true,"google":false,"weibo":false,"instapaper":false,"vk":false,"all":["facebook","google","twitter","weibo","instapaper"]},"fontsettings":{"theme":"white","family":"sans","size":2},"theme-default":{"styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"},"showLevel":false}},"theme":"default","pdf":{"pageNumbers":true,"fontSize":12,"fontFamily":"Arial","paperSize":"a4","chapterMark":"pagebreak","pageBreaksBefore":"/","margin":{"right":62,"left":62,"top":56,"bottom":56}},"structure":{"langs":"LANGS.md","readme":"intro.md","glossary":"GLOSSARY.md","summary":"toc.md"},"variables":{},"gitbook":"3.2.2"},"file":{"path":"api.md","mtime":"2018-06-12T00:13:32.000Z","type":"markdown"},"gitbook":{"version":"3.2.2","time":"2018-06-12T00:13:33.359Z"},"basePath":".","book":{"language":""}});
         });
     </script>
 </div>
