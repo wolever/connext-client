@@ -1,14 +1,18 @@
-<a name="Connext"></a>
+<br/>
+<br/>
+<br/>
 
-## Connext
-Class representing an instance of a Connext client.
+<a id="Connext"></a>
+
+<h2>Connext</h2>Class representing an instance of a Connext client.
 
 **Kind**: global class  
 
-<a name="new_Connext_new"></a>
+<br/>
 
-### new Connext(params)
-Create an instance of the Connext client.
+<a id="new_Connext_new"></a>
+
+<h2>new Connext(params)</h2>Create an instance of the Connext client.
 
 
 | Param | Type | Description |
@@ -20,10 +24,13 @@ Create an instance of the Connext client.
 | params.ingridUrl | <code>String</code> | Url of intermediary server (defaults to Connext hub). |
 | params.contractAddress | <code>String</code> | Address of deployed contract (defaults to latest deployed contract). |
 
-<a name="Connext+register"></a>
+<br/>
+<br/>
+<br/>
 
-### connext.register(initialDeposit) ⇒ <code>String</code>
-Opens a ledger channel with ingridAddress and bonds initialDeposit.
+<a id="Connext+register"></a>
+
+<h2>connext.register(initialDeposit) ⇒ <code>String</code></h2>Opens a ledger channel with ingridAddress and bonds initialDeposit.
 Requests a challenge timer for the ledger channel from ingrid.
 
 Use web3 to call openLC function on ledgerChannel.
@@ -43,10 +50,13 @@ add deposits based on user needs.
 const deposit = web3.utils.toBN(10000)
 await connext.register(deposit)
 ```
-<a name="Connext+deposit"></a>
+<br/>
+<br/>
+<br/>
 
-### connext.deposit(depositInWei)
-Add a deposit to an existing ledger channel. Calls contract function "deposit"
+<a id="Connext+deposit"></a>
+
+<h2>connext.deposit(depositInWei)</h2>Add a deposit to an existing ledger channel. Calls contract function "deposit"
 
 **Kind**: instance method of [<code>Connext</code>](#Connext)  
 
@@ -60,10 +70,13 @@ Add a deposit to an existing ledger channel. Calls contract function "deposit"
 const deposit = web3.utils.toBN(10000)
 await connext.deposit(deposit)
 ```
-<a name="Connext+withdraw"></a>
+<br/>
+<br/>
+<br/>
 
-### connext.withdraw() ⇒ <code>boolean</code> \| <code>String</code>
-Withdraw bonded funds from ledger channel with ingrid. All virtual channels must be closed before a ledger channel can be closed.
+<a id="Connext+withdraw"></a>
+
+<h2>connext.withdraw() ⇒ <code>boolean</code> \| <code>String</code></h2>Withdraw bonded funds from ledger channel with ingrid. All virtual channels must be closed before a ledger channel can be closed.
 
 Generates the state update from the latest ingrid signed state with fast-close flag. Ingrid should countersign if the state update matches what she has signed previously, and the channel will fast close by calling consensusCloseChannel on the Channel Manager contract.
 
@@ -75,10 +88,13 @@ If the state update doesn't match what Ingrid previously signed, then updateLCSt
 ```js
 const success = await connext.withdraw()
 ```
-<a name="Connext+withdrawFinal"></a>
+<br/>
+<br/>
+<br/>
 
-### connext.withdrawFinal()
-Withdraw bonded funds from ledger channel after a channel is challenge-closed after the challenge period expires by calling withdrawFinal using Web3.
+<a id="Connext+withdrawFinal"></a>
+
+<h2>connext.withdrawFinal()</h2>Withdraw bonded funds from ledger channel after a channel is challenge-closed after the challenge period expires by calling withdrawFinal using Web3.
 
 Looks up LC by the account address of the client-side user.
 
@@ -91,10 +107,13 @@ if (!success) {
   await connext.withdrawFinal()
 }
 ```
-<a name="Connext+checkpoint"></a>
+<br/>
+<br/>
+<br/>
 
-### connext.checkpoint()
-Sync signed state updates with chain.
+<a id="Connext+checkpoint"></a>
+
+<h2>connext.checkpoint()</h2>Sync signed state updates with chain.
 
 Generates client signature on latest Ingrid-signed state update, and uses web3 to call updateLCState on the contract without challenge flag.
 
@@ -103,10 +122,13 @@ Generates client signature on latest Ingrid-signed state update, and uses web3 t
 ```js
 await connext.checkpoint()
 ```
-<a name="Connext+openChannel"></a>
+<br/>
+<br/>
+<br/>
 
-### connext.openChannel(params)
-Opens a virtual channel between to and caller with Ingrid as the hub. Both users must have a ledger channel open with ingrid.
+<a id="Connext+openChannel"></a>
+
+<h2>connext.openChannel(params)</h2>Opens a virtual channel between to and caller with Ingrid as the hub. Both users must have a ledger channel open with ingrid.
 
 If there is no deposit provided, then 100% of the ledger channel balance is added to VC deposit. This function is to be called by the "A" party in a unidirectional scheme.
 Sends a proposed LC update for countersigning that updates the VCRootHash of the ledger channel state.
@@ -125,10 +147,13 @@ This proposed LC update (termed LC0 throughout documentation) serves as the open
 const myFriendsAddress = "0x627306090abaB3A6e1400e9345bC60c78a8BEf57"
 await connext.openChannel({ to: myFriendsAddress })
 ```
-<a name="Connext+joinChannel"></a>
+<br/>
+<br/>
+<br/>
 
-### connext.joinChannel(channelId)
-Joins channel by channelId with a deposit of 0 (unidirectional channels).
+<a id="Connext+joinChannel"></a>
+
+<h2>connext.joinChannel(channelId)</h2>Joins channel by channelId with a deposit of 0 (unidirectional channels).
 
 This function is to be called by the "B" party in a unidirectional scheme.
 Sends opening cert (VC0) to message queue, so it is accessible by Ingrid and Watchers.
@@ -144,10 +169,13 @@ Sends opening cert (VC0) to message queue, so it is accessible by Ingrid and Wat
 const channelId = 10 // accessed by getChannel method
 await connext.joinChannel(channelId)
 ```
-<a name="Connext+updateBalance"></a>
+<br/>
+<br/>
+<br/>
 
-### connext.updateBalance(params) ⇒ <code>String</code>
-Updates channel balance by provided ID.
+<a id="Connext+updateBalance"></a>
+
+<h2>connext.updateBalance(params) ⇒ <code>String</code></h2>Updates channel balance by provided ID.
 
 In the unidirectional scheme, this function is called by the "A" party only.
 Increments the nonce and generates a signed state update, which is then posted to the hub/watcher.
@@ -168,10 +196,13 @@ await connext.updateBalance({
   balance: web3.utils.toBN(web3.utils.toWei(0.5, 'ether'))
 })
 ```
-<a name="Connext+cosignBalanceUpdate"></a>
+<br/>
+<br/>
+<br/>
 
-### connext.cosignBalanceUpdate(params) ⇒ <code>String</code>
-Verifies signature on balance update and co-signs update.
+<a id="Connext+cosignBalanceUpdate"></a>
+
+<h2>connext.cosignBalanceUpdate(params) ⇒ <code>String</code></h2>Verifies signature on balance update and co-signs update.
 
 In the unidirectional scheme, this function is called by the "B" party only.
 Signature is posted to the hub/watcher.
@@ -186,10 +217,13 @@ Signature is posted to the hub/watcher.
 | params.balance | <code>BigNumber</code> | Channel balance in Wei (of "A" party). |
 | params.sig | <code>String</code> | Signature received from "A" party to be verified before co-signing. |
 
-<a name="Connext+fastCloseChannel"></a>
+<br/>
+<br/>
+<br/>
 
-### connext.fastCloseChannel(channelId)
-Closes specified channel using latest double signed update.
+<a id="Connext+fastCloseChannel"></a>
+
+<h2>connext.fastCloseChannel(channelId)</h2>Closes specified channel using latest double signed update.
 
 Generates a decomposed LC update containing the updated balances and VCRoot to Ingrid from latest
 double signed VC update.
@@ -204,10 +238,13 @@ double signed VC update.
 ```js
 await connext.fastCloseChannel(10)
 ```
-<a name="Connext+closeChannel"></a>
+<br/>
+<br/>
+<br/>
 
-### connext.closeChannel(params)
-Closes a channel in a dispute.
+<a id="Connext+closeChannel"></a>
+
+<h2>connext.closeChannel(params)</h2>Closes a channel in a dispute.
 
 Retrieves decomposed LC updates from Ingrid, and countersign updates if needed (i.e. if they are recieving funds).
 
@@ -228,10 +265,13 @@ await connext.closeChannel({
   balance: web3.utils.toBN(web3.utils.toWei(0.5, 'ether'))
 })
 ```
-<a name="Connext+closeChannels"></a>
+<br/>
+<br/>
+<br/>
 
-### connext.closeChannels(channels)
-Close many channels
+<a id="Connext+closeChannels"></a>
+
+<h2>connext.closeChannels(channels)</h2>Close many channels
 
 **Kind**: instance method of [<code>Connext</code>](#Connext)  
 

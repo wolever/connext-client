@@ -357,13 +357,15 @@
     
                                 <section class="normal markdown-section">
                                 
-                                <p><a name="Connext"></a></p>
-<h2 id="connext">Connext</h2>
-<p>Class representing an instance of a Connext client.</p>
+                                <p><br>
+<br>
+<br></p>
+<p><a id="Connext"></a></p>
+<p></p><h2 id="connext">Connext</h2>Class representing an instance of a Connext client.<p></p>
 <p><strong>Kind</strong>: global class  </p>
-<p><a name="new_Connext_new"></a></p>
-<h3 id="new-connextparams">new Connext(params)</h3>
-<p>Create an instance of the Connext client.</p>
+<p><br></p>
+<p><a id="new_Connext_new"></a></p>
+<p></p><h2 id="new-connextparams">new Connext(params)</h2>Create an instance of the Connext client.<p></p>
 <table>
 <thead>
 <tr>
@@ -405,10 +407,12 @@
 </tr>
 </tbody>
 </table>
-<p><a name="Connext+register"></a></p>
-<h3 id="connextregisterinitialdeposit-&#x21D2;-string">connext.register(initialDeposit) &#x21D2; <code>String</code></h3>
-<p>Opens a ledger channel with ingridAddress and bonds initialDeposit.
-Requests a challenge timer for the ledger channel from ingrid.</p>
+<p><br>
+<br>
+<br></p>
+<p><a id="Connext+register"></a></p>
+<p></p><h2 id="connextregisterinitialdeposit-&#x21D2;-string">connext.register(initialDeposit) &#x21D2; <code>String</code></h2>Opens a ledger channel with ingridAddress and bonds initialDeposit.
+Requests a challenge timer for the ledger channel from ingrid.<p></p>
 <p>Use web3 to call openLC function on ledgerChannel.
 Ingrid will open with 0 balance, and can call the deposit function to
 add deposits based on user needs.</p>
@@ -434,9 +438,11 @@ add deposits based on user needs.</p>
 <span class="hljs-keyword">const</span> deposit = web3.utils.toBN(<span class="hljs-number">10000</span>)
 <span class="hljs-keyword">await</span> connext.register(deposit)
 </code></pre>
-<p><a name="Connext+deposit"></a></p>
-<h3 id="connextdepositdepositinwei">connext.deposit(depositInWei)</h3>
-<p>Add a deposit to an existing ledger channel. Calls contract function &quot;deposit&quot;</p>
+<p><br>
+<br>
+<br></p>
+<p><a id="Connext+deposit"></a></p>
+<p></p><h2 id="connextdepositdepositinwei">connext.deposit(depositInWei)</h2>Add a deposit to an existing ledger channel. Calls contract function &quot;deposit&quot;<p></p>
 <p><strong>Kind</strong>: instance method of <a href="#Connext"><code>Connext</code></a>  </p>
 <table>
 <thead>
@@ -459,17 +465,21 @@ add deposits based on user needs.</p>
 <span class="hljs-keyword">const</span> deposit = web3.utils.toBN(<span class="hljs-number">10000</span>)
 <span class="hljs-keyword">await</span> connext.deposit(deposit)
 </code></pre>
-<p><a name="Connext+withdraw"></a></p>
-<h3 id="connextwithdraw-&#x21D2;-boolean--string">connext.withdraw() &#x21D2; <code>boolean</code> | <code>String</code></h3>
-<p>Withdraw bonded funds from ledger channel with ingrid. All virtual channels must be closed before a ledger channel can be closed.</p>
+<p><br>
+<br>
+<br></p>
+<p><a id="Connext+withdraw"></a></p>
+<p></p><h2 id="connextwithdraw-&#x21D2;-boolean--string">connext.withdraw() &#x21D2; <code>boolean</code> | <code>String</code></h2>Withdraw bonded funds from ledger channel with ingrid. All virtual channels must be closed before a ledger channel can be closed.<p></p>
 <p>Generates the state update from the latest ingrid signed state with fast-close flag. Ingrid should countersign if the state update matches what she has signed previously, and the channel will fast close by calling consensusCloseChannel on the Channel Manager contract.</p>
 <p>If the state update doesn&apos;t match what Ingrid previously signed, then updateLCState is called with the latest state and a challenge flag.</p>
 <p><strong>Kind</strong>: instance method of <a href="#Connext"><code>Connext</code></a><br><strong>Returns</strong>: <code>boolean</code> - Returns true if successfully withdrawn, false if challenge process commences.<code>String</code> - Flag indicating whether the channel was consensus-closed or if lc was challenge-closed.<br><strong>Example</strong>  </p>
 <pre><code class="lang-js"><span class="hljs-keyword">const</span> success = <span class="hljs-keyword">await</span> connext.withdraw()
 </code></pre>
-<p><a name="Connext+withdrawFinal"></a></p>
-<h3 id="connextwithdrawfinal">connext.withdrawFinal()</h3>
-<p>Withdraw bonded funds from ledger channel after a channel is challenge-closed after the challenge period expires by calling withdrawFinal using Web3.</p>
+<p><br>
+<br>
+<br></p>
+<p><a id="Connext+withdrawFinal"></a></p>
+<p></p><h2 id="connextwithdrawfinal">connext.withdrawFinal()</h2>Withdraw bonded funds from ledger channel after a channel is challenge-closed after the challenge period expires by calling withdrawFinal using Web3.<p></p>
 <p>Looks up LC by the account address of the client-side user.</p>
 <p><strong>Kind</strong>: instance method of <a href="#Connext"><code>Connext</code></a><br><strong>Example</strong>  </p>
 <pre><code class="lang-js"><span class="hljs-keyword">const</span> success = <span class="hljs-keyword">await</span> connext.withdraw()
@@ -478,16 +488,20 @@ add deposits based on user needs.</p>
   <span class="hljs-keyword">await</span> connext.withdrawFinal()
 }
 </code></pre>
-<p><a name="Connext+checkpoint"></a></p>
-<h3 id="connextcheckpoint">connext.checkpoint()</h3>
-<p>Sync signed state updates with chain.</p>
+<p><br>
+<br>
+<br></p>
+<p><a id="Connext+checkpoint"></a></p>
+<p></p><h2 id="connextcheckpoint">connext.checkpoint()</h2>Sync signed state updates with chain.<p></p>
 <p>Generates client signature on latest Ingrid-signed state update, and uses web3 to call updateLCState on the contract without challenge flag.</p>
 <p><strong>Kind</strong>: instance method of <a href="#Connext"><code>Connext</code></a><br><strong>Example</strong>  </p>
 <pre><code class="lang-js"><span class="hljs-keyword">await</span> connext.checkpoint()
 </code></pre>
-<p><a name="Connext+openChannel"></a></p>
-<h3 id="connextopenchannelparams">connext.openChannel(params)</h3>
-<p>Opens a virtual channel between to and caller with Ingrid as the hub. Both users must have a ledger channel open with ingrid.</p>
+<p><br>
+<br>
+<br></p>
+<p><a id="Connext+openChannel"></a></p>
+<p></p><h2 id="connextopenchannelparams">connext.openChannel(params)</h2>Opens a virtual channel between to and caller with Ingrid as the hub. Both users must have a ledger channel open with ingrid.<p></p>
 <p>If there is no deposit provided, then 100% of the ledger channel balance is added to VC deposit. This function is to be called by the &quot;A&quot; party in a unidirectional scheme.
 Sends a proposed LC update for countersigning that updates the VCRootHash of the ledger channel state.
 This proposed LC update (termed LC0 throughout documentation) serves as the opening certificate for the virtual channel.</p>
@@ -522,9 +536,11 @@ This proposed LC update (termed LC0 throughout documentation) serves as the open
 <pre><code class="lang-js"><span class="hljs-keyword">const</span> myFriendsAddress = <span class="hljs-string">&quot;0x627306090abaB3A6e1400e9345bC60c78a8BEf57&quot;</span>
 <span class="hljs-keyword">await</span> connext.openChannel({ to: myFriendsAddress })
 </code></pre>
-<p><a name="Connext+joinChannel"></a></p>
-<h3 id="connextjoinchannelchannelid">connext.joinChannel(channelId)</h3>
-<p>Joins channel by channelId with a deposit of 0 (unidirectional channels).</p>
+<p><br>
+<br>
+<br></p>
+<p><a id="Connext+joinChannel"></a></p>
+<p></p><h2 id="connextjoinchannelchannelid">connext.joinChannel(channelId)</h2>Joins channel by channelId with a deposit of 0 (unidirectional channels).<p></p>
 <p>This function is to be called by the &quot;B&quot; party in a unidirectional scheme.
 Sends opening cert (VC0) to message queue, so it is accessible by Ingrid and Watchers.</p>
 <p><strong>Kind</strong>: instance method of <a href="#Connext"><code>Connext</code></a>  </p>
@@ -548,9 +564,11 @@ Sends opening cert (VC0) to message queue, so it is accessible by Ingrid and Wat
 <pre><code class="lang-js"><span class="hljs-keyword">const</span> channelId = <span class="hljs-number">10</span> <span class="hljs-comment">// accessed by getChannel method</span>
 <span class="hljs-keyword">await</span> connext.joinChannel(channelId)
 </code></pre>
-<p><a name="Connext+updateBalance"></a></p>
-<h3 id="connextupdatebalanceparams-&#x21D2;-string">connext.updateBalance(params) &#x21D2; <code>String</code></h3>
-<p>Updates channel balance by provided ID.</p>
+<p><br>
+<br>
+<br></p>
+<p><a id="Connext+updateBalance"></a></p>
+<p></p><h2 id="connextupdatebalanceparams-&#x21D2;-string">connext.updateBalance(params) &#x21D2; <code>String</code></h2>Updates channel balance by provided ID.<p></p>
 <p>In the unidirectional scheme, this function is called by the &quot;A&quot; party only.
 Increments the nonce and generates a signed state update, which is then posted to the hub/watcher.</p>
 <p><strong>Kind</strong>: instance method of <a href="#Connext"><code>Connext</code></a><br><strong>Returns</strong>: <code>String</code> - Returns signature of balance update.  </p>
@@ -586,9 +604,11 @@ Increments the nonce and generates a signed state update, which is then posted t
   balance: web3.utils.toBN(web3.utils.toWei(<span class="hljs-number">0.5</span>, <span class="hljs-string">&apos;ether&apos;</span>))
 })
 </code></pre>
-<p><a name="Connext+cosignBalanceUpdate"></a></p>
-<h3 id="connextcosignbalanceupdateparams-&#x21D2;-string">connext.cosignBalanceUpdate(params) &#x21D2; <code>String</code></h3>
-<p>Verifies signature on balance update and co-signs update.</p>
+<p><br>
+<br>
+<br></p>
+<p><a id="Connext+cosignBalanceUpdate"></a></p>
+<p></p><h2 id="connextcosignbalanceupdateparams-&#x21D2;-string">connext.cosignBalanceUpdate(params) &#x21D2; <code>String</code></h2>Verifies signature on balance update and co-signs update.<p></p>
 <p>In the unidirectional scheme, this function is called by the &quot;B&quot; party only.
 Signature is posted to the hub/watcher.</p>
 <p><strong>Kind</strong>: instance method of <a href="#Connext"><code>Connext</code></a><br><strong>Returns</strong>: <code>String</code> - Returns signature of balance update.  </p>
@@ -623,9 +643,11 @@ Signature is posted to the hub/watcher.</p>
 </tr>
 </tbody>
 </table>
-<p><a name="Connext+fastCloseChannel"></a></p>
-<h3 id="connextfastclosechannelchannelid">connext.fastCloseChannel(channelId)</h3>
-<p>Closes specified channel using latest double signed update.</p>
+<p><br>
+<br>
+<br></p>
+<p><a id="Connext+fastCloseChannel"></a></p>
+<p></p><h2 id="connextfastclosechannelchannelid">connext.fastCloseChannel(channelId)</h2>Closes specified channel using latest double signed update.<p></p>
 <p>Generates a decomposed LC update containing the updated balances and VCRoot to Ingrid from latest
 double signed VC update.</p>
 <p><strong>Kind</strong>: instance method of <a href="#Connext"><code>Connext</code></a>  </p>
@@ -648,9 +670,11 @@ double signed VC update.</p>
 <p><strong>Example</strong>  </p>
 <pre><code class="lang-js"><span class="hljs-keyword">await</span> connext.fastCloseChannel(<span class="hljs-number">10</span>)
 </code></pre>
-<p><a name="Connext+closeChannel"></a></p>
-<h3 id="connextclosechannelparams">connext.closeChannel(params)</h3>
-<p>Closes a channel in a dispute.</p>
+<p><br>
+<br>
+<br></p>
+<p><a id="Connext+closeChannel"></a></p>
+<p></p><h2 id="connextclosechannelparams">connext.closeChannel(params)</h2>Closes a channel in a dispute.<p></p>
 <p>Retrieves decomposed LC updates from Ingrid, and countersign updates if needed (i.e. if they are recieving funds).</p>
 <p>Settle VC is called on chain for each vcID if Ingrid does not provide decomposed state updates, and closeVirtualChannel is called for each vcID.</p>
 <p><strong>Kind</strong>: instance method of <a href="#Connext"><code>Connext</code></a>  </p>
@@ -686,9 +710,11 @@ double signed VC update.</p>
   balance: web3.utils.toBN(web3.utils.toWei(<span class="hljs-number">0.5</span>, <span class="hljs-string">&apos;ether&apos;</span>))
 })
 </code></pre>
-<p><a name="Connext+closeChannels"></a></p>
-<h3 id="connextclosechannelschannels">connext.closeChannels(channels)</h3>
-<p>Close many channels</p>
+<p><br>
+<br>
+<br></p>
+<p><a id="Connext+closeChannels"></a></p>
+<p></p><h2 id="connextclosechannelschannels">connext.closeChannels(channels)</h2>Close many channels<p></p>
 <p><strong>Kind</strong>: instance method of <a href="#Connext"><code>Connext</code></a>  </p>
 <table>
 <thead>
@@ -772,7 +798,7 @@ double signed VC update.</p>
     <script>
         var gitbook = gitbook || [];
         gitbook.push(function() {
-            gitbook.page.hasChanged({"page":{"title":"Connext","level":"2.1","depth":1,"next":{"title":"constructor","level":"2.1.1","depth":2,"anchor":"#new_Connext_new","path":"api.md","ref":"api.md#new_Connext_new","articles":[]},"previous":{"title":"Getting Started","level":"1.2","depth":1,"path":"start.md","ref":"start.md","articles":[]},"dir":"ltr"},"config":{"plugins":["livereload"],"root":"./docs","styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"},"pluginsConfig":{"livereload":{},"highlight":{},"search":{},"lunr":{"maxIndexSize":1000000,"ignoreSpecialCharacters":false},"sharing":{"facebook":true,"twitter":true,"google":false,"weibo":false,"instapaper":false,"vk":false,"all":["facebook","google","twitter","weibo","instapaper"]},"fontsettings":{"theme":"white","family":"sans","size":2},"theme-default":{"styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"},"showLevel":false}},"theme":"default","pdf":{"pageNumbers":true,"fontSize":12,"fontFamily":"Arial","paperSize":"a4","chapterMark":"pagebreak","pageBreaksBefore":"/","margin":{"right":62,"left":62,"top":56,"bottom":56}},"structure":{"langs":"LANGS.md","readme":"intro.md","glossary":"GLOSSARY.md","summary":"toc.md"},"variables":{},"gitbook":"3.2.2"},"file":{"path":"api.md","mtime":"2018-06-12T01:09:04.000Z","type":"markdown"},"gitbook":{"version":"3.2.2","time":"2018-06-12T00:38:16.519Z"},"basePath":".","book":{"language":""}});
+            gitbook.page.hasChanged({"page":{"title":"Connext","level":"2.1","depth":1,"next":{"title":"constructor","level":"2.1.1","depth":2,"anchor":"#new_Connext_new","path":"api.md","ref":"api.md#new_Connext_new","articles":[]},"previous":{"title":"Getting Started","level":"1.2","depth":1,"path":"start.md","ref":"start.md","articles":[]},"dir":"ltr"},"config":{"plugins":["livereload"],"root":"./docs","styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"},"pluginsConfig":{"livereload":{},"highlight":{},"search":{},"lunr":{"maxIndexSize":1000000,"ignoreSpecialCharacters":false},"sharing":{"facebook":true,"twitter":true,"google":false,"weibo":false,"instapaper":false,"vk":false,"all":["facebook","google","twitter","weibo","instapaper"]},"fontsettings":{"theme":"white","family":"sans","size":2},"theme-default":{"styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"},"showLevel":false}},"theme":"default","pdf":{"pageNumbers":true,"fontSize":12,"fontFamily":"Arial","paperSize":"a4","chapterMark":"pagebreak","pageBreaksBefore":"/","margin":{"right":62,"left":62,"top":56,"bottom":56}},"structure":{"langs":"LANGS.md","readme":"intro.md","glossary":"GLOSSARY.md","summary":"toc.md"},"variables":{},"gitbook":"3.2.2"},"file":{"path":"api.md","mtime":"2018-06-12T01:12:20.000Z","type":"markdown"},"gitbook":{"version":"3.2.2","time":"2018-06-12T01:11:33.801Z"},"basePath":".","book":{"language":""}});
         });
     </script>
 </div>
