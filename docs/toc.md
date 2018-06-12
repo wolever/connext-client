@@ -8,7 +8,7 @@
     * [constructor](api.md#new_Connext_new)
     * [register](api.md#Connext+register)
     * [.deposit](api.md#connextdepositdepositinwei)
-    * [.withdraw](api.md#connextwithdraw-⇒-boolean--string)
+    * [withdraw](api.md#connext-withdraw-boolean-or-string)
     * [.withdrawFinal](api.md#connextwithdrawfinal)
     * [.checkpoint](api.md#connextcheckpoint)
     * [.openChannel](api.md#connextopenchannelparams)
