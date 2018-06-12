@@ -357,11 +357,22 @@
     
                                 <section class="normal markdown-section">
                                 
-                                <p><br>
-<br>
-<br></p>
-<p><a id="value"></a></p>
-<p></p><h2 id="value-&#x21D2;-string">value &#x21D2; <code>String</code></h2>Updates channel balance by provided ID.<p></p>
+                                <h2 id="members">Members</h2>
+<dl>
+<dt><a href="#value">value</a> &#x21D2; <code>String</code></dt>
+<dd><p>Updates channel balance by provided ID.</p>
+<p>In the unidirectional scheme, this function is called by the &quot;A&quot; party only.
+Increments the nonce and generates a signed state update, which is then posted to the hub/watcher.</p>
+</dd>
+<dt><a href="#value">value</a></dt>
+<dd><p>Closes specified channel using latest double signed update.</p>
+<p>Generates a decomposed LC update containing the updated balances and VCRoot to Ingrid from latest
+double signed VC update.</p>
+</dd>
+</dl>
+
+<p><a name="value"></a></p>
+<h2 id="value-&#x21D2;-stringupdates-channel-balance-by-provided-id">value &#x21D2; <code>String</code>Updates channel balance by provided ID.</h2>
 <p>In the unidirectional scheme, this function is called by the &quot;A&quot; party only.
 Increments the nonce and generates a signed state update, which is then posted to the hub/watcher.</p>
 <p><strong>Kind</strong>: global variable<br><strong>Returns</strong>: <code>String</code> - Returns signature of balance update.  </p>
@@ -397,11 +408,8 @@ Increments the nonce and generates a signed state update, which is then posted t
   balance: web3.utils.toBN(web3.utils.toWei(<span class="hljs-number">0.5</span>, <span class="hljs-string">&apos;ether&apos;</span>))
 })
 </code></pre>
-<p><br>
-<br>
-<br></p>
-<p><a id="value"></a></p>
-<p></p><h2 id="value">value</h2>Closes specified channel using latest double signed update.<p></p>
+<p><a name="value"></a></p>
+<h2 id="valuecloses-specified-channel-using-latest-double-signed-update">valueCloses specified channel using latest double signed update.</h2>
 <p>Generates a decomposed LC update containing the updated balances and VCRoot to Ingrid from latest
 double signed VC update.</p>
 <p><strong>Kind</strong>: global variable  </p>
@@ -467,7 +475,7 @@ double signed VC update.</p>
     <script>
         var gitbook = gitbook || [];
         gitbook.push(function() {
-            gitbook.page.hasChanged({"page":{"title":"Connext","level":"2.1","depth":1,"next":{"title":"constructor","level":"2.1.1","depth":2,"anchor":"#new_Connext_new","path":"api.md","ref":"api.md#new_Connext_new","articles":[]},"previous":{"title":"Getting Started","level":"1.2","depth":1,"path":"start.md","ref":"start.md","articles":[]},"dir":"ltr"},"config":{"plugins":["livereload"],"root":"./docs","styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"},"pluginsConfig":{"livereload":{},"highlight":{},"search":{},"lunr":{"maxIndexSize":1000000,"ignoreSpecialCharacters":false},"sharing":{"facebook":true,"twitter":true,"google":false,"weibo":false,"instapaper":false,"vk":false,"all":["facebook","google","twitter","weibo","instapaper"]},"fontsettings":{"theme":"white","family":"sans","size":2},"theme-default":{"styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"},"showLevel":false}},"theme":"default","pdf":{"pageNumbers":true,"fontSize":12,"fontFamily":"Arial","paperSize":"a4","chapterMark":"pagebreak","pageBreaksBefore":"/","margin":{"right":62,"left":62,"top":56,"bottom":56}},"structure":{"langs":"LANGS.md","readme":"intro.md","glossary":"GLOSSARY.md","summary":"toc.md"},"variables":{},"gitbook":"3.2.2"},"file":{"path":"api.md","mtime":"2018-06-12T00:16:16.000Z","type":"markdown"},"gitbook":{"version":"3.2.2","time":"2018-06-12T00:16:17.050Z"},"basePath":".","book":{"language":""}});
+            gitbook.page.hasChanged({"page":{"title":"Connext","level":"2.1","depth":1,"next":{"title":"constructor","level":"2.1.1","depth":2,"anchor":"#new_Connext_new","path":"api.md","ref":"api.md#new_Connext_new","articles":[]},"previous":{"title":"Getting Started","level":"1.2","depth":1,"path":"start.md","ref":"start.md","articles":[]},"dir":"ltr"},"config":{"plugins":["livereload"],"root":"./docs","styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"},"pluginsConfig":{"livereload":{},"highlight":{},"search":{},"lunr":{"maxIndexSize":1000000,"ignoreSpecialCharacters":false},"sharing":{"facebook":true,"twitter":true,"google":false,"weibo":false,"instapaper":false,"vk":false,"all":["facebook","google","twitter","weibo","instapaper"]},"fontsettings":{"theme":"white","family":"sans","size":2},"theme-default":{"styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"},"showLevel":false}},"theme":"default","pdf":{"pageNumbers":true,"fontSize":12,"fontFamily":"Arial","paperSize":"a4","chapterMark":"pagebreak","pageBreaksBefore":"/","margin":{"right":62,"left":62,"top":56,"bottom":56}},"structure":{"langs":"LANGS.md","readme":"intro.md","glossary":"GLOSSARY.md","summary":"toc.md"},"variables":{},"gitbook":"3.2.2"},"file":{"path":"api.md","mtime":"2018-06-12T00:18:38.000Z","type":"markdown"},"gitbook":{"version":"3.2.2","time":"2018-06-12T00:18:39.965Z"},"basePath":".","book":{"language":""}});
         });
     </script>
 </div>

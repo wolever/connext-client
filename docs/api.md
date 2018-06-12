@@ -1,10 +1,21 @@
-<br/>
-<br/>
-<br/>
+## Members
 
-<a id="value"></a>
+<dl>
+<dt><a href="#value">value</a> ⇒ <code>String</code></dt>
+<dd><p>Updates channel balance by provided ID.</p>
+<p>In the unidirectional scheme, this function is called by the &quot;A&quot; party only.
+Increments the nonce and generates a signed state update, which is then posted to the hub/watcher.</p>
+</dd>
+<dt><a href="#value">value</a></dt>
+<dd><p>Closes specified channel using latest double signed update.</p>
+<p>Generates a decomposed LC update containing the updated balances and VCRoot to Ingrid from latest
+double signed VC update.</p>
+</dd>
+</dl>
 
-<h2>value ⇒ <code>String</code></h2>Updates channel balance by provided ID.
+<a name="value"></a>
+
+## value ⇒ <code>String</code>Updates channel balance by provided ID.
 
 In the unidirectional scheme, this function is called by the "A" party only.
 Increments the nonce and generates a signed state update, which is then posted to the hub/watcher.
@@ -25,13 +36,9 @@ await connext.updateBalance({
   balance: web3.utils.toBN(web3.utils.toWei(0.5, 'ether'))
 })
 ```
-<br/>
-<br/>
-<br/>
+<a name="value"></a>
 
-<a id="value"></a>
-
-<h2>value</h2>Closes specified channel using latest double signed update.
+## valueCloses specified channel using latest double signed update.
 
 Generates a decomposed LC update containing the updated balances and VCRoot to Ingrid from latest
 double signed VC update.
