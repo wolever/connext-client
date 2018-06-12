@@ -5,13 +5,45 @@ const tokenAbi = require('human-standard-token-abi')
 const util = require('ethereumjs-util')
 const Web3 = require('web3')
 const validate = require('validate')
-const Utils = require('./helpers/utils')
+const Utils = require('../helpers/utils')
 
 validate.validators.isBN = value => {
   if (Web3.utils.isBN(value)) {
     return null
   } else {
     return 'Is not BN.'
+  }
+}
+
+validate.validators.isHexString = value => {
+  if (Web3.utils.isHex(value)) {
+    return null
+  } else {
+    return 'Is not hex string.'
+  }
+}
+
+validate.validators.isAddress = value => {
+  if (Web3.utils.isAddress(value)) {
+    return null
+  } else {
+    return 'Is not address.'
+  }
+}
+
+validate.validators.isBooleanInt = value => {
+  if (value == 0 || value == 1) {
+    return null
+  } else {
+    return 'Is not a boolean integer (0 or 1).'
+  }
+}
+
+validate.validators.isPositiveInt = value => {
+  if (value >= 0) {
+    return null
+  } else {
+    return 'Is not a positive integer.'
   }
 }
 
@@ -81,16 +113,10 @@ class Connext {
     // get challenge timer from ingrid
     const accounts = await this.web3.eth.getAccounts()
     const challenge = await this.getLedgerChannelChallengeTimer()
+    // generate additional initial lc params
+
     // should call openLC
     // but contract function does not exist yet, talk to Nathan
-    // const sigA = await this.createLCStateUpdate({
-    //   nonce: 0,
-    //   openVCs: 0,
-    //   vcRootHash: '0x0', // should i actually be creating a starting hash
-    //   agentA: accounts[0],
-    //   balanceA: initialDeposit,
-    //   balanceB: '0' // should ingrid join with 0 deposit
-    // })
   }
 
   /**
@@ -268,48 +294,81 @@ class Connext {
     openVCs,
     vcRootHash,
     agentA,
-    agentB = this.ingridAddress, // defaults to ingrid
+    agentB,
     balanceA,
     balanceB
   }) {
     // validate params
-    check.assert.match(
-      isCloseFlag,
-      regexExpessions.booleanInt,
-      'No isCloseFlag provided.'
-    )
-    check.assert.integer(nonce, 'No nonce provided.')
-    check.assert.integer(openVCs, 'No number of open VCs provided.')
-    check.assert.string(vcRootHash, 'No vcRootHash provided.')
-    check.assert.match(
-      agentA,
-      regexExpessions.address,
-      'No agentA address provided.'
-    )
-    check.assert.match(
-      agentB,
-      regexExpessions.address,
-      'No agentB address provided.'
-    )
+    validate.single(isCloseFlag, { presence: true, isBoooleanInt: true })
+    validate.single(nonce, { presence: true, isPositiveInt: true })
+    validate.single(openVCs, { presence: true, isPositiveInt: true })
+    validate.single(vcRootHash, { presence: true, isHexString: true })
+    validate.single(agentA, { presence: true, isAddress: true })
+    validate.single(agentB, { presence: true, isAddress: true })
     validate.single(balanceA, { presence: true, isBN: true })
     validate.single(balanceB, { presence: true, isBN: true })
     // generate state update to sign
-    const state = []
-    state.push(isCloseFlag)
-    state.push(nonce)
-    state.push(openVCs)
-    state.push(vcRootHash)
-    state.push(agentA)
-    state.push(agentB)
-    state.push(balanceA)
-    state.push(balanceB)
-
-    const hash = web3.sha3(Utils.marshallState(state), { encoding: 'hex' })
-
+    const hash = Web3.utils.soliditySha3(
+      { type: 'uint256', value: nonce },
+      { type: 'uint256', value: openVCs },
+      { type: 'string', value: vcRootHash },
+      { type: 'address', value: agentA },
+      { type: 'address', value: agentB },
+      { type: 'uint256', value: balanceA },
+      { type: 'uint256', value: balanceB }
+    )
     return hash
   }
 
-  static recoverSignerFromLCStateUpdate () {}
+  static recoverSignerFromLCStateUpdate ({
+    sig,
+    isCloseFlag,
+    nonce,
+    openVCs,
+    vcRootHash,
+    agentA,
+    agentB,
+    balanceA,
+    balanceB
+  }) {
+    // validate params
+    validate.single(sig, { presence: true, isHexString: true })
+    validate.single(isCloseFlag, { presence: true, isBoooleanInt: true })
+    validate.single(nonce, { presence: true, isPositiveInt: true })
+    validate.single(openVCs, { presence: true, isPositiveInt: true })
+    validate.single(vcRootHash, { presence: true, isHexString: true })
+    validate.single(agentA, { presence: true, isAddress: true })
+    validate.single(agentB, { presence: true, isAddress: true })
+    validate.single(balanceA, { presence: true, isBN: true })
+    validate.single(balanceB, { presence: true, isBN: true })
+    // generate fingerprint
+    let fingerprint = Connext.createLCStateUpdateFingerprint({
+      isCloseFlag,
+      nonce,
+      openVCs,
+      vcRootHash,
+      agentA,
+      agentB,
+      balanceA,
+      balanceB
+    })
+    fingerprint = util.toBuffer(fingerprint)
+
+    const prefix = Buffer.from('\x19Ethereum Signed Message:\n')
+    const prefixedMsg = util.sha3(
+      Buffer.concat([
+        prefix,
+        Buffer.from(String(fingerprint.length)),
+        fingerprint
+      ])
+    )
+    const res = util.fromRpcSig(sig)
+    const pubKey = util.ecrecover(prefixedMsg, res.v, res.r, res.s)
+    const addrBuf = util.pubToAddress(pubKey)
+    const addr = util.bufferToHex(addrBuf)
+
+    return addr
+  }
 
   async createLCStateUpdate ({
     isCloseFlag = 0, // default isnt close LC
@@ -323,24 +382,10 @@ class Connext {
     unlockedAccountPresent = false // true if hub or ingrid
   }) {
     // validate params
-    check.assert.match(
-      isCloseFlag,
-      regexExpessions.booleanInt,
-      'No isCloseFlag provided.'
-    )
-    check.assert.integer(nonce, 'No nonce provided.')
-    check.assert.integer(openVCs, 'No number of open VCs provided.')
-    check.assert.string(vcRootHash, 'No vcRootHash provided.')
-    check.assert.match(
-      agentA,
-      regexExpessions.address,
-      'No agentA address provided.'
-    )
-    check.assert.match(
-      agentB,
-      regexExpessions.address,
-      'No agentB address provided.'
-    )
+    validate.single(nonce, { presence: true, isPositiveInt: true })
+    validate.single(openVCs, { presence: true, isPositiveInt: true })
+    validate.single(vcRootHash, { presence: true, isHexString: true })
+    validate.single(agentA, { presence: true, isAddress: true })
     validate.single(balanceA, { presence: true, isBN: true })
     validate.single(balanceB, { presence: true, isBN: true })
 
@@ -350,7 +395,7 @@ class Connext {
     // generate sig
     const accounts = await this.web3.getAccounts()
     // personal sign?
-    const hash = this.createLCStateUpdateFingerprint({
+    const hash = Connext.createLCStateUpdateFingerprint({
       isCloseFlag,
       nonce,
       openVCs,
@@ -360,15 +405,117 @@ class Connext {
       balanceA,
       balanceB
     })
-    const sig = await this.web3.eth.sign(hash, accounts[0])
+    let sig
+    if (unlockedAccountPresent) {
+      sig = await this.web3.eth.sign(hash, accounts[0])
+    } else {
+      sig = await this.web3.eth.personal.sign(hash, accounts[0])
+    }
     return sig
   }
 
-  static createVCStateUpdateFingerprint () {}
+  static createVCStateUpdateFingerprint ({
+    nonce,
+    agentA,
+    agentB,
+    agentI,
+    balanceA,
+    balanceB
+  }) {
+    // validate
+    validate.single(nonce, { presence: true, isPositiveInt: true })
+    validate.single(agentA, { presence: true, isAddress: true })
+    validate.single(agentB, { presence: true, isAddress: true })
+    validate.single(agentI, { presence: true, isAddress: true })
+    validate.single(balanceA, { presence: true, isBN: true })
+    validate.single(balanceB, { presence: true, isBN: true })
+    // generate state update to sign
+    const hash = Web3.utils.soliditySha3(
+      { type: 'uint256', value: nonce },
+      { type: 'address', value: agentA },
+      { type: 'address', value: agentB },
+      { type: 'address', value: agentI },
+      { type: 'uint256', value: balanceA },
+      { type: 'uint256', value: balanceB }
+    )
+    return hash
+  }
 
-  static recoverSignerFromVCStateUpdate () {}
+  static recoverSignerFromVCStateUpdate ({
+    sig,
+    nonce,
+    agentA,
+    agentB,
+    agentI,
+    balanceA,
+    balanceB
+  }) {
+    // validate
+    validate.single(nonce, { presence: true, isPositiveInt: true })
+    validate.single(agentA, { presence: true, isAddress: true })
+    validate.single(agentB, { presence: true, isAddress: true })
+    validate.single(agentI, { presence: true, isAddress: true })
+    validate.single(balanceA, { presence: true, isBN: true })
+    validate.single(balanceB, { presence: true, isBN: true })
+    // generate fingerprint
+    let fingerprint = Connext.createVCStateUpdateFingerprint({
+      nonce,
+      agentA,
+      agentB,
+      agentI,
+      balanceA,
+      balanceB
+    })
+    fingerprint = util.toBuffer(fingerprint)
+    const prefix = Buffer.from('\x19Ethereum Signed Message:\n')
+    const prefixedMsg = util.sha3(
+      Buffer.concat([
+        prefix,
+        Buffer.from(String(fingerprint.length)),
+        fingerprint
+      ])
+    )
+    const res = util.fromRpcSig(sig)
+    const pubKey = util.ecrecover(prefixedMsg, res.v, res.r, res.s)
+    const addrBuf = util.pubToAddress(pubKey)
+    const addr = util.bufferToHex(addrBuf)
 
-  async createVCStateUpdate () {}
+    return addr
+  }
+
+  async createVCStateUpdate ({
+    nonce,
+    agentA,
+    agentB,
+    agentI = this.ingridAddress,
+    balanceA,
+    balanceB,
+    unlockedAccountPresent = false // if true, use sign over personal.sign
+  }) {
+    // validate
+    validate.single(nonce, { presence: true, isPositiveInt: true })
+    validate.single(agentA, { presence: true, isAddress: true })
+    validate.single(agentB, { presence: true, isAddress: true })
+    validate.single(balanceA, { presence: true, isBN: true })
+    validate.single(balanceB, { presence: true, isBN: true })
+    // generate and sign hash
+    const hash = Connext.createVCStateUpdateFingerprint({
+      nonce,
+      agentA,
+      agentB,
+      agentI,
+      balanceA,
+      balanceB
+    })
+    const accounts = await this.web3.getAccounts()
+    let sig
+    if (unlockedAccountPresent) {
+      sig = await this.web3.eth.sign(hash, accounts[0])
+    } else {
+      sig = await this.web3.eth.personal.sign(hash, accounts[0])
+    }
+    return sig
+  }
 
   // HELPER FUNCTIONS
 
