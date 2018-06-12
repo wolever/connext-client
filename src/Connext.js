@@ -144,9 +144,20 @@ class Connext {
    * @param {BigNumber} depositInWei - Value of the deposit.
    */
   async deposit (depositInWei) {
-    validate.single(initialDeposit, { presence: true, isBN: true })
+    validate.single(depositInWei, { presence: true, isBN: true })
     // find ledger channel by mine and ingrids address
+    const lcId = this.getMyLcId()
     // call LC method
+    const accounts = await this.web3.eth.getAccounts()
+    const result = await this.channelManagerInstance.deposit(
+      lcId, // PARAM NOT IN CONTRACT YET, SHOULD BE
+      accounts[0],
+      {
+        from: accounts[0],
+        value: depositInWei
+      }
+    )
+    return result
   }
 
   /**
@@ -538,6 +549,15 @@ class Connext {
 
   async getMyLcId () {
     // get my LC with ingrid
+    const accounts = await this.web3.eth.getAccounts()
+    const response = await axios.get(
+      `${this.ingridUrl}/ledgerchannel?a=${accounts[0]}`
+    )
+    if (response.data.data.ledgerChannel) {
+      return response.data.data.ledgerChannel.id
+    } else {
+      return null
+    }
   }
 
   async getOtherLcId () {
