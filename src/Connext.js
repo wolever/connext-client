@@ -130,7 +130,7 @@ class Connext {
     )
     console.log(result)
     // ping ingrid
-    const response = this.requestJoinChannel({ sig, balanceA: initialDeposit })
+    const response = this.requestJoinLc({ sig, balanceA: initialDeposit })
     return response
   }
 
@@ -146,7 +146,7 @@ class Connext {
   async deposit (depositInWei) {
     validate.single(depositInWei, { presence: true, isBN: true })
     // find ledger channel by mine and ingrids address
-    const lcId = this.getMyLcId()
+    const lcId = this.getLcId()
     // call LC method
     const accounts = await this.web3.eth.getAccounts()
     const result = await this.channelManagerInstance.deposit(
@@ -161,9 +161,12 @@ class Connext {
   }
 
   /**
-   * Withdraw bonded funds from ledger channel with ingrid. All virtual channels must be closed before a ledger channel can be closed.
+   * Withdraw bonded funds from ledger channel with ingrid.
+   * All virtual channels must be closed before a ledger channel can be closed.
    *
-   * Generates the state update from the latest ingrid signed state with fast-close flag. Ingrid should countersign if the state update matches what she has signed previously, and the channel will fast close by calling consensusCloseChannel on the Channel Manager contract.
+   * Generates the state update from the latest ingrid signed state with fast-close flag.
+   * Ingrid should countersign if the state update matches what she has signed previously,
+   * and the channel will fast close by calling consensusCloseChannel on the Channel Manager contract.
    *
    * If the state update doesn't match what Ingrid previously signed, then updateLCState is called with the latest state and a challenge flag.
    *
@@ -203,7 +206,7 @@ class Connext {
    *
    * If there is no deposit provided, then 100% of the ledger channel balance is added to VC deposit. This function is to be called by the "A" party in a unidirectional scheme.
    * Sends a proposed LC update for countersigning that updates the VCRootHash of the ledger channel state.
-   * This proposed LC update (termed LC0 throughout documentation) serves as the opening certificate for the virtual channel.
+   * This proposed LC update (termed VC0 throughout documentation) serves as the opening certificate for the virtual channel.
    *
    * @example
    * const myFriendsAddress = "0x627306090abaB3A6e1400e9345bC60c78a8BEf57"
@@ -212,7 +215,35 @@ class Connext {
    * @param {String} params.to Wallet address to wallet for agentB in virtual channel
    * @param {BigNumber} params.deposit User deposit for VC, in wei. Optional.
    */
-  async openChannel ({ to, deposit = null }) {}
+  async openChannel ({ to, deposit = null }) {
+    validate.single(to, { presence: true, isAddress: true })
+    if (deposit) {
+      validate.single(deposit, { presence: true, isBN: true })
+    }
+    const lcIdA = await this.getLcId()
+    const lcIdB = await this.getLcId(to)
+    // validate the subchannels exist
+    if (lcIdB === null || lcIdA === null) {
+      throw new Error('Missing one or more required subchannels for VC.')
+    }
+    // get ledger channel A
+    const lcA = await this.getLc({ lcId: lcIdA })
+    // generate initial vcstate
+    const vc0 = await this.createVCStateUpdate({
+      nonce: 0,
+      agentA: lcA.agentA,
+      agentB: to,
+      balanceA: deposit || lcA.balanceA,
+      balanceB: 0
+    })
+    // ping ingrid
+    const result = await this.openVc({
+      sig: vc0,
+      balanceA: deposit || lcA.balanceA,
+      to
+    })
+    return result
+  }
 
   /**
    * Joins channel by channelId with a deposit of 0 (unidirectional channels).
@@ -221,12 +252,26 @@ class Connext {
    * Sends opening cert (VC0) to message queue, so it is accessible by Ingrid and Watchers.
    *
    * @example
-   * const channelId = 10 // accessed by getChannel method
+   * const channelId = 10 // accessed by getChannelId method
    * await connext.joinChannel(channelId)
    * @param {Number} channelId - ID of the virtual channel.
    */
   async joinChannel (channelId) {
     // join virtual channel
+    validate.single(channelId, { presence: true, isPositiveInt: true })
+    // get virtual channel
+    const accounts = await this.web3.eth.getAccounts()
+    const vc = await this.getChannel({ channelId })
+    const vc0 = await this.createVCStateUpdate({
+      nonce: 0,
+      agentA: vc.agentA, // depending on ingrid for this value
+      agentB: accounts[0],
+      balanceA: vc.balanceA, // depending on ingrid for this value
+      balanceB: 0
+    })
+    // ping ingrid with vc0 (hub decomposes to lc)
+    const result = await this.joinVc({ vc0, channelId })
+    return result.data
   }
 
   /**
@@ -547,17 +592,31 @@ class Connext {
 
   async getLatestLedgerStateUpdate ({ ledgerChannelId, sig }) {}
 
-  async getMyLcId () {
+  async getLcId (agentA = null) {
+    if (agentA) {
+      validate.single(agentA, { presence: true })
+    } else {
+      const accounts = await this.web3.eth.getAccounts()
+      agentA = accounts[0]
+    }
     // get my LC with ingrid
-    const accounts = await this.web3.eth.getAccounts()
     const response = await axios.get(
-      `${this.ingridUrl}/ledgerchannel?a=${accounts[0]}`
+      `${this.ingridUrl}/ledgerchannel?a=${agentA}`
     )
     if (response.data.data.ledgerChannel) {
       return response.data.data.ledgerChannel.id
     } else {
       return null
     }
+  }
+
+  async getChannelId () {}
+
+  async getChannel ({ channelId }) {
+    const response = await axios.get(
+      `${this.ingridUrl}/virtualchannel/${channelId}`
+    )
+    return response.data
   }
 
   async getOtherLcId () {
@@ -567,17 +626,41 @@ class Connext {
   async getLc ({ lcId }) {}
 
   async getLedgerChannelChallengeTimer () {
-    const response = await axios.post(`${this.ingridUrl}/ledgerchannel/timer`)
+    const response = await axios.get(`${this.ingridUrl}/ledgerchannel/timer`)
     return response.data
   }
 
-  async requestJoinChannel ({ sig, balanceA }) {
+  async requestJoinLc ({ sig, balanceA }) {
     const accounts = await this.web3.eth.getAccounts()
     const response = await axios.post(
       `${this.ingridUrl}/ledgerchannel/join?a=${accounts[0]}`,
       {
         sig,
         balanceA
+      }
+    )
+    return response.data
+  }
+
+  async openVc ({ sig, balanceA, to }) {
+    const accounts = await this.web3.eth.getAccounts()
+    const response = await axios.post(
+      `${this.ingridUrl}/virtualchannel/open?a=${accounts[0]}`,
+      {
+        sig,
+        balanceA,
+        to
+      }
+    )
+  }
+
+  async joinVc ({ sig, channelId }) {
+    const accounts = await this.web3.eth.getAccounts()
+    const response = await axios.post(
+      `${this.ingridUrl}/virtualchannel/open?a=${accounts[0]}`,
+      {
+        sig,
+        channelId
       }
     )
     return response.data
