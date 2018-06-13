@@ -498,7 +498,13 @@ class Connext {
    * await connext.fastCloseChannel(10)
    * @param {Number} channelId - virtual channel ID
    */
-  async fastCloseChannel (channelId) {}
+  async fastCloseChannel (channelId) {
+    validate.single(channelId, { presence: true, isPositiveInt: true })
+    const response = await axios.post(
+      `${this.ingridUrl}/virtualchannel/${channelId}/fastclose`
+    )
+    return response.data
+  }
 
   /**
    * Closes a channel in a dispute.
@@ -516,7 +522,21 @@ class Connext {
    * @param {Number} params.channelId Virtual channel ID to close.
    * @param {BigNumber} params.balance Virtual channel balance.
    */
-  closeChannel ({ channelId, balance }) {}
+  async closeChannel ({ channelId, balance }) {
+    validate.single(channelId, { presence: true, isPositiveInt: true })
+    validate.single(balance, { presence: true, isBN: true })
+    // get decomposed lc updates from ingrid
+    const accounts = await this.web3.eth.getAccounts()
+    const vc = await this.getChannel({ channelId })
+    const lcUpdate = await this.getDecomposedLcUpdates({
+      channelId,
+      lcAgentA: accounts[0]
+    })
+    // countersign if needed
+    if (accounts[0] === vc.agentB) {
+      // recieving money in unidrectional
+    }
+  }
 
   /**
    * Close many channels
@@ -537,7 +557,18 @@ class Connext {
    * @param {Number} channels.$.channelId Channel ID to close
    * @param {BigNumber} channels.$.balance Channel balance.
    */
-  closeChannels (channels) {}
+  async closeChannels (channels) {
+    // should this try to fast close any of the channels?
+    // or just immediately force close in dispute many channels
+    channels.forEach(async channel => {
+      // async ({ channelId, balance }) maybe?
+      console.log('Closing channel:', channel)
+      this.closeChannel({
+        channelId: channel.channelId,
+        balance: channel.balance
+      })
+    })
+  }
 
   // SIGNATURE FUNCTIONS
   static createLCStateUpdateFingerprint ({
@@ -770,9 +801,7 @@ class Connext {
   }
 
   static generateVcRootHash ({ vc0, initialRootHash }, removeVc = false) {
-    validate.single(vc0, { presence: true, isHexString: true })
-    validate.single(initialRootHash, { presence: true, isHexString: true })
-    let merkle, vcRootHash
+    let vcRootHash
     if (removeVc) {
       // remove vc from initialRootHash
 
@@ -782,16 +811,39 @@ class Connext {
 
       vcRootHash = '0x0'
     } else {
-      // add vc to root
+      validate.single(vc0, { presence: true, isHexString: true })
+      validate.single(initialRootHash, { presence: true, isHexString: true })
       const hash = this.web3.soliditySha3({ type: 'string', value: vc0 })
       const vcBuf = Utils.hexToBuffer(hash)
       initialRootHash = Utils.hexToBuffer(initialRootHash)
       let elems = []
       elems.push(vcBuf)
       elems.push(initialRootHash)
-      merkle = new MerkleTree(elems)
+      const merkle = new MerkleTree(elems)
       vcRootHash = Utils.bufferToHex(merkle.getRoot())
     }
+    // validate.single(vc0, { presence: true, isHexString: true })
+    // validate.single(initialRootHash, { presence: true, isHexString: true })
+    // let merkle, vcRootHash
+    // if (removeVc) {
+    //   // remove vc from initialRootHash
+
+    //   // TO DO: refactor to remove specific vc
+    //   // now only resets to 0x0 so it removes all VCs
+    //   // must sort out rebalancing of tree and leaf removal protocol
+
+    //   vcRootHash = '0x0'
+    // } else {
+    //   // add vc to root
+    //   const hash = this.web3.soliditySha3({ type: 'string', value: vc0 })
+    //   const vcBuf = Utils.hexToBuffer(hash)
+    //   initialRootHash = Utils.hexToBuffer(initialRootHash)
+    //   let elems = []
+    //   elems.push(vcBuf)
+    //   elems.push(initialRootHash)
+    //   merkle = new MerkleTree(elems)
+    //   vcRootHash = Utils.bufferToHex(merkle.getRoot())
+    // }
 
     // const vcRootHash = Utils.bufferToHex(merkle.getRoot())
     return vcRootHash
@@ -813,6 +865,7 @@ class Connext {
     //  *  balanceB
     //  * }
     //  */
+    // lcState == latest ingrid signed state
     const response = await axios.get(
       `${this.ingridUrl}/ledgerchannel/${ledgerChannelId}/lateststate`
     )
@@ -908,7 +961,7 @@ class Connext {
 
   async vcStateUpdate ({ channelId, sig, balance }) {
     const response = await axios.post(
-      `${this.ingridUrl}/ledgerchannel/${channelId}/update`,
+      `${this.ingridUrl}/virtualchannel/${channelId}/update`,
       {
         sig,
         balance
@@ -919,10 +972,27 @@ class Connext {
 
   async cosignVcStateUpdate ({ channelId, sig, balance }) {
     const response = await axios.post(
-      `${this.ingridUrl}/ledgerchannel/${channelId}/cosign`,
+      `${this.ingridUrl}/virtualchannel/${channelId}/cosign`,
       {
         sig,
         balance
+      }
+    )
+    return response.data
+  }
+
+  async getLatestVirtualDoubleSignedStateUpdate ({ channelId }) {
+    const response = await axios.get(
+      `${this.ingridUrl}/virtualchannel/${channelId}/lateststate/doublesigned`
+    )
+    return response.data
+  }
+
+  async getDecomposedLcUpdates ({ channelId, lcAgentA }) {
+    const response = await axios.post(
+      `${this.ingridUrl}/virtualchannel/${channelId}/decompose`,
+      {
+        lcAgentA
       }
     )
     return response.data
