@@ -438,7 +438,7 @@ class Connext {
       balanceB: vc.balanceB + (vc.balanceA - balance) // type issues?
     })
     // post signed update to watcher
-    const response = await this.postVcStateUpdate({ channelId, sig, balance })
+    const response = await this.vcStateUpdate({ channelId, sig, balance })
     return response
   }
 
@@ -454,7 +454,38 @@ class Connext {
    * @returns {String} Returns signature of balance update.
    */
   async cosignBalanceUpdate ({ channelId, balance, sig }) {
+    // validate inputs
+    validate.single(channelId, { presence: true, isPositiveInt: true })
+    validate.single(balance, { presence: true, isBN: true })
+    validate.single(sig, { presence: true, isHexString: true })
     // check sig
+    const vc = await this.getChannel(channelId)
+    const signer = Connext.recoverSignerFromVCStateUpdate({
+      sig,
+      nonce: vc.nonce, // will this be stored in vc after updateState?
+      agentA: vc.agentA,
+      agentB: vc.agentB,
+      balanceA: balance,
+      balanceB: vc.balanceB // will this be stored in vc after updateState?
+    })
+    if (signer !== vc.agentA) {
+      throw new Error('AgentA did not sign this state update.')
+    }
+    // generate sigB
+    const sigB = await this.createLCStateUpdate({
+      nonce: vc.nonce, // will this be stored in vc after updateState?
+      agentA: vc.agentA,
+      agentB: vc.agentB,
+      balanceA: balance,
+      balanceB: vc.balanceB // will this be stored in vc after updateState?
+    })
+    // post sig to hub
+    const response = await this.cosignVcStateUpdate({
+      channelId,
+      sig: sigB,
+      balance
+    })
+    return response
   }
 
   /**
@@ -807,7 +838,6 @@ class Connext {
   }
 
   async getChannelId () {}
-
   async getChannel ({ channelId }) {
     const response = await axios.get(
       `${this.ingridUrl}/virtualchannel/${channelId}`
@@ -876,11 +906,22 @@ class Connext {
     return response.data
   }
 
-  async postVcStateUpdate ({ channelId, sig, balance }) {
+  async vcStateUpdate ({ channelId, sig, balance }) {
     const response = await axios.post(
       `${this.ingridUrl}/ledgerchannel/${channelId}/update`,
       {
-        sig: sig,
+        sig,
+        balance
+      }
+    )
+    return response.data
+  }
+
+  async cosignVcStateUpdate ({ channelId, sig, balance }) {
+    const response = await axios.post(
+      `${this.ingridUrl}/ledgerchannel/${channelId}/cosign`,
+      {
+        sig,
         balance
       }
     )
