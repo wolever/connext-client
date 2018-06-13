@@ -175,7 +175,86 @@ class Connext {
    * @returns {boolean} Returns true if successfully withdrawn, false if challenge process commences.
    * @returns {String} Flag indicating whether the channel was consensus-closed or if lc was challenge-closed.
    */
-  async withdraw () {}
+  async withdraw () {
+    const lcId = await this.getLcId()
+    const lcState = await this.getLatestLedgerStateUpdate({
+      ledgerChannelId: lcId
+    })
+    /**
+     * lcState = {
+     *  sigB,
+     *  sigA,
+     *  nonce,
+     *  openVCs,
+     *  vcRootHash,
+     *  agentA,
+     *  agentB,
+     *  balanceA,
+     *  balanceB
+     * }
+     */
+    // check ingrid signed
+    // TO DO: probably should check with values that don't come from
+    // the same
+    const signer = Connext.recoverSignerFromLCStateUpdate({
+      sig: lcState.sigB,
+      isCloseFlag: 0,
+      nonce: lcState.nonce,
+      openVCs: lcState.openVCs,
+      vcRootHash: lcState.vcRootHash,
+      agentA: lcState.agentA,
+      agentB: lcState.agentB,
+      balanceA: lcState.balanceA,
+      balanceB: lcState.balanceB
+    })
+    if (signer !== this.ingridAddress) {
+      throw new Error('Hub did not sign this state update.')
+    }
+    // generate same update with fast close flag and post
+    const sigParams = {
+      isCloseFlag: 1,
+      nonce: lcState.nonce,
+      openVCs: lcState.openVCs,
+      vcRootHash: lcState.vcRootHash,
+      agentA: lcState.agentA,
+      agentB: lcState.agentB,
+      balanceA: lcState.balanceA,
+      balanceB: lcState.balanceB
+    }
+    const sig = await this.createLCStateUpdate(sigParams)
+
+    const fastCloseResponse = await this.fastCloseLc({ sig, lcId })
+    const accounts = await this.web3.eth.getAccounts()
+    let response
+    if (fastCloseResponse) {
+      // call consensus close channel
+      response = await this.channelManagerInstance.consensusCloseChannel(
+        1,
+        lcState.nonce,
+        lcState.balanceA,
+        lcState.balanceB,
+        lcState.sigA,
+        lcState.sigB,
+        {
+          from: accounts[0]
+        }
+      )
+    } else {
+      // call updateLCState
+      response = await this.channelManagerInstance.updateLcState(
+        0,
+        lcState.nonce,
+        lcState.balanceA,
+        lcState.balanceB,
+        lcState.sigA,
+        lcState.sigB,
+        {
+          from: accounts[0]
+        }
+      )
+    }
+    return response
+  }
 
   /**
    * Withdraw bonded funds from ledger channel after a channel is challenge-closed after the challenge period expires by calling withdrawFinal using Web3.
@@ -611,9 +690,11 @@ class Connext {
     let merkle, vcRootHash
     if (removeVc) {
       // remove vc from initialRootHash
+
       // TO DO: refactor to remove specific vc
       // now only resets to 0x0 so it removes all VCs
       // must sort out rebalancing of tree and leaf removal protocol
+
       vcRootHash = '0x0'
     } else {
       // add vc to root
@@ -633,7 +714,25 @@ class Connext {
 
   // HELPER FUNCTIONS
 
-  async getLatestLedgerStateUpdate ({ ledgerChannelId, sig }) {}
+  async getLatestLedgerStateUpdate ({ ledgerChannelId }) {
+    // should return Object lcState where:
+    //  * lcState = {
+    //  *  sigB,
+    //  *  sigA,
+    //  *  nonce,
+    //  *  openVCs,
+    //  *  vcRootHash,
+    //  *  agentA,
+    //  *  agentB,
+    //  *  balanceA,
+    //  *  balanceB
+    //  * }
+    //  */
+    const response = await axios.get(
+      `${this.ingridUrl}/ledgerchannel/${ledgerChannelId}/lateststate`
+    )
+    return response.data
+  }
 
   async getLcId (agentA = null) {
     if (agentA) {
@@ -708,6 +807,16 @@ class Connext {
       {
         sig,
         vcRootHash
+      }
+    )
+    return response.data
+  }
+
+  async fastCloseLc ({ sig, lcId }) {
+    const response = await axios.post(
+      `${this.ingridUrl}/ledgerchannel/${id}/fastclose`,
+      {
+        sig
       }
     )
     return response.data
