@@ -164,7 +164,7 @@ class Connext {
   async deposit (depositInWei) {
     validate.single(depositInWei, { presence: true, isBN: true })
     // find ledger channel by mine and ingrids address
-    const lcId = this.getLcId()
+    const lcId = this.getLcId({})
     // call LC method
     const accounts = await this.web3.eth.getAccounts()
     const result = await this.channelManagerInstance.deposit(
@@ -194,7 +194,7 @@ class Connext {
    * @returns {String} Flag indicating whether the channel was consensus-closed or if lc was challenge-closed.
    */
   async withdraw () {
-    const lcId = await this.getLcId()
+    const lcId = await this.getLcId({})
     const lcState = await this.getLatestLedgerStateUpdate({
       ledgerChannelId: lcId
     })
@@ -298,7 +298,7 @@ class Connext {
    */
   async checkpoint () {
     // get latest ingrid signed state update
-    const lcId = await this.getLcId()
+    const lcId = await this.getLcId({})
     const lcState = await this.getLatestLedgerStateUpdate({
       ledgerChannelId: lcId
     })
@@ -356,8 +356,8 @@ class Connext {
     if (deposit) {
       validate.single(deposit, { presence: true, isBN: true })
     }
-    const lcIdA = await this.getLcId()
-    const lcIdB = await this.getLcId(to)
+    const lcIdA = await this.getLcId({})
+    const lcIdB = await this.getLcId({ agentA: to })
     // validate the subchannels exist
     if (lcIdB === null || lcIdA === null) {
       throw new Error('Missing one or more required subchannels for VC.')
@@ -372,9 +372,10 @@ class Connext {
       balanceA: deposit || lcA.balanceA,
       balanceB: 0
     })
+    let vc0s = await this.getVcInitialStates({ ledgerChannelId: lcIdA }) // array of vc state objs
+    vc0s.push(vc0)
     const newVcRootHash = Connext.generateVcRootHash({
-      vc0,
-      initialRootHash: lcA.vcRootHash
+      vc0s
     })
     // ping ingrid
     const result = await this.openVc({
@@ -403,10 +404,10 @@ class Connext {
     // get channels and accounts
     const accounts = await this.web3.eth.getAccounts()
 
-    const lcId = await this.getLcId()
-    const lc = await this.getLc({ lcId })
-
     const vc = await this.getChannel({ channelId })
+
+    const lcIdB = await this.getLcId({})
+
     const vc0 = await this.createVCStateUpdate({
       nonce: 0,
       agentA: vc.agentA, // depending on ingrid for this value
@@ -414,9 +415,10 @@ class Connext {
       balanceA: vc.balanceA, // depending on ingrid for this value
       balanceB: 0
     })
+    let vc0s = await this.getVcInitialStates({ ledgerChannelId: lcIdB })
+    vc0s.push(vc0)
     const newVcRootHash = Connext.generateVcRootHash({
-      vc0,
-      initialRootHash: lc.vcRootHash
+      vc0s
     })
     // ping ingrid with vc0 (hub decomposes to lc)
     const result = await this.joinVc({
@@ -478,11 +480,15 @@ class Connext {
     validate.single(sig, { presence: true, isHex: true })
     // check sig
     const vc = await this.getChannel(channelId)
+    const subchanAI = await this.getChannelId({ agentA: vc.agentA })
+    const subchanBI = await this.getChannelId({ agentA: vc.agentB })
     const signer = Connext.recoverSignerFromVCStateUpdate({
       sig,
       nonce: vc.nonce, // will this be stored in vc after updateState?
       agentA: vc.agentA,
       agentB: vc.agentB,
+      subchanAI,
+      subchanBI,
       balanceA: balance,
       balanceB: vc.balanceB // will this be stored in vc after updateState?
     })
@@ -720,6 +726,8 @@ class Connext {
     agentA,
     agentB,
     agentI,
+    subchanAI,
+    subchanBI,
     balanceA,
     balanceB
   }) {
@@ -728,6 +736,8 @@ class Connext {
     validate.single(agentA, { presence: true, isAddress: true })
     validate.single(agentB, { presence: true, isAddress: true })
     validate.single(agentI, { presence: true, isAddress: true })
+    validate.single(subchanAI, { presence: true, isHexStrict: true })
+    validate.single(subchanBI, { presence: true, isHexStrict: true })
     validate.single(balanceA, { presence: true, isBN: true })
     validate.single(balanceB, { presence: true, isBN: true })
     // generate state update to sign
@@ -748,6 +758,8 @@ class Connext {
     agentA,
     agentB,
     agentI,
+    subchanAI,
+    subchanBI,
     balanceA,
     balanceB
   }) {
@@ -756,6 +768,8 @@ class Connext {
     validate.single(agentA, { presence: true, isAddress: true })
     validate.single(agentB, { presence: true, isAddress: true })
     validate.single(agentI, { presence: true, isAddress: true })
+    validate.single(subchanAI, { presence: true, isHexString: true })
+    validate.single(subchanBI, { presence: true, isHexString: true })
     validate.single(balanceA, { presence: true, isBN: true })
     validate.single(balanceB, { presence: true, isBN: true })
     // generate fingerprint
@@ -764,6 +778,8 @@ class Connext {
       agentA,
       agentB,
       agentI,
+      subchanAI,
+      subchanBI,
       balanceA,
       balanceB
     })
@@ -799,16 +815,38 @@ class Connext {
     validate.single(agentB, { presence: true, isAddress: true })
     validate.single(balanceA, { presence: true, isBN: true })
     validate.single(balanceB, { presence: true, isBN: true })
+    // get accounts
+    const accounts = await this.web3.getAccounts()
+    // get subchans
+    let subchanAI, subchanBI
+    // is this agentA or B?
+    if (accounts[0] === agentA) {
+      subchanAI = await this.getLcId({})
+      subchanBI = await this.getLcId({ agentA: agentB })
+    } else if (accounts[0] === agentB) {
+      subchanAI = await this.getLcId({ agentA })
+      subchanBI = await this.getLcId({})
+    } else {
+      throw new Error('Not your virtual channel.')
+    }
+
+    // keep in here? probably separate out into a validation of state update
+    // params fn
+    if (subchanAI === null || subchanBI === null) {
+      throw new Error('Missing one or more required subchannels.')
+    }
+
     // generate and sign hash
     const hash = Connext.createVCStateUpdateFingerprint({
       nonce,
       agentA,
       agentB,
       agentI,
+      subchanAI,
+      subchanBI,
       balanceA,
       balanceB
     })
-    const accounts = await this.web3.getAccounts()
     let sig
     if (unlockedAccountPresent) {
       sig = await this.web3.eth.sign(hash, accounts[0])
@@ -829,7 +867,9 @@ class Connext {
       elems.push(vcRootHash)
     } else {
       elems = vc0s.forEach(vc0 => {
-        const hash = Web3.utils.soliditySha3({ type: 'string', value: vc0 })
+        // vc0 is the initial state of each vc
+        // hash each initial state and convert hash to buffer
+        const hash = Connext.createVCStateUpdateFingerprint(vc0)
         const vcBuf = Utils.hexToBuffer(hash)
         return vcBuf
       })
@@ -862,7 +902,7 @@ class Connext {
     return response.data
   }
 
-  async getLcId (agentA = null) {
+  async getLcId ({ agentA = null }) {
     if (agentA) {
       validate.single(agentA, { presence: true })
     } else {
@@ -987,6 +1027,8 @@ class Connext {
     )
     return response.data
   }
+
+  async getVcInitialStates () {}
 }
 
 module.exports = Connext
