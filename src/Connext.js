@@ -591,6 +591,7 @@ class Connext {
         channelId: channel.channelId,
         balance: channel.balance
       })
+      console.log('Channel closed.')
     })
   }
 
