@@ -278,7 +278,46 @@ class Connext {
    * @example
    * await connext.checkpoint()
    */
-  async checkpoint () {}
+  async checkpoint () {
+    // get latest ingrid signed state update
+    const lcId = await this.getLcId()
+    const lcState = await this.getLatestLedgerStateUpdate({
+      ledgerChannelId: lcId
+    })
+    const signer = Connext.recoverSignerFromLCStateUpdate({
+      sig: lcState.sigB,
+      isCloseFlag: 0,
+      nonce: lcState.nonce,
+      openVCs: lcState.openVCs,
+      vcRootHash: lcState.vcRootHash,
+      agentA: lcState.agentA,
+      agentB: lcState.agentB,
+      balanceA: lcState.balanceA,
+      balanceB: lcState.balanceB
+    })
+    if (signer !== this.ingridAddress) {
+      throw new Error('Hub did not sign this state update.')
+    }
+    const sig = await this.createLCStateUpdate({
+      nonce: lcState.nonce,
+      openVCs: lcState.openVCs,
+      vcRootHash: lcState.vcRootHash,
+      agentA: lcState.agentA,
+      balanceA: lcState.balanceA,
+      balanceB: lcState.balanceB
+    })
+    const result = await this.channelManagerInstance.updateLCState(
+      0,
+      lcState.nonce,
+      lcState.openVCs,
+      lcState.balanceA,
+      lcState.balanceB,
+      lcState.vcRootHash,
+      sig,
+      lcState.sigB
+    )
+    return result
+  }
 
   /**
    * Opens a virtual channel between to and caller with Ingrid as the hub. Both users must have a ledger channel open with ingrid.
