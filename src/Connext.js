@@ -236,11 +236,16 @@ class Connext {
       balanceA: deposit || lcA.balanceA,
       balanceB: 0
     })
+    const newVcRootHash = Connext.generateVcRootHash({
+      vc0,
+      initialRootHash: lcA.vcRootHash
+    })
     // ping ingrid
     const result = await this.openVc({
-      sig: vc0,
+      vc0: vc0,
       balanceA: deposit || lcA.balanceA,
-      to
+      to,
+      vcRootHash: newVcRootHash
     })
     return result
   }
@@ -259,8 +264,12 @@ class Connext {
   async joinChannel (channelId) {
     // join virtual channel
     validate.single(channelId, { presence: true, isPositiveInt: true })
-    // get virtual channel
+    // get channels and accounts
     const accounts = await this.web3.eth.getAccounts()
+
+    const lcId = await this.getLcId()
+    const lc = await this.getLc({ lcId })
+
     const vc = await this.getChannel({ channelId })
     const vc0 = await this.createVCStateUpdate({
       nonce: 0,
@@ -269,8 +278,16 @@ class Connext {
       balanceA: vc.balanceA, // depending on ingrid for this value
       balanceB: 0
     })
+    const newVcRootHash = Connext.generateVcRootHash({
+      vc0,
+      initialRootHash: lc.vcRootHash
+    })
     // ping ingrid with vc0 (hub decomposes to lc)
-    const result = await this.joinVc({ vc0, channelId })
+    const result = await this.joinVc({
+      sig: vc0,
+      vcRootHash: newVcRootHash,
+      channelId
+    })
     return result.data
   }
 
@@ -588,6 +605,32 @@ class Connext {
     return sig
   }
 
+  static generateVcRootHash ({ vc0, initialRootHash }, removeVc = false) {
+    validate.single(vc0, { presence: true, isHexString: true })
+    validate.single(initialRootHash, { presence: true, isHexString: true })
+    let merkle, vcRootHash
+    if (removeVc) {
+      // remove vc from initialRootHash
+      // TO DO: refactor to remove specific vc
+      // now only resets to 0x0 so it removes all VCs
+      // must sort out rebalancing of tree and leaf removal protocol
+      vcRootHash = '0x0'
+    } else {
+      // add vc to root
+      const hash = this.web3.soliditySha3({ type: 'string', value: vc0 })
+      const vcBuf = Utils.hexToBuffer(hash)
+      initialRootHash = Utils.hexToBuffer(initialRootHash)
+      let elems = []
+      elems.push(vcBuf)
+      elems.push(initialRootHash)
+      merkle = new MerkleTree(elems)
+      vcRootHash = Utils.bufferToHex(merkle.getRoot())
+    }
+
+    // const vcRootHash = Utils.bufferToHex(merkle.getRoot())
+    return vcRootHash
+  }
+
   // HELPER FUNCTIONS
 
   async getLatestLedgerStateUpdate ({ ledgerChannelId, sig }) {}
@@ -642,25 +685,29 @@ class Connext {
     return response.data
   }
 
-  async openVc ({ sig, balanceA, to }) {
+  async openVc ({ sig, balanceA, to, vcRootHash }) {
     const accounts = await this.web3.eth.getAccounts()
+    // ingrid should add vc params to db
     const response = await axios.post(
       `${this.ingridUrl}/virtualchannel/open?a=${accounts[0]}`,
       {
         sig,
         balanceA,
-        to
+        to,
+        vcRootHash
       }
     )
+    return response.data
   }
 
-  async joinVc ({ sig, channelId }) {
+  async joinVc ({ sig, vcRootHash, channelId }) {
     const accounts = await this.web3.eth.getAccounts()
+    // ingrid should verify vcS0A and vcS0b
     const response = await axios.post(
-      `${this.ingridUrl}/virtualchannel/open?a=${accounts[0]}`,
+      `${this.ingridUrl}/virtualchannel/${channelId}/join`,
       {
         sig,
-        channelId
+        vcRootHash
       }
     )
     return response.data
