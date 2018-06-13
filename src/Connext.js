@@ -226,7 +226,7 @@ class Connext {
       balanceB: lcState.balanceB
     })
     if (signer !== this.ingridAddress) {
-      throw new Error('Hub did not sign this state update.')
+      throw new Error('Ingrid did not sign this state update.')
     }
     // generate same update with fast close flag and post
     const sigParams = {
