@@ -138,6 +138,15 @@ class Connext {
 
     // create LC on contract
     // TO DO: better error handling here
+    /**
+     * Descriptive error message back to wallet here
+     *
+     * Atomicity -- roll back to a previous state if there are inconsistencies here
+     *
+     * Return to a recoverable state based on block history
+     *
+     * Fail point so Ingrid can retry if join fails, make sure if ingrid cant join, the funds are recoverable.
+     */
     const result = await this.channelManagerInstance.createLedgerChannel(
       this.ingridAddress,
       challenge,
@@ -351,6 +360,13 @@ class Connext {
    * @param {String} params.to Wallet address to wallet for agentB in virtual channel
    * @param {BigNumber} params.deposit User deposit for VC, in wei. Optional.
    */
+  /**
+   * add error handling for calling openChannel twice as a viewer or something
+   *
+   * should fail if you try calling openChannel if it doesnt let you
+   *
+   * validate the state update against lc is valid
+   */
   async openChannel ({ to, deposit = null }) {
     validate.single(to, { presence: true, isAddress: true })
     if (deposit) {
@@ -524,11 +540,26 @@ class Connext {
    */
   async fastCloseChannel (channelId) {
     validate.single(channelId, { presence: true, isPositiveInt: true })
+    // generate and sign fast close flag
+    const isCloseFlag = 1
+    const hash = this.web3.utils.soliditySha3({
+      type: 'uint256',
+      value: isCloseFlag
+    })
+    const accounts = await this.web3.eth.getAccounts()
+    const sig = await this.web3.eth.personal.sign(hash, accounts[0])
     const response = await axios.post(
-      `${this.ingridUrl}/virtualchannel/${channelId}/fastclose`
+      `${this.ingridUrl}/virtualchannel/${channelId}/fastclose`,
+      {
+        sig
+      }
     )
     return response.data
   }
+
+  /**
+   * TO DO -- MAKE VC IDS BIG NUMBERS
+   */
 
   /**
    * Closes a channel in a dispute.
@@ -747,6 +778,8 @@ class Connext {
       { type: 'address', value: agentA },
       { type: 'address', value: agentB },
       { type: 'address', value: agentI },
+      { type: 'string', value: subchanAI },
+      { type: 'string', value: subchanAI },
       { type: 'uint256', value: balanceA },
       { type: 'uint256', value: balanceB }
     )
