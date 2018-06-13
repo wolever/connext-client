@@ -14,7 +14,7 @@ validate.validators.isBN = value => {
   }
 }
 
-validate.validators.isHexString = value => {
+validate.validators.isHex = value => {
   if (Web3.utils.isHex(value)) {
     return null
   } else {
@@ -457,7 +457,7 @@ class Connext {
     // validate inputs
     validate.single(channelId, { presence: true, isPositiveInt: true })
     validate.single(balance, { presence: true, isBN: true })
-    validate.single(sig, { presence: true, isHexString: true })
+    validate.single(sig, { presence: true, isHex: true })
     // check sig
     const vc = await this.getChannel(channelId)
     const signer = Connext.recoverSignerFromVCStateUpdate({
@@ -585,7 +585,7 @@ class Connext {
     validate.single(isCloseFlag, { presence: true, isBoooleanInt: true })
     validate.single(nonce, { presence: true, isPositiveInt: true })
     validate.single(openVCs, { presence: true, isPositiveInt: true })
-    validate.single(vcRootHash, { presence: true, isHexString: true })
+    validate.single(vcRootHash, { presence: true, isHex: true })
     validate.single(agentA, { presence: true, isAddress: true })
     validate.single(agentB, { presence: true, isAddress: true })
     validate.single(balanceA, { presence: true, isBN: true })
@@ -615,11 +615,11 @@ class Connext {
     balanceB
   }) {
     // validate params
-    validate.single(sig, { presence: true, isHexString: true })
+    validate.single(sig, { presence: true, isHex: true })
     validate.single(isCloseFlag, { presence: true, isBoooleanInt: true })
     validate.single(nonce, { presence: true, isPositiveInt: true })
     validate.single(openVCs, { presence: true, isPositiveInt: true })
-    validate.single(vcRootHash, { presence: true, isHexString: true })
+    validate.single(vcRootHash, { presence: true, isHex: true })
     validate.single(agentA, { presence: true, isAddress: true })
     validate.single(agentB, { presence: true, isAddress: true })
     validate.single(balanceA, { presence: true, isBN: true })
@@ -667,7 +667,7 @@ class Connext {
     // validate params
     validate.single(nonce, { presence: true, isPositiveInt: true })
     validate.single(openVCs, { presence: true, isPositiveInt: true })
-    validate.single(vcRootHash, { presence: true, isHexString: true })
+    validate.single(vcRootHash, { presence: true, isHex: true })
     validate.single(agentA, { presence: true, isAddress: true })
     validate.single(balanceA, { presence: true, isBN: true })
     validate.single(balanceB, { presence: true, isBN: true })
@@ -800,19 +800,16 @@ class Connext {
     return sig
   }
 
-  static generateVcRootHash ({ vc0, initialRootHash }, removeVc = false) {
+  // vc0 is array of all existing vc0 sigs for open vcs
+  static generateVcRootHash ({ vc0 }) {
+    validate.single(vc0, { presence: true, isArray: true })
     let vcRootHash
-    if (removeVc) {
-      // remove vc from initialRootHash
-
-      // TO DO: refactor to remove specific vc
-      // now only resets to 0x0 so it removes all VCs
-      // must sort out rebalancing of tree and leaf removal protocol
-
+    if (vc0.length === 0) {
+      // reset to initial value -- no open VCs
       vcRootHash = '0x0'
     } else {
-      validate.single(vc0, { presence: true, isHexString: true })
-      validate.single(initialRootHash, { presence: true, isHexString: true })
+      validate.single(vc0, { presence: true, isHex: true })
+      validate.single(initialRootHash, { presence: true, isHex: true })
       const hash = this.web3.soliditySha3({ type: 'string', value: vc0 })
       const vcBuf = Utils.hexToBuffer(hash)
       initialRootHash = Utils.hexToBuffer(initialRootHash)
@@ -822,30 +819,6 @@ class Connext {
       const merkle = new MerkleTree(elems)
       vcRootHash = Utils.bufferToHex(merkle.getRoot())
     }
-    // validate.single(vc0, { presence: true, isHexString: true })
-    // validate.single(initialRootHash, { presence: true, isHexString: true })
-    // let merkle, vcRootHash
-    // if (removeVc) {
-    //   // remove vc from initialRootHash
-
-    //   // TO DO: refactor to remove specific vc
-    //   // now only resets to 0x0 so it removes all VCs
-    //   // must sort out rebalancing of tree and leaf removal protocol
-
-    //   vcRootHash = '0x0'
-    // } else {
-    //   // add vc to root
-    //   const hash = this.web3.soliditySha3({ type: 'string', value: vc0 })
-    //   const vcBuf = Utils.hexToBuffer(hash)
-    //   initialRootHash = Utils.hexToBuffer(initialRootHash)
-    //   let elems = []
-    //   elems.push(vcBuf)
-    //   elems.push(initialRootHash)
-    //   merkle = new MerkleTree(elems)
-    //   vcRootHash = Utils.bufferToHex(merkle.getRoot())
-    // }
-
-    // const vcRootHash = Utils.bufferToHex(merkle.getRoot())
     return vcRootHash
   }
 
