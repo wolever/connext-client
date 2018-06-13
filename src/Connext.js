@@ -425,7 +425,22 @@ class Connext {
    * @param {BigNumber} params.balance Channel balance in Wei (of "A" party).
    * @returns {String} Returns signature of balance update.
    */
-  async updateBalance ({ channelId, balance }) {}
+  async updateBalance ({ channelId, balance }) {
+    validate.single(channelId, { presence: true, isPositiveInt: true }) // better channelID validator
+    validate.single(balance, { presence: true, isBN: true })
+    // get the vc
+    const vc = await this.getChannel({ channelId })
+    const sig = await this.createVCStateUpdate({
+      nonce: vc.nonce + 1,
+      agentA: vc.agentA,
+      agentB: vc.agentB,
+      balanceA: balance,
+      balanceB: vc.balanceB + (vc.balanceA - balance) // type issues?
+    })
+    // post signed update to watcher
+    const response = await this.postVcStateUpdate({ channelId, sig, balance })
+    return response
+  }
 
   /**
    * Verifies signature on balance update and co-signs update.
@@ -856,6 +871,17 @@ class Connext {
       `${this.ingridUrl}/ledgerchannel/${id}/fastclose`,
       {
         sig
+      }
+    )
+    return response.data
+  }
+
+  async postVcStateUpdate ({ channelId, sig, balance }) {
+    const response = await axios.post(
+      `${this.ingridUrl}/ledgerchannel/${channelId}/update`,
+      {
+        sig: sig,
+        balance
       }
     )
     return response.data
