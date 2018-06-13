@@ -819,21 +819,20 @@ class Connext {
   }
 
   // vc0 is array of all existing vc0 sigs for open vcs
-  static generateVcRootHash ({ vc0 }) {
-    validate.single(vc0, { presence: true, isArray: true })
-    let vcRootHash
-    if (vc0.length === 0) {
+  static generateVcRootHash ({ vc0s }) {
+    validate.single(vc0s, { presence: true, isArray: true })
+    let vcRootHash, elems
+    if (vc0s.length === 0) {
       // reset to initial value -- no open VCs
+      elems = []
       vcRootHash = '0x0'
+      elems.push(vcRootHash)
     } else {
-      validate.single(vc0, { presence: true, isArray: true })
-      validate.single(initialRootHash, { presence: true, isHexStrict: true }) // isHex ?
-      const hash = this.web3.soliditySha3({ type: 'string', value: vc0 })
-      const vcBuf = Utils.hexToBuffer(hash)
-      initialRootHash = Utils.hexToBuffer(initialRootHash)
-      let elems = []
-      elems.push(vcBuf)
-      elems.push(initialRootHash)
+      elems = vc0s.forEach(vc0 => {
+        const hash = Web3.utils.soliditySha3({ type: 'string', value: vc0 })
+        const vcBuf = Utils.hexToBuffer(hash)
+        return vcBuf
+      })
       const merkle = new MerkleTree(elems)
       vcRootHash = Utils.bufferToHex(merkle.getRoot())
     }
