@@ -1,5 +1,4 @@
 const axios = require('axios')
-const abi = require('ethereumjs-abi')
 const channelManagerAbi = require('../artifacts/ChannelManagerAbi.json')
 const util = require('ethereumjs-util')
 const Web3 = require('web3')
