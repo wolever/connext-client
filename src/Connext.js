@@ -22,6 +22,24 @@ validate.validators.isHex = value => {
   }
 }
 
+validate.validators.isHexStrict = value => {
+  // for ledgerIDs
+  if (Web3.utils.isHexStrict(value)) {
+    return null
+  } else {
+    return 'Is not hex string prefixed with 0x.'
+  }
+}
+
+validate.validators.isArray = value => {
+  // for ledgerIDs
+  if (value.constructor === Array) {
+    return null
+  } else {
+    return 'Is not an array.'
+  }
+}
+
 validate.validators.isAddress = value => {
   if (Web3.utils.isAddress(value)) {
     return null
@@ -808,8 +826,8 @@ class Connext {
       // reset to initial value -- no open VCs
       vcRootHash = '0x0'
     } else {
-      validate.single(vc0, { presence: true, isHex: true })
-      validate.single(initialRootHash, { presence: true, isHex: true })
+      validate.single(vc0, { presence: true, isArray: true })
+      validate.single(initialRootHash, { presence: true, isHexStrict: true }) // isHex ?
       const hash = this.web3.soliditySha3({ type: 'string', value: vc0 })
       const vcBuf = Utils.hexToBuffer(hash)
       initialRootHash = Utils.hexToBuffer(initialRootHash)
