@@ -2,7 +2,7 @@ const axios = require('axios')
 const channelManagerAbi = require('../artifacts/ChannelManagerAbi.json')
 const util = require('ethereumjs-util')
 const Web3 = require('web3')
-const validate = require('validate')
+const validate = require('validate.js')
 const Utils = require('../helpers/utils')
 const crypto = require('crypto')
 
@@ -83,14 +83,17 @@ class Connext {
    * @param {String} params.ingridUrl Url of intermediary server (defaults to Connext hub).
    * @param {String} params.contractAddress Address of deployed contract (defaults to latest deployed contract).
    */
-  constructor ({
-    web3,
-    ingridAddress = '',
-    watcherUrl = '',
-    ingridUrl = '',
-    contractAddress = ''
-  }) {
-    this.web3 = new Web3(web3.currentProvider) // convert legacy web3 0.x to 1.x
+  constructor (
+    {
+      web3,
+      ingridAddress = '',
+      watcherUrl = '',
+      ingridUrl = '',
+      contractAddress = ''
+    },
+    web3Lib = Web3
+  ) {
+    this.web3 = new web3Lib(web3.currentProvider) // convert legacy web3 0.x to 1.x
     this.ingridAddress = ingridAddress
     this.watcherUrl = watcherUrl
     this.ingridUrl = ingridUrl
@@ -573,10 +576,13 @@ class Connext {
     const latestVcState = await this.getLatestVirtualDoubleSignedStateUpdate({
       channelId
     })
-    if (latestVcState.partyA !== accounts[0] && latestVcState.partyB !== accounts[0]) {
+    if (
+      latestVcState.partyA !== accounts[0] &&
+      latestVcState.partyB !== accounts[0]
+    ) {
       throw new Error('Not your virtual channel.')
     }
-    
+
     // verify signatures
     const signerA = Connext.recoverSignerFromVCStateUpdate({
       sig: sigA,
@@ -607,11 +613,14 @@ class Connext {
     }
     // vc update is signed by correct people
     // it is their vc
-    
+
     // generate LcUpdate
     const lcStateUpdate = await this.getDecomposedLcUpdates(latestVcState)
     // post to ingrid
-    const results = await this.fastCloseVcHandler({ vcId: channelId, sigA: lcStateUpdate.sigA })
+    const results = await this.fastCloseVcHandler({
+      vcId: channelId,
+      sigA: lcStateUpdate.sigA
+    })
   }
 
   /**
@@ -838,8 +847,8 @@ class Connext {
       { type: 'address', value: partyA },
       { type: 'address', value: partyB },
       { type: 'address', value: partyI },
-      { type: 'string', value: subchanAI },
-      { type: 'string', value: subchanAI },
+      { type: 'bytes32', value: subchanAI },
+      { type: 'bytes32', value: subchanAI },
       { type: 'uint256', value: balanceA },
       { type: 'uint256', value: balanceB }
     )
@@ -980,9 +989,9 @@ class Connext {
     return vcRootHash
   }
 
-  // HELPER FUNCTIONS
+  // HELPER FUNCTIONS=
 
-  async getLatestLedgerStateUpdate ({ ledgerChannelId }) {
+  async getLatestLedgerStateUpdate ( ledgerChannelId ) {
     // should return Object lcState where:
     //  * lcState = {
     //  *  sigB,
@@ -1228,11 +1237,11 @@ class Connext {
     lcState.openVCs = lc.openVCs - 1
     lcState.partyA = accounts[0]
     lcState.sigA = await this.createLCStateUpdate(lcState)
-    
+
     return lcState
   }
 
-  async fastCloseVcHandler({ vcId, sigA }) {
+  async fastCloseVcHandler ({ vcId, sigA }) {
     validate.single(vcId, { presence: true, isHexStrict: true })
     validate.single(sigA, { presence: true, isHex: true })
     const results = await axios.post(

@@ -1,5 +1,5 @@
 const Web3 = require('web3')
-const channelManagerArtifacts = require('../artifacts/ChannelManager.json')
+const channelManagerArtifacts = require('../artifacts/ChannelManagerAbi.json')
 const ledgerChannelArtifacts = require('../artifacts/Ledger.json')
 
 let web3, channelManager, ledgerChannel
