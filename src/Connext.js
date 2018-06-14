@@ -127,15 +127,15 @@ class Connext {
     const openVCs = 0
     const lcId = await this.getNewChannelId()
     const vcRootHash = '0x0'
-    const agentA = accounts[0]
+    const partyA = accounts[0]
     const sig = this.createLCStateUpdate({
       lcId,
       nonce,
       openVCs,
       vcRootHash,
-      agentA,
+      partyA,
       balanceA: initialDeposit,
-      balanceB
+      balanceI: 0
     })
 
     // create LC on contract
@@ -212,15 +212,15 @@ class Connext {
     })
     /**
      * lcState = {
-     *  sigB,
      *  sigA,
+     *  sigI,
      *  nonce,
      *  openVCs,
      *  vcRootHash,
-     *  agentA,
-     *  agentB,
+     *  partyA,
+     *  partyI,
      *  balanceA,
-     *  balanceB
+     *  balanceI
      * }
      */
     // check ingrid signed
@@ -233,10 +233,10 @@ class Connext {
       nonce: lcState.nonce,
       openVCs: lcState.openVCs,
       vcRootHash: lcState.vcRootHash,
-      agentA: lcState.agentA,
-      agentB: lcState.agentB,
+      partyA: lcState.partyA,
+      partyI: lcState.partyI,
       balanceA: lcState.balanceA,
-      balanceB: lcState.balanceB
+      balanceI: lcState.balanceI
     })
     if (signer !== this.ingridAddress) {
       throw new Error('Ingrid did not sign this state update.')
@@ -248,14 +248,14 @@ class Connext {
       nonce: lcState.nonce,
       openVCs: lcState.openVCs,
       vcRootHash: lcState.vcRootHash,
-      agentA: lcState.agentA,
-      agentB: lcState.agentB,
+      partyA: lcState.partyA,
+      partyI: lcState.partyI,
       balanceA: lcState.balanceA,
-      balanceB: lcState.balanceB
+      balanceI: lcState.balanceI
     }
     const sig = await this.createLCStateUpdate(sigParams)
 
-    const fastCloseResponse = await this.fastCloseLc({ sig, lcId })
+    const fastCloseResponse = await this.fastCloseLcHandler({ sig, lcId })
     const accounts = await this.web3.eth.getAccounts()
     let response
     if (fastCloseResponse) {
@@ -265,9 +265,9 @@ class Connext {
         lcId,
         lcState.nonce,
         lcState.balanceA,
-        lcState.balanceB,
+        lcState.balanceI,
         lcState.sigA,
-        lcState.sigB,
+        lcState.sigI,
         {
           from: accounts[0]
         }
@@ -279,9 +279,9 @@ class Connext {
         lcId,
         lcState.nonce,
         lcState.balanceA,
-        lcState.balanceB,
+        lcState.balanceI,
         lcState.sigA,
-        lcState.sigB,
+        lcState.sigI,
         {
           from: accounts[0]
         }
@@ -319,16 +319,16 @@ class Connext {
       ledgerChannelId: lcId
     })
     const signer = Connext.recoverSignerFromLCStateUpdate({
-      sig: lcState.sigB,
+      sig: lcState.sigI,
       isCloseFlag: 0,
       lcId,
       nonce: lcState.nonce,
       openVCs: lcState.openVCs,
       vcRootHash: lcState.vcRootHash,
-      agentA: lcState.agentA,
-      agentB: lcState.agentB,
+      partyA: lcState.partyA,
+      partyI: lcState.partyI,
       balanceA: lcState.balanceA,
-      balanceB: lcState.balanceB
+      balanceI: lcState.balanceI
     })
     if (signer !== this.ingridAddress) {
       throw new Error('Hub did not sign this state update.')
@@ -338,9 +338,9 @@ class Connext {
       nonce: lcState.nonce,
       openVCs: lcState.openVCs,
       vcRootHash: lcState.vcRootHash,
-      agentA: lcState.agentA,
+      partyA: lcState.partyA,
       balanceA: lcState.balanceA,
-      balanceB: lcState.balanceB
+      balanceI: lcState.balanceI
     })
     const result = await this.channelManagerInstance.updateLCState(
       0,
@@ -348,10 +348,10 @@ class Connext {
       lcState.nonce,
       lcState.openVCs,
       lcState.balanceA,
-      lcState.balanceB,
+      lcState.balanceI,
       lcState.vcRootHash,
       sig,
-      lcState.sigB
+      lcState.sigI
     )
     return result
   }
@@ -367,7 +367,7 @@ class Connext {
    * const myFriendsAddress = "0x627306090abaB3A6e1400e9345bC60c78a8BEf57"
    * await connext.openChannel({ to: myFriendsAddress })
    * @param {Object} params - The method object.
-   * @param {String} params.to Wallet address to wallet for agentB in virtual channel
+   * @param {String} params.to Wallet address to wallet for partyB in virtual channel
    * @param {BigNumber} params.deposit User deposit for VC, in wei. Optional.
    */
   /**
@@ -383,7 +383,7 @@ class Connext {
       validate.single(deposit, { presence: true, isBN: true })
     }
     const lcIdA = await this.getLcId({})
-    const lcIdB = await this.getLcId({ agentA: to })
+    const lcIdB = await this.getLcId({ partyA: to })
     // validate the subchannels exist
     if (lcIdB === null || lcIdA === null) {
       throw new Error('Missing one or more required subchannels for VC.')
@@ -395,8 +395,8 @@ class Connext {
     const vc0 = await this.createVCStateUpdate({
       vcId,
       nonce: 0,
-      agentA: lcA.agentA,
-      agentB: to,
+      partyA: lcA.partyA,
+      partyB: to,
       balanceA: deposit || lcA.balanceA,
       balanceB: 0
     })
@@ -436,24 +436,26 @@ class Connext {
 
     const lcIdB = await this.getLcId({})
 
-    const vc0 = await this.createVCStateUpdate({
+    const vc0 = {
       vcId: channelId,
       nonce: 0,
-      agentA: vc.agentA, // depending on ingrid for this value
-      agentB: accounts[0],
+      partyA: vc.partyA, // depending on ingrid for this value
+      partyB: accounts[0],
       balanceA: vc.balanceA, // depending on ingrid for this value
       balanceB: 0
-    })
+    }
+
+    const sig = await this.createVCStateUpdate(state)
     let vc0s = await this.getVcInitialStates({ ledgerChannelId: lcIdB })
     vc0s.push(vc0)
     const newVcRootHash = Connext.generateVcRootHash({
       vc0s
     })
     // ping ingrid with vc0 (hub decomposes to lc)
-    const result = await this.joinVc({
-      sig: vc0,
-      vcRootHash: newVcRootHash,
-      channelId
+    const result = await this.joinVcHandler({
+      sig: sig,
+      channelId,
+      balanceB: 0
     })
     return result.data
   }
@@ -479,16 +481,21 @@ class Connext {
     validate.single(balance, { presence: true, isBN: true })
     // get the vc
     const vc = await this.getChannel({ channelId })
+
     const sig = await this.createVCStateUpdate({
       vcId: channelId,
       nonce: vc.nonce + 1,
-      agentA: vc.agentA,
-      agentB: vc.agentB,
+      partyA: vc.partyA,
+      partyB: vc.partyB,
       balanceA: balance,
       balanceB: vc.balanceB + (vc.balanceA - balance) // type issues?
     })
     // post signed update to watcher
-    const response = await this.vcStateUpdate({ channelId, sig, balance })
+    const response = await this.vcStateUpdateHandler({
+      channelId,
+      sig,
+      balance
+    })
     return response
   }
 
@@ -509,29 +516,34 @@ class Connext {
     validate.single(balance, { presence: true, isBN: true })
     validate.single(sig, { presence: true, isHex: true })
     // check sig
+    const accounts = await this.web3.eth.getAccounts()
     const vc = await this.getChannel(channelId)
-    const subchanAI = await this.getChannelId({ agentA: vc.agentA })
-    const subchanBI = await this.getChannelId({ agentA: vc.agentB })
+    const subchanAI = await this.getChannelId({ partyA: vc.partyA })
+    const subchanBI = await this.getChannelId({ partyA: vc.partyB })
     const signer = Connext.recoverSignerFromVCStateUpdate({
       sig,
       vcId: channelId,
       nonce: vc.nonce, // will this be stored in vc after updateState?
-      agentA: vc.agentA,
-      agentB: vc.agentB,
+      partyA: vc.partyA,
+      partyB: vc.partyB,
       subchanAI,
       subchanBI,
       balanceA: balance,
       balanceB: vc.balanceB // will this be stored in vc after updateState?
     })
-    if (signer !== vc.agentA) {
-      throw new Error('AgentA did not sign this state update.')
+    if (accounts[0] === vc.partyB && signer !== vc.partyA) {
+      throw new Error('partyA did not sign this state update.')
+    } else if (accounts[0] === vc.partyA && signer !== vc.partyB) {
+      throw new Error('partyB did not sign this state update.')
+    } else if (accounts[0] !== vc.partyA && accounts[0] !== vc.partyB) {
+      throw new Error('Not your virtual channel')
     }
     // generate sigB
     const sigB = await this.createVCStateUpdate({
       vcId: channelId,
       nonce: vc.nonce, // will this be stored in vc after updateState?
-      agentA: vc.agentA,
-      agentB: vc.agentB,
+      partyA: vc.partyA,
+      partyB: vc.partyB,
       balanceA: balance,
       balanceB: vc.balanceB // will this be stored in vc after updateState?
     })
@@ -552,25 +564,21 @@ class Connext {
    *
    * @example
    * await connext.fastCloseChannel(10)
-   * @param {Number} channelId - virtual channel ID
+   * @param {Bytes32} channelId - virtual channel ID
    */
   async fastCloseChannel (channelId) {
     validate.single(channelId, { presence: true, isHexStrict: true })
     // generate and sign fast close flag
-    const isCloseFlag = 1
-    const hash = this.web3.utils.soliditySha3({
-      type: 'uint256',
-      value: isCloseFlag
-    })
     const accounts = await this.web3.eth.getAccounts()
-    const sig = await this.web3.eth.personal.sign(hash, accounts[0])
-    const response = await axios.post(
-      `${this.ingridUrl}/virtualchannel/${channelId}/fastclose`,
-      {
-        sig
-      }
-    )
-    return response.data
+    const vc = await this.getChannel({ channelId })
+    if (vc.partyA !== accounts[0] && vc.partyB !== accounts[0]) {
+      throw new Error('Not your virtual channel.')
+    }
+    // get latest double signed updates
+    const latestState = await this.getLatestVirtualDoubleSignedStateUpdate({
+      channelId,
+      lcpartyA: accounts[0]
+    })
   }
 
   /**
@@ -638,10 +646,10 @@ class Connext {
     nonce,
     openVCs,
     vcRootHash,
-    agentA,
-    agentB,
+    partyA,
+    partyI,
     balanceA,
-    balanceB
+    balanceI
   }) {
     // validate params
     validate.single(isCloseFlag, { presence: true, isBoooleanInt: true })
@@ -649,10 +657,10 @@ class Connext {
     validate.single(nonce, { presence: true, isPositiveInt: true })
     validate.single(openVCs, { presence: true, isPositiveInt: true })
     validate.single(vcRootHash, { presence: true, isHex: true })
-    validate.single(agentA, { presence: true, isAddress: true })
-    validate.single(agentB, { presence: true, isAddress: true })
+    validate.single(partyA, { presence: true, isAddress: true })
+    validate.single(partyI, { presence: true, isAddress: true })
     validate.single(balanceA, { presence: true, isBN: true })
-    validate.single(balanceB, { presence: true, isBN: true })
+    validate.single(balanceI, { presence: true, isBN: true })
     // generate state update to sign
     const hash = Web3.utils.soliditySha3(
       { type: 'uint256', value: isCloseFlag },
@@ -660,10 +668,10 @@ class Connext {
       { type: 'uint256', value: nonce },
       { type: 'uint256', value: openVCs },
       { type: 'string', value: vcRootHash },
-      { type: 'address', value: agentA },
-      { type: 'address', value: agentB },
+      { type: 'address', value: partyA },
+      { type: 'address', value: partyI },
       { type: 'uint256', value: balanceA },
-      { type: 'uint256', value: balanceB }
+      { type: 'uint256', value: balanceI }
     )
     return hash
   }
@@ -675,10 +683,10 @@ class Connext {
     nonce,
     openVCs,
     vcRootHash,
-    agentA,
-    agentB,
+    partyA,
+    partyI,
     balanceA,
-    balanceB
+    balanceI
   }) {
     // validate params
     validate.single(sig, { presence: true, isHex: true })
@@ -687,10 +695,10 @@ class Connext {
     validate.single(nonce, { presence: true, isPositiveInt: true })
     validate.single(openVCs, { presence: true, isPositiveInt: true })
     validate.single(vcRootHash, { presence: true, isHex: true })
-    validate.single(agentA, { presence: true, isAddress: true })
-    validate.single(agentB, { presence: true, isAddress: true })
+    validate.single(partyA, { presence: true, isAddress: true })
+    validate.single(partyI, { presence: true, isAddress: true })
     validate.single(balanceA, { presence: true, isBN: true })
-    validate.single(balanceB, { presence: true, isBN: true })
+    validate.single(balanceI, { presence: true, isBN: true })
     // generate fingerprint
     let fingerprint = Connext.createLCStateUpdateFingerprint({
       isCloseFlag,
@@ -698,10 +706,10 @@ class Connext {
       nonce,
       openVCs,
       vcRootHash,
-      agentA,
-      agentB,
+      partyA,
+      partyI,
       balanceA,
-      balanceB
+      balanceI
     })
     fingerprint = util.toBuffer(fingerprint)
 
@@ -727,10 +735,10 @@ class Connext {
     nonce,
     openVCs,
     vcRootHash,
-    agentA,
-    agentB = this.ingridAddress, // default to ingrid
+    partyA,
+    partyI = this.ingridAddress, // default to ingrid
     balanceA,
-    balanceB,
+    balanceI,
     unlockedAccountPresent = false // true if hub or ingrid
   }) {
     // validate params
@@ -739,9 +747,9 @@ class Connext {
     validate.single(nonce, { presence: true, isPositiveInt: true })
     validate.single(openVCs, { presence: true, isPositiveInt: true })
     validate.single(vcRootHash, { presence: true, isHex: true })
-    validate.single(agentA, { presence: true, isAddress: true })
+    validate.single(partyA, { presence: true, isAddress: true })
     validate.single(balanceA, { presence: true, isBN: true })
-    validate.single(balanceB, { presence: true, isBN: true })
+    validate.single(balanceI, { presence: true, isBN: true })
 
     // TO DO:
     // additional validation to only allow clients to call correct state updates
@@ -755,10 +763,10 @@ class Connext {
       nonce,
       openVCs,
       vcRootHash,
-      agentA,
-      agentB,
+      partyA,
+      partyI,
       balanceA,
-      balanceB
+      balanceI
     })
     let sig
     if (unlockedAccountPresent) {
@@ -772,9 +780,9 @@ class Connext {
   static createVCStateUpdateFingerprint ({
     vcId,
     nonce,
-    agentA,
-    agentB,
-    agentI,
+    partyA,
+    partyB,
+    partyI,
     subchanAI,
     subchanBI,
     balanceA,
@@ -783,9 +791,9 @@ class Connext {
     // validate
     validate.single(vcId, { presence: true, isHexStrict: true })
     validate.single(nonce, { presence: true, isPositiveInt: true })
-    validate.single(agentA, { presence: true, isAddress: true })
-    validate.single(agentB, { presence: true, isAddress: true })
-    validate.single(agentI, { presence: true, isAddress: true })
+    validate.single(partyA, { presence: true, isAddress: true })
+    validate.single(partyB, { presence: true, isAddress: true })
+    validate.single(partyI, { presence: true, isAddress: true })
     validate.single(subchanAI, { presence: true, isHexStrict: true })
     validate.single(subchanBI, { presence: true, isHexStrict: true })
     validate.single(balanceA, { presence: true, isBN: true })
@@ -794,9 +802,9 @@ class Connext {
     const hash = Web3.utils.soliditySha3(
       { type: 'bytes32', value: vcId },
       { type: 'uint256', value: nonce },
-      { type: 'address', value: agentA },
-      { type: 'address', value: agentB },
-      { type: 'address', value: agentI },
+      { type: 'address', value: partyA },
+      { type: 'address', value: partyB },
+      { type: 'address', value: partyI },
       { type: 'string', value: subchanAI },
       { type: 'string', value: subchanAI },
       { type: 'uint256', value: balanceA },
@@ -809,9 +817,9 @@ class Connext {
     sig,
     vcId,
     nonce,
-    agentA,
-    agentB,
-    agentI,
+    partyA,
+    partyB,
+    partyI,
     subchanAI,
     subchanBI,
     balanceA,
@@ -821,9 +829,9 @@ class Connext {
     validate.single(sig, { presence: true, isHex: true })
     validate.single(vcId, { presence: true, isHexStrict: true })
     validate.single(nonce, { presence: true, isPositiveInt: true })
-    validate.single(agentA, { presence: true, isAddress: true })
-    validate.single(agentB, { presence: true, isAddress: true })
-    validate.single(agentI, { presence: true, isAddress: true })
+    validate.single(partyA, { presence: true, isAddress: true })
+    validate.single(partyB, { presence: true, isAddress: true })
+    validate.single(partyI, { presence: true, isAddress: true })
     validate.single(subchanAI, { presence: true, isHexStrict: true })
     validate.single(subchanBI, { presence: true, isHexStrict: true })
     validate.single(balanceA, { presence: true, isBN: true })
@@ -832,9 +840,9 @@ class Connext {
     let fingerprint = Connext.createVCStateUpdateFingerprint({
       vcId,
       nonce,
-      agentA,
-      agentB,
-      agentI,
+      partyA,
+      partyB,
+      partyI,
       subchanAI,
       subchanBI,
       balanceA,
@@ -860,9 +868,9 @@ class Connext {
   async createVCStateUpdate ({
     vcId,
     nonce,
-    agentA,
-    agentB,
-    agentI = this.ingridAddress,
+    partyA,
+    partyB,
+    partyI = this.ingridAddress,
     balanceA,
     balanceB,
     unlockedAccountPresent = false // if true, use sign over personal.sign
@@ -870,20 +878,20 @@ class Connext {
     // validate
     validate.single(vcId, { presence: true, isHexStrict: true })
     validate.single(nonce, { presence: true, isPositiveInt: true })
-    validate.single(agentA, { presence: true, isAddress: true })
-    validate.single(agentB, { presence: true, isAddress: true })
+    validate.single(partyA, { presence: true, isAddress: true })
+    validate.single(partyB, { presence: true, isAddress: true })
     validate.single(balanceA, { presence: true, isBN: true })
     validate.single(balanceB, { presence: true, isBN: true })
     // get accounts
     const accounts = await this.web3.getAccounts()
     // get subchans
     let subchanAI, subchanBI
-    // is this agentA or B?
-    if (accounts[0] === agentA) {
+    // is this partyA or B?
+    if (accounts[0] === partyA) {
       subchanAI = await this.getLcId({})
-      subchanBI = await this.getLcId({ agentA: agentB })
-    } else if (accounts[0] === agentB) {
-      subchanAI = await this.getLcId({ agentA })
+      subchanBI = await this.getLcId({ partyA: partyB })
+    } else if (accounts[0] === partyB) {
+      subchanAI = await this.getLcId({ partyA })
       subchanBI = await this.getLcId({})
     } else {
       throw new Error('Not your virtual channel.')
@@ -899,9 +907,9 @@ class Connext {
     const hash = Connext.createVCStateUpdateFingerprint({
       vcId,
       nonce,
-      agentA,
-      agentB,
-      agentI,
+      partyA,
+      partyB,
+      partyI,
       subchanAI,
       subchanBI,
       balanceA,
@@ -949,10 +957,10 @@ class Connext {
     //  *  nonce,
     //  *  openVCs,
     //  *  vcRootHash,
-    //  *  agentA,
-    //  *  agentB,
+    //  *  partyA,
+    //  *  partyI,
     //  *  balanceA,
-    //  *  balanceB
+    //  *  balanceI
     //  * }
     //  */
     // lcState == latest ingrid signed state
@@ -963,16 +971,16 @@ class Connext {
     return response.data
   }
 
-  async getLcId ({ agentA = null }) {
-    if (agentA) {
-      validate.single(agentA, { presence: true, isAddress: true })
+  async getLcId ({ partyA = null }) {
+    if (partyA) {
+      validate.single(partyA, { presence: true, isAddress: true })
     } else {
       const accounts = await this.web3.eth.getAccounts()
-      agentA = accounts[0]
+      partyA = accounts[0]
     }
     // get my LC with ingrid
     const response = await axios.get(
-      `${this.ingridUrl}/ledgerchannel?a=${agentA}`
+      `${this.ingridUrl}/ledgerchannel?a=${partyA}`
     )
     if (response.data.data.ledgerChannel) {
       return response.data.data.ledgerChannel.id
@@ -1051,7 +1059,7 @@ class Connext {
     return response.data
   }
 
-  async joinVc ({ sig, vcRootHash, channelId }) {
+  async joinVcHandler ({ sig, vcRootHash, channelId }) {
     validate.single(sig, { presence: true, isHex: true })
     validate.single(vcRootHash, { presence: true, isHex: true })
     validate.single(channelId, { presence: true, isHexStrict: true })
@@ -1067,7 +1075,7 @@ class Connext {
     return response.data
   }
 
-  async fastCloseLc ({ sig, lcId }) {
+  async fastCloseLcHandler ({ sig, lcId }) {
     validate.single(sig, { presence: true, isHex: true })
     validate.single(vcRootHash, { presence: true, isHex: true })
     validate.single(lcId, { presence: true, isHexStrict: true })
@@ -1080,7 +1088,7 @@ class Connext {
     return response.data
   }
 
-  async vcStateUpdate ({ channelId, sig, balance }) {
+  async vcStateUpdateHandler ({ channelId, sig, balance }) {
     validate.single(channelId, { presence: true, isHexStrict: true })
     validate.single(sig, { presence: true, isHex: true })
     validate.single(balance, { presence: true, isBN: true })
@@ -1094,7 +1102,7 @@ class Connext {
     return response.data
   }
 
-  async cosignVcStateUpdate ({ channelId, sig, balance }) {
+  async cosignVcStateUpdateHandler ({ channelId, sig, balance }) {
     validate.single(channelId, { presence: true, isHexStrict: true })
     validate.single(sig, { presence: true, isHex: true })
     validate.single(balance, { presence: true, isBN: true })
@@ -1108,6 +1116,20 @@ class Connext {
     return response.data
   }
 
+  // Should generate an object like this:
+  // const vcState = {
+  //   sigA,
+  //   sigB,
+  //   vcId,
+  //   nonce,
+  //   partyA,
+  //   partyB,
+  //   partyI,
+  //   subchanAI,
+  //   subchanBI,
+  //   balanceA,
+  //   balanceB
+  // }
   async getLatestVirtualDoubleSignedStateUpdate ({ channelId }) {
     validate.single(channelId, { presence: true, isHexStrict: true })
     const response = await axios.get(
@@ -1116,13 +1138,13 @@ class Connext {
     return response.data
   }
 
-  async getDecomposedLcUpdates ({ channelId, lcAgentA }) {
+  async getDecomposedLcUpdates ({ channelId, lcpartyA }) {
     validate.single(channelId, { presence: true, isHexStrict: true })
-    validate.single(lcAgentA, { presence: true, isAddress: true })
+    validate.single(lcpartyA, { presence: true, isAddress: true })
     const response = await axios.post(
       `${this.ingridUrl}/virtualchannel/${channelId}/decompose`,
       {
-        lcAgentA
+        lcpartyA
       }
     )
     return response.data
