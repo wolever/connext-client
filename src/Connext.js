@@ -302,7 +302,26 @@ class Connext {
    *   await connext.withdrawFinal()
    * }
    */
-  async withdrawFinal () {}
+  async withdrawFinal () {
+    const lcId = await this.getLcId({})
+    const lc = await this.getLc({ lcId })
+    if (lc.openVCs > 0) {
+      throw new Error('Close open VCs before withdraw final.')
+    }
+    if (!lc.isSettling) {
+      throw new Error('Ledger channel is not in settlement state.')
+    }
+    if (lc.updateLcTimeout < new Date().getTime()) {
+      throw new Error('Ledger channel is still in challenge phase.')
+    }
+    const results = await this.channelManagerInstance.byzantineCloseChannel(
+      lcId,
+      {
+        from: accounts[0]
+      }
+    )
+    return results
+  }
 
   /**
    * Sync signed state updates with chain.
@@ -573,10 +592,13 @@ class Connext {
     const latestVcState = await this.getLatestVirtualDoubleSignedStateUpdate({
       channelId
     })
-    if (latestVcState.partyA !== accounts[0] && latestVcState.partyB !== accounts[0]) {
+    if (
+      latestVcState.partyA !== accounts[0] &&
+      latestVcState.partyB !== accounts[0]
+    ) {
       throw new Error('Not your virtual channel.')
     }
-    
+
     // verify signatures
     const signerA = Connext.recoverSignerFromVCStateUpdate({
       sig: sigA,
@@ -607,11 +629,15 @@ class Connext {
     }
     // vc update is signed by correct people
     // it is their vc
-    
+
     // generate LcUpdate
     const lcStateUpdate = await this.getDecomposedLcUpdates(latestVcState)
     // post to ingrid
-    const results = await this.fastCloseVcHandler({ vcId: channelId, sigA: lcStateUpdate.sigA })
+    const results = await this.fastCloseVcHandler({
+      vcId: channelId,
+      sigA: lcStateUpdate.sigA
+    })
+    return results
   }
 
   /**
@@ -1228,11 +1254,11 @@ class Connext {
     lcState.openVCs = lc.openVCs - 1
     lcState.partyA = accounts[0]
     lcState.sigA = await this.createLCStateUpdate(lcState)
-    
+
     return lcState
   }
 
-  async fastCloseVcHandler({ vcId, sigA }) {
+  async fastCloseVcHandler ({ vcId, sigA }) {
     validate.single(vcId, { presence: true, isHexStrict: true })
     validate.single(sigA, { presence: true, isHex: true })
     const results = await axios.post(
