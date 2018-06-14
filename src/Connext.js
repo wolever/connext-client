@@ -207,6 +207,7 @@ class Connext {
    */
   async withdraw () {
     const lcId = await this.getLcId({})
+    const accounts = await this.web3.eth.getAccounts()
     const lcState = await this.getLatestLedgerStateUpdate({
       ledgerChannelId: lcId
     })
@@ -256,7 +257,6 @@ class Connext {
     const sig = await this.createLCStateUpdate(sigParams)
 
     const fastCloseResponse = await this.fastCloseLcHandler({ sig, lcId })
-    const accounts = await this.web3.eth.getAccounts()
     let response
     if (fastCloseResponse) {
       // call consensus close channel
@@ -568,17 +568,50 @@ class Connext {
    */
   async fastCloseChannel (channelId) {
     validate.single(channelId, { presence: true, isHexStrict: true })
-    // generate and sign fast close flag
     const accounts = await this.web3.eth.getAccounts()
-    const vc = await this.getChannel({ channelId })
-    if (vc.partyA !== accounts[0] && vc.partyB !== accounts[0]) {
+    // get latest double signed updates
+    const latestVcState = await this.getLatestVirtualDoubleSignedStateUpdate({
+      channelId
+    })
+    if (latestVcState.partyA !== accounts[0] && latestVcState.partyB !== accounts[0]) {
       throw new Error('Not your virtual channel.')
     }
-    // get latest double signed updates
-    const latestState = await this.getLatestVirtualDoubleSignedStateUpdate({
-      channelId,
-      lcpartyA: accounts[0]
-    })
+    
+    // verify signatures
+    const signerA = Connext.recoverSignerFromVCStateUpdate({
+      sig: sigA,
+      vcId: channelId,
+      nonce: latestVcState.nonce,
+      partyA: latestVcState.partyA,
+      partyB: latestVcState.partyB,
+      partyI: latestVcState.partyI,
+      subchanAI: latestVcState.subchanAI,
+      subchanBI: latestVcState.subchanBI,
+      balanceA: latestVcState.balanceA,
+      balanceB: latestVcState.balanceB
+    }) // should be partyA
+    const signerB = Connext.recoverSignerFromVCStateUpdate({
+      sig: sigB,
+      vcId: channelId,
+      nonce: latestVcState.nonce,
+      partyA: latestVcState.partyA,
+      partyB: latestVcState.partyB,
+      partyI: latestVcState.partyI,
+      subchanAI: latestVcState.subchanAI,
+      subchanBI: latestVcState.subchanBI,
+      balanceA: latestVcState.balanceA,
+      balanceB: latestVcState.balanceB
+    }) // should be accounts[0]
+    if (signerB !== vc.partyB || signerA !== vc.partyA) {
+      throw new Error('Incorrect signer detected on state.')
+    }
+    // vc update is signed by correct people
+    // it is their vc
+    
+    // generate LcUpdate
+    const lcStateUpdate = await this.getDecomposedLcUpdates(latestVcState)
+    // post to ingrid
+    const results = await this.fastCloseVcHandler({ vcId: channelId, sigA: lcStateUpdate.sigA })
   }
 
   /**
@@ -1075,6 +1108,8 @@ class Connext {
     return response.data
   }
 
+  // posts to ingrid endpoint to decompose ledger channel
+  // based on latest double signed update
   async fastCloseLcHandler ({ sig, lcId }) {
     validate.single(sig, { presence: true, isHex: true })
     validate.single(vcRootHash, { presence: true, isHex: true })
@@ -1138,19 +1173,82 @@ class Connext {
     return response.data
   }
 
-  async getDecomposedLcUpdates ({ channelId, lcpartyA }) {
-    validate.single(channelId, { presence: true, isHexStrict: true })
-    validate.single(lcpartyA, { presence: true, isAddress: true })
-    const response = await axios.post(
-      `${this.ingridUrl}/virtualchannel/${channelId}/decompose`,
-      {
-        lcpartyA
-      }
-    )
-    return response.data
+  async getDecomposedLcUpdates ({
+    sigA,
+    sigB,
+    vcId,
+    nonce,
+    partyA,
+    partyB,
+    partyI,
+    subchanAI,
+    subchanBI,
+    balanceA,
+    balanceB
+  }) {
+    // validate params
+    validate.single(sigA, { presence: true, isHex: true })
+    validate.single(sigB, { presence: true, isHex: true })
+    validate.single(vcId, { presence: true, isHexStrict: true })
+    validate.single(nonce, { presence: true, isPositiveInt: true })
+    validate.single(partyA, { presence: true, isAddress: true })
+    validate.single(partyB, { presence: true, isAddress: true })
+    validate.single(partyI, { presence: true, isAddress: true })
+    validate.single(subchanAI, { presence: true, isHexStrict: true })
+    validate.single(subchanBI, { presence: true, isHexStrict: true })
+    validate.single(balanceA, { presence: true, isBN: true })
+    validate.single(balanceB, { presence: true, isBN: true })
+    // get correct lc info
+    let lc, lcState, vc0s
+    const accounts = await this.web3.getAccounts()
+    if (accounts[0] === partyA) {
+      // accounts[0] is partyA, vcAgentA is paying money
+      lc = await this.getLc({ subchanAI })
+      vc0s = await this.getVcInitialStates({ subchanAI })
+      lcState.lcId = subchanAI
+      lcState.balanceA = lc.balanceA - balanceA
+      lcState.balanceI = lc.balanceI + balanceA
+    } else if (accounts[0] === partyB) {
+      // accounts[0] is partyB, vcAgentA is making money
+      lc = await this.getLc({ subchanBI })
+      vc0s = await this.getVcInitialStates({ subchanBI })
+      lcState.lcId = subchanBI
+      lcState.balanceA = lc.balanceA + balanceB
+      lcState.balanceI = lc.balanceI - balanceB
+    } else {
+      // does this condition make it so watchers cant call this function
+      throw new Error('Not your virtual channel to decompose.')
+    }
+    // create vc root hash
+    const vc0 = await this.getVcInitialState({ vcId })
+    vc0s = vc0s.pop(vc0)
+    lcState.vCRootHash = Connext.generateVcRootHash({ vc0s })
+    // add additional state params to create vc update
+    lcState.nonce = lc.nonce + 1
+    lcState.openVCs = lc.openVCs - 1
+    lcState.partyA = accounts[0]
+    lcState.sigA = await this.createLCStateUpdate(lcState)
+    
+    return lcState
   }
 
-  async getVcInitialStates () {}
+  async fastCloseVcHandler({ vcId, sigA }) {
+    validate.single(vcId, { presence: true, isHexStrict: true })
+    validate.single(sigA, { presence: true, isHex: true })
+    const results = await axios.post(
+      `${this.ingridUrl}/virtualChannel/${vcId}/fastclose`,
+      {
+        sig: sigA
+      }
+    )
+  }
+
+  // should return a list of initial vc state objects
+  // for all open VCs for a given LC
+  async getVcInitialStates ({ lcId }) {}
+
+  // returns initial vc state object for given vc
+  async getVcInitialState ({ vcId }) {}
 }
 
 module.exports = Connext
