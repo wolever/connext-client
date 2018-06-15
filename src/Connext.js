@@ -973,18 +973,6 @@ class Connext {
     balanceA,
     balanceB
   }) {
-    // validate
-    validate.single(sig, { presence: true, isHex: true })
-    validate.single(vcId, { presence: true, isHexStrict: true })
-    validate.single(nonce, { presence: true, isPositiveInt: true })
-    validate.single(partyA, { presence: true, isAddress: true })
-    validate.single(partyB, { presence: true, isAddress: true })
-    validate.single(partyI, { presence: true, isAddress: true })
-    validate.single(subchanAI, { presence: true, isHexStrict: true })
-    validate.single(subchanBI, { presence: true, isHexStrict: true })
-    validate.single(balanceA, { presence: true, isBN: true })
-    validate.single(balanceB, { presence: true, isBN: true })
-    // generate fingerprint
     const methodName = 'recoverSignerFromVCStateUpdate'
     // validate
     // validatorOpts'
@@ -1092,14 +1080,51 @@ class Connext {
     unlockedAccountPresent = false // if true, use sign over personal.sign
   }) {
     // validate
-    validate.single(vcId, { presence: true, isHexStrict: true })
-    validate.single(nonce, { presence: true, isPositiveInt: true })
-    validate.single(partyA, { presence: true, isAddress: true })
-    validate.single(partyB, { presence: true, isAddress: true })
-    validate.single(balanceA, { presence: true, isBN: true })
-    validate.single(balanceB, { presence: true, isBN: true })
+    const methodName = 'createVCStateUpdate'
+    // validate
+    // validatorOpts'
+    const isHex = { presence: true, isHex: true }
+    const isHexStrict = { presence: true, isHexStrict: true }
+    const isBN = { presence: true, isBN: true }
+    const isAddress = { presence: true, isAddress: true }
+    const isPositiveInt = { presence: true, isPositiveInt: true }
+
+    Connext.validatorsResponseToError(
+      validate.single(vcId, isHexStrict),
+      methodName,
+      'vcId'
+    )
+    Connext.validatorsResponseToError(
+      validate.single(nonce, isPositiveInt),
+      methodName,
+      'nonce'
+    )
+
+    Connext.validatorsResponseToError(
+      validate.single(partyA, isAddress),
+      methodName,
+      'partyA'
+    )
+
+    Connext.validatorsResponseToError(
+      validate.single(partyB, isAddress),
+      methodName,
+      'partyB'
+    )
+
+    Connext.validatorsResponseToError(
+      validate.single(balanceA, isBN),
+      methodName,
+      'balanceA'
+    )
+
+    Connext.validatorsResponseToError(
+      validate.single(balanceB, isBN),
+      methodName,
+      'balanceB'
+    )
     // get accounts
-    const accounts = await this.web3.getAccounts()
+    const accounts = await this.web3.eth.getAccounts()
     // get subchans
     let subchanAI, subchanBI
     // is this partyA or B?
@@ -1202,6 +1227,7 @@ class Connext {
       partyA = accounts[0]
     }
     // get my LC with ingrid
+
     const response = await axios.get(
       `${this.ingridUrl}/ledgerchannel?a=${partyA}`
     )
