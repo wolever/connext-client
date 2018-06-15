@@ -274,6 +274,9 @@ class Connext {
       )
     } else {
       // call updateLCState
+      /// //////////////////////////////////////////////////////////////////
+      // NOTE: HERE YOU PING THE WATCHER SO THEY KEEP TRACK OF TIMEOUTS //
+      /// ////////////////////////////////////////////////////////////////
       response = await this.channelManagerInstance.updateLcState(
         0,
         lcId,
@@ -631,7 +634,7 @@ class Connext {
     // it is their vc
 
     // generate LcUpdate
-    const lcStateUpdate = await this.getDecomposedLcUpdates(latestVcState)
+    const lcStateUpdate = await this.createDecomposedLcUpdates(latestVcState)
     // post to ingrid
     const results = await this.fastCloseVcHandler({
       vcId: channelId,
@@ -643,13 +646,13 @@ class Connext {
   /**
    * Closes a channel in a dispute.
    *
-   * Retrieves decomposed LC updates from Ingrid, and countersign updates if needed (i.e. if they are recieving funds).
+   * Retrieves decomposed LC updates from Ingrid, and countersigns updates if needed (i.e. if they are recieving funds).
    *
    * Settle VC is called on chain for each vcID if Ingrid does not provide decomposed state updates, and closeVirtualChannel is called for each vcID.
    *
    * @example
    * await connext.closeChannel({
-   *   channelId: 10,
+   *   channelId: 0xadsf11..,
    *   balance: web3.utils.toBN(web3.utils.toWei(0.5, 'ether'))
    * })
    * @param {Object} params - Object containing { vcId, balance }
@@ -662,6 +665,37 @@ class Connext {
     // get decomposed lc updates from ingrid
     const accounts = await this.web3.eth.getAccounts()
     const vc = await this.getChannel({ channelId })
+    // your vc? which agent?
+    let subchan
+    if (accounts[0] === vc.partyA) {
+      subchan = vc.subchanAI
+    } else if (accounts[0] === vc.partyB) {
+      subchan = vc.subchanBI
+    } else {
+      throw new Error('Not your channel to close.')
+    }
+    // ping ingrid for decomposed updates
+    // if doesnt respond, then settleVC for all VCIDs in LC
+    const lcStates = await this.getDecomposedLcStates({ vcId: channelId })
+    // the lc update for this subchan should be signed by ingrid
+    // should you just call checkpoint to update the LC on chain with this?
+    if (lcStates) {
+      // const result = await this.checkpoint() // maybe just post update cosig to ingrid?
+      const sig = await this.createLCStateUpdate(lcStates[subchan])
+      // post sig to ingrid
+      const result = await axios.post(
+        `${this.ingridUrl}/ledgerchannel/${subchan}/cosign`,
+        {
+          sig
+        }
+      )
+      return result
+    } else {
+      // ingrid MIA, call settle vc on chain for each vcID
+      // get initial states of VCs
+      const result = await this.byzantineCloseVc(channelId)
+      return result
+    }
   }
 
   /**
@@ -993,7 +1027,7 @@ class Connext {
       vcRootHash = '0x0'
       elems.push(vcRootHash)
     } else {
-      elems = vc0s.forEach(vc0 => {
+      elems = vc0s.map(vc0 => {
         // vc0 is the initial state of each vc
         // hash each initial state and convert hash to buffer
         const hash = Connext.createVCStateUpdateFingerprint(vc0)
@@ -1199,7 +1233,7 @@ class Connext {
     return response.data
   }
 
-  async getDecomposedLcUpdates ({
+  async createDecomposedLcUpdates ({
     sigA,
     sigB,
     vcId,
@@ -1225,21 +1259,21 @@ class Connext {
     validate.single(balanceA, { presence: true, isBN: true })
     validate.single(balanceB, { presence: true, isBN: true })
     // get correct lc info
-    let lc, lcState, vc0s
     const accounts = await this.web3.getAccounts()
+    let lc, lcState, vc0s
     if (accounts[0] === partyA) {
-      // accounts[0] is partyA, vcAgentA is paying money
+      // accounts[0] is vcpartyA, lcAgentA is paying money
       lc = await this.getLc({ subchanAI })
       vc0s = await this.getVcInitialStates({ subchanAI })
       lcState.lcId = subchanAI
-      lcState.balanceA = lc.balanceA - balanceA
-      lcState.balanceI = lc.balanceI + balanceA
+      lcState.balanceA = lc.balanceA - balanceB // balanceB in VC is amount A paid
+      lcState.balanceI = lc.balanceI + balanceB
     } else if (accounts[0] === partyB) {
       // accounts[0] is partyB, vcAgentA is making money
       lc = await this.getLc({ subchanBI })
       vc0s = await this.getVcInitialStates({ subchanBI })
       lcState.lcId = subchanBI
-      lcState.balanceA = lc.balanceA + balanceB
+      lcState.balanceA = lc.balanceA + balanceB // lc balance inc. by amount earned
       lcState.balanceI = lc.balanceI - balanceB
     } else {
       // does this condition make it so watchers cant call this function
@@ -1275,6 +1309,36 @@ class Connext {
 
   // returns initial vc state object for given vc
   async getVcInitialState ({ vcId }) {}
+
+  // requests both decomposed lc state updates from ingrid.
+  // returns labeled lc state object (i.e. indexed by lc channel id)
+  // lcState obj should match whats submitted to createLcUpdate
+  async getDecomposedLcStates ({ vcId }) {
+    validate.single(vcId, { presence: true, isHexStrict: true })
+  }
+
+  // settles all vcs on chain in the case of a dispute (used in close channel)
+  // first calls init vc
+  // then calls settleVc
+
+  /// SHOULD WE JUST POST THIS DIRECTLY TO THE WATCHER URL FROM OUR PACKAGE
+
+  // then posts to watcher (?) -- maybe just post all of this to the watcher url (?)
+  async byzantineCloseVc (vcId) {
+    validate.single(vcId, { presence: true, isHexStrict: true })
+    const accounts = await this.getAccounts()
+    const vc0 = await this.getVcInitialState({ vcId })
+    let subchan
+    if (accounts[0] === v0.agentA) {
+      subchan = vc0.subchanAI
+    } else if (accounts[0] == vc.agentB) {
+      subchan = vc0.subchanBI
+    }
+    // const initResult = await this.channelManagerInstance.initVCState(
+    // )
+    // // should check on the transaction status of the above call
+    // const settleResult = await this.channelManagerInstance.settleVc()
+  }
 }
 
 module.exports = Connext
