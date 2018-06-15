@@ -1,7 +1,5 @@
 import { fakeWeb3 } from './FakeWeb3'
 
-const moxios = require('moxios')
-
 export const createRandomBytes32 = async () => {
   return new Promise((resolve, reject) => {
     crypto.randomBytes(32, (err, buf) => {
