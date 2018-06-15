@@ -23,7 +23,7 @@ describe('Connext', async () => {
       const client = new Connext({ web3 }, createFakeWeb3())
       assert.ok(typeof client === 'object')
     })
-    it('should create a connect client with real web3', () => {
+    it('should create a connect client with real web3', async () => {
       const port = process.env.ETH_PORT ? process.env.ETH_PORT : '9545'
       web3 = new Web3(`ws://localhost:${port}`)
       let client = new Connext({ web3 }, Web3)
@@ -31,10 +31,91 @@ describe('Connext', async () => {
     })
   })
 
+  describe('createVCStateUpdate', () => {
+    const port = process.env.ETH_PORT ? process.env.ETH_PORT : '9545'
+    web3 = new Web3(`ws://localhost:${port}`)
+    let client = new Connext({ web3 }, Web3)
+    describe('createVCStateUpdate with real web3.utils and valid params', async () => {
+      beforeEach(() => {
+        // import and pass your custom axios instance to this method
+        moxios.install()
+      })
+
+      afterEach(() => {
+        // import and pass your custom axios instance to this method
+        moxios.uninstall()
+      })
+      const accounts = await web3.eth.getAccounts()
+      partyA = accounts[0]
+      partyB = accounts[1]
+      ingridAddress = accounts[2]
+      describe('should generate a signature', async () => {
+        it('should return 0xc1912 for both subchannel ids', async () => {
+          const url = `${client.ingridUrl}/ledgerchannel?a=${partyA}`
+          // moxios.wait(async () => {
+          moxios.stubRequest(url, {
+            status: 200,
+            response: {
+              data: {
+                data: {
+                  ledgerChannel: {
+                    id: '0xc1912'
+                  }
+                }
+              }
+            }
+          })
+          const sig = await client.createVCStateUpdate({
+            vcId: '0xc1912',
+            nonce: 0,
+            partyA: partyA,
+            partyB: partyB,
+            partyI: ingridAddress,
+            subchanAI: '0xc1912',
+            subchanBI: '0xc1912',
+            balanceA: Web3.utils.toBN('0'),
+            balanceB: Web3.utils.toBN('0'),
+            unlockedAccountPresent: true
+          })
+          // console.log(sig)
+          assert.equal(
+            sig,
+            '0xa72b2506d43e4e6e506c19c3f0400d88df7d138d0dcb54e274d415c13bc60c235b22988de3867f566856318f1783cc08324fd9c5a650631010aa7eb22bcc2a5b00'
+          )
+        })
+        // })
+      })
+    })
+  })
+
   describe('recoverSignerFromVCStateUpdate', () => {
     const port = process.env.ETH_PORT ? process.env.ETH_PORT : '9545'
     web3 = new Web3(`ws://localhost:${port}`)
     let client = new Connext({ web3 }, Web3)
+    describe('recoverSignerFromVCStateUpdate with real web3.utils and valid params', async () => {
+      const accounts = await web3.eth.getAccounts()
+      partyA = accounts[0]
+      partyB = accounts[1]
+      ingridAddress = accounts[2]
+      describe('should recover the address of person who signed', () => {
+        it('should return signer 0xC501E4e8aC8da07D9eC89122d375412477f561B1', () => {
+          const signer = Connext.recoverSignerFromVCStateUpdate({
+            sig: '0xa72b2506d43e4e6e506c19c3f0400d88df7d138d0dcb54e274d415c13bc60c235b22988de3867f566856318f1783cc08324fd9c5a650631010aa7eb22bcc2a5b00',
+            vcId: '0xc1912',
+            nonce: 0,
+            partyA: partyA,
+            partyB: partyB,
+            partyI: ingridAddress,
+            subchanAI: '0xc1912',
+            subchanBI: '0xc1912',
+            balanceA: Web3.utils.toBN('0'),
+            balanceB: Web3.utils.toBN('0')
+          })
+          assert.equal(signer, accounts[0].toLowerCase())
+        })
+      })
+    })
+
     describe('validators', () => {
       it('does throw an error when param is null', async () => {
         try {
@@ -294,6 +375,31 @@ describe('Connext', async () => {
   })
 
   describe('createVCStateUpdateFingerprint', () => {
+    const port = process.env.ETH_PORT ? process.env.ETH_PORT : '9545'
+    web3 = new Web3(`ws://localhost:${port}`)
+    let client = new Connext({ web3 }, Web3)
+    describe('recoverSignerFromVCStateUpdate with real web3.utils and valid params', async () => {
+      const accounts = await web3.eth.getAccounts()
+      partyA = accounts[0]
+      partyB = accounts[1]
+      ingridAddress = accounts[2]
+      describe('Should create a valid hash.', async () => {
+        it('returns a hashed value', () => {
+          const hash = Connext.createVCStateUpdateFingerprint({
+            vcId: '0xc1912',
+            nonce: 0,
+            partyA: partyA,
+            partyB: partyB,
+            partyI: ingridAddress,
+            subchanAI: '0xc1912',
+            subchanBI: '0xc1912',
+            balanceA: Web3.utils.toBN('0'),
+            balanceB: Web3.utils.toBN('0')
+          })
+          assert.equal(true, web3.utils.isHexStrict(hash))
+        })
+      })
+    })
     describe('throws an error when validator fails', () => {
       describe('Null or undefined', () => {
         it('does throw an error when param is undefined', async () => {
