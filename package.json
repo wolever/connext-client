@@ -47,6 +47,7 @@
   },
   "homepage": "https://github.com/ConnextProject/ethcalate-client#readme",
   "devDependencies": {
+    "axios-mock-adapter": "^1.15.0",
     "babel-cli": "^6.26.0",
     "babel-plugin-transform-async-to-generator": "^6.24.1",
     "babel-plugin-transform-runtime": "^6.23.0",
