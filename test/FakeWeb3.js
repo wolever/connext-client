@@ -1,3 +1,5 @@
+const Web3 = require('web3')
+
 export class fakeWeb3 {
   constructor () {
     this.eth = {
@@ -8,7 +10,8 @@ export class fakeWeb3 {
         sign: () => ''
       }
     }
-    this.utils = {
+    this.utils = Web3.utils
+    this.fakeUtils = {
       isBN: value => true,
       isHex: value => true,
       isHexStrict: value => true,
