@@ -1,3 +1,4 @@
+require('dotenv').config()
 const Web3 = require('web3')
 const channelManagerArtifacts = require('../artifacts/ChannelManagerAbi.json')
 const ledgerChannelArtifacts = require('../artifacts/Ledger.json')

@@ -7,7 +7,7 @@ const MerkleTree = require('../helpers/MerkleTree')
 const Utils = require('../helpers/utils')
 const Web3 = require('web3')
 const artifacts = require('../artifacts/Ledger.json')
-const { getChannelManager, getLedgerChannel, initWeb3 } = require('../web3')
+const { initWeb3, getWeb3 } = require('../web3')
 
 let web3 = { currentProvider: 'mock' }
 let partyA
@@ -18,16 +18,279 @@ let watcherUrl
 let ingridUrl
 
 describe('Connext', async () => {
-  beforeEach(async () => {
-    moxios.install()
-  })
-  afterEach(async () => {
-    moxios.uninstall()
+  describe('client init', () => {
+    it('should create a connext client with a fake version of web3', async () => {
+      const client = new Connext({ web3 }, createFakeWeb3())
+      assert.ok(typeof client === 'object')
+    })
+    it('should create a connect client with real web3', () => {
+      const port = process.env.ETH_PORT ? process.env.ETH_PORT : '9545'
+      web3 = new Web3(`ws://localhost:${port}`)
+      let client = new Connext({ web3 }, Web3)
+      assert.ok(typeof client === 'object')
+    })
   })
 
-  it('should create a connext client with a mock version of web3', async () => {
-    const client = new Connext({ web3 }, createFakeWeb3())
-    assert.ok(typeof client === 'object')
+  describe('recoverSignerFromVCStateUpdate', () => {
+    const port = process.env.ETH_PORT ? process.env.ETH_PORT : '9545'
+    web3 = new Web3(`ws://localhost:${port}`)
+    let client = new Connext({ web3 }, Web3)
+    describe('validators', () => {
+      it('does throw an error when param is null', async () => {
+        try {
+          Connext.recoverSignerFromVCStateUpdate({
+            sig: '0xc1912',
+            vcId: '0xc1912',
+            nonce: 100,
+            partyA: '0x627306090abaB3A6e1400e9345bC60c78a8BEf57',
+            partyB: '0x627306090abaB3A6e1400e9345bC60c78a8BEf57',
+            partyI: '0x627306090abaB3A6e1400e9345bC60c78a8BEf57',
+            subchanAI: '0xc1912',
+            subchanBI: '0xc1912',
+            balanceA: Web3.utils.toBN('100'),
+            balanceB: null
+          })
+        } catch (e) {
+          assert.equal(
+            e.message,
+            `[recoverSignerFromVCStateUpdate][balanceB] : can\'t be blank,null is not BN.`
+          )
+        }
+      })
+    })
+    describe('recoverSignerFromVCStateUpdate', () => {
+      describe('throws an error when validator fails', () => {
+        describe('Null or undefined', () => {
+          it('does throw an error when param is undefined', async () => {
+            try {
+              Connext.recoverSignerFromVCStateUpdate({
+                sig: '0xc1912',
+                vcId: '0xc1912',
+                nonce: 100,
+                partyA: '0x627306090abaB3A6e1400e9345bC60c78a8BEf57',
+                partyB: '0x627306090abaB3A6e1400e9345bC60c78a8BEf57',
+                partyI: '0x627306090abaB3A6e1400e9345bC60c78a8BEf57',
+                subchanAI: '0xc1912',
+                subchanBI: '0xc1912',
+                balanceA: Web3.utils.toBN('0'),
+                balanceB: undefined
+              })
+            } catch (e) {
+              assert.equal(
+                e.message,
+                `[recoverSignerFromVCStateUpdate][balanceB] : can\'t be blank,undefined is not BN.`
+              )
+            }
+          })
+          it('does throw an error when param is null', async () => {
+            try {
+              Connext.recoverSignerFromVCStateUpdate({
+                sig: '0xc1912',
+                vcId: '0xc1912',
+                nonce: 100,
+                partyA: '0x627306090abaB3A6e1400e9345bC60c78a8BEf57',
+                partyB: '0x627306090abaB3A6e1400e9345bC60c78a8BEf57',
+                partyI: '0x627306090abaB3A6e1400e9345bC60c78a8BEf57',
+                subchanAI: '0xc1912',
+                subchanBI: '0xc1912',
+                balanceA: Web3.utils.toBN('100'),
+                balanceB: null
+              })
+            } catch (e) {
+              assert.equal(
+                e.message,
+                `[recoverSignerFromVCStateUpdate][balanceB] : can\'t be blank,null is not BN.`
+              )
+            }
+          })
+        })
+
+        describe('vcId', () => {
+          it('throws an error when vcId is not a hex String', async () => {
+            try {
+              Connext.recoverSignerFromVCStateUpdate({
+                sig: '0xc1912',
+                vcId: 'bad VC ID'
+              })
+            } catch (e) {
+              assert.equal(
+                e.message,
+                `[recoverSignerFromVCStateUpdate][vcId] : bad VC ID is not hex string prefixed with 0x.`
+              )
+            }
+          })
+          it('does not throw a vcId error when vcId is a valid hex', async () => {
+            try {
+              Connext.recoverSignerFromVCStateUpdate({
+                sig: '0xc1912',
+                vcId: '0xc1912'
+              })
+            } catch (e) {
+              assert.notEqual(
+                e.message,
+                `[recoverSignerFromVCStateUpdate][vcId] : bad VC ID is not hex string prefixed with 0x.'`
+              )
+            }
+          })
+        })
+        describe('nonce', () => {
+          it('does throw an error when nonce is not postive int', async () => {
+            try {
+              Connext.recoverSignerFromVCStateUpdate({
+                sig: '0xc1912',
+                vcId: '0xc1912',
+                nonce: '100aa'
+              })
+            } catch (e) {
+              assert.equal(
+                e.message,
+                `[recoverSignerFromVCStateUpdate][nonce] : 100aa is not a positive integer.`
+              )
+            }
+          })
+        })
+        describe('partyA', () => {
+          it('does throw an error when partyA is not an address', async () => {
+            try {
+              Connext.recoverSignerFromVCStateUpdate({
+                sig: '0xc1912',
+                vcId: '0xc1912',
+                nonce: 100,
+                partyA: 'its a party'
+              })
+            } catch (e) {
+              assert.equal(
+                e.message,
+                `[recoverSignerFromVCStateUpdate][partyA] : its a party is not address.`
+              )
+            }
+          })
+        })
+        describe('partyB', () => {
+          it('does throw an error when partyB is not an address', async () => {
+            try {
+              Connext.recoverSignerFromVCStateUpdate({
+                sig: '0xc1912',
+                vcId: '0xc1912',
+                nonce: 100,
+                partyA: '0x627306090abaB3A6e1400e9345bC60c78a8BEf57',
+                partyB: 'cardi B party B'
+              })
+            } catch (e) {
+              assert.equal(
+                e.message,
+                `[recoverSignerFromVCStateUpdate][partyB] : cardi B party B is not address.`
+              )
+            }
+          })
+        })
+        describe('partyI', () => {
+          it('does throw an error when partyI is not an address', async () => {
+            try {
+              Connext.recoverSignerFromVCStateUpdate({
+                sig: '0xc1912',
+                vcId: '0xc1912',
+                nonce: 100,
+                partyA: '0x627306090abaB3A6e1400e9345bC60c78a8BEf57',
+                partyB: '0x627306090abaB3A6e1400e9345bC60c78a8BEf57',
+                partyI: 'cardi I party i'
+              })
+            } catch (e) {
+              assert.equal(
+                e.message,
+                `[recoverSignerFromVCStateUpdate][partyI] : cardi I party i is not address.`
+              )
+            }
+          })
+        })
+        describe('subchanAI', () => {
+          it('does throw an error when subchanAI is not a strict hex', async () => {
+            try {
+              Connext.recoverSignerFromVCStateUpdate({
+                sig: '0xc1912',
+                vcId: '0xc1912',
+                nonce: 100,
+                partyA: '0x627306090abaB3A6e1400e9345bC60c78a8BEf57',
+                partyB: '0x627306090abaB3A6e1400e9345bC60c78a8BEf57',
+                partyI: '0x627306090abaB3A6e1400e9345bC60c78a8BEf57',
+                subchanAI: 'I am ai'
+              })
+            } catch (e) {
+              assert.equal(
+                e.message,
+                `[recoverSignerFromVCStateUpdate][subchanAI] : I am ai is not hex string prefixed with 0x.`
+              )
+            }
+          })
+        })
+        describe('subchanBI', () => {
+          it('does throw an error when subchanBI is not a strict hex', async () => {
+            try {
+              Connext.recoverSignerFromVCStateUpdate({
+                sig: '0xc1912',
+                vcId: '0xc1912',
+                nonce: 100,
+                partyA: '0x627306090abaB3A6e1400e9345bC60c78a8BEf57',
+                partyB: '0x627306090abaB3A6e1400e9345bC60c78a8BEf57',
+                partyI: '0x627306090abaB3A6e1400e9345bC60c78a8BEf57',
+                subchanAI: '0xc1912',
+                subchanBI: 'invalid'
+              })
+            } catch (e) {
+              assert.equal(
+                e.message,
+                `[recoverSignerFromVCStateUpdate][subchanBI] : invalid is not hex string prefixed with 0x.`
+              )
+            }
+          })
+        })
+        describe('balanceA', () => {
+          it('does throw an error when subchanBI is not a strict hex', async () => {
+            try {
+              Connext.recoverSignerFromVCStateUpdate({
+                sig: '0xc1912',
+                vcId: '0xc1912',
+                nonce: 100,
+                partyA: '0x627306090abaB3A6e1400e9345bC60c78a8BEf57',
+                partyB: '0x627306090abaB3A6e1400e9345bC60c78a8BEf57',
+                partyI: '0x627306090abaB3A6e1400e9345bC60c78a8BEf57',
+                subchanAI: '0xc1912',
+                subchanBI: '0xc1912',
+                balanceA: 'cow'
+              })
+            } catch (e) {
+              assert.equal(
+                e.message,
+                `[recoverSignerFromVCStateUpdate][balanceA] : cow is not BN.`
+              )
+            }
+          })
+        })
+        describe('balanceB', () => {
+          it('does throw an error when subchanBI is not a strict hex', async () => {
+            try {
+              Connext.recoverSignerFromVCStateUpdate({
+                sig: '0xc1912',
+                vcId: '0xc1912',
+                nonce: 100,
+                partyA: '0x627306090abaB3A6e1400e9345bC60c78a8BEf57',
+                partyB: '0x627306090abaB3A6e1400e9345bC60c78a8BEf57',
+                partyI: '0x627306090abaB3A6e1400e9345bC60c78a8BEf57',
+                subchanAI: '0xc1912',
+                subchanBI: '0xc1912',
+                balanceA: Web3.utils.toBN('100'),
+                balanceB: '7 cats'
+              })
+            } catch (e) {
+              assert.equal(
+                e.message,
+                `[recoverSignerFromVCStateUpdate][balanceB] : 7 cats is not BN.`
+              )
+            }
+          })
+        })
+      })
+    })
   })
 
   describe('createVCStateUpdateFingerprint', () => {

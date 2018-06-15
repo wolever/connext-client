@@ -985,6 +985,74 @@ class Connext {
     validate.single(balanceA, { presence: true, isBN: true })
     validate.single(balanceB, { presence: true, isBN: true })
     // generate fingerprint
+    const methodName = 'recoverSignerFromVCStateUpdate'
+    // validate
+    // validatorOpts'
+    const isHex = { presence: true, isHex: true }
+    const isHexStrict = { presence: true, isHexStrict: true }
+    const isBN = { presence: true, isBN: true }
+    const isAddress = { presence: true, isAddress: true }
+    const isPositiveInt = { presence: true, isPositiveInt: true }
+
+    Connext.validatorsResponseToError(
+      validate.single(sig, isHex),
+      methodName,
+      'sig'
+    )
+
+    Connext.validatorsResponseToError(
+      validate.single(vcId, isHexStrict),
+      methodName,
+      'vcId'
+    )
+    Connext.validatorsResponseToError(
+      validate.single(nonce, isPositiveInt),
+      methodName,
+      'nonce'
+    )
+
+    Connext.validatorsResponseToError(
+      validate.single(partyA, isAddress),
+      methodName,
+      'partyA'
+    )
+
+    Connext.validatorsResponseToError(
+      validate.single(partyB, isAddress),
+      methodName,
+      'partyB'
+    )
+
+    Connext.validatorsResponseToError(
+      validate.single(partyI, isAddress),
+      methodName,
+      'partyI'
+    )
+
+    Connext.validatorsResponseToError(
+      validate.single(subchanAI, isHexStrict),
+      methodName,
+      'subchanAI'
+    )
+
+    Connext.validatorsResponseToError(
+      validate.single(subchanBI, isHexStrict),
+      methodName,
+      'subchanBI'
+    )
+
+    Connext.validatorsResponseToError(
+      validate.single(balanceA, isBN),
+      methodName,
+      'balanceA'
+    )
+
+    Connext.validatorsResponseToError(
+      validate.single(balanceB, isBN),
+      methodName,
+      'balanceB'
+    )
+
     let fingerprint = Connext.createVCStateUpdateFingerprint({
       vcId,
       nonce,
