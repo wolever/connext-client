@@ -1,6 +1,11 @@
 const assert = require('assert')
 const Connext = require('../src/Connext')
 const moxios = require('moxios')
+const axios = require('axios')
+const MockAdapter = require('axios-mock-adapter')
+
+// This sets the mock adapter on the default instance
+
 const { createFakeWeb3 } = require('./Helpers')
 const sinon = require('sinon')
 const MerkleTree = require('../helpers/MerkleTree')
@@ -52,18 +57,23 @@ describe('Connext', async () => {
       describe('should generate a signature', async () => {
         it('should return 0xc1912 for both subchannel ids', async () => {
           const url = `${client.ingridUrl}/ledgerchannel?a=${partyA}`
-          // moxios.wait(async () => {
-          moxios.stubRequest(url, {
-            status: 200,
-            response: {
-              data: {
+          // moxios.stubRequest(url, {
+          //   status: 200,
+          //   response: {}
+          // })
+          const mock = new MockAdapter(axios)
+          mock.onGet().reply(() => {
+            // `config` is the axios config and contains things like the url
+
+            // return an array in the form of [status, data, headers]
+            return [
+              200,
+              {
                 data: {
-                  ledgerChannel: {
-                    id: '0xc1912'
-                  }
+                  ledgerChannel: { id: '0xc1912' }
                 }
               }
-            }
+            ]
           })
           const sig = await client.createVCStateUpdate({
             vcId: '0xc1912',
@@ -71,8 +81,6 @@ describe('Connext', async () => {
             partyA: partyA,
             partyB: partyB,
             partyI: ingridAddress,
-            subchanAI: '0xc1912',
-            subchanBI: '0xc1912',
             balanceA: Web3.utils.toBN('0'),
             balanceB: Web3.utils.toBN('0'),
             unlockedAccountPresent: true
@@ -83,7 +91,6 @@ describe('Connext', async () => {
             '0xa72b2506d43e4e6e506c19c3f0400d88df7d138d0dcb54e274d415c13bc60c235b22988de3867f566856318f1783cc08324fd9c5a650631010aa7eb22bcc2a5b00'
           )
         })
-        // })
       })
     })
   })
