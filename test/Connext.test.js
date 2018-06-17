@@ -5,7 +5,6 @@ const MockAdapter = require('axios-mock-adapter')
 const { createFakeWeb3 } = require('./Helpers')
 const sinon = require('sinon')
 const MerkleTree = require('../helpers/MerkleTree')
-const Utils = require('../helpers/utils')
 const Web3 = require('web3')
 const artifacts = require('../artifacts/Ledger.json')
 const { initWeb3, getWeb3 } = require('../web3')
@@ -14,9 +13,6 @@ let web3 = { currentProvider: 'mock' }
 let partyA
 let partyB
 let ingridAddress
-let contractAddress
-let watcherUrl
-let ingridUrl
 
 describe('Connext', async () => {
   describe('client init', () => {
@@ -63,11 +59,10 @@ describe('Connext', async () => {
           balanceB: Web3.utils.toBN('0'),
           unlockedAccountPresent: true
         })
-          // console.log(sig)
         assert.equal(
-            sig,
-            '0xa72b2506d43e4e6e506c19c3f0400d88df7d138d0dcb54e274d415c13bc60c235b22988de3867f566856318f1783cc08324fd9c5a650631010aa7eb22bcc2a5b00'
-          )
+          sig,
+          '0xa72b2506d43e4e6e506c19c3f0400d88df7d138d0dcb54e274d415c13bc60c235b22988de3867f566856318f1783cc08324fd9c5a650631010aa7eb22bcc2a5b00'
+        )
       })
     })
   })
@@ -78,7 +73,6 @@ describe('Connext', async () => {
     let client = new Connext({ web3 }, Web3)
     describe('recoverSignerFromVCStateUpdate with real web3.utils and valid params', async () => {
       const accounts = await web3.eth.getAccounts()
-      console.log('HOWWW', accounts)
       partyA = accounts[0]
       partyB = accounts[1]
       ingridAddress = accounts[2]
@@ -784,6 +778,6 @@ describe('ingridClientRequests', () => {
       ]
     })
     const result = await client.openVc(params)
-    assert.deepEqual(result, {data: {}})
+    assert.deepEqual(result, { data: {} })
   })
 })
