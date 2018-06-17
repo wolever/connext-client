@@ -1970,7 +1970,7 @@ class Connext {
       'to'
     )
     Connext.validatorsResponseToError(
-      validate.single(vcRootHash, isAddress),
+      validate.single(vcRootHash, isHex),
       methodName,
       'vcRootHash'
     )
