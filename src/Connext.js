@@ -1065,7 +1065,7 @@ class Connext {
     // additional validation to only allow clients to call correct state updates
 
     // generate sig
-    const accounts = await this.web3.getAccounts()
+    const accounts = await this.web3.eth.getAccounts()
     // personal sign?
     const hash = Connext.createLCStateUpdateFingerprint({
       isCloseFlag,
