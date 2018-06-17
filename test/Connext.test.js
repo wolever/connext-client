@@ -613,15 +613,15 @@ describe('Connext', async () => {
 describe('ingridClientRequests', () => {
   let mock
   let validLedgerState = {
-    sigB: 'sigB',
-    sigA: 'sigA',
+    sigB: '0xc12',
+    sigA: '0xc12',
     nonce: 0,
-    openVCs: 'openVCs',
-    vcRootHash: 'hash',
-    partyA: 'partyA',
-    partyI: 'partyI',
-    balanceA: 100,
-    balanceI: 32
+    openVCs: 0,
+    vcRootHash: '0xc12',
+    partyA: '0xC501E4e8aC8da07D9eC89122d375412477f561B1',
+    partyI: '0x2c86bF8a3Fb43CE005d6897dCbBe6338912A14cc',
+    balanceA: Web3.utils.toBN(3),
+    balanceI: Web3.utils.toBN(3)
   }
   beforeEach(() => {
     mock = new MockAdapter(axios)
@@ -629,7 +629,7 @@ describe('ingridClientRequests', () => {
   it('getLatestLedgerStateUpdate', async () => {
     const client = new Connext({ web3 }, createFakeWeb3())
     client.ingridUrl = 'ingridUrl'
-    const ledgerChannelId = 'address'
+    const ledgerChannelId = '0xc12'
     const url = `${client.ingridUrl}/ledgerchannel/${ledgerChannelId}/lateststate`
     const mock = new MockAdapter(axios)
     mock.onGet().reply(() => {
@@ -640,7 +640,7 @@ describe('ingridClientRequests', () => {
         }
       ]
     })
-    const res = await client.getLatestLedgerStateUpdate('address')
+    const res = await client.getLatestLedgerStateUpdate('0xc12')
     assert.ok(typeof res === 'object')
   })
 
@@ -664,7 +664,7 @@ describe('ingridClientRequests', () => {
 
   it('fastCloseVcHandler', async () => {
     const client = new Connext({ web3 }, createFakeWeb3())
-    const params = { vcId: 'vcId', sigA: 'sigA' }
+    const params = { vcId: '0xc12', sigA: '0xc12' }
     client.ingridUrl = 'ingridUrl'
     const url = `${client.ingridUrl}/virtualChannel/${params.vcId}/fastclose`
     const mock = new MockAdapter(axios)
@@ -683,7 +683,7 @@ describe('ingridClientRequests', () => {
   it('getLatestVirtualDoubleSignedStateUpdate', async () => {
     const client = new Connext({ web3 }, createFakeWeb3())
     client.ingridUrl = 'ingridUrl'
-    const params = { channelId: 'channelId' }
+    const params = { channelId: '0xc12' }
     const url = `${client.ingridUrl}/virtualchannel/${params.channelId}/lateststate/doublesigned`
     const mock = new MockAdapter(axios)
     mock.onGet().reply(() => {
@@ -701,7 +701,11 @@ describe('ingridClientRequests', () => {
   it('cosignVcStateUpdateHandler', async () => {
     const client = new Connext({ web3 }, createFakeWeb3())
     client.ingridUrl = 'ingridUrl'
-    const params = { channelId: 'channelId', sig: 'sig', balance: 12 }
+    const params = {
+      channelId: '0xc12',
+      sig: '0xc12',
+      balance: Web3.utils.toBN(3)
+    }
     const url = `${client.ingridUrl}/virtualchannel/${params.channelId}/cosign`
     const mock = new MockAdapter(axios)
     mock.onPost().reply(() => {
@@ -719,7 +723,11 @@ describe('ingridClientRequests', () => {
   it('vcStateUpdateHandler', async () => {
     const client = new Connext({ web3 }, createFakeWeb3())
     client.ingridUrl = 'ingridUrl'
-    const params = { channelId: 'channelId', sig: 'sig', balance: 12 }
+    const params = {
+      channelId: '0xc12',
+      sig: '0xc12',
+      balance: Web3.utils.toBN(10)
+    }
     const url = `${client.ingridUrl}/virtualchannel/${params.channelId}/update`
     const mock = new MockAdapter(axios)
     mock.onPost().reply(() => {
@@ -737,7 +745,7 @@ describe('ingridClientRequests', () => {
   it('joinVcHandler', async () => {
     const client = new Connext({ web3 }, createFakeWeb3())
     client.ingridUrl = 'ingridUrl'
-    const params = { channelId: 'channelId', sig: 'sig', vcRootHash: 1212033 }
+    const params = { channelId: '0xc12', sig: '0xc12', vcRootHash: '0xc12' }
     const url = `${client.ingridUrl}/virtualchannel/${params.channelId}/join`
 
     const mock = new MockAdapter(axios)
@@ -762,10 +770,10 @@ describe('ingridClientRequests', () => {
     }
     client.ingridUrl = 'ingridUrl'
     const params = {
-      sig: 'sig',
-      balanceA: 100,
-      to: 230,
-      vcRootHash: 'hashKey'
+      sig: '0xc12',
+      balanceA: Web3.utils.toBN(10),
+      to: '0xC501E4e8aC8da07D9eC89122d375412477f561B1',
+      vcRootHash: '0xc12'
     }
     const url = `${client.ingridUrl}/virtualchannel/open?a=${fakeAccounts[0]}`
     const mock = new MockAdapter(axios)
