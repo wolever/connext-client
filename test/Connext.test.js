@@ -5,14 +5,27 @@ const MockAdapter = require('axios-mock-adapter')
 const { createFakeWeb3 } = require('./Helpers')
 const sinon = require('sinon')
 const MerkleTree = require('../helpers/MerkleTree')
+const Utils = require('../helpers/utils')
 const Web3 = require('web3')
 const artifacts = require('../artifacts/Ledger.json')
 const { initWeb3, getWeb3 } = require('../web3')
 
+// named variables
 let web3 = { currentProvider: 'mock' }
 let partyA
 let partyB
 let ingridAddress
+let vc0 = {
+  vcId: '0xc12',
+  nonce: 0,
+  partyA: '',
+  partyB: '',
+  partyI: '',
+  subchanAI: '0xc34',
+  subchanBI: '0xc56',
+  balanceA: Web3.utils.toBN('2'),
+  balanceB: Web3.utils.toBN('2')
+}
 
 describe('Connext', async () => {
   describe('client init', () => {
@@ -25,6 +38,64 @@ describe('Connext', async () => {
       web3 = new Web3(`ws://localhost:${port}`)
       let client = new Connext({ web3 }, Web3)
       assert.ok(typeof client === 'object')
+    })
+  })
+
+  describe('generateVcRootHash', () => {
+    const port = process.env.ETH_PORT ? process.env.ETH_PORT : '9545'
+    web3 = new Web3(`ws://localhost:${port}`)
+    let client = new Connext({ web3 }, Web3)
+    describe('generateVCRootHash with real web3.utils and valid params', () => {
+      it('should create a vcRootHash = 0x0 when no VCs are provided', () => {
+        const vc0s = []
+        const vcRootHash = Connext.generateVcRootHash({ vc0s })
+        assert.equal('0x0', vcRootHash)
+      })
+      it('should create a vcRootHash containing vcs', async () => {
+        const accounts = await client.web3.eth.getAccounts()
+        partyA = vc0.partyA = accounts[0]
+        partyB = vc0.partyB = accounts[1]
+        ingridAddress = client.ingridAddress = vc0.partyI = accounts[2]
+        let vc1 = Object.assign({}, vc0)
+        vc1.vcId = '0xd12'
+        vc1.subchanAI = '0xd34'
+        vc1.subchanBI = '0xd56'
+        const vc0s = [vc0, vc1]
+        const vcRootHash = Connext.generateVcRootHash({ vc0s })
+        assert.equal(
+          '0x42a2683a579efa82710bc101454fc1059d70c21f093efba62d4a991bf67bdeb6',
+          vcRootHash
+        )
+      })
+
+      // it('should correctly validate if VCs are in root hash', async () => {
+      //   // generate vc0s
+      //   const accounts = await client.web3.eth.getAccounts()
+      //   partyA = vc0.partyA = accounts[0]
+      //   partyB = vc0.partyB = accounts[1]
+      //   ingridAddress = client.ingridAddress = vc0.partyI = accounts[2]
+      //   let vc1 = Object.assign({}, vc0)
+      //   vc1.vcId = '0xd12'
+      //   vc1.subchanAI = '0xd34'
+      //   vc1.subchanBI = '0xd56'
+      //   const vc0s = [vc0, vc1]
+      //   const vcRootHash =
+      //     '0x42a2683a579efa82710bc101454fc1059d70c21f093efba62d4a991bf67bdeb6'
+      //   // generate tree
+      //   let elems = vc0s.map(vc0 => {
+      //     const hash = Connext.createVCStateUpdateFingerprint(vc0)
+      //     const vcBuf = Utils.hexToBuffer(hash)
+      //     return vcBuf
+      //   })
+      //   const merkle = new MerkleTree.default(elems)
+      //   // generate proof
+      //   let proof = [vcRootHash]
+      //   proof = Utils.marshallState(proof)
+      //   assert.equal(
+      //     '0x42a2683a579efa82710bc101454fc1059d70c21f093efba62d4a991bf67bdeb6',
+      //     proof
+      //   )
+      // })
     })
   })
 

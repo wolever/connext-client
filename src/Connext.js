@@ -3,6 +3,7 @@ const channelManagerAbi = require('../artifacts/ChannelManagerAbi.json')
 const util = require('ethereumjs-util')
 const Web3 = require('web3')
 const validate = require('validate.js')
+const MerkleTree = require('../helpers/MerkleTree')
 const Utils = require('../helpers/utils')
 const crypto = require('crypto')
 
@@ -32,8 +33,7 @@ validate.validators.isHexStrict = value => {
 }
 
 validate.validators.isArray = value => {
-  // for ledgerIDs
-  if (value.constructor === Array) {
+  if (Array.isArray(value)) {
     return null
   } else {
     return `${value} is not an array.`
@@ -1396,7 +1396,7 @@ class Connext {
         const vcBuf = Utils.hexToBuffer(hash)
         return vcBuf
       })
-      const merkle = new MerkleTree(elems)
+      const merkle = new MerkleTree.default(elems)
       vcRootHash = Utils.bufferToHex(merkle.getRoot())
     }
     return vcRootHash
@@ -1702,7 +1702,7 @@ class Connext {
     const accounts = await this.web3.eth.getAccounts()
     // generate proof from lc
     const vc0s = await this.getVcInitialStates({ lcId: subchan })
-    const vcRootHash = await this.generateVcRootHash({ vc0s })
+    const vcRootHash = Connext.generateVcRootHash({ vc0s })
     let proof = [vcRootHash]
     proof = this.web3.utils.soliditySha3({ type: 'bytes32', value: proof })
     const results = await this.channelManagerInstance.initVCState(

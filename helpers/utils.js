@@ -1,5 +1,6 @@
 const Buffer = require('buffer').Buffer
 const util = require('ethereumjs-util')
+const Web3 = require('web3')
 
 module.exports = {
   latestTime: function latestTime () {
@@ -82,8 +83,8 @@ module.exports = {
 
   getBytes: function getBytes (input) {
     if (Buffer.isBuffer(input)) input = '0x' + input.toString('hex')
-    if (66 - input.length <= 0) return web3.toHex(input)
-    return this.padBytes32(web3.toHex(input))
+    if (66 - input.length <= 0) return Web3.utils.toHex(input)
+    return this.padBytes32(Web3.utils.toHex(input))
   },
 
   marshallState: function marshallState (inputs) {
