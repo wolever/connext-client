@@ -123,7 +123,14 @@ class Connext {
    * @returns {String} result of calling openLedgerChannel on the channelManager instance.
    */
   async register (initialDeposit) {
-    validate.single(initialDeposit, { presence: true, isBN: true })
+    // validate params
+    const methodName = 'register'
+    const isBN = { presence: true, isBN: true }
+    Connext.validatorsResponseToError(
+      validate.single(initialDeposit, isBN),
+      methodName,
+      'initialDeposit'
+    )
     // get challenge timer from ingrid
     const accounts = await this.web3.eth.getAccounts()
     const challenge = await this.getLedgerChannelChallengeTimer()
@@ -175,7 +182,14 @@ class Connext {
    * @param {BigNumber} depositInWei - Value of the deposit.
    */
   async deposit (depositInWei) {
-    validate.single(depositInWei, { presence: true, isBN: true })
+    // validate params
+    const methodName = 'deposit'
+    const isBN = { presence: true, isBN: true }
+    Connext.validatorsResponseToError(
+      validate.single(depositInWei, isBN),
+      methodName,
+      'depositInWei'
+    )
     // call contract handler
     const result = await this.depositContractHandler({ depositInWei })
     return result
@@ -382,9 +396,21 @@ class Connext {
    * validate the state update against lc is valid
    */
   async openChannel ({ to, deposit = null }) {
-    validate.single(to, { presence: true, isAddress: true })
+    // validate params
+    const methodName = 'openChannel'
+    const isAddress = { presence: true, isAddress: true }
+    const isBN = { presence: true, isBN: true }
+    Connext.validatorsResponseToError(
+      validate.single(to, isAddress),
+      methodName,
+      'to'
+    )
     if (deposit) {
-      validate.single(deposit, { presence: true, isBN: true })
+      Connext.validatorsResponseToError(
+        validate.single(deposit, isBN),
+        methodName,
+        'deposit'
+      )
     }
     const lcIdA = await this.getLcId({})
     const lcIdB = await this.getLcId({ partyA: to })
@@ -431,8 +457,14 @@ class Connext {
    * @param {Number} channelId - ID of the virtual channel.
    */
   async joinChannel (channelId) {
-    // join virtual channel
-    validate.single(channelId, { presence: true, isHexStrict: true })
+    // validate params
+    const methodName = 'joinChannel'
+    const isHexStrict = { presence: true, isHexStrict: true }
+    Connext.validatorsResponseToError(
+      validate.single(channelId, isHexStrict),
+      methodName,
+      'channelId'
+    )
     // get channels and accounts
     const accounts = await this.web3.eth.getAccounts()
 
@@ -481,8 +513,20 @@ class Connext {
    * @returns {String} Returns signature of balance update.
    */
   async updateBalance ({ channelId, balance }) {
-    validate.single(channelId, { presence: true, isHexStrict: true }) // better channelID validator
-    validate.single(balance, { presence: true, isBN: true })
+    // validate params
+    const methodName = 'updateBalance'
+    const isHexStrict = { presence: true, isHexStrict: true }
+    const isBN = { presence: true, isBN: true }
+    Connext.validatorsResponseToError(
+      validate.single(channelId, isHexStrict),
+      methodName,
+      'channelId'
+    )
+    Connext.validatorsResponseToError(
+      validate.single(balance, isBN),
+      methodName,
+      'balance'
+    )
     // get the vc
     const vc = await this.getChannel({ channelId })
 
@@ -515,6 +559,26 @@ class Connext {
    * @returns {String} Returns signature of balance update.
    */
   async cosignBalanceUpdate ({ channelId, balance, sig }) {
+    // validate params
+    const methodName = 'cosignBalanceUpdate'
+    const isHexStrict = { presence: true, isHexStrict: true }
+    const isBN = { presence: true, isBN: true }
+    const isHex = { presence: true, isHex: true }
+    Connext.validatorsResponseToError(
+      validate.single(channelId, isHexStrict),
+      methodName,
+      'channelId'
+    )
+    Connext.validatorsResponseToError(
+      validate.single(balance, isBN),
+      methodName,
+      'balance'
+    )
+    Connext.validatorsResponseToError(
+      validate.single(sig, isHex),
+      methodName,
+      'sig'
+    )
     // validate inputs
     validate.single(channelId, { presence: true, isHexStrict: true })
     validate.single(balance, { presence: true, isBN: true })
@@ -571,7 +635,14 @@ class Connext {
    * @param {Bytes32} channelId - virtual channel ID
    */
   async fastCloseChannel (channelId) {
-    validate.single(channelId, { presence: true, isHexStrict: true })
+    // validate params
+    const methodName = 'fastCloseChannel'
+    const isHexStrict = { presence: true, isHexStrict: true }
+    Connext.validatorsResponseToError(
+      validate.single(channelId, isHexStrict),
+      methodName,
+      'channelId'
+    )
     const accounts = await this.web3.eth.getAccounts()
     // get latest double signed updates
     const latestVcState = await this.getLatestVirtualDoubleSignedStateUpdate({
@@ -642,8 +713,21 @@ class Connext {
    * @param {BigNumber} params.balance Virtual channel balance.
    */
   async closeChannel ({ channelId, balance }) {
-    validate.single(channelId, { presence: true, isHexStrict: true })
-    validate.single(balance, { presence: true, isBN: true })
+    // validate params
+    const methodName = 'closeChannel'
+    const isHexStrict = { presence: true, isHexStrict: true }
+    const isBN = { presence: true, isBN: true }
+    Connext.validatorsResponseToError(
+      validate.single(channelId, isHexStrict),
+      methodName,
+      'channelId'
+    )
+    Connext.validatorsResponseToError(
+      validate.single(balance, isBN),
+      methodName,
+      'balance'
+    )
+
     // get decomposed lc updates from ingrid
     const accounts = await this.web3.eth.getAccounts()
     const vc = await this.getChannel({ channelId })
@@ -700,7 +784,13 @@ class Connext {
    * @param {BigNumber} channels.$.balance Channel balance.
    */
   async closeChannels (channels) {
-    validate.single(channels, { presence: true, isArray: true })
+    const methodName = 'closeChannels'
+    const isArray = { presence: true, isArray: true }
+    Connext.validatorsResponseToError(
+      validate.single(channels, isArray),
+      methodName,
+      'channels'
+    )
     // should this try to fast close any of the channels?
     // or just immediately force close in dispute many channels
     channels.forEach(async channel => {
@@ -727,15 +817,62 @@ class Connext {
     balanceI
   }) {
     // validate params
-    validate.single(isCloseFlag, { presence: true, isBoooleanInt: true })
-    validate.single(lcId, { presence: true, isHexStrict: true })
-    validate.single(nonce, { presence: true, isPositiveInt: true })
-    validate.single(openVCs, { presence: true, isPositiveInt: true })
-    validate.single(vcRootHash, { presence: true, isHex: true })
-    validate.single(partyA, { presence: true, isAddress: true })
-    validate.single(partyI, { presence: true, isAddress: true })
-    validate.single(balanceA, { presence: true, isBN: true })
-    validate.single(balanceI, { presence: true, isBN: true })
+    const methodName = 'createLCStateUpdateFingerprint'
+    // validate
+    // validatorOpts
+    const isHexStrict = { presence: true, isHexStrict: true }
+    const isHex = { presence: true, isHex: true }
+    const isBN = { presence: true, isBN: true }
+    const isAddress = { presence: true, isAddress: true }
+    const isPositiveInt = { presence: true, isPositiveInt: true }
+    const isBooleanInt = { presence: true, isBooleanInt: true }
+
+    Connext.validatorsResponseToError(
+      validate.single(isCloseFlag, isBooleanInt),
+      methodName,
+      'isCloseFlag'
+    )
+
+    Connext.validatorsResponseToError(
+      validate.single(lcId, isHexStrict),
+      methodName,
+      'lcId'
+    )
+    Connext.validatorsResponseToError(
+      validate.single(nonce, isPositiveInt),
+      methodName,
+      'nonce'
+    )
+    Connext.validatorsResponseToError(
+      validate.single(openVCs, isPositiveInt),
+      methodName,
+      'openVCs'
+    )
+    Connext.validatorsResponseToError(
+      validate.single(vcRootHash, isHex),
+      methodName,
+      'vcRootHash'
+    )
+    Connext.validatorsResponseToError(
+      validate.single(partyA, isAddress),
+      methodName,
+      'partyA'
+    )
+    Connext.validatorsResponseToError(
+      validate.single(partyI, isAddress),
+      methodName,
+      'partyI'
+    )
+    Connext.validatorsResponseToError(
+      validate.single(balanceA, isBN),
+      methodName,
+      'balanceA'
+    )
+    Connext.validatorsResponseToError(
+      validate.single(balanceI, isBN),
+      methodName,
+      'balanceI'
+    )
     // generate state update to sign
     const hash = Web3.utils.soliditySha3(
       { type: 'uint256', value: isCloseFlag },
@@ -763,17 +900,69 @@ class Connext {
     balanceA,
     balanceI
   }) {
-    // validate params
-    validate.single(sig, { presence: true, isHex: true })
-    validate.single(isCloseFlag, { presence: true, isBoooleanInt: true })
-    validate.single(lcId, { presence: true, isHexStrict: true })
-    validate.single(nonce, { presence: true, isPositiveInt: true })
-    validate.single(openVCs, { presence: true, isPositiveInt: true })
-    validate.single(vcRootHash, { presence: true, isHex: true })
-    validate.single(partyA, { presence: true, isAddress: true })
-    validate.single(partyI, { presence: true, isAddress: true })
-    validate.single(balanceA, { presence: true, isBN: true })
-    validate.single(balanceI, { presence: true, isBN: true })
+    const methodName = 'recoverSignerFromLCStateUpdate'
+    // validate
+    // validatorOpts
+    const isHexStrict = { presence: true, isHexStrict: true }
+    const isHex = { presence: true, isHex: true }
+    const isBN = { presence: true, isBN: true }
+    const isAddress = { presence: true, isAddress: true }
+    const isPositiveInt = { presence: true, isPositiveInt: true }
+    const isBooleanInt = { presence: true, isBooleanInt: true }
+
+    Connext.validatorsResponseToError(
+      validate.single(sig, isHex),
+      methodName,
+      'sig'
+    )
+
+    Connext.validatorsResponseToError(
+      validate.single(isCloseFlag, isBooleanInt),
+      methodName,
+      'isCloseFlag'
+    )
+
+    Connext.validatorsResponseToError(
+      validate.single(lcId, isHexStrict),
+      methodName,
+      'lcId'
+    )
+    Connext.validatorsResponseToError(
+      validate.single(nonce, isPositiveInt),
+      methodName,
+      'nonce'
+    )
+    Connext.validatorsResponseToError(
+      validate.single(openVCs, isPositiveInt),
+      methodName,
+      'openVCs'
+    )
+    Connext.validatorsResponseToError(
+      validate.single(vcRootHash, isHex),
+      methodName,
+      'vcRootHash'
+    )
+    Connext.validatorsResponseToError(
+      validate.single(partyA, isAddress),
+      methodName,
+      'partyA'
+    )
+    Connext.validatorsResponseToError(
+      validate.single(partyI, isAddress),
+      methodName,
+      'partyI'
+    )
+    Connext.validatorsResponseToError(
+      validate.single(balanceA, isBN),
+      methodName,
+      'balanceA'
+    )
+    Connext.validatorsResponseToError(
+      validate.single(balanceI, isBN),
+      methodName,
+      'balanceI'
+    )
+
     // generate fingerprint
     let fingerprint = Connext.createLCStateUpdateFingerprint({
       isCloseFlag,
@@ -816,15 +1005,61 @@ class Connext {
     balanceI,
     unlockedAccountPresent = false // true if hub or ingrid
   }) {
-    // validate params
-    validate.single(isCloseFlag, { presence: true, isBooleanInt: true })
-    validate.single(lcId, { presence: true, isHexStrict: true })
-    validate.single(nonce, { presence: true, isPositiveInt: true })
-    validate.single(openVCs, { presence: true, isPositiveInt: true })
-    validate.single(vcRootHash, { presence: true, isHex: true })
-    validate.single(partyA, { presence: true, isAddress: true })
-    validate.single(balanceA, { presence: true, isBN: true })
-    validate.single(balanceI, { presence: true, isBN: true })
+    const methodName = 'createLCStateUpdate'
+    // validate
+    // validatorOpts
+    const isHexStrict = { presence: true, isHexStrict: true }
+    const isHex = { presence: true, isHex: true }
+    const isBN = { presence: true, isBN: true }
+    const isAddress = { presence: true, isAddress: true }
+    const isPositiveInt = { presence: true, isPositiveInt: true }
+    const isBooleanInt = { presence: true, isBooleanInt: true }
+
+    Connext.validatorsResponseToError(
+      validate.single(isCloseFlag, isBooleanInt),
+      methodName,
+      'isCloseFlag'
+    )
+    Connext.validatorsResponseToError(
+      validate.single(lcId, isHexStrict),
+      methodName,
+      'lcId'
+    )
+    Connext.validatorsResponseToError(
+      validate.single(nonce, isPositiveInt),
+      methodName,
+      'nonce'
+    )
+    Connext.validatorsResponseToError(
+      validate.single(openVCs, isPositiveInt),
+      methodName,
+      'openVCs'
+    )
+    Connext.validatorsResponseToError(
+      validate.single(vcRootHash, isHex),
+      methodName,
+      'vcRootHash'
+    )
+    Connext.validatorsResponseToError(
+      validate.single(partyA, isAddress),
+      methodName,
+      'partyA'
+    )
+    Connext.validatorsResponseToError(
+      validate.single(partyI, isAddress),
+      methodName,
+      'partyI'
+    )
+    Connext.validatorsResponseToError(
+      validate.single(balanceA, isBN),
+      methodName,
+      'balanceA'
+    )
+    Connext.validatorsResponseToError(
+      validate.single(balanceI, isBN),
+      methodName,
+      'balanceI'
+    )
 
     // TO DO:
     // additional validation to only allow clients to call correct state updates
@@ -865,12 +1100,10 @@ class Connext {
   }) {
     const methodName = 'createVCStateUpdateFingerprint'
     // validate
-    // validatorOpts
     const isHexStrict = { presence: true, isHexStrict: true }
     const isBN = { presence: true, isBN: true }
     const isAddress = { presence: true, isAddress: true }
     const isPositiveInt = { presence: true, isPositiveInt: true }
-
     Connext.validatorsResponseToError(
       validate.single(vcId, isHexStrict),
       methodName,
@@ -881,7 +1114,6 @@ class Connext {
       methodName,
       'nonce'
     )
-
     Connext.validatorsResponseToError(
       validate.single(partyA, isAddress),
       methodName,
@@ -1060,7 +1292,6 @@ class Connext {
     const methodName = 'createVCStateUpdate'
     // validate
     // validatorOpts'
-    const isHex = { presence: true, isHex: true }
     const isHexStrict = { presence: true, isHexStrict: true }
     const isBN = { presence: true, isBN: true }
     const isAddress = { presence: true, isAddress: true }
@@ -1144,7 +1375,13 @@ class Connext {
 
   // vc0 is array of all existing vc0 sigs for open vcs
   static generateVcRootHash ({ vc0s }) {
-    validate.single(vc0s, { presence: true, isArray: true })
+    const methodName = 'generateVcRootHash'
+    const isArray = { presence: true, isArray: true }
+    Connext.validatorsResponseToError(
+      validate.single(vc0s, isArray),
+      methodName,
+      'vc0s'
+    )
     let vcRootHash, elems
     if (vc0s.length === 0) {
       // reset to initial value -- no open VCs
@@ -1194,7 +1431,7 @@ class Connext {
       'lcId'
     )
     Connext.validatorsResponseToError(
-      validate.single(isPositiveInt, isPositiveInt),
+      validate.single(challenge, isPositiveInt),
       methodName,
       'challenge'
     )
@@ -1409,7 +1646,6 @@ class Connext {
   async initVcStateContractHandler ({
     subchanId,
     vcId,
-    proof,
     partyA,
     partyB,
     balanceA,
@@ -1424,19 +1660,14 @@ class Connext {
     const isBN = { presence: true, isBN: true }
     const isHex = { presence: true, isHex: true }
     Connext.validatorsResponseToError(
-      validate.single(lcId, isHexStrict),
+      validate.single(subchanId, isHexStrict),
       methodName,
-      'lcId'
+      'subchanId'
     )
     Connext.validatorsResponseToError(
       validate.single(vcId, isHexStrict),
       methodName,
       'vcId'
-    )
-    Connext.validatorsResponseToError(
-      validate.single(proof, isHex),
-      methodName,
-      'proof'
     )
     Connext.validatorsResponseToError(
       validate.single(partyA, isAddress),
@@ -1576,9 +1807,9 @@ class Connext {
   // ***************************************
   // ********** ERROR HELPERS ************
   // ***************************************
-  static validatorsResponseToError (validtorResponse, methodName, varName) {
-    if (validtorResponse !== undefined) {
-      const errorMessage = `[${methodName}][${varName}] : ${validtorResponse}`
+  static validatorsResponseToError (validatorResponse, methodName, varName) {
+    if (validatorResponse !== undefined) {
+      const errorMessage = `[${methodName}][${varName}] : ${validatorResponse}`
       throw new Error(errorMessage)
     }
   }
@@ -1601,7 +1832,13 @@ class Connext {
     //  * }
     //  */
     // lcState == latest ingrid signed state
-    validate.single(ledgerChannelId, { presence: true, isHexStrict: true })
+    const methodName = 'getLatestLedgerStateUpdate'
+    const isHexStrict = { presence: true, isHexStrict: true }
+    Connext.validatorsResponseToError(
+      validate.single(ledgerChannelId, isHexStrict),
+      methodName,
+      'ledgerChannelId'
+    )
     const response = await axios.get(
       `${this.ingridUrl}/ledgerchannel/${ledgerChannelId}/lateststate`
     )
@@ -1609,8 +1846,14 @@ class Connext {
   }
 
   async getLcId ({ partyA = null }) {
+    const methodName = 'getLcId'
+    const isAddress = { presence: true, isAddress: true }
     if (partyA) {
-      validate.single(partyA, { presence: true, isAddress: true })
+      Connext.validatorsResponseToError(
+        validate.single(partyA, isAddress),
+        methodName,
+        'partyA'
+      )
     } else {
       const accounts = await this.web3.eth.getAccounts()
       partyA = accounts[0]
@@ -1642,7 +1885,13 @@ class Connext {
   }
 
   async getChannel ({ channelId }) {
-    validate.single(channelId, { presence: true, isHexStrict: true })
+    const methodName = 'getChannel'
+    const isHexStrict = { presence: true, isHexStrict: true }
+    Connext.validatorsResponseToError(
+      validate.single(channelId, isHexStrict),
+      methodName,
+      'channelId'
+    )
     const response = await axios.get(
       `${this.ingridUrl}/virtualchannel/${channelId}`
     )
@@ -1654,7 +1903,15 @@ class Connext {
   }
 
   async getLc ({ lcId }) {
-    validate.single(lcId, { presence: true, isHexStrict: true })
+    const methodName = 'getLc'
+    const isHexStrict = { presence: true, isHexStrict: true }
+    Connext.validatorsResponseToError(
+      validate.single(lcId, isHexStrict),
+      methodName,
+      'lcId'
+    )
+    const response = await axios.get(`${this.ingridUrl}/ledgerchannel/${lcId}`)
+    return response.data
   }
 
   async getLedgerChannelChallengeTimer () {
@@ -1665,8 +1922,20 @@ class Connext {
   // posts signature of lc0 to ingrid
   // requests to open a ledger channel with the hub
   async requestJoinLc ({ sig, balanceA }) {
-    validate.single(channelId, { presence: true, isHexStrict: true })
-    validate.single(balanceA, { presence: true, isBN: true })
+    // validate params
+    const methodName = 'requestJoinLc'
+    const isHex = { presence: true, isHex: true }
+    const isBN = { presence: true, isBN: true }
+    Connext.validatorsResponseToError(
+      validate.single(sig, isHex),
+      methodName,
+      'sig'
+    )
+    Connext.validatorsResponseToError(
+      validate.single(balanceA, isBN),
+      methodName,
+      'balanceA'
+    )
 
     const accounts = await this.web3.eth.getAccounts()
     const response = await axios.post(
@@ -1680,10 +1949,31 @@ class Connext {
   }
 
   async openVc ({ sig, balanceA, to, vcRootHash }) {
-    validate.single(sig, { presence: true, isHexStrict: true })
-    validate.single(balanceA, { presence: true, isBN: true })
-    validate.single(to, { presence: true, isAddress: true })
-    validate.single(vcRootHash, { presence: true, isHex: true })
+    // validate params
+    const methodName = 'openVc'
+    const isAddress = { presence: true, isAddress: true }
+    const isHex = { presence: true, isHex: true }
+    const isBN = { presence: true, isBN: true }
+    Connext.validatorsResponseToError(
+      validate.single(sig, isHex),
+      methodName,
+      'sig'
+    )
+    Connext.validatorsResponseToError(
+      validate.single(balanceA, isBN),
+      methodName,
+      'balanceA'
+    )
+    Connext.validatorsResponseToError(
+      validate.single(to, isAddress),
+      methodName,
+      'to'
+    )
+    Connext.validatorsResponseToError(
+      validate.single(vcRootHash, isAddress),
+      methodName,
+      'vcRootHash'
+    )
 
     const accounts = await this.web3.eth.getAccounts()
     // ingrid should add vc params to db
@@ -1700,12 +1990,25 @@ class Connext {
   }
 
   async joinVcHandler ({ sig, vcRootHash, channelId }) {
-    console.log(
-      validate.single(sig, { presence: true, isHex: true }),
-      validate.single(vcRootHash, { presence: true, isHex: true }),
-      validate.single(channelId, { presence: true, isHexStrict: true })
+    // validate params
+    const methodName = 'joinVcHandler'
+    const isHexStrict = { presence: true, isHexStrict: true }
+    const isHex = { presence: true, isHex: true }
+    Connext.validatorsResponseToError(
+      validate.single(sig, isHex),
+      methodName,
+      'sig'
     )
-    const accounts = await this.web3.eth.getAccounts()
+    Connext.validatorsResponseToError(
+      validate.single(vcRootHash, isHex),
+      methodName,
+      'vcRootHash'
+    )
+    Connext.validatorsResponseToError(
+      validate.single(channelId, isHexStrict),
+      methodName,
+      'channelId'
+    )
     // ingrid should verify vcS0A and vcS0b
     const response = await axios.post(
       `${this.ingridUrl}/virtualchannel/${channelId}/join`,
@@ -1720,9 +2023,20 @@ class Connext {
   // posts to ingrid endpoint to decompose ledger channel
   // based on latest double signed update
   async fastCloseLcHandler ({ sig, lcId }) {
-    validate.single(sig, { presence: true, isHex: true })
-    validate.single(vcRootHash, { presence: true, isHex: true })
-    validate.single(lcId, { presence: true, isHexStrict: true })
+    // validate params
+    const methodName = 'fastCloseLcHandler'
+    const isHexStrict = { presence: true, isHexStrict: true }
+    const isHex = { presence: true, isHex: true }
+    Connext.validatorsResponseToError(
+      validate.single(sig, isHex),
+      methodName,
+      'sig'
+    )
+    Connext.validatorsResponseToError(
+      validate.single(lcId, isHexStrict),
+      methodName,
+      'lcId'
+    )
     const response = await axios.post(
       `${this.ingridUrl}/ledgerchannel/${lcId}/fastclose`,
       {
@@ -1733,9 +2047,26 @@ class Connext {
   }
 
   async vcStateUpdateHandler ({ channelId, sig, balance }) {
-    validate.single(channelId, { presence: true, isHexStrict: true })
-    validate.single(sig, { presence: true, isHex: true })
-    validate.single(balance, { presence: true, isBN: true })
+    // validate params
+    const methodName = 'vcStateUpdateHandler'
+    const isHexStrict = { presence: true, isHexStrict: true }
+    const isHex = { presence: true, isHex: true }
+    const isBN = { presence: true, isBN: true }
+    Connext.validatorsResponseToError(
+      validate.single(sig, isHex),
+      methodName,
+      'sig'
+    )
+    Connext.validatorsResponseToError(
+      validate.single(channelId, isHexStrict),
+      methodName,
+      'channelId'
+    )
+    Connext.validatorsResponseToError(
+      validate.single(balance, isBN),
+      methodName,
+      'balance'
+    )
     const response = await axios.post(
       `${this.ingridUrl}/virtualchannel/${channelId}/update`,
       {
@@ -1747,9 +2078,26 @@ class Connext {
   }
 
   async cosignVcStateUpdateHandler ({ channelId, sig, balance }) {
-    validate.single(channelId, { presence: true, isHexStrict: true })
-    validate.single(sig, { presence: true, isHex: true })
-    validate.single(balance, { presence: true, isBN: true })
+    // validate params
+    const methodName = 'cosignVcStateUpdateHandler'
+    const isHexStrict = { presence: true, isHexStrict: true }
+    const isHex = { presence: true, isHex: true }
+    const isBN = { presence: true, isBN: true }
+    Connext.validatorsResponseToError(
+      validate.single(sig, isHex),
+      methodName,
+      'sig'
+    )
+    Connext.validatorsResponseToError(
+      validate.single(channelId, isHexStrict),
+      methodName,
+      'channelId'
+    )
+    Connext.validatorsResponseToError(
+      validate.single(balance, isBN),
+      methodName,
+      'balance'
+    )
     const response = await axios.post(
       `${this.ingridUrl}/virtualchannel/${channelId}/cosign`,
       {
@@ -1775,6 +2123,14 @@ class Connext {
   //   balanceB
   // }
   async getLatestVirtualDoubleSignedStateUpdate ({ channelId }) {
+    // validate params
+    const methodName = 'getLatestVirtualDoubleSignedStateUpdate'
+    const isHexStrict = { presence: true, isHexStrict: true }
+    Connext.validatorsResponseToError(
+      validate.single(channelId, isHexStrict),
+      methodName,
+      'channelId'
+    )
     validate.single(channelId, { presence: true, isHexStrict: true })
     const response = await axios.get(
       `${this.ingridUrl}/virtualchannel/${channelId}/lateststate/doublesigned`
@@ -1796,17 +2152,67 @@ class Connext {
     balanceB
   }) {
     // validate params
-    validate.single(sigA, { presence: true, isHex: true })
-    validate.single(sigB, { presence: true, isHex: true })
-    validate.single(vcId, { presence: true, isHexStrict: true })
-    validate.single(nonce, { presence: true, isPositiveInt: true })
-    validate.single(partyA, { presence: true, isAddress: true })
-    validate.single(partyB, { presence: true, isAddress: true })
-    validate.single(partyI, { presence: true, isAddress: true })
-    validate.single(subchanAI, { presence: true, isHexStrict: true })
-    validate.single(subchanBI, { presence: true, isHexStrict: true })
-    validate.single(balanceA, { presence: true, isBN: true })
-    validate.single(balanceB, { presence: true, isBN: true })
+    const methodName = 'createDecomposedLcUpdates'
+    const isHex = { presence: true, isHex: true }
+    const isHexStrict = { presence: true, isHexStrict: true }
+    const isPositiveInt = { presence: true, isPositiveInt: true }
+    const isAddress = { presence: true, isAddress: true }
+    const isBN = { presence: true, isBN: true }
+    Connext.validatorsResponseToError(
+      validate.single(sigA, isHex),
+      methodName,
+      'sigA'
+    )
+    Connext.validatorsResponseToError(
+      validate.single(sigB, isHex),
+      methodName,
+      'sigB'
+    )
+    Connext.validatorsResponseToError(
+      validate.single(vcId, isHexStrict),
+      methodName,
+      'vcId'
+    )
+    Connext.validatorsResponseToError(
+      validate.single(nonce, isPositiveInt),
+      methodName,
+      'nonce'
+    )
+    Connext.validatorsResponseToError(
+      validate.single(partyA, isAddress),
+      methodName,
+      'partyA'
+    )
+    Connext.validatorsResponseToError(
+      validate.single(partyB, isAddress),
+      methodName,
+      'partyB'
+    )
+    Connext.validatorsResponseToError(
+      validate.single(partyI, isAddress),
+      methodName,
+      'partyI'
+    )
+    Connext.validatorsResponseToError(
+      validate.single(subchanAI, isHexStrict),
+      methodName,
+      'subchanAI'
+    )
+    Connext.validatorsResponseToError(
+      validate.single(subchanBI, isHexStrict),
+      methodName,
+      'subchanBI'
+    )
+    Connext.validatorsResponseToError(
+      validate.single(balanceA, isBN),
+      methodName,
+      'balanceA'
+    )
+    Connext.validatorsResponseToError(
+      validate.single(balanceB, isBN),
+      methodName,
+      'balanceB'
+    )
     // get correct lc info
     const accounts = await this.web3.getAccounts()
     let lc, lcState, vc0s
@@ -1842,8 +2248,20 @@ class Connext {
   }
 
   async fastCloseVcHandler ({ vcId, sigA }) {
-    validate.single(vcId, { presence: true, isHexStrict: true })
-    validate.single(sigA, { presence: true, isHex: true })
+    // validate params
+    const methodName = 'fastCloseVcHandler'
+    const isHex = { presence: true, isHex: true }
+    const isHexStrict = { presence: true, isHexStrict: true }
+    Connext.validatorsResponseToError(
+      validate.single(vcId, isHexStrict),
+      methodName,
+      'vcId'
+    )
+    Connext.validatorsResponseToError(
+      validate.single(sigA, isHex),
+      methodName,
+      'sigA'
+    )
     const results = await axios.post(
       `${this.ingridUrl}/virtualChannel/${vcId}/fastclose`,
       {
@@ -1856,7 +2274,20 @@ class Connext {
   // should return a list of initial vc state objects
   // for all open VCs for a given LC
   // list of objects in form detailed below
-  async getVcInitialStates ({ lcId }) {}
+  async getVcInitialStates ({ lcId }) {
+    // validate params
+    const methodName = 'getVcInitialStates'
+    const isHexStrict = { presence: true, isHexStrict: true }
+    Connext.validatorsResponseToError(
+      validate.single(lcId, isHexStrict),
+      methodName,
+      'lcId'
+    )
+    const response = await axios.get(
+      `${this.ingridUrl}/ledgerchannel/${lcId}/virtualchannel/intialstate`
+    )
+    return response.data
+  }
 
   // returns initial vc state object for given vc
   // object:
@@ -1867,13 +2298,37 @@ class Connext {
   //     sigA: vc0.sigA,
   //     sigB: vc0.sigB
   //   }
-  async getVcInitialState ({ vcId }) {}
+  async getVcInitialState ({ vcId }) {
+    // validate params
+    const methodName = 'getVcInitialState'
+    const isHexStrict = { presence: true, isHexStrict: true }
+    Connext.validatorsResponseToError(
+      validate.single(vcId, isHexStrict),
+      methodName,
+      'vcId'
+    )
+    const response = await axios.get(
+      `${this.ingridUrl}/virtualchannel/${vcId}/intialstate`
+    )
+    return response.data
+  }
 
   // requests both decomposed lc state updates from ingrid.
   // returns labeled lc state object (i.e. indexed by lc channel id)
   // lcState obj should match whats submitted to createLcUpdate
   async getDecomposedLcStates ({ vcId }) {
-    validate.single(vcId, { presence: true, isHexStrict: true })
+    // validate params
+    const methodName = 'getDecomposedLcStates'
+    const isHexStrict = { presence: true, isHexStrict: true }
+    Connext.validatorsResponseToError(
+      validate.single(vcId, isHexStrict),
+      methodName,
+      'vcId'
+    )
+    const response = await axios.get(
+      `${this.ingridUrl}/virtualchannel/${vcId}/decompose`
+    )
+    return response.data
   }
 
   // settles all vcs on chain in the case of a dispute (used in close channel)
@@ -1884,7 +2339,14 @@ class Connext {
 
   // then posts to watcher (?) -- maybe just post all of this to the watcher url (?)
   async byzantineCloseVc (vcId) {
-    validate.single(vcId, { presence: true, isHexStrict: true })
+    // validate params
+    const methodName = 'byzantineCloseVc'
+    const isHexStrict = { presence: true, isHexStrict: true }
+    Connext.validatorsResponseToError(
+      validate.single(vcId, isHexStrict),
+      methodName,
+      'vcId'
+    )
     const accounts = await this.getAccounts()
     const vc0 = await this.getVcInitialState({ vcId })
     let subchan
