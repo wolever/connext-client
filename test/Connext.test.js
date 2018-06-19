@@ -90,6 +90,29 @@ describe('Connext', async () => {
     })
   })
 
+  describe('joinLedgerChannelContractHandler', () => {
+    // init web3
+    const port = process.env.ETH_PORT ? process.env.ETH_PORT : '9545'
+    web3 = new Web3(`ws://localhost:${port}`)
+    let client = new Connext({ web3 }, Web3)
+    describe('Web3 and contract properly initialized, valid parameters', async () => {
+      it('should call joinChannel on the channel manager instance', async () => {
+        const accounts = await client.web3.eth.getAccounts()
+        ingridAddress = client.ingridAddress = accounts[2]
+        const params = {
+          lcId: lc0.lcId
+        }
+        const response = await client.joinLedgerChannelContractHandler(params)
+        assert.ok(
+          response.transactionHash !== null &&
+            response.transactionHash !== undefined
+        )
+      })
+    })
+  })
+
+  describe('updateLcStateContractHandler', () => {})
+
   describe('consensusCloseChannelContractHandler', () => {
     // init web3
     const port = process.env.ETH_PORT ? process.env.ETH_PORT : '9545'
@@ -139,8 +162,6 @@ describe('Connext', async () => {
       ).timeout(5000)
     })
   })
-
-  describe('updateLcStateContractHandler', () => {})
 
   describe('byzantineCloseChannelContractHandler', () => {})
 

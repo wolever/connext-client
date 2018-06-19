@@ -1552,6 +1552,35 @@ class Connext {
     return result
   }
 
+  // default null means join with 0 deposit
+  async joinLedgerChannelContractHandler({ lcId, deposit = null }) {
+    const methodName = 'joinLedgerChannelContractHandler'
+    const isHexStrict = { presence: true, isHexStrict: true }
+    const isBN = { presence: true, isBN: true }
+    Connext.validatorsResponseToError(
+      validate.single(lcId, isHexStrict),
+      methodName,
+      'lcId'
+    )
+    if (deposit) {
+      Connext.validatorsResponseToError(
+        validate.single(lcId, isBN),
+        methodName,
+        'deposit'
+      )
+    } else {
+      deposit = Web3.utils.toBN('0')
+    }
+    const result = await this.channelManagerInstance.methods.joinChannel(lcId).send(
+      {
+        from: this.ingridAddress,
+        value: deposit,
+        gas: 3000000 // FIX THIS, WHY HAPPEN, TRUFFLE CONFIG???
+      }
+    )
+    return result
+  }
+
   async updateLcStateContractHandler ({
     isClose = 0,
     lcId,
