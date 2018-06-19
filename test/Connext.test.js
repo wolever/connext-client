@@ -155,7 +155,6 @@ describe('Connext', async () => {
           response.transactionHash !== null &&
             response.transactionHash !== undefined
         )
-        // assert.equal(response, 'pls')
       })
     })
   })
