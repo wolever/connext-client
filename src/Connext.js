@@ -48,11 +48,11 @@ validate.validators.isAddress = value => {
   }
 }
 
-validate.validators.isBooleanInt = value => {
-  if (value == 0 || value == 1) {
+validate.validators.isBool = value => {
+  if (typeof value === typeof true) {
     return null
   } else {
-    return `${value} is not a boolean integer (0 or 1).`
+    return `${value} is not a boolean.`
   }
 }
 
@@ -138,7 +138,7 @@ class Connext {
     const nonce = 0
     const openVCs = 0
     const lcId = await this.getNewChannelId()
-    const vcRootHash = '0x0'
+    const vcRootHash = Connext.generateVcRootHash({ vc0s: [] })
     const partyA = accounts[0]
     const sig = this.createLCStateUpdate({
       lcId,
@@ -234,7 +234,7 @@ class Connext {
     // the same
     const signer = Connext.recoverSignerFromLCStateUpdate({
       sig: lcState.sigI,
-      isClose: 0,
+      isClose: false,
       lcId,
       nonce: lcState.nonce,
       openVCs: lcState.openVCs,
@@ -249,7 +249,7 @@ class Connext {
     }
     // generate same update with fast close flag and post
     const sigParams = {
-      isClose: 1,
+      isClose: true,
       lcId,
       nonce: lcState.nonce,
       openVCs: lcState.openVCs,
@@ -338,7 +338,7 @@ class Connext {
     })
     const signer = Connext.recoverSignerFromLCStateUpdate({
       sig: lcState.sigI,
-      isClose: 0,
+      isClose: false,
       lcId,
       nonce: lcState.nonce,
       openVCs: lcState.openVCs,
@@ -825,10 +825,10 @@ class Connext {
     const isBN = { presence: true, isBN: true }
     const isAddress = { presence: true, isAddress: true }
     const isPositiveInt = { presence: true, isPositiveInt: true }
-    const isBooleanInt = { presence: true, isBooleanInt: true }
+    const isBool = { presence: true, isBool: true }
 
     Connext.validatorsResponseToError(
-      validate.single(isClose, isBooleanInt),
+      validate.single(isClose, isBool),
       methodName,
       'isClose'
     )
@@ -875,7 +875,7 @@ class Connext {
     )
     // generate state update to sign
     const hash = Web3.utils.soliditySha3(
-      { type: 'uint256', value: isClose },
+      { type: 'bool', value: isClose },
       { type: 'uint256', value: nonce },
       { type: 'uint256', value: openVCs },
       { type: 'bytes32', value: vcRootHash },
@@ -907,7 +907,7 @@ class Connext {
     const isBN = { presence: true, isBN: true }
     const isAddress = { presence: true, isAddress: true }
     const isPositiveInt = { presence: true, isPositiveInt: true }
-    const isBooleanInt = { presence: true, isBooleanInt: true }
+    const isBool = { presence: true, isBool: true }
 
     Connext.validatorsResponseToError(
       validate.single(sig, isHex),
@@ -916,7 +916,7 @@ class Connext {
     )
 
     Connext.validatorsResponseToError(
-      validate.single(isClose, isBooleanInt),
+      validate.single(isClose, isBool),
       methodName,
       'isClose'
     )
@@ -993,7 +993,7 @@ class Connext {
   }
 
   async createLCStateUpdate ({
-    isClose = 0, // default isnt close LC
+    isClose = false, // default isnt close LC
     lcId,
     nonce,
     openVCs,
@@ -1012,10 +1012,10 @@ class Connext {
     const isBN = { presence: true, isBN: true }
     const isAddress = { presence: true, isAddress: true }
     const isPositiveInt = { presence: true, isPositiveInt: true }
-    const isBooleanInt = { presence: true, isBooleanInt: true }
+    const isBool = { presence: true, isBool: true }
 
     Connext.validatorsResponseToError(
-      validate.single(isClose, isBooleanInt),
+      validate.single(isClose, isBool),
       methodName,
       'isClose'
     )
@@ -1385,8 +1385,9 @@ class Connext {
     if (vc0s.length === 0) {
       // reset to initial value -- no open VCs
       elems = []
-      vcRootHash = '0x0'
-      elems.push(vcRootHash)
+      const emptyRoot = Utils.padBytes32('0x0')
+      const vcBuf = new Buffer(emptyRoot.substr(2, emptyRoot.length), 'hex')
+      elems.push(vcBuf)
     } else {
       elems = vc0s.map(vc0 => {
         // vc0 is the initial state of each vc
@@ -1395,9 +1396,10 @@ class Connext {
         const vcBuf = Utils.hexToBuffer(hash)
         return vcBuf
       })
-      const merkle = new MerkleTree.default(elems)
-      vcRootHash = Utils.bufferToHex(merkle.getRoot())
     }
+    const merkle = new MerkleTree.default(elems)
+    vcRootHash = Utils.bufferToHex(merkle.getRoot())
+
     return vcRootHash
   }
 
@@ -1445,14 +1447,14 @@ class Connext {
       .send(
         // in contract yet?
         // challenge,
-        {
-          from: accounts[0],
-          value: initialDeposit,
-          gas: 3000000 // FIX THIS, WHY HAPPEN, TRUFFLE CONFIG???
-        }
+      {
+        from: accounts[0],
+        value: initialDeposit,
+        gas: 3000000 // FIX THIS, WHY HAPPEN, TRUFFLE CONFIG???
+      }
       )
     // should be transaction receipt in form:
-    // { 
+    // {
     //   transactionHash: '0x22a2db0cb80c36064b4d49c8bea54874d9f4bb68c6ac6c69748724df9425c87e',
     //   transactionIndex: 0,
     //   blockHash: '0x15df3dfb11b9a4cc5a3286330cc4b0d34eb5c8174f6e4b23fdcb1d498b2aca4e',
@@ -1462,7 +1464,7 @@ class Connext {
     //   contractAddress: null,
     //   status: true,
     //   logsBloom: '0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000',
-    //   events: {} 
+    //   events: {}
     // }
     return result
   }
@@ -1536,24 +1538,17 @@ class Connext {
       'sigI'
     )
     const accounts = await this.web3.eth.getAccounts()
-    const result = await this.channelManagerInstance.methods.consensusCloseChannel(
-      lcId,
-      nonce,
-      balanceA,
-      balanceI,
-      sigA,
-      sigI
-    ).send(
-      {
+    const result = await this.channelManagerInstance.methods
+      .consensusCloseChannel(lcId, nonce, balanceA, balanceI, sigA, sigI)
+      .call({
         from: accounts[0],
         gas: 3000000 // FIX THIS, WHY HAPPEN, TRUFFLE CONFIG???
-      }
-    )
+      })
     return result
   }
 
   // default null means join with 0 deposit
-  async joinLedgerChannelContractHandler({ lcId, deposit = null }) {
+  async joinLedgerChannelContractHandler ({ lcId, deposit = null }) {
     const methodName = 'joinLedgerChannelContractHandler'
     const isHexStrict = { presence: true, isHexStrict: true }
     const isBN = { presence: true, isBN: true }
@@ -1571,18 +1566,17 @@ class Connext {
     } else {
       deposit = Web3.utils.toBN('0')
     }
-    const result = await this.channelManagerInstance.methods.joinChannel(lcId).send(
-      {
-        from: this.ingridAddress,
+    const result = await this.channelManagerInstance.methods
+      .joinChannel(lcId)
+      .send({
+        from: this.ingridAddress, // can also be accounts[0], easier for testing
         value: deposit,
         gas: 3000000 // FIX THIS, WHY HAPPEN, TRUFFLE CONFIG???
-      }
-    )
+      })
     return result
   }
 
   async updateLcStateContractHandler ({
-    isClose = 0,
     lcId,
     nonce,
     openVCs,
@@ -1594,16 +1588,10 @@ class Connext {
   }) {
     const methodName = 'updateLcStateContractHandler'
     // validate
-    const isBooleanInt = { presence: true, isBooleanInt: true }
     const isHexStrict = { presence: true, isHexStrict: true }
     const isPositiveInt = { presence: true, isPositiveInt: true }
     const isBN = { presence: true, isBN: true }
     const isHex = { presence: true, isHex: true }
-    Connext.validatorsResponseToError(
-      validate.single(isClose, isBooleanInt),
-      methodName,
-      'isClose'
-    )
     Connext.validatorsResponseToError(
       validate.single(lcId, isHexStrict),
       methodName,
@@ -1645,20 +1633,21 @@ class Connext {
       'sigI'
     )
     const accounts = await this.web3.eth.getAccounts()
-    const result = await this.channelManagerInstance.updateLCState(
-      isClose,
-      lcId,
-      nonce,
-      openVCs,
-      balanceA,
-      balanceI,
-      vcRootHash,
-      sigA,
-      sigI,
-      {
-        from: accounts[0]
-      }
-    )
+    const result = await this.channelManagerInstance.methods
+      .updateLCstate(
+        lcId,
+        nonce,
+        openVCs,
+        balanceA,
+        balanceI,
+        vcRootHash,
+        sigA,
+        sigI
+      )
+      .send({
+        from: accounts[0],
+        gas: 3000000 // FIX THIS, WHY HAPPEN, TRUFFLE CONFIG???
+      })
     return result
   }
 
