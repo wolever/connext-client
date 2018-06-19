@@ -91,7 +91,7 @@ class Connext {
       ingridAddress = '',
       watcherUrl = '',
       ingridUrl = '',
-      contractAddress = '0x9f544a3fc3d1045e6ec49d4ecef6dcd700457165'
+      contractAddress = '0xf25186b5081ff5ce73482ad761db0eb0d25abfbf'
     },
     web3Lib = Web3
   ) {
@@ -1536,18 +1536,6 @@ class Connext {
       'sigI'
     )
     const accounts = await this.web3.eth.getAccounts()
-    // const result = await this.channelManagerInstance.methods.consensusCloseChannel(
-    //   lcId,
-    //   nonce,
-    //   balanceA,
-    //   balanceI,
-    //   sigA,
-    //   sigI
-    // ).send(
-    //   {
-    //     from: accounts[0]
-    //   }
-    // )
     const result = await this.channelManagerInstance.methods.consensusCloseChannel(
       lcId,
       nonce,
@@ -1555,17 +1543,12 @@ class Connext {
       balanceI,
       sigA,
       sigI
-    ).call(
+    ).send(
       {
-        from: accounts[0]
+        from: accounts[0],
+        gas: 3000000 // FIX THIS, WHY HAPPEN, TRUFFLE CONFIG???
       }
     )
-
-    // const result = await this.channelManagerInstance.methods.consensusCloseChannel().send(
-    //   {
-    //     from: accounts[0]
-    //   }
-    // )
     return result
   }
 
