@@ -1,5 +1,5 @@
 const axios = require('axios')
-const channelManagerAbi = require('../artifacts/ChannelManagerAbi.json')
+const channelManagerAbi = require('../artifacts/LedgerChannel.json')
 const util = require('ethereumjs-util')
 const Web3 = require('web3')
 const validate = require('validate.js')
@@ -91,7 +91,7 @@ class Connext {
       ingridAddress = '',
       watcherUrl = '',
       ingridUrl = '',
-      contractAddress = ''
+      contractAddress = '0x9f544a3fc3d1045e6ec49d4ecef6dcd700457165'
     },
     web3Lib = Web3
   ) {
@@ -100,7 +100,7 @@ class Connext {
     this.watcherUrl = watcherUrl
     this.ingridUrl = ingridUrl
     this.channelManagerInstance = new this.web3.eth.Contract(
-      channelManagerAbi,
+      channelManagerAbi.abi,
       contractAddress
     )
   }
@@ -234,7 +234,7 @@ class Connext {
     // the same
     const signer = Connext.recoverSignerFromLCStateUpdate({
       sig: lcState.sigI,
-      isCloseFlag: 0,
+      isClose: 0,
       lcId,
       nonce: lcState.nonce,
       openVCs: lcState.openVCs,
@@ -249,7 +249,7 @@ class Connext {
     }
     // generate same update with fast close flag and post
     const sigParams = {
-      isCloseFlag: 1,
+      isClose: 1,
       lcId,
       nonce: lcState.nonce,
       openVCs: lcState.openVCs,
@@ -338,7 +338,7 @@ class Connext {
     })
     const signer = Connext.recoverSignerFromLCStateUpdate({
       sig: lcState.sigI,
-      isCloseFlag: 0,
+      isClose: 0,
       lcId,
       nonce: lcState.nonce,
       openVCs: lcState.openVCs,
@@ -806,7 +806,7 @@ class Connext {
 
   // SIGNATURE FUNCTIONS
   static createLCStateUpdateFingerprint ({
-    isCloseFlag,
+    isClose,
     lcId,
     nonce,
     openVCs,
@@ -828,9 +828,9 @@ class Connext {
     const isBooleanInt = { presence: true, isBooleanInt: true }
 
     Connext.validatorsResponseToError(
-      validate.single(isCloseFlag, isBooleanInt),
+      validate.single(isClose, isBooleanInt),
       methodName,
-      'isCloseFlag'
+      'isClose'
     )
 
     Connext.validatorsResponseToError(
@@ -875,13 +875,12 @@ class Connext {
     )
     // generate state update to sign
     const hash = Web3.utils.soliditySha3(
-      { type: 'uint256', value: isCloseFlag },
-      { type: 'bytes32', value: lcId },
+      { type: 'uint256', value: isClose },
       { type: 'uint256', value: nonce },
       { type: 'uint256', value: openVCs },
-      { type: 'string', value: vcRootHash },
-      { type: 'address', value: partyA },
-      { type: 'address', value: partyI },
+      { type: 'bytes32', value: vcRootHash },
+      { type: 'address', value: partyA }, // address will be returned bytepadded
+      { type: 'address', value: partyI }, // address is returned bytepadded
       { type: 'uint256', value: balanceA },
       { type: 'uint256', value: balanceI }
     )
@@ -890,7 +889,7 @@ class Connext {
 
   static recoverSignerFromLCStateUpdate ({
     sig,
-    isCloseFlag,
+    isClose,
     lcId,
     nonce,
     openVCs,
@@ -917,9 +916,9 @@ class Connext {
     )
 
     Connext.validatorsResponseToError(
-      validate.single(isCloseFlag, isBooleanInt),
+      validate.single(isClose, isBooleanInt),
       methodName,
-      'isCloseFlag'
+      'isClose'
     )
 
     Connext.validatorsResponseToError(
@@ -965,7 +964,7 @@ class Connext {
 
     // generate fingerprint
     let fingerprint = Connext.createLCStateUpdateFingerprint({
-      isCloseFlag,
+      isClose,
       lcId,
       nonce,
       openVCs,
@@ -994,7 +993,7 @@ class Connext {
   }
 
   async createLCStateUpdate ({
-    isCloseFlag = 0, // default isnt close LC
+    isClose = 0, // default isnt close LC
     lcId,
     nonce,
     openVCs,
@@ -1016,9 +1015,9 @@ class Connext {
     const isBooleanInt = { presence: true, isBooleanInt: true }
 
     Connext.validatorsResponseToError(
-      validate.single(isCloseFlag, isBooleanInt),
+      validate.single(isClose, isBooleanInt),
       methodName,
-      'isCloseFlag'
+      'isClose'
     )
     Connext.validatorsResponseToError(
       validate.single(lcId, isHexStrict),
@@ -1068,7 +1067,7 @@ class Connext {
     const accounts = await this.web3.eth.getAccounts()
     // personal sign?
     const hash = Connext.createLCStateUpdateFingerprint({
-      isCloseFlag,
+      isClose,
       lcId,
       nonce,
       openVCs,
@@ -1410,7 +1409,7 @@ class Connext {
   async createLedgerChannelContractHandler ({
     ingridAddress = this.ingridAddress,
     lcId,
-    challenge,
+    // challenge,
     initialDeposit
   }) {
     const methodName = 'createLedgerChannelContractHandler'
@@ -1430,26 +1429,41 @@ class Connext {
       methodName,
       'lcId'
     )
-    Connext.validatorsResponseToError(
-      validate.single(challenge, isPositiveInt),
-      methodName,
-      'challenge'
-    )
+    // Connext.validatorsResponseToError(
+    //   validate.single(challenge, isPositiveInt),
+    //   methodName,
+    //   'challenge'
+    // )
     Connext.validatorsResponseToError(
       validate.single(initialDeposit, isBN),
       methodName,
       'initialDeposit'
     )
     const accounts = await this.web3.eth.getAccounts()
-    const result = await this.channelManagerInstance.createLedgerChannel(
-      ingridAddress,
-      lcId, // in contract yet?
-      challenge,
-      {
-        from: accounts[0],
-        value: initialDeposit
-      }
-    )
+    const result = await this.channelManagerInstance.methods
+      .createChannel(lcId, ingridAddress)
+      .send(
+        // in contract yet?
+        // challenge,
+        {
+          from: accounts[0],
+          value: initialDeposit,
+          gas: 3000000 // FIX THIS, WHY HAPPEN, TRUFFLE CONFIG???
+        }
+      )
+    // should be transaction receipt in form:
+    // { 
+    //   transactionHash: '0x22a2db0cb80c36064b4d49c8bea54874d9f4bb68c6ac6c69748724df9425c87e',
+    //   transactionIndex: 0,
+    //   blockHash: '0x15df3dfb11b9a4cc5a3286330cc4b0d34eb5c8174f6e4b23fdcb1d498b2aca4e',
+    //   blockNumber: 15,
+    //   gasUsed: 111623,
+    //   cumulativeGasUsed: 111623,
+    //   contractAddress: null,
+    //   status: true,
+    //   logsBloom: '0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000',
+    //   events: {} 
+    // }
     return result
   }
 
@@ -1478,7 +1492,6 @@ class Connext {
   }
 
   async consensusCloseChannelContractHandler ({
-    isClose = 1,
     lcId,
     nonce,
     balanceA,
@@ -1488,16 +1501,10 @@ class Connext {
   }) {
     const methodName = 'consensusCloseChannelContractHandler'
     // validate
-    const isBooleanInt = { presence: true, isBooleanInt: true }
     const isHexStrict = { presence: true, isHexStrict: true }
     const isPositiveInt = { presence: true, isPositiveInt: true }
     const isBN = { presence: true, isBN: true }
     const isHex = { presence: true, isHex: true }
-    Connext.validatorsResponseToError(
-      validate.single(isClose, isBooleanInt),
-      methodName,
-      'isClose'
-    )
     Connext.validatorsResponseToError(
       validate.single(lcId, isHexStrict),
       methodName,
@@ -1529,18 +1536,36 @@ class Connext {
       'sigI'
     )
     const accounts = await this.web3.eth.getAccounts()
-    const result = await this.channelManagerInstance.consensusCloseChannel(
-      isClose,
+    // const result = await this.channelManagerInstance.methods.consensusCloseChannel(
+    //   lcId,
+    //   nonce,
+    //   balanceA,
+    //   balanceI,
+    //   sigA,
+    //   sigI
+    // ).send(
+    //   {
+    //     from: accounts[0]
+    //   }
+    // )
+    const result = await this.channelManagerInstance.methods.consensusCloseChannel(
       lcId,
       nonce,
       balanceA,
       balanceI,
       sigA,
-      sigI,
+      sigI
+    ).call(
       {
         from: accounts[0]
       }
     )
+
+    // const result = await this.channelManagerInstance.methods.consensusCloseChannel().send(
+    //   {
+    //     from: accounts[0]
+    //   }
+    // )
     return result
   }
 
@@ -1873,14 +1898,9 @@ class Connext {
   /**
    * Sets channel IDs to be random.
    */
-  async getNewChannelId () {
-    const prefix = Buffer.from('0x', 'hex')
-    const channelId = await crypto.randomBytes(32, (err, buf) => {
-      if (err) throw err
-      // append prefix
-      const final = Buffer.concat([prefix, buf])
-      return final
-    })
+  getNewChannelId () {
+    const buf = crypto.randomBytes(32)
+    const channelId = Web3.utils.bytesToHex(buf)
     return channelId
   }
 
@@ -1898,8 +1918,20 @@ class Connext {
     return response.data
   }
 
-  async getOtherLcId () {
+  // returns the lcID for the partyB in the virtual channel
+  // NOTE: this method may be excessive since subchans are now stored in
+  //       vc objects
+  async getOtherLcId (vcId) {
+    const methodName = 'getOtherLcId'
+    const isHexStrict = { presence: true, isHexStrict: true }
+    Connext.validatorsResponseToError(
+      validate.single(vcId, isHexStrict),
+      methodName,
+      'vcId'
+    )
     // get LC for other VC party and ingrid
+    const vc = await this.getChannel({ channelId: vcId })
+    return vc.subchanBI
   }
 
   async getLc ({ lcId }) {
@@ -2214,7 +2246,7 @@ class Connext {
       'balanceB'
     )
     // get correct lc info
-    const accounts = await this.web3.getAccounts()
+    const accounts = await this.web3.eth.getAccounts()
     let lc, lcState, vc0s
     if (accounts[0] === partyA) {
       // accounts[0] is vcpartyA, lcAgentA is paying money
