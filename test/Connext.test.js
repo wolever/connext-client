@@ -7,14 +7,29 @@ const sinon = require('sinon')
 const MerkleTree = require('../helpers/MerkleTree')
 const Utils = require('../helpers/utils')
 const Web3 = require('web3')
-const artifacts = require('../artifacts/Ledger.json')
+const channelManagerAbi = require('../artifacts/LedgerChannel.json')
+// const fakeChannelManagerAbi = require('../artifacts/Ledger.json')
 const { initWeb3, getWeb3 } = require('../web3')
 
 // named variables
 let web3 = { currentProvider: 'mock' }
-let partyA
-let partyB
-let ingridAddress
+let partyA // accounts[0]
+let partyB // accounts[1]
+let ingridAddress // accounts[2]
+let lcId
+
+let lc0 = {
+  isClose: 0,
+  nonce: 0,
+  openVCs: 0,
+  vcRootHash: '0x0',
+  partyA: '',
+  partyI: '',
+  balanceA: Web3.utils.toBN('5'),
+  balanceI: Web3.utils.toBN('0'),
+  unlockedAccountPresent: true
+}
+
 let vc0 = {
   vcId: '0xc12',
   nonce: 0,
@@ -33,13 +48,106 @@ describe('Connext', async () => {
       const client = new Connext({ web3 }, createFakeWeb3())
       assert.ok(typeof client === 'object')
     })
-    it('should create a connect client with real web3', async () => {
+    it('should create a connext client with real web3 and channel manager', async () => {
       const port = process.env.ETH_PORT ? process.env.ETH_PORT : '9545'
       web3 = new Web3(`ws://localhost:${port}`)
       let client = new Connext({ web3 }, Web3)
       assert.ok(typeof client === 'object')
     })
   })
+
+  // describe('register(initialDeposit)', () => {
+  //   const port = process.env.ETH_PORT ? process.env.ETH_PORT : '9545'
+  //   web3 = new Web3(`ws://localhost:${port}`)
+  //   let client = new Connext({ web3 }, Web3)
+  //   describe('register with real web3 and valid params', () => {
+  //     it('should create a ledger channel with ingrid and bond initial deposit', () => {})
+  //   })
+  // })
+
+  describe('createLedgerChannelContractHandler', () => {
+    // init web3
+    const port = process.env.ETH_PORT ? process.env.ETH_PORT : '9545'
+    web3 = new Web3(`ws://localhost:${port}`)
+    let client = new Connext({ web3 }, Web3)
+    describe('Web3 and contract properly initialized, valid parameters', async () => {
+      it('should call createChannel on the channel manager instance', async () => {
+        const accounts = await client.web3.eth.getAccounts()
+        ingridAddress = client.ingridAddress = lc0.partyI = accounts[2]
+        partyA = lc0.partyA = accounts[0]
+        partyB = vc0.partyB = accounts[1]
+        lcId = await client.getNewChannelId()
+        lc0.lcId = lcId // add lcid to obj
+        const vcRootHash = await Connext.generateVcRootHash({ vc0s: [] })
+        lc0.vcRootHash = vcRootHash
+        const response = await client.createLedgerChannelContractHandler({
+          ingridAddress,
+          lcId,
+          initialDeposit: lc0.balanceA
+        })
+        assert.ok(Web3.utils.isHexStrict(response.transactionHash))
+      })
+    })
+  })
+
+  describe('consensusCloseChannelContractHandler', () => {
+    // init web3
+    const port = process.env.ETH_PORT ? process.env.ETH_PORT : '9545'
+    web3 = new Web3(`ws://localhost:${port}`)
+    let client = new Connext({ web3 }, Web3)
+    describe('Web3 and contract properly initialized, valid parameters', async () => {
+      it(
+        'should call consensusCloseChannel on the channel manager instance',
+        async () => {
+          const accounts = await client.web3.eth.getAccounts()
+          const sigA = await client.createLCStateUpdate({
+            isClose: 1,
+            lcId: lc0.lcId,
+            nonce: 1,
+            openVCs: lc0.openVCs,
+            vcRootHash: lc0.vcRootHash,
+            partyA: lc0.partyA,
+            partyI: lc0.partyI,
+            balanceA: lc0.balanceA,
+            balanceI: lc0.balanceI,
+            unlockedAccountPresent: true
+          })
+          const hashI = await Connext.createLCStateUpdateFingerprint({
+            isClose: 1,
+            lcId: lc0.lcId,
+            nonce: 1,
+            openVCs: lc0.openVCs,
+            vcRootHash: lc0.vcRootHash,
+            partyA: lc0.partyA,
+            partyI: lc0.partyI,
+            balanceA: lc0.balanceA,
+            balanceI: lc0.balanceI
+          })
+          const sigI = await client.web3.eth.sign(hashI, accounts[2])
+          const result = await client.consensusCloseChannelContractHandler({
+            lcId: lc0.lcId,
+            nonce: 1,
+            balanceA: lc0.balanceA,
+            balanceI: lc0.balanceI,
+            sigA: sigA,
+            sigI: sigI
+          })
+          assert.equal(
+            result,
+            Web3.utils.padLeft(accounts[2].toLowerCase(), 64)
+          )
+        }
+      ).timeout(5000)
+    })
+  })
+
+  describe('updateLcStateContractHandler', () => {})
+
+  describe('byzantineCloseChannelContractHandler', () => {})
+
+  describe('initVcStateContractHandler', () => {})
+
+  describe('settleVcContractHandler', () => {})
 
   describe('generateVcRootHash', () => {
     const port = process.env.ETH_PORT ? process.env.ETH_PORT : '9545'
@@ -63,7 +171,7 @@ describe('Connext', async () => {
         const vc0s = [vc0, vc1]
         const vcRootHash = Connext.generateVcRootHash({ vc0s })
         assert.equal(
-          '0x42a2683a579efa82710bc101454fc1059d70c21f093efba62d4a991bf67bdeb6',
+          '0xc96adb8cf2f4874d36b445a8a9191f24fb8889f91c1b1a251f9259481c7c4272',
           vcRootHash
         )
       })
@@ -122,7 +230,7 @@ describe('Connext', async () => {
         })
         assert.equal(
           sig,
-          '0x4ccd57c0d81e51be5ac3719d09cabe303b1a267fc389cc7c1a2f91bb4976fa2931b77f10ef4d3ed931a75cf220244cc0448047c7de2d4a63e2318bb0bc746de501'
+          '0x1c5637c71248b0b65482c46057156130441f3997db1c358e903ad507cd4fe58a74e889a43d6adf8cdf52372b43a31e77888b379d5b3ec3415d6ac55f146e024f00'
         )
       })
     })
@@ -138,10 +246,10 @@ describe('Connext', async () => {
       partyB = accounts[1]
       ingridAddress = accounts[2]
       describe('should recover the address of person who signed', () => {
-        it('should return signer 0xC501E4e8aC8da07D9eC89122d375412477f561B1', () => {
+        it('should return signer 0x627306090abab3a6e1400e9345bc60c78a8bef57', () => {
           const signer = Connext.recoverSignerFromLCStateUpdate({
-            sig: '0x4ccd57c0d81e51be5ac3719d09cabe303b1a267fc389cc7c1a2f91bb4976fa2931b77f10ef4d3ed931a75cf220244cc0448047c7de2d4a63e2318bb0bc746de501',
-            isCloseFlag: 0,
+            sig: '0x1c5637c71248b0b65482c46057156130441f3997db1c358e903ad507cd4fe58a74e889a43d6adf8cdf52372b43a31e77888b379d5b3ec3415d6ac55f146e024f00',
+            isClose: 0,
             lcId: '0xc1912',
             nonce: 0,
             openVCs: 0,
@@ -190,7 +298,7 @@ describe('Connext', async () => {
         })
         assert.equal(
           sig,
-          '0xa72b2506d43e4e6e506c19c3f0400d88df7d138d0dcb54e274d415c13bc60c235b22988de3867f566856318f1783cc08324fd9c5a650631010aa7eb22bcc2a5b00'
+          '0xfa84e6cc25e7d6d3cb309a734b559be2f47a60437ad7e247aeb55bd339eee1f359eb4c46ccb09703ac35391ec843cbbd12a39aa6bafd396c693535842448389a00'
         )
       })
     })
@@ -206,9 +314,9 @@ describe('Connext', async () => {
       partyB = accounts[1]
       ingridAddress = accounts[2]
       describe('should recover the address of person who signed', () => {
-        it('should return signer 0xC501E4e8aC8da07D9eC89122d375412477f561B1', () => {
+        it('should return signer 0x627306090abab3a6e1400e9345bc60c78a8bef57', () => {
           const signer = Connext.recoverSignerFromVCStateUpdate({
-            sig: '0xa72b2506d43e4e6e506c19c3f0400d88df7d138d0dcb54e274d415c13bc60c235b22988de3867f566856318f1783cc08324fd9c5a650631010aa7eb22bcc2a5b00',
+            sig: '0xfa84e6cc25e7d6d3cb309a734b559be2f47a60437ad7e247aeb55bd339eee1f359eb4c46ccb09703ac35391ec843cbbd12a39aa6bafd396c693535842448389a00',
             vcId: '0xc1912',
             nonce: 0,
             partyA: partyA,
