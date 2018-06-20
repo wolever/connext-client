@@ -503,33 +503,32 @@ class Connext {
       methodName,
       'channelId'
     )
-    // get channels and accounts
-    const accounts = await this.web3.eth.getAccounts()
-
+    // get channel
     const vc = await this.getChannel(channelId)
-
-    const lcIdB = await this.getLcId()
-
     const vc0 = {
       vcId: channelId,
       nonce: 0,
       partyA: vc.partyA, // depending on ingrid for this value
-      partyB: accounts[0],
-      balanceA: vc.balanceA, // depending on ingrid for this value
-      balanceB: 0
+      partyB: vc.partyB,
+      partyI: vc.partyI,
+      balanceA: Web3.utils.toBN(vc.balanceA), // depending on ingrid for this value
+      balanceB: Web3.utils.toBN(0)
     }
-
-    const sig = await this.createVCStateUpdate(state)
-    let vc0s = await this.getVcInitialStates(lcIdB)
+    const sig = await this.createVCStateUpdate(vc0)
+    console.log('vc0:',vc0)
+    console.log('sigB of vc0:', sig)
+    // add vc0 to initial states
+    let vc0s = await this.getVcInitialStates(vc.subchanBI)
     vc0s.push(vc0)
     const newVcRootHash = Connext.generateVcRootHash({
       vc0s
     })
+    console.log('newVcRootHash for subchanBI:', newVcRootHash)
     // ping ingrid with vc0 (hub decomposes to lc)
     const result = await this.joinVcHandler({
       sig: sig,
-      channelId,
-      balanceB: 0
+      vcRootHash: newVcRootHash,
+      channelId
     })
     return result.data
   }
