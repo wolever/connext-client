@@ -139,7 +139,7 @@ class Connext {
     // generate additional initial lc params
     const nonce = 0
     const openVCs = 0
-    const lcId = await this.getNewChannelId()
+    const lcId = Connext.getNewChannelId()
     console.log('register lcId (subchanAI):', lcId)
     const vcRootHash = Connext.generateVcRootHash({ vc0s: [] })
     const partyA = accounts[0]
@@ -449,7 +449,7 @@ class Connext {
     // get ledger channel A
     const lcA = await this.getLc(lcIdA)
     // generate initial vcstate
-    const vcId = await this.getNewChannelId()
+    const vcId = Connext.getNewChannelId()
     console.log('subchanAI id:', lcIdA)
     console.log('subchanBI id:', lcIdB)
     console.log('openChannel vcID:', vcId)
@@ -1933,7 +1933,7 @@ class Connext {
    *
    * @returns {String} a random 32 byte channel ID.
    */
-  getNewChannelId () {
+  static getNewChannelId () {
     const buf = crypto.randomBytes(32)
     const channelId = Web3.utils.bytesToHex(buf)
     return channelId
