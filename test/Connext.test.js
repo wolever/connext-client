@@ -16,14 +16,15 @@ let web3 = { currentProvider: 'mock' }
 let partyA // accounts[0], hardcoded is truffle develop accts
 let partyB // accounts[1]
 let ingridAddress // accounts[2]
-let lcId
+
+const emptyRootHash = Connext.generateVcRootHash({ vc0s: [] })
 
 let lc0 = {
   isClose: false,
   lcId: '0x01',
   nonce: 0,
   openVCs: 0,
-  vcRootHash: '',
+  vcRootHash: emptyRootHash,
   partyA: '0x627306090abab3a6e1400e9345bc60c78a8bef57',
   partyI: '0xc5fdf4076b8f3a5357c5e395ab970b5b54098fef',
   balanceA: Web3.utils.toBN(Web3.utils.toWei('5', 'ether')),
@@ -63,43 +64,145 @@ describe('Connext', async () => {
     let client = new Connext({ web3 }, Web3)
     describe('register with real web3 and valid params', () => {
       describe('ingrid is responsive and returns correct results', () => {
+        it('should create a ledger channel with ingrid and bond initial deposit', async () => {
+          // params
+          const accounts = await client.web3.eth.getAccounts()
+          partyA = lc0.partyA = accounts[0]
+          ingridAddress = client.ingridAddress = lc0.partyI = accounts[2]
+          const initialDeposit = Web3.utils.toBN(Web3.utils.toWei('5', 'ether'))
+          // url requests
+          client.ingridUrl = 'ingridUrl'
+          let url = `${client.ingridUrl}/ledgerchannel/timer`
+          const mock = new MockAdapter(axios)
+          mock.onGet(url).reply(() => {
+            return [
+              200,
+              {
+                data: 3600
+              }
+            ]
+          })
+          url = `${client.ingridUrl}/ledgerchannel/join?a=${partyA}`
+          mock.onPost(url).reply(() => {
+            return [
+              200,
+              {
+                data: {}
+              }
+            ]
+          })
+          const results = await client.register(initialDeposit)
+          assert.deepEqual(
+            {
+              data: {}
+            },
+            results
+          )
+        })
+        it('should generate a string to enter into truffle develop to create subchanBI with accounts[1] and ingrid', async () => {
+          // params
+          const accounts = await client.web3.eth.getAccounts()
+          partyB = lc0.partyB = accounts[1]
+          ingridAddress = client.ingridAddress = lc0.partyI = accounts[2]
+          const initialDeposit = Web3.utils.toBN(Web3.utils.toWei('5', 'ether'))
+          // call create channel on contract
+          const lcId = await client.getNewChannelId()
+          const command = `LedgerChannel.deployed().then(i => i.createChannel('${lcId}', '${ingridAddress.toLowerCase()}', {from: '${partyB.toLowerCase()}', value: ${initialDeposit}}))`
+          console.log('lcId, subchan BI:', lcId)
+          console.log(
+            'TO CREATE SUBCHANBI, ENTER THE FOLLOWING INTO TRUFFLE CONSOLE:'
+          )
+          console.log(command)
+          assert.ok(command)
+        })
+      })
+    })
+  })
+
+  describe('openChannel', () => {
+    // init web3
+    const port = process.env.ETH_PORT ? process.env.ETH_PORT : '9545'
+    web3 = new Web3(`ws://localhost:${port}`)
+    let client = new Connext({ web3 }, Web3)
+    describe('Web3 and contract properly initialized', () => {
+      describe('Ingrid, partyA, and partyB are responsive and honest actors', () => {
         it.only(
-          'should create a ledger channel with ingrid and bond initial deposit',
+          'should call openChannel to create a virtual channel',
           async () => {
             // params
             const accounts = await client.web3.eth.getAccounts()
-            partyA = lc0.partyA = accounts[0]
-            ingridAddress = client.ingridAddress = lc0.partyI = accounts[2]
-            const initialDeposit = Web3.utils.toBN(
-              Web3.utils.toWei('5', 'ether')
-            )
-            lc0.lcId = '0x01' // add lcid to obj
-            const vcRootHash = Connext.generateVcRootHash({ vc0s: [] })
-            const sig = await client.createLCStateUpdate({
-              lcId: lc0.lcId,
-              nonce: 0,
-              openVCs: 0,
-              vcRootHash,
-              partyA,
-              balanceA: initialDeposit,
-              balanceI: lc0.balanceI,
-              unlockedAccountPresent: true
-            })
-            console.log('request sig: ', sig)
+            partyA = accounts[0]
+            partyB = accounts[1]
+            ingridAddress = client.ingridAddress = accounts[2]
+            const subchanAI =
+              '0xc06672adc237aeabb9d8046b34ce7b7f783461f4fe1f8ce7e2efb740c64e3c6d'
+            const subchanBI =
+              '0x271e72f1c740ef558f8702b0ba953c0fc30a4598bdc0e25633a8dcdc8bd0814d'
             // url requests
             client.ingridUrl = 'ingridUrl'
-            let url = `${client.ingridUrl}/ledgerchannel/timer`
             const mock = new MockAdapter(axios)
+            // when requesting subchanBI id
+            let url = `${client.ingridUrl}/ledgerchannel?a=${partyA}`
             mock.onGet(url).reply(() => {
               return [
                 200,
                 {
-                  data: 3600
+                  data: {
+                    ledgerChannel: {
+                      id: subchanAI
+                    }
+                  }
                 }
               ]
             })
-            url = `${client.ingridUrl}/ledgerchannel/join?a=${partyA}`
-            mock.onPost(url).reply(() => {
+            // when requesting subchanBI id
+            url = `${client.ingridUrl}/ledgerchannel?a=${partyB}`
+            mock.onGet(url).reply(() => {
+              return [
+                200,
+                {
+                  data: {
+                    ledgerChannel: {
+                      id: subchanBI
+                    }
+                  }
+                }
+              ]
+            })
+            // when getting subchanAI object
+            url = `${client.ingridUrl}/ledgerchannel/${subchanAI}`
+            mock.onGet(url).reply(() => {
+              return [
+                200,
+                {
+                  data: {
+                    ledgerChannel: {
+                      id: subchanAI,
+                      partyA: partyA,
+                      partyI: ingridAddress,
+                      balanceA: Web3.utils.toBN(Web3.utils.toWei('5', 'ether')),
+                      balanceI: Web3.utils.toBN(Web3.utils.toWei('0', 'ether')),
+                      vcRootHash: emptyRootHash,
+                      isOpen: true,
+                      isUpdateLCSettling: false,
+                      openVCs: 0
+                    }
+                  }
+                }
+              ]
+            })
+            // when getting intial states of open vcs
+            url = `${client.ingridUrl}/ledgerchannel/${subchanAI}/virtualchannel/initialstate`
+            mock.onGet(url).reply(() => {
+              return [
+                200,
+                {
+                  data: []
+                }
+              ]
+            })
+            // when posting to client
+            mock.onPost().reply(() => {
               return [
                 200,
                 {
@@ -107,14 +210,11 @@ describe('Connext', async () => {
                 }
               ]
             })
-
-            const results = await client.register(initialDeposit)
-            assert.deepEqual(
-              {
-                data: {}
-              },
-              results
-            )
+            // client results
+            const results = await client.openChannel({ to: partyB })
+            assert.deepEqual(results, {
+              data: {}
+            })
           }
         )
       })
@@ -126,7 +226,7 @@ describe('Connext', async () => {
     const port = process.env.ETH_PORT ? process.env.ETH_PORT : '9545'
     web3 = new Web3(`ws://localhost:${port}`)
     let client = new Connext({ web3 }, Web3)
-    describe('Web3 and contract properly initialized, valid parameters', async () => {
+    describe('Web3 and contract properly initialized, valid parameters', () => {
       it('should call createChannel on the channel manager instance', async () => {
         const accounts = await client.web3.eth.getAccounts()
         ingridAddress = accounts[2]
@@ -153,7 +253,7 @@ describe('Connext', async () => {
         const accounts = await client.web3.eth.getAccounts()
         client.ingridAddress = accounts[2]
         const params = {
-          lcId: '0x01'
+          lcId: '0x271e72f1c740ef558f8702b0ba953c0fc30a4598bdc0e25633a8dcdc8bd0814d'
         }
         const response = await client.joinLedgerChannelContractHandler(params)
         assert.ok(
@@ -438,7 +538,7 @@ describe('Connext', async () => {
         })
         assert.equal(
           sig,
-          '0xfa84e6cc25e7d6d3cb309a734b559be2f47a60437ad7e247aeb55bd339eee1f359eb4c46ccb09703ac35391ec843cbbd12a39aa6bafd396c693535842448389a00'
+          '0x30565d3de1709474d36df47983053ae622e90784cf081755317e2fd1c07c86551986ec306838b3757e53bdfe1cde8b5e29b9996f35bb76fb280cca2920a287c300'
         )
       })
     })
@@ -456,7 +556,7 @@ describe('Connext', async () => {
       describe('should recover the address of person who signed', () => {
         it('should return signer 0x627306090abab3a6e1400e9345bc60c78a8bef57', () => {
           const signer = Connext.recoverSignerFromVCStateUpdate({
-            sig: '0xfa84e6cc25e7d6d3cb309a734b559be2f47a60437ad7e247aeb55bd339eee1f359eb4c46ccb09703ac35391ec843cbbd12a39aa6bafd396c693535842448389a00',
+            sig: '0x30565d3de1709474d36df47983053ae622e90784cf081755317e2fd1c07c86551986ec306838b3757e53bdfe1cde8b5e29b9996f35bb76fb280cca2920a287c300',
             vcId: '0xc1912',
             nonce: 0,
             partyA: partyA,

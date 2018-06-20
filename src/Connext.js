@@ -140,6 +140,7 @@ class Connext {
     const nonce = 0
     const openVCs = 0
     const lcId = await this.getNewChannelId()
+    console.log('register lcId (subchanAI):', lcId)
     const vcRootHash = Connext.generateVcRootHash({ vc0s: [] })
     const partyA = accounts[0]
     const sig = await this.createLCStateUpdate({
@@ -151,6 +152,7 @@ class Connext {
       balanceA: initialDeposit,
       balanceI: Web3.utils.toBN('0')
     })
+    console.log('register sig:', sig)
 
     // create LC on contract
     // TO DO: better error handling here
@@ -168,7 +170,11 @@ class Connext {
       challenge,
       initialDeposit
     })
-    console.log(contractResult)
+    if (contractResult.transactionHash) {
+      console.log('tx hash:', contractResult.transactionHash)
+    } else {
+      throw new Error('Transaction was not successfully mined.')
+    }
     // ping ingrid
     const response = this.requestJoinLc({ sig, balanceA: initialDeposit })
     return response
@@ -444,25 +450,35 @@ class Connext {
     const lcA = await this.getLc(lcIdA)
     // generate initial vcstate
     const vcId = await this.getNewChannelId()
-    const vc0 = await this.createVCStateUpdate({
+    console.log('subchanAI id:', lcIdA)
+    console.log('subchanBI id:', lcIdB)
+    console.log('openChannel vcID:', vcId)
+    const vc0 = {
       vcId,
       nonce: 0,
       partyA: lcA.partyA,
       partyB: to,
-      balanceA: deposit || lcA.balanceA,
-      balanceB: 0
-    })
-    let vc0s = await this.getVcInitialStates(cIdA) // array of vc state objs
+      partyI: this.ingridAddress,
+      subchanAI: lcIdA,
+      subchanBI: lcIdB,
+      balanceA: deposit || Web3.utils.toBN(lcA.balanceA),
+      balanceB: Web3.utils.toBN(0)
+    }
+    const sigVC0 = await this.createVCStateUpdate(vc0)
+    console.log('sigVC0:', vc0)
+    let vc0s = await this.getVcInitialStates(lcIdA) // array of vc state objs
     vc0s.push(vc0)
     const newVcRootHash = Connext.generateVcRootHash({
       vc0s
     })
+    console.log('newVcRootHash:', newVcRootHash)
     // ping ingrid
     const result = await this.openVc({
       vc0: vc0,
-      balanceA: deposit || lcA.balanceA,
+      balanceA: deposit || Web3.utils.toBN(lcA.balanceA),
       to,
-      vcRootHash: newVcRootHash
+      vcRootHash: newVcRootHash,
+      sig: sigVC0
     })
     return result
   }
@@ -1080,8 +1096,8 @@ class Connext {
     partyA,
     partyB,
     partyI,
-    subchanAI,
-    subchanBI,
+    // subchanAI,
+    // subchanBI,
     balanceA,
     balanceB
   }) {
@@ -1119,17 +1135,17 @@ class Connext {
       'partyI'
     )
 
-    Connext.validatorsResponseToError(
-      validate.single(subchanAI, isHexStrict),
-      methodName,
-      'subchanAI'
-    )
+    // Connext.validatorsResponseToError(
+    //   validate.single(subchanAI, isHexStrict),
+    //   methodName,
+    //   'subchanAI'
+    // )
 
-    Connext.validatorsResponseToError(
-      validate.single(subchanBI, isHexStrict),
-      methodName,
-      'subchanBI'
-    )
+    // Connext.validatorsResponseToError(
+    //   validate.single(subchanBI, isHexStrict),
+    //   methodName,
+    //   'subchanBI'
+    // )
 
     Connext.validatorsResponseToError(
       validate.single(balanceA, isBN),
@@ -1149,8 +1165,8 @@ class Connext {
       { type: 'address', value: partyA },
       { type: 'address', value: partyB },
       { type: 'address', value: partyI },
-      { type: 'bytes32', value: subchanAI },
-      { type: 'bytes32', value: subchanAI },
+      // { type: 'bytes32', value: subchanAI },
+      // { type: 'bytes32', value: subchanAI },
       { type: 'uint256', value: balanceA },
       { type: 'uint256', value: balanceB }
     )
@@ -1164,8 +1180,8 @@ class Connext {
     partyA,
     partyB,
     partyI,
-    subchanAI,
-    subchanBI,
+    // subchanAI,
+    // subchanBI,
     balanceA,
     balanceB
   }) {
@@ -1213,17 +1229,17 @@ class Connext {
       'partyI'
     )
 
-    Connext.validatorsResponseToError(
-      validate.single(subchanAI, isHexStrict),
-      methodName,
-      'subchanAI'
-    )
+    // Connext.validatorsResponseToError(
+    //   validate.single(subchanAI, isHexStrict),
+    //   methodName,
+    //   'subchanAI'
+    // )
 
-    Connext.validatorsResponseToError(
-      validate.single(subchanBI, isHexStrict),
-      methodName,
-      'subchanBI'
-    )
+    // Connext.validatorsResponseToError(
+    //   validate.single(subchanBI, isHexStrict),
+    //   methodName,
+    //   'subchanBI'
+    // )
 
     Connext.validatorsResponseToError(
       validate.single(balanceA, isBN),
@@ -1243,8 +1259,8 @@ class Connext {
       partyA,
       partyB,
       partyI,
-      subchanAI,
-      subchanBI,
+      // subchanAI,
+      // subchanBI,
       balanceA,
       balanceB
     })
@@ -1273,7 +1289,8 @@ class Connext {
     partyI = this.ingridAddress,
     balanceA,
     balanceB,
-    unlockedAccountPresent = false // if true, use sign over personal.sign
+    // unlockedAccountPresent = false // if true, use sign over personal.sign
+    unlockedAccountPresent = true // CHANGE TO DEFAULT FALSE WHEN NOT TESTING
   }) {
     // validate
     const methodName = 'createVCStateUpdate'
@@ -1974,7 +1991,11 @@ class Connext {
       'lcId'
     )
     const response = await axios.get(`${this.ingridUrl}/ledgerchannel/${lcId}`)
-    return response.data
+    if (response.data.data) {
+      return response.data.data.ledgerChannel
+    } else {
+      return response.data
+    }
   }
 
   /**
@@ -2384,9 +2405,13 @@ class Connext {
       'lcId'
     )
     const response = await axios.get(
-      `${this.ingridUrl}/ledgerchannel/${lcId}/virtualchannel/intialstate`
+      `${this.ingridUrl}/ledgerchannel/${lcId}/virtualchannel/initialstate`
     )
-    return response.data
+    if (response.data.data) {
+      return response.data.data
+    } else {
+      return response.data
+    }
   }
 
   // returns initial vc state object for given vc
