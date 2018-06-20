@@ -689,9 +689,8 @@ class Connext {
     )
     const accounts = await this.web3.eth.getAccounts()
     // get latest double signed updates
-    const latestVcState = await this.getLatestVirtualDoubleSignedStateUpdate({
-      channelId
-    })
+    const latestVcState = await this.getLatestVirtualDoubleSignedStateUpdate(channelId)
+    console.log(latestVcState)
     if (
       latestVcState.partyA !== accounts[0] &&
       latestVcState.partyB !== accounts[0]
@@ -700,7 +699,7 @@ class Connext {
     }
 
     // have ingrid decompose since this is the happy case closing
-    const results = await this.getDecomposedLcStates(channelId)
+    const results = await this.requestDecomposeLC(channelId)
 
     return results
   }
@@ -2476,9 +2475,31 @@ class Connext {
   // requests both decomposed lc state updates from ingrid.
   // returns labeled lc state object (i.e. indexed by lc channel id)
   // lcState obj should match whats submitted to createLcUpdate
+  // const decomposedLcStates = {
+  //   subchanBI: {},
+  //   subchanAI: {}
+  // }
   async getDecomposedLcStates (vcId) {
     // validate params
     const methodName = 'getDecomposedLcStates'
+    const isHexStrict = { presence: true, isHexStrict: true }
+    Connext.validatorsResponseToError(
+      validate.single(vcId, isHexStrict),
+      methodName,
+      'vcId'
+    )
+    const response = await axios.get(
+      `${this.ingridUrl}/virtualchannel/${vcId}/decompose`
+    )
+    return response.data
+  }
+
+  // asks ingrid to decompose virtual channel at latest double signed update
+  // to ledger channel updates
+  // called from fastCloseChannel
+  async requestDecomposeLC (vcId) {
+    // validate params
+    const methodName = 'requestDecomposeLC'
     const isHexStrict = { presence: true, isHexStrict: true }
     Connext.validatorsResponseToError(
       validate.single(vcId, isHexStrict),
