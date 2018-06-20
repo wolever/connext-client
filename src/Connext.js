@@ -140,14 +140,14 @@ class Connext {
     const lcId = await this.getNewChannelId()
     const vcRootHash = Connext.generateVcRootHash({ vc0s: [] })
     const partyA = accounts[0]
-    const sig = this.createLCStateUpdate({
+    const sig = await this.createLCStateUpdate({
       lcId,
       nonce,
       openVCs,
       vcRootHash,
       partyA,
       balanceA: initialDeposit,
-      balanceI: 0
+      balanceI: Web3.utils.toBN('0')
     })
 
     // create LC on contract
@@ -163,7 +163,7 @@ class Connext {
      */
     const contractResult = await this.createLedgerChannelContractHandler({
       lcId,
-      challenge,
+      // challenge,
       initialDeposit
     })
     console.log(contractResult)
@@ -967,7 +967,8 @@ class Connext {
     partyI = this.ingridAddress, // default to ingrid
     balanceA,
     balanceI,
-    unlockedAccountPresent = false // true if hub or ingrid
+    // unlockedAccountPresent = false // true if hub or ingrid,
+    unlockedAccountPresent = true // FOR TESTING, CHANGE
   }) {
     const methodName = 'createLCStateUpdate'
     // validate
@@ -1912,7 +1913,7 @@ class Connext {
 
   async getLedgerChannelChallengeTimer () {
     const response = await axios.get(`${this.ingridUrl}/ledgerchannel/timer`)
-    return response.data
+    return response.data.data
   }
 
   // posts signature of lc0 to ingrid

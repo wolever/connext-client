@@ -57,17 +57,66 @@ describe('Connext', async () => {
     })
   })
 
-  describe('register(initialDeposit)', () => {
+  describe('register(initialDeposit)', async () => {
     const port = process.env.ETH_PORT ? process.env.ETH_PORT : '9545'
     web3 = new Web3(`ws://localhost:${port}`)
     let client = new Connext({ web3 }, Web3)
     describe('register with real web3 and valid params', () => {
-      it('should create a ledger channel with ingrid and bond initial deposit', async () => {
-        const accounts = await client.web3.eth.getAccounts()
-        ingridAddress = client.ingridAddress = lc0.partyI = accounts[2]
-        const initialDeposit = Web3.utils.toBN('5')
-        const results = await client.register(initialDeposit)
-        assert.equal('pls', results)
+      describe('ingrid is responsive and returns correct results', () => {
+        it.only(
+          'should create a ledger channel with ingrid and bond initial deposit',
+          async () => {
+            // params
+            const accounts = await client.web3.eth.getAccounts()
+            partyA = lc0.partyA = accounts[0]
+            ingridAddress = client.ingridAddress = lc0.partyI = accounts[2]
+            const initialDeposit = Web3.utils.toBN(
+              Web3.utils.toWei('5', 'ether')
+            )
+            lc0.lcId = '0x01' // add lcid to obj
+            const vcRootHash = Connext.generateVcRootHash({ vc0s: [] })
+            const sig = await client.createLCStateUpdate({
+              lcId: lc0.lcId,
+              nonce: 0,
+              openVCs: 0,
+              vcRootHash,
+              partyA,
+              balanceA: initialDeposit,
+              balanceI: lc0.balanceI,
+              unlockedAccountPresent: true
+            })
+            console.log('request sig: ', sig)
+            // url requests
+            client.ingridUrl = 'ingridUrl'
+            let url = `${client.ingridUrl}/ledgerchannel/timer`
+            const mock = new MockAdapter(axios)
+            mock.onGet(url).reply(() => {
+              return [
+                200,
+                {
+                  data: 3600
+                }
+              ]
+            })
+            url = `${client.ingridUrl}/ledgerchannel/join?a=${partyA}`
+            mock.onPost(url).reply(() => {
+              return [
+                200,
+                {
+                  data: {}
+                }
+              ]
+            })
+
+            const results = await client.register(initialDeposit)
+            assert.deepEqual(
+              {
+                data: {}
+              },
+              results
+            )
+          }
+        )
       })
     })
   })
@@ -84,13 +133,11 @@ describe('Connext', async () => {
         partyA = lc0.partyA = accounts[0]
         partyB = vc0.partyB = accounts[1]
         lc0.lcId = '0x01' // add lcid to obj
-        console.log('lc0:', lc0)
         const response = await client.createLedgerChannelContractHandler({
           ingridAddress,
           lcId: lc0.lcId,
           initialDeposit: lc0.balanceA
         })
-        console.log(response)
         assert.ok(Web3.utils.isHexStrict(response.transactionHash))
       })
     })
@@ -193,10 +240,10 @@ describe('Connext', async () => {
           const sigA = await client.createLCStateUpdate(params)
 
           const sigI = await client.web3.eth.sign(hashI, accounts[2])
-          console.log('params:', params)
-          console.log('hashI:', hashI)
-          console.log('sigI:', sigI)
-          console.log('sigA:', sigA)
+          // console.log('params:', params)
+          // console.log('hashI:', hashI)
+          // console.log('sigI:', sigI)
+          // console.log('sigA:', sigA)
 
           const result = await client.consensusCloseChannelContractHandler({
             lcId: params.lcId,
@@ -206,7 +253,6 @@ describe('Connext', async () => {
             sigA: sigA,
             sigI: sigI
           })
-          console.log(result)
           assert.ok(
             result.transactionHash !== null &&
               result.transactionHash !== undefined
@@ -321,7 +367,7 @@ describe('Connext', async () => {
           balanceI: Web3.utils.toBN('0'),
           unlockedAccountPresent: true
         })
-        console.log(sig)
+        // console.log(sig)
         assert.equal(
           sig,
           '0x47fcfaa2daad4c569bb65985324c2f2ee66563ce558688733b04b3cef4cad69d7e48cc489f57a4268ecc8f73eab0a19cbc099d12ae7d319f277254e15eb297a701'
@@ -990,7 +1036,7 @@ describe('ingridClientRequests', () => {
       ]
     })
     const res = await client.getLedgerChannelChallengeTimer('address')
-    assert.deepEqual(res, { data: {} })
+    assert.deepEqual(res, {})
   })
 
   it('fastCloseVcHandler', async () => {
