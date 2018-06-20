@@ -566,15 +566,15 @@ class Connext {
     )
     // get the vc
     const vc = await this.getChannel(channelId)
+    // calculate new balanceB
+    const balanceB = Web3.utils.toBN(vc.balanceB) + (Web3.utils.toBN(vc.balanceA) - balance)
     const vc1 = {
       vcId: channelId,
       nonce: vc.nonce + 1,
       partyA: vc.partyA,
       partyB: vc.partyB,
       balanceA: balance,
-      balanceB: Web3.utils.toBN(
-        Web3.utils.toBN(vc.balanceB) + (Web3.utils.toBN(vc.balanceA) - balance)
-      ) // type issues?
+      balanceB: Web3.utils.toBN(balanceB)
     }
 
     const sig = await this.createVCStateUpdate(vc1)
@@ -621,25 +621,23 @@ class Connext {
       methodName,
       'sig'
     )
-    // validate inputs
-    validate.single(channelId, { presence: true, isHexStrict: true })
-    validate.single(balance, { presence: true, isBN: true })
-    validate.single(sig, { presence: true, isHex: true })
     // check sig
     const accounts = await this.web3.eth.getAccounts()
     const vc = await this.getChannel(channelId)
-    const subchanAI = await this.getChannelId({ partyA: vc.partyA })
-    const subchanBI = await this.getChannelId({ partyA: vc.partyB })
+    const subchanAI = await this.getLcId(vc.partyA)
+    const subchanBI = await this.getLcId(vc.partyB)
+    const balanceB = Web3.utils.toBN(vc.balanceB) + (Web3.utils.toBN(vc.balanceA) - balance)
     const signer = Connext.recoverSignerFromVCStateUpdate({
       sig,
       vcId: channelId,
       nonce: vc.nonce, // will this be stored in vc after updateState?
       partyA: vc.partyA,
       partyB: vc.partyB,
+      partyI: this.ingridAddress,
       subchanAI,
       subchanBI,
       balanceA: balance,
-      balanceB: vc.balanceB // will this be stored in vc after updateState?
+      balanceB: Web3.utils.toBN(balanceB) // will this be stored in vc after updateState?
     })
     if (accounts[0] === vc.partyB && signer !== vc.partyA) {
       throw new Error('partyA did not sign this state update.')
@@ -655,15 +653,19 @@ class Connext {
       partyA: vc.partyA,
       partyB: vc.partyB,
       balanceA: balance,
-      balanceB: vc.balanceB // will this be stored in vc after updateState?
+      balanceB: Web3.utils.toBN(balanceB) // will this be stored in vc after updateState?
     })
+    console.log('sig:', sigB)
     // post sig to hub
-    const response = await this.cosignVcStateUpdate({
-      channelId,
-      sig: sigB,
-      balance
-    })
-    return response
+    const response = await axios.post(
+      `${this.ingridUrl}/virtualchannel/${channelId}/cosign`,
+      {
+        channelId,
+        sig: sigB,
+        balance
+      }
+    )
+    return response.data
   }
 
   /**
