@@ -91,7 +91,7 @@ class Connext {
       ingridAddress = '',
       watcherUrl = '',
       ingridUrl = '',
-      contractAddress = '0xf25186b5081ff5ce73482ad761db0eb0d25abfbf'
+      contractAddress = '0x3ba7c2578b59e0e1ccfee9a20d92f043c0e0b3e6'
     },
     web3Lib = Web3
   ) {
@@ -1381,13 +1381,10 @@ class Connext {
       methodName,
       'vc0s'
     )
-    let vcRootHash, elems
+    let elems
     if (vc0s.length === 0) {
       // reset to initial value -- no open VCs
       elems = []
-      const emptyRoot = Utils.padBytes32('0x0')
-      const vcBuf = new Buffer(emptyRoot.substr(2, emptyRoot.length), 'hex')
-      elems.push(vcBuf)
     } else {
       elems = vc0s.map(vc0 => {
         // vc0 is the initial state of each vc
@@ -1397,8 +1394,9 @@ class Connext {
         return vcBuf
       })
     }
+
     const merkle = new MerkleTree.default(elems)
-    vcRootHash = Utils.bufferToHex(merkle.getRoot())
+    const vcRootHash = Utils.bufferToHex(merkle.getRoot())
 
     return vcRootHash
   }
@@ -1418,7 +1416,6 @@ class Connext {
     // validate
     // validatorOpts'
     const isHexStrict = { presence: true, isHexStrict: true }
-    const isPositiveInt = { presence: true, isPositiveInt: true }
     const isBN = { presence: true, isBN: true }
     const isAddress = { presence: true, isAddress: true }
     Connext.validatorsResponseToError(
@@ -1540,7 +1537,8 @@ class Connext {
     const accounts = await this.web3.eth.getAccounts()
     const result = await this.channelManagerInstance.methods
       .consensusCloseChannel(lcId, nonce, balanceA, balanceI, sigA, sigI)
-      .call({
+      // .consensusCloseChannel(lcId, nonce, balances, sigA)
+      .send({
         from: accounts[0],
         gas: 3000000 // FIX THIS, WHY HAPPEN, TRUFFLE CONFIG???
       })
