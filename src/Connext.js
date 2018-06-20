@@ -221,9 +221,7 @@ class Connext {
    */
   async withdraw () {
     const lcId = await this.getLcId()
-    const lcState = await this.getLatestLedgerStateUpdate({
-      ledgerChannelId: lcId
-    })
+    const lcState = await this.getLatestLedgerStateUpdate(lcId)
     // /**
     //  * lcState = {
     //  *  sigA,
@@ -237,82 +235,66 @@ class Connext {
     //  *  balanceI
     //  * }
     //  */
-    // // check ingrid signed
-    // // TO DO: probably should check with values that don't come from
-    // // the same source
-    // const signer = Connext.recoverSignerFromLCStateUpdate({
-    //   sig: lcState.sigI,
-    //   isClose: false,
-    //   lcId,
-    //   nonce: lcState.nonce,
-    //   openVCs: lcState.openVCs,
-    //   vcRootHash: lcState.vcRootHash,
-    //   partyA: lcState.partyA,
-    //   partyI: lcState.partyI,
-    //   balanceA: lcState.balanceA,
-    //   balanceI: lcState.balanceI
-    // })
-    // if (signer !== this.ingridAddress) {
-    //   throw new Error('Ingrid did not sign this state update.')
-    // }
-    // // generate same update with fast close flag and post
-    // const sigParams = {
-    //   isClose: true,
-    //   lcId,
-    //   nonce: lcState.nonce,
-    //   openVCs: lcState.openVCs,
-    //   vcRootHash: lcState.vcRootHash,
-    //   partyA: lcState.partyA,
-    //   partyI: lcState.partyI,
-    //   balanceA: lcState.balanceA,
-    //   balanceI: lcState.balanceI
-    // }
-    // const sig = await this.createLCStateUpdate(sigParams)
-
-    // const channelFastClosed = await this.fastCloseLcHandler({ sig, lcId })
-
-    // if (channelFastClosed) {
-    //   // call consensus close channel
-    //   // INGRID SHOULD CALL CONSENSUS CLOSE CHANNEL IF VERIFIED
-    //   response = await this.consensusCloseChannelContractHandler({
-    //     lcId,
-    //     nonce: lcState.nonce,
-    //     balanceA: lcState.balanceA,
-    //     balanceI: lcState.balanceI,
-    //     sigA: sig,
-    //     sigI: lcState.sigI
-    //   })
-    // } else {
-    //   // call updateLCState
-    //   const response = await this.updateLcStateContractHandler({
-    //     // challenge flag..?
-    //     lcId,
-    //     nonce: lcState.nonce,
-    //     openVCs: lcState.openVCs,
-    //     balanceA: lcState.balanceA,
-    //     balanceI: lcState.balanceI,
-    //     vcRootHash: lcState.vcRootHash,
-    //     sigA: sig,
-    //     sigI: lcState.sigI
-    //   })
-    //   return response
-    // }
-
-    // if (!channelFastClosed) {
-    //   // call updateLCState
-    //   const response = await this.updateLcStateContractHandler({
-    //     // challenge flag..?
-    //     lcId,
-    //     nonce: lcState.nonce,
-    //     openVCs: lcState.openVCs,
-    //     balanceA: lcState.balanceA,
-    //     balanceI: lcState.balanceI,
-    //     vcRootHash: lcState.vcRootHash,
-    //     sigA: sig,
-    //     sigI: lcState.sigI
-    //   })
-    //   return response
-    // }
+    // check ingrid signed
+    // TO DO: probably should check with values that don't come from
+    // the same source
+    const signer = Connext.recoverSignerFromLCStateUpdate({
+      sig: lcState.sigI,
+      isClose: false,
+      lcId,
+      nonce: lcState.nonce,
+      openVCs: lcState.openVCs,
+      vcRootHash: lcState.vcRootHash,
+      partyA: lcState.partyA,
+      partyI: lcState.partyI,
+      balanceA: Web3.utils.toBN(lcState.balanceA),
+      balanceI: Web3.utils.toBN(lcState.balanceI)
+    })
+    if (signer !== this.ingridAddress.toLowerCase()) {
+      throw new Error('Ingrid did not sign this state update.')
+    }
+    // generate same update with fast close flag and post
+    const sigParams = {
+      isClose: true,
+      lcId,
+      nonce: lcState.nonce,
+      openVCs: lcState.openVCs,
+      vcRootHash: lcState.vcRootHash,
+      partyA: lcState.partyA,
+      partyI: lcState.partyI,
+      balanceA: Web3.utils.toBN(lcState.balanceA),
+      balanceI: Web3.utils.toBN(lcState.balanceI)
+    }
+    const sig = await this.createLCStateUpdate(sigParams)
+    console.log('withdraw sigA:',sig)
+    const sigI = await this.fastCloseLcHandler({ sig, lcId })
+    console.log('closing channel sigI:',sigI)
+    let response
+    if (sigI) {
+      // call consensus close channel
+      response = await this.consensusCloseChannelContractHandler({
+        lcId,
+        nonce: lcState.nonce,
+        balanceA: Web3.utils.toBN(lcState.balanceA),
+        balanceI: Web3.utils.toBN(lcState.balanceI),
+        sigA: sig,
+        sigI: sigI
+      })
+    } else {
+      // call updateLCState
+      response = await this.updateLcStateContractHandler({
+        // challenge flag..?
+        lcId,
+        nonce: lcState.nonce,
+        openVCs: lcState.openVCs,
+        balanceA: Web3.utils.toBN(lcState.balanceA),
+        balanceI: Web3.utils.toBN(lcState.balanceI),
+        vcRootHash: lcState.vcRootHash,
+        sigA: sig,
+        sigI: lcState.sigI
+      })
+    }
+    return response
   }
 
   /**
@@ -372,7 +354,7 @@ class Connext {
       balanceA: lcState.balanceA,
       balanceI: lcState.balanceI
     })
-    if (signer !== this.ingridAddress) {
+    if (signer !== this.ingridAddress.toLowerCase()) {
       throw new Error('Hub did not sign this state update.')
     }
     const sig = await this.createLCStateUpdate({
@@ -639,11 +621,11 @@ class Connext {
       balanceA: balance,
       balanceB: Web3.utils.toBN(balanceB) // will this be stored in vc after updateState?
     })
-    if (accounts[0] === vc.partyB && signer !== vc.partyA) {
+    if (accounts[0].toLowerCase() === vc.partyB && signer !== vc.partyA) {
       throw new Error('partyA did not sign this state update.')
-    } else if (accounts[0] === vc.partyA && signer !== vc.partyB) {
+    } else if (accounts[0].toLowerCase() === vc.partyA && signer !== vc.partyB) {
       throw new Error('partyB did not sign this state update.')
-    } else if (accounts[0] !== vc.partyA && accounts[0] !== vc.partyB) {
+    } else if (accounts[0].toLowerCase() !== vc.partyA && accounts[0].toLowerCase() !== vc.partyB) {
       throw new Error('Not your virtual channel')
     }
     // generate sigB
@@ -692,8 +674,8 @@ class Connext {
     const latestVcState = await this.getLatestVirtualDoubleSignedStateUpdate(channelId)
     console.log(latestVcState)
     if (
-      latestVcState.partyA !== accounts[0] &&
-      latestVcState.partyB !== accounts[0]
+      latestVcState.partyA !== accounts[0].toLowerCase() &&
+      latestVcState.partyB !== accounts[0].toLowerCase()
     ) {
       throw new Error('Not your virtual channel.')
     }
@@ -741,9 +723,9 @@ class Connext {
     const vc = await this.getChannel(channelId)
     // your vc? which agent?
     let subchan
-    if (accounts[0] === vc.partyA) {
+    if (accounts[0].toLowerCase() === vc.partyA) {
       subchan = vc.subchanAI
-    } else if (accounts[0] === vc.partyB) {
+    } else if (accounts[0].toLowerCase() === vc.partyB) {
       subchan = vc.subchanBI
     } else {
       throw new Error('Not your channel to close.')
@@ -1345,10 +1327,10 @@ class Connext {
     // get subchans
     let subchanAI, subchanBI
     // is this partyA or B?
-    if (accounts[0] === partyA) {
+    if (accounts[0].toLowerCase() === partyA) {
       subchanAI = await this.getLcId()
       subchanBI = await this.getLcId(partyB)
-    } else if (accounts[0] === partyB) {
+    } else if (accounts[0].toLowerCase() === partyB) {
       subchanAI = await this.getLcId(partyA)
       subchanBI = await this.getLcId()
     } else {
@@ -1391,10 +1373,10 @@ class Connext {
       methodName,
       'vc0s'
     )
-    let elems
+    let elems, vcRootHash
     if (vc0s.length === 0) {
       // reset to initial value -- no open VCs
-      elems = []
+      vcRootHash = '0x0'
     } else {
       elems = vc0s.map(vc0 => {
         // vc0 is the initial state of each vc
@@ -1403,10 +1385,9 @@ class Connext {
         const vcBuf = Utils.hexToBuffer(hash)
         return vcBuf
       })
+      const merkle = new MerkleTree.default(elems)
+      vcRootHash = Utils.bufferToHex(merkle.getRoot())
     }
-
-    const merkle = new MerkleTree.default(elems)
-    const vcRootHash = Utils.bufferToHex(merkle.getRoot())
 
     return vcRootHash
   }
@@ -2143,6 +2124,11 @@ class Connext {
 
   // posts to ingrid endpoint to decompose ledger channel
   // based on latest double signed update
+  // should return ingrids signature on the closing lc update used in
+  // consensusCloseChannel
+
+  // as called in withdraw: requests ingrid cosigns final ledger update
+  // if she cosigns, call consensus
   async fastCloseLcHandler ({ sig, lcId }) {
     // validate params
     const methodName = 'fastCloseLcHandler'
@@ -2360,14 +2346,14 @@ class Connext {
     // get correct lc info
     const accounts = await this.web3.eth.getAccounts()
     let lc, lcState, vc0s
-    if (accounts[0] === partyA) {
+    if (accounts[0].toLowerCase() === partyA) {
       // accounts[0] is vcpartyA, lcAgentA is paying money
       lc = await this.getLc(subchanAI)
       vc0s = await this.getVcInitialStates(subchanAI)
       lcState.lcId = subchanAI
       lcState.balanceA = lc.balanceA - balanceB // balanceB in VC is amount A paid
       lcState.balanceI = lc.balanceI + balanceB
-    } else if (accounts[0] === partyB) {
+    } else if (accounts[0].toLowerCase() === partyB) {
       // accounts[0] is partyB, vcAgentA is making money
       lc = await this.getLc(subchanBI)
       vc0s = await this.getVcInitialStates(subchanBI)
