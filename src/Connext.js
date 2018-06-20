@@ -75,7 +75,7 @@ class Connext {
    *
    * Create an instance of the Connext client.
    *
-   * 
+   * @constructor
    * @example
    * const Connext = require('connext')
    * const connext = new Connext(web3)
@@ -108,16 +108,13 @@ class Connext {
 
   // WALLET FUNCTIONS
   /**
-   * Opens a ledger channel with ingridAddress and bonds initialDeposit.
-   * Requests a challenge timer for the ledger channel from ingrid.
+   * Opens a ledger channel with ingridAddress and bonds initialDeposit. Ledger channel challenge timer is determined by Ingrid.
    *
-   * Use web3 to call openLC function on ledgerChannel.
-   * 
-   * Ingrid will open with 0 balance, and can call the deposit function to
-   * add deposits based on user needs.
-   * 
-   * In the case where Ingrid is unresponsive, the function LCOpenTimeout() can be called
-   * by the client to recover the funds.
+   * Uses web3 to call openLC function on the contract, and pings Ingrid with opening signature and initial deposit.
+   *
+   * Ingrid should verify the signature and call "joinChannel" on the contract.
+   *
+   * If Ingrid is unresponsive, the client function "LCOpenTimeoutContractHandler" can be called by the client to recover the funds, or the client can call the contract function directly.
    *
    * @example
    * // get a BN
@@ -157,15 +154,15 @@ class Connext {
 
     // create LC on contract
     // TO DO: better error handling here
-    /**
-     * Descriptive error message back to wallet here
-     *
-     * Atomicity -- roll back to a previous state if there are inconsistencies here
-     *
-     * Return to a recoverable state based on block history
-     *
-     * Fail point so Ingrid can retry if join fails, make sure if ingrid cant join, the funds are recoverable.
-     */
+    // /**
+    //  * Descriptive error message back to wallet here
+    //  *
+    //  * Atomicity -- roll back to a previous state if there are inconsistencies here
+    //  *
+    //  * Return to a recoverable state based on block history
+    //  *
+    //  * Fail point so Ingrid can retry if join fails, make sure if ingrid cant join, the funds are recoverable.
+    //  */
     const contractResult = await this.createLedgerChannelContractHandler({
       lcId,
       challenge,
@@ -178,8 +175,8 @@ class Connext {
   }
 
   /**
-   * Add a deposit to an existing ledger channel. Calls contract function "deposit".
-   * 
+   * Adds a deposit to an existing ledger channel. Calls contract function "deposit".
+   *
    * Can be used by either party in a ledger channel.
    *
    * @example
@@ -203,12 +200,11 @@ class Connext {
   }
 
   /**
-   * Withdraw bonded funds from ledger channel with ingrid.
+   * Withdraws bonded funds from ledger channel with ingrid.
    * All virtual channels must be closed before a ledger channel can be closed.
    *
    * Generates the state update from the latest ingrid signed state with fast-close flag.
-   * Ingrid should countersign if the state update matches what she has signed previously,
-   * and the channel will fast close by calling consensusCloseChannel on the Channel Manager contract.
+   * Ingrid should countersign if the state update matches what she has signed previously, and the channel will fast close by calling consensusCloseChannel on the Channel Manager contract.
    *
    * If the state update doesn't match what Ingrid previously signed, then updateLCState is called with the latest state and a challenge flag.
    *
@@ -268,7 +264,7 @@ class Connext {
     // const sig = await this.createLCStateUpdate(sigParams)
 
     // const channelFastClosed = await this.fastCloseLcHandler({ sig, lcId })
-    
+
     // if (channelFastClosed) {
     //   // call consensus close channel
     //   // INGRID SHOULD CALL CONSENSUS CLOSE CHANNEL IF VERIFIED
@@ -296,7 +292,6 @@ class Connext {
     //   return response
     // }
 
-
     // if (!channelFastClosed) {
     //   // call updateLCState
     //   const response = await this.updateLcStateContractHandler({
@@ -319,17 +314,19 @@ class Connext {
    *
    * Looks up LC by the account address of the client-side user.
    *
+   * Calls the "byzantineCloseChannel" function on the contract.
+   *
    * @example
    * const success = await connext.withdraw()
    * if (!success) {
    *   // wait out challenge timer
    *   await connext.withdrawFinal()
    * }
-   * 
+   *
    */
   async withdrawFinal () {
     const lcId = await this.getLcId()
-    const lc = await this.getLc({ lcId })
+    const lc = await this.getLc(lcId)
     if (lc.openVCs > 0) {
       throw new Error('Close open VCs before withdraw final.')
     }
@@ -399,23 +396,27 @@ class Connext {
    * Opens a virtual channel between to and caller with Ingrid as the hub. Both users must have a ledger channel open with ingrid.
    *
    * If there is no deposit provided, then 100% of the ledger channel balance is added to VC deposit. This function is to be called by the "A" party in a unidirectional scheme.
+   *
    * Sends a proposed LC update for countersigning that updates the VCRootHash of the ledger channel state.
+   *
    * This proposed LC update (termed VC0 throughout documentation) serves as the opening certificate for the virtual channel.
+   *
    *
    * @example
    * const myFriendsAddress = "0x627306090abaB3A6e1400e9345bC60c78a8BEf57"
    * await connext.openChannel({ to: myFriendsAddress })
+   *
    * @param {Object} params - The method object.
    * @param {String} params.to Wallet address to wallet for partyB in virtual channel
    * @param {BigNumber} params.deposit User deposit for VC, in wei. Optional.
    */
-  /**
-   * add error handling for calling openChannel twice as a viewer or something
-   *
-   * should fail if you try calling openChannel if it doesnt let you
-   *
-   * validate the state update against lc is valid
-   */
+  // /**
+  //  * add error handling for calling openChannel twice as a viewer or something
+  //  *
+  //  * should fail if you try calling openChannel if it doesnt let you
+  //  *
+  //  * validate the state update against lc is valid
+  //  */
   async openChannel ({ to, deposit = null }) {
     // validate params
     const methodName = 'openChannel'
@@ -440,9 +441,9 @@ class Connext {
       throw new Error('Missing one or more required subchannels for VC.')
     }
     // get ledger channel A
-    const lcA = await this.getLc({ lcId: lcIdA })
+    const lcA = await this.getLc(lcIdA)
     // generate initial vcstate
-    const vcId = await this.getNewVirtualChannelId()
+    const vcId = await this.getNewChannelId()
     const vc0 = await this.createVCStateUpdate({
       vcId,
       nonce: 0,
@@ -451,7 +452,7 @@ class Connext {
       balanceA: deposit || lcA.balanceA,
       balanceB: 0
     })
-    let vc0s = await this.getVcInitialStates({ ledgerChannelId: lcIdA }) // array of vc state objs
+    let vc0s = await this.getVcInitialStates(cIdA) // array of vc state objs
     vc0s.push(vc0)
     const newVcRootHash = Connext.generateVcRootHash({
       vc0s
@@ -475,7 +476,7 @@ class Connext {
    * @example
    * const channelId = 10 // accessed by getChannelId method
    * await connext.joinChannel(channelId)
-   * @param {Number} channelId - ID of the virtual channel.
+   * @param {String} channelId - ID of the virtual channel.
    */
   async joinChannel (channelId) {
     // validate params
@@ -489,7 +490,7 @@ class Connext {
     // get channels and accounts
     const accounts = await this.web3.eth.getAccounts()
 
-    const vc = await this.getChannel({ channelId })
+    const vc = await this.getChannel(channelId)
 
     const lcIdB = await this.getLcId()
 
@@ -503,7 +504,7 @@ class Connext {
     }
 
     const sig = await this.createVCStateUpdate(state)
-    let vc0s = await this.getVcInitialStates({ ledgerChannelId: lcIdB })
+    let vc0s = await this.getVcInitialStates(lcIdB)
     vc0s.push(vc0)
     const newVcRootHash = Connext.generateVcRootHash({
       vc0s
@@ -529,7 +530,7 @@ class Connext {
    *   balance: web3.utils.toBN(web3.utils.toWei(0.5, 'ether'))
    * })
    * @param {Object} params - The method object.
-   * @param {Number} params.channelId ID of channel.
+   * @param {HexString} params.channelId ID of channel.
    * @param {BigNumber} params.balance Channel balance in Wei (of "A" party).
    * @returns {String} Returns signature of balance update.
    */
@@ -549,7 +550,7 @@ class Connext {
       'balance'
     )
     // get the vc
-    const vc = await this.getChannel({ channelId })
+    const vc = await this.getChannel(channelId)
 
     const sig = await this.createVCStateUpdate({
       vcId: channelId,
@@ -574,7 +575,7 @@ class Connext {
    * In the unidirectional scheme, this function is called by the "B" party only.
    * Signature is posted to the hub/watcher.
    * @param {Object} params - The method object.
-   * @param {Number} params.channelId ID of channel.
+   * @param {HexString} params.channelId ID of channel.
    * @param {BigNumber} params.balance Channel balance in Wei (of "A" party).
    * @param {String} params.sig Signature received from "A" party to be verified before co-signing.
    * @returns {String} Returns signature of balance update.
@@ -653,7 +654,7 @@ class Connext {
    *
    * @example
    * await connext.fastCloseChannel(10)
-   * @param {Bytes32} channelId - virtual channel ID
+   * @param {String} channelId - virtual channel ID
    */
   async fastCloseChannel (channelId) {
     // validate params
@@ -716,7 +717,7 @@ class Connext {
 
     // get decomposed lc updates from ingrid
     const accounts = await this.web3.eth.getAccounts()
-    const vc = await this.getChannel({ channelId })
+    const vc = await this.getChannel(channelId)
     // your vc? which agent?
     let subchan
     if (accounts[0] === vc.partyA) {
@@ -751,7 +752,7 @@ class Connext {
   }
 
   /**
-   * Close many channels
+   * Close many virtual channels
    *
    * @example
    * const channels = [
@@ -766,7 +767,7 @@ class Connext {
    * ]
    * await connext.closeChannels(channels)
    * @param {Object[]} channels - Array of objects with {vcId, balance} to close
-   * @param {Number} channels.$.channelId Channel ID to close
+   * @param {String} channels.$.channelId Channel ID to close
    * @param {BigNumber} channels.$.balance Channel balance.
    */
   async closeChannels (channels) {
@@ -1453,6 +1454,16 @@ class Connext {
     return result
   }
 
+  async LCOpenTimeoutContractHandler () {
+    const accounts = await this.web3.eth.getAccounts()
+    const result = await this.channelManagerInstance.methods
+      .LCOpenTimeout()
+      .send({
+        from: accounts[0]
+      })
+    return result
+  }
+
   async depositContractHandler ({ depositInWei }) {
     const methodName = 'depositContractHandler'
     // validate
@@ -1712,7 +1723,7 @@ class Connext {
     )
     const accounts = await this.web3.eth.getAccounts()
     // generate proof from lc
-    const vc0s = await this.getVcInitialStates({ lcId: subchan })
+    const vc0s = await this.getVcInitialStates(subchan)
     const vcRootHash = Connext.generateVcRootHash({ vc0s })
     let proof = [vcRootHash]
     proof = this.web3.utils.soliditySha3({ type: 'bytes32', value: proof })
@@ -1829,11 +1840,16 @@ class Connext {
   // *********** INGRID HELPERS ************
   // ***************************************
   /**
+   * Returns the latest ingrid-signed ledger state update.
+   *
    * @example
    * // returns highest nonce ledger channel state update
-   * const lcState = await connext.getLatestLedgerStateUpdate('0x01')
+   * const lcId = await connext.getLcId()
+   * const lcState = await connext.getLatestLedgerStateUpdate(lcId)
+   *
+   *
    * @param {HexString} ledgerChannelId
-   * @returns {Object} containing the latest signed state update for the ledger channel
+   * @returns {Object} containing the latest signed state update for the ledger channel. May or may not be double signed.
    */
   async getLatestLedgerStateUpdate (ledgerChannelId) {
     // should return Object lcState where:
@@ -1863,6 +1879,13 @@ class Connext {
     return response.data
   }
 
+  /**
+   * Returns the ledger channel id between the supplied address and ingrid.
+   *
+   * If no address is supplied, accounts[0] is used as partyA.
+   *
+   * @param {String} partyA - address of the partyA in the channel with Ingrid.
+   */
   async getLcId (partyA = null) {
     const methodName = 'getLcId'
     const isAddress = { presence: true, isAddress: true }
@@ -1889,7 +1912,9 @@ class Connext {
   }
 
   /**
-   * Sets channel IDs to be random.
+   * Returns a new channel id that is a random hex string.
+   *
+   * @returns {String} a random 32 byte channel ID.
    */
   getNewChannelId () {
     const buf = crypto.randomBytes(32)
@@ -1897,7 +1922,12 @@ class Connext {
     return channelId
   }
 
-  async getChannel ({ channelId }) {
+  /**
+   * Returns an object representing the virtual channel in the database.
+   *
+   * @param {String} channelId - the ID of the virtual channel
+   */
+  async getChannel (channelId) {
     const methodName = 'getChannel'
     const isHexStrict = { presence: true, isHexStrict: true }
     Connext.validatorsResponseToError(
@@ -1911,9 +1941,12 @@ class Connext {
     return response.data
   }
 
-  // returns the lcID for the partyB in the virtual channel
-  // NOTE: this method may be excessive since subchans are now stored in
-  //       vc objects
+  /**
+   * Returns the ledger channel id for partyB in the virtual channel.
+   *
+   *
+   * @param {String} vcId - the virtual channel id
+   */
   async getOtherLcId (vcId) {
     const methodName = 'getOtherLcId'
     const isHexStrict = { presence: true, isHexStrict: true }
@@ -1923,11 +1956,16 @@ class Connext {
       'vcId'
     )
     // get LC for other VC party and ingrid
-    const vc = await this.getChannel({ channelId: vcId })
+    const vc = await this.getChannel(vcId)
     return vc.subchanBI
   }
 
-  async getLc ({ lcId }) {
+  /**
+   * Returns an object representing a ledger channel.
+   *
+   * @param {String} lcId - the ledgerchannel id
+   */
+  async getLc (lcId) {
     const methodName = 'getLc'
     const isHexStrict = { presence: true, isHexStrict: true }
     Connext.validatorsResponseToError(
@@ -1939,6 +1977,12 @@ class Connext {
     return response.data
   }
 
+  /**
+   * Returns the default ledger channel challenge period from ingrid.
+   *
+   * Challenge timers are used when constructing an LC.
+   *
+   */
   async getLedgerChannelChallengeTimer () {
     const response = await axios.get(`${this.ingridUrl}/ledgerchannel/timer`)
     return response.data.data
@@ -2149,7 +2193,15 @@ class Connext {
   //   balanceA,
   //   balanceB
   // }
-  async getLatestVirtualDoubleSignedStateUpdate ({ channelId }) {
+  /**
+   * Returns the latest double signed virtual channel state as an object.
+   *
+   * Signatures from both parties are included as fields in that object.
+   *
+   * @param {String} channelId - ID of the virtual channel
+   * @returns {Object} representing the latest double signed virtual channel state.
+   */
+  async getLatestVirtualDoubleSignedStateUpdate (channelId) {
     // validate params
     const methodName = 'getLatestVirtualDoubleSignedStateUpdate'
     const isHexStrict = { presence: true, isHexStrict: true }
@@ -2158,13 +2210,28 @@ class Connext {
       methodName,
       'channelId'
     )
-    validate.single(channelId, { presence: true, isHexStrict: true })
     const response = await axios.get(
       `${this.ingridUrl}/virtualchannel/${channelId}/lateststate/doublesigned`
     )
     return response.data
   }
 
+  /**
+   * Generates the decomposed ledger channel updates needed when closing a virtual channel.
+   *
+   * @param {Object} params
+   * @param {String} params.sigA - signature of partyA on closing virtual channel state
+   * @param {String} params.sigB - signature of partyB on closing virtual channel state
+   * @param {String} params.vcId - virtual channel id
+   * @param {Number} params.nonce - nonce of the virtual channel
+   * @param {String} params.partyA - wallet address of partyA
+   * @param {String} params.partyB - wallet address of partyB
+   * @param {String} params.partyI - wallet address of Ingrid
+   * @param {String} params.subchanAI - ledger channel id of the ledger channel between partyA and partyI
+   * @param {String} params.subchanBI - ledger channel id of the ledger channel between partyB and partyI
+   * @param {BigNumber} params.balanceA - balanceA in the virtual channel
+   * @param {BigNumber} params.balanceB - balanceB in the virtual channel
+   */
   async createDecomposedLcUpdates ({
     sigA,
     sigB,
@@ -2245,15 +2312,15 @@ class Connext {
     let lc, lcState, vc0s
     if (accounts[0] === partyA) {
       // accounts[0] is vcpartyA, lcAgentA is paying money
-      lc = await this.getLc({ subchanAI })
-      vc0s = await this.getVcInitialStates({ subchanAI })
+      lc = await this.getLc(subchanAI)
+      vc0s = await this.getVcInitialStates(subchanAI)
       lcState.lcId = subchanAI
       lcState.balanceA = lc.balanceA - balanceB // balanceB in VC is amount A paid
       lcState.balanceI = lc.balanceI + balanceB
     } else if (accounts[0] === partyB) {
       // accounts[0] is partyB, vcAgentA is making money
-      lc = await this.getLc({ subchanBI })
-      vc0s = await this.getVcInitialStates({ subchanBI })
+      lc = await this.getLc(subchanBI)
+      vc0s = await this.getVcInitialStates(subchanBI)
       lcState.lcId = subchanBI
       lcState.balanceA = lc.balanceA + balanceB // lc balance inc. by amount earned
       lcState.balanceI = lc.balanceI - balanceB
@@ -2262,7 +2329,7 @@ class Connext {
       throw new Error('Not your virtual channel to decompose.')
     }
     // create vc root hash
-    const vc0 = await this.getVcInitialState({ vcId })
+    const vc0 = await this.getVcInitialState(vcId)
     vc0s = vc0s.pop(vc0)
     lcState.vCRootHash = Connext.generateVcRootHash({ vc0s })
     // add additional state params to create vc update
@@ -2301,7 +2368,13 @@ class Connext {
   // should return a list of initial vc state objects
   // for all open VCs for a given LC
   // list of objects in form detailed below
-  async getVcInitialStates ({ lcId }) {
+  /**
+   * Returns a list of initial vc state objects that correspond to the open VCs for this ledger channel.
+   *
+   * These initial states are used when generating the vcRootHash for ledger channel updates.
+   * @param {String} lcId - ledger channel ID
+   */
+  async getVcInitialStates (lcId) {
     // validate params
     const methodName = 'getVcInitialStates'
     const isHexStrict = { presence: true, isHexStrict: true }
@@ -2325,7 +2398,12 @@ class Connext {
   //     sigA: vc0.sigA,
   //     sigB: vc0.sigB
   //   }
-  async getVcInitialState ({ vcId }) {
+  /**
+   * Returns an object representing the initial state of the virtual channel when it was opened.
+   *
+   * @param {String} vcId the virtual channel id
+   */
+  async getVcInitialState (vcId) {
     // validate params
     const methodName = 'getVcInitialState'
     const isHexStrict = { presence: true, isHexStrict: true }
@@ -2365,6 +2443,13 @@ class Connext {
   /// SHOULD WE JUST POST THIS DIRECTLY TO THE WATCHER URL FROM OUR PACKAGE
 
   // then posts to watcher (?) -- maybe just post all of this to the watcher url (?)
+  /**
+   * Settles all virtual channels on chain in the case of a displute (i.e. Ingrid doesn't return decomposed state updates in "closeChannel").
+   *
+   * First, calls "initVC" on the contract. If that transaction was successful, "settleVC" is called. Otherwise, returns the result of calling "initVC".
+   *
+   * @param {String} vcId - id of the virtual channel to close in dispute
+   */
   async byzantineCloseVc (vcId) {
     // validate params
     const methodName = 'byzantineCloseVc'
@@ -2375,7 +2460,7 @@ class Connext {
       'vcId'
     )
     const accounts = await this.getAccounts()
-    const vc0 = await this.getVcInitialState({ vcId })
+    const vc0 = await this.getVcInitialState(vcId)
     let subchan
     if (accounts[0] === vc0.agentA) {
       subchan = vc0.subchanAI
