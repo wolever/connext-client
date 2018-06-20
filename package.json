@@ -36,16 +36,17 @@
     "connext",
     "ethcalate"
   ],
-  "author": "Rahul Sethuram <rahul@connext.network>",
+  "author": "Layne Haber <layne@connext.network>",
   "contributors": [
+    "Rahul Sethuram, <rahul@connext.network>",
     "Arjun Bhuptani, <arjun@connext.network>",
-    "Layne Haber <layne@connext.network>"
+    "Robert Seares, <robert@connext.network>"
   ],
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/ConnextProject/ethcalate-client/issues"
+    "url": "https://github.com/ConnextProject/connext-client/issues"
   },
-  "homepage": "https://github.com/ConnextProject/ethcalate-client#readme",
+  "homepage": "https://github.com/ConnextProject/connext-client#readme",
   "devDependencies": {
     "axios-mock-adapter": "^1.15.0",
     "babel-cli": "^6.26.0",
