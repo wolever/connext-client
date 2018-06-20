@@ -106,7 +106,7 @@ describe('Connext', async () => {
           ingridAddress = client.ingridAddress = lc0.partyI = accounts[2]
           const initialDeposit = Web3.utils.toBN(Web3.utils.toWei('5', 'ether'))
           // call create channel on contract
-          const lcId = await client.getNewChannelId()
+          const lcId = await Connext.getNewChannelId()
           const command = `LedgerChannel.deployed().then(i => i.createChannel('${lcId}', '${ingridAddress.toLowerCase()}', {from: '${partyB.toLowerCase()}', value: ${initialDeposit}}))`
           console.log('lcId, subchan BI:', lcId)
           console.log(
@@ -126,97 +126,94 @@ describe('Connext', async () => {
     let client = new Connext({ web3 }, Web3)
     describe('Web3 and contract properly initialized', () => {
       describe('Ingrid, partyA, and partyB are responsive and honest actors', () => {
-        it.only(
-          'should call openChannel to create a virtual channel',
-          async () => {
-            // params
-            const accounts = await client.web3.eth.getAccounts()
-            partyA = accounts[0]
-            partyB = accounts[1]
-            ingridAddress = client.ingridAddress = accounts[2]
-            const subchanAI =
-              '0xc06672adc237aeabb9d8046b34ce7b7f783461f4fe1f8ce7e2efb740c64e3c6d'
-            const subchanBI =
-              '0x271e72f1c740ef558f8702b0ba953c0fc30a4598bdc0e25633a8dcdc8bd0814d'
-            // url requests
-            client.ingridUrl = 'ingridUrl'
-            const mock = new MockAdapter(axios)
-            // when requesting subchanBI id
-            let url = `${client.ingridUrl}/ledgerchannel?a=${partyA}`
-            mock.onGet(url).reply(() => {
-              return [
-                200,
-                {
-                  data: {
-                    ledgerChannel: {
-                      id: subchanAI
-                    }
+        it('should call openChannel to create a virtual channel', async () => {
+          // params
+          const accounts = await client.web3.eth.getAccounts()
+          partyA = accounts[0]
+          partyB = accounts[1]
+          ingridAddress = client.ingridAddress = accounts[2]
+          const subchanAI =
+            '0xc06672adc237aeabb9d8046b34ce7b7f783461f4fe1f8ce7e2efb740c64e3c6d'
+          const subchanBI =
+            '0x271e72f1c740ef558f8702b0ba953c0fc30a4598bdc0e25633a8dcdc8bd0814d'
+          // url requests
+          client.ingridUrl = 'ingridUrl'
+          const mock = new MockAdapter(axios)
+          // when requesting subchanBI id
+          let url = `${client.ingridUrl}/ledgerchannel?a=${partyA}`
+          mock.onGet(url).reply(() => {
+            return [
+              200,
+              {
+                data: {
+                  ledgerChannel: {
+                    id: subchanAI
                   }
                 }
-              ]
-            })
-            // when requesting subchanBI id
-            url = `${client.ingridUrl}/ledgerchannel?a=${partyB}`
-            mock.onGet(url).reply(() => {
-              return [
-                200,
-                {
-                  data: {
-                    ledgerChannel: {
-                      id: subchanBI
-                    }
+              }
+            ]
+          })
+          // when requesting subchanBI id
+          url = `${client.ingridUrl}/ledgerchannel?a=${partyB}`
+          mock.onGet(url).reply(() => {
+            return [
+              200,
+              {
+                data: {
+                  ledgerChannel: {
+                    id: subchanBI
                   }
                 }
-              ]
-            })
-            // when getting subchanAI object
-            url = `${client.ingridUrl}/ledgerchannel/${subchanAI}`
-            mock.onGet(url).reply(() => {
-              return [
-                200,
-                {
-                  data: {
-                    ledgerChannel: {
-                      id: subchanAI,
-                      partyA: partyA,
-                      partyI: ingridAddress,
-                      balanceA: Web3.utils.toBN(Web3.utils.toWei('5', 'ether')),
-                      balanceI: Web3.utils.toBN(Web3.utils.toWei('0', 'ether')),
-                      vcRootHash: emptyRootHash,
-                      isOpen: true,
-                      isUpdateLCSettling: false,
-                      openVCs: 0
-                    }
+              }
+            ]
+          })
+          // when getting subchanAI object
+          url = `${client.ingridUrl}/ledgerchannel/${subchanAI}`
+          mock.onGet(url).reply(() => {
+            return [
+              200,
+              {
+                data: {
+                  ledgerChannel: {
+                    id: subchanAI,
+                    partyA: partyA,
+                    partyI: ingridAddress,
+                    balanceA: Web3.utils.toBN(Web3.utils.toWei('5', 'ether')),
+                    balanceI: Web3.utils.toBN(Web3.utils.toWei('0', 'ether')),
+                    vcRootHash: emptyRootHash,
+                    isOpen: true,
+                    isUpdateLCSettling: false,
+                    openVCs: 0
                   }
                 }
-              ]
-            })
-            // when getting intial states of open vcs
-            url = `${client.ingridUrl}/ledgerchannel/${subchanAI}/virtualchannel/initialstate`
-            mock.onGet(url).reply(() => {
-              return [
-                200,
-                {
-                  data: []
-                }
-              ]
-            })
-            // when posting to client
-            mock.onPost().reply(() => {
-              return [
-                200,
-                {
-                  data: {}
-                }
-              ]
-            })
-            // client results
-            const results = await client.openChannel({ to: partyB })
-            assert.deepEqual(results, {
-              data: {}
-            })
-          }
-        )
+              }
+            ]
+          })
+          // when getting intial states of open vcs
+          url = `${client.ingridUrl}/ledgerchannel/${subchanAI}/virtualchannel/initialstate`
+          mock.onGet(url).reply(() => {
+            return [
+              200,
+              {
+                data: []
+              }
+            ]
+          })
+          // when posting to client
+          mock.onPost().reply(() => {
+            return [
+              200,
+              {
+                data: {}
+              }
+            ]
+          })
+          // client results
+          const results = await client.openChannel({ to: partyB })
+          assert.deepEqual(results, {
+            data: {}
+          })
+        })
       })
     })
   })
@@ -253,7 +250,7 @@ describe('Connext', async () => {
         const accounts = await client.web3.eth.getAccounts()
         client.ingridAddress = accounts[2]
         const params = {
-          lcId: '0x271e72f1c740ef558f8702b0ba953c0fc30a4598bdc0e25633a8dcdc8bd0814d'
+          lcId: '0x01'
         }
         const response = await client.joinLedgerChannelContractHandler(params)
         assert.ok(
@@ -380,54 +377,66 @@ describe('Connext', async () => {
         assert.equal('0x', vcRootHash)
       })
 
-      // // DELETE IN THE FUTURE
-      // it.only(
-      //   'should be equal to the empty bytes32 generated on the contract',
-      //   async () => {
-      //     const accounts = await client.web3.eth.getAccounts()
-      //     const vcRootHash = Connext.generateVcRootHash({ vc0s: [] })
-      //     const result1 = await client.channelManagerInstance.methods
-      //       .testingVCHash1(vcRootHash)
-      //       .call({ from: accounts[0], gas: 3000000 })
-      //     console.log(result1)
-      //     const result2 = await client.channelManagerInstance.methods
-      //       .testingVCHash2(vcRootHash)
-      //       .call({ from: accounts[0], gas: 3000000 })
-      //     console.log('results: ', result1, result2)
-      //     assert.equal(result2, ':0')
-      //   }
-      // )
-
       it('should create a vcRootHash containing vcs', async () => {
         const accounts = await client.web3.eth.getAccounts()
-        partyA = vc0.partyA = accounts[0]
-        partyB = vc0.partyB = accounts[1]
-        ingridAddress = client.ingridAddress = vc0.partyI = accounts[2]
-        let vc1 = Object.assign({}, vc0)
-        vc1.vcId = '0xd12'
-        vc1.subchanAI = '0xd34'
-        vc1.subchanBI = '0xd56'
-        const vc0s = [vc0, vc1]
+        partyA = accounts[0]
+        partyB = accounts[1]
+        ingridAddress = accounts[2]
+        const vc0 = {
+          vcId: '0x1',
+          nonce: 0,
+          partyA: partyA,
+          partyB: partyB,
+          partyI: ingridAddress,
+          balanceA: Web3.utils.toBN(1000),
+          balanceB: Web3.utils.toBN(0)
+        }
+        const vc1 = {
+          vcId: '0x2',
+          nonce: 0,
+          partyA: partyA,
+          partyB: partyB,
+          partyI: ingridAddress,
+          balanceA: Web3.utils.toBN(1000),
+          balanceB: Web3.utils.toBN(0)
+        }
+        const vc0s = []
+        vc0s.push(vc0)
+        vc0s.push(vc1)
         const vcRootHash = Connext.generateVcRootHash({ vc0s })
         assert.equal(
-          '0x9715bd3bfb269a716873abe410253ac29128da8c1a40baf1982edf543032754c',
+          '0xbc8a7623f3fd4779a4510b266265248fc8dfbc1a28988c9d8284a87419b2643c',
           vcRootHash
         )
       })
 
-      // it('should correctly validate if VCs are in root hash', async () => {
-      //   // generate vc0s
+      // it.only('should correctly validate if VCs are in root hash', async () => {
+      //   // generate vc0s and merkle tree
       //   const accounts = await client.web3.eth.getAccounts()
-      //   partyA = vc0.partyA = accounts[0]
-      //   partyB = vc0.partyB = accounts[1]
-      //   ingridAddress = client.ingridAddress = vc0.partyI = accounts[2]
-      //   let vc1 = Object.assign({}, vc0)
-      //   vc1.vcId = '0xd12'
-      //   vc1.subchanAI = '0xd34'
-      //   vc1.subchanBI = '0xd56'
-      //   const vc0s = [vc0, vc1]
-      //   const vcRootHash =
-      //     '0x42a2683a579efa82710bc101454fc1059d70c21f093efba62d4a991bf67bdeb6'
+      //   partyA = accounts[0]
+      //   partyB = accounts[1]
+      //   ingridAddress = accounts[2]
+      //   const vc0 = {
+      //     vcId: '0x1',
+      //     nonce: 0,
+      //     partyA: partyA,
+      //     partyB: partyB,
+      //     partyI: ingridAddress,
+      //     balanceA: Web3.utils.toBN(1000),
+      //     balanceB: Web3.utils.toBN(0)
+      //   }
+      //   const vc1 = {
+      //     vcId: '0x2',
+      //     nonce: 0,
+      //     partyA: partyA,
+      //     partyB: partyB,
+      //     partyI: ingridAddress,
+      //     balanceA: Web3.utils.toBN(1000),
+      //     balanceB: Web3.utils.toBN(0)
+      //   }
+      //   const vc0s = []
+      //   vc0s.push(vc0)
+      //   vc0s.push(vc1)
       //   // generate tree
       //   let elems = vc0s.map(vc0 => {
       //     const hash = Connext.createVCStateUpdateFingerprint(vc0)
@@ -435,13 +444,16 @@ describe('Connext', async () => {
       //     return vcBuf
       //   })
       //   const merkle = new MerkleTree.default(elems)
+      //   // vcRootHash from test above
+      //   const vcRootHash =
+      //     '0xbc8a7623f3fd4779a4510b266265248fc8dfbc1a28988c9d8284a87419b2643c'
       //   // generate proof
-      //   let proof = [vcRootHash]
-      //   proof = Utils.marshallState(proof)
-      //   assert.equal(
-      //     '0x42a2683a579efa82710bc101454fc1059d70c21f093efba62d4a991bf67bdeb6',
-      //     proof
-      //   )
+      //   let proof = merkle.proof(Web3.utils.hexToBytes(vcRootHash))
+      //   // proof = Utils.marshallState(proof)
+      //   // set root
+      //   console.log(proof)
+      //   const isContained = merkle.verify(proof, vcRootHash)
+      //   assert.equal(isContained, false)
       // })
     })
   })
@@ -740,47 +752,47 @@ describe('Connext', async () => {
             }
           })
         })
-        describe('subchanAI', () => {
-          it('does throw an error when subchanAI is not a strict hex', async () => {
-            try {
-              Connext.recoverSignerFromVCStateUpdate({
-                sig: '0xc1912',
-                vcId: '0xc1912',
-                nonce: 100,
-                partyA: '0x627306090abaB3A6e1400e9345bC60c78a8BEf57',
-                partyB: '0x627306090abaB3A6e1400e9345bC60c78a8BEf57',
-                partyI: '0x627306090abaB3A6e1400e9345bC60c78a8BEf57',
-                subchanAI: 'I am ai'
-              })
-            } catch (e) {
-              assert.equal(
-                e.message,
-                `[recoverSignerFromVCStateUpdate][subchanAI] : I am ai is not hex string prefixed with 0x.`
-              )
-            }
-          })
-        })
-        describe('subchanBI', () => {
-          it('does throw an error when subchanBI is not a strict hex', async () => {
-            try {
-              Connext.recoverSignerFromVCStateUpdate({
-                sig: '0xc1912',
-                vcId: '0xc1912',
-                nonce: 100,
-                partyA: '0x627306090abaB3A6e1400e9345bC60c78a8BEf57',
-                partyB: '0x627306090abaB3A6e1400e9345bC60c78a8BEf57',
-                partyI: '0x627306090abaB3A6e1400e9345bC60c78a8BEf57',
-                subchanAI: '0xc1912',
-                subchanBI: 'invalid'
-              })
-            } catch (e) {
-              assert.equal(
-                e.message,
-                `[recoverSignerFromVCStateUpdate][subchanBI] : invalid is not hex string prefixed with 0x.`
-              )
-            }
-          })
-        })
+        // describe('subchanAI', () => {
+        //   it('does throw an error when subchanAI is not a strict hex', async () => {
+        //     try {
+        //       Connext.recoverSignerFromVCStateUpdate({
+        //         sig: '0xc1912',
+        //         vcId: '0xc1912',
+        //         nonce: 100,
+        //         partyA: '0x627306090abaB3A6e1400e9345bC60c78a8BEf57',
+        //         partyB: '0x627306090abaB3A6e1400e9345bC60c78a8BEf57',
+        //         partyI: '0x627306090abaB3A6e1400e9345bC60c78a8BEf57',
+        //         subchanAI: 'I am ai'
+        //       })
+        //     } catch (e) {
+        //       assert.equal(
+        //         e.message,
+        //         `[recoverSignerFromVCStateUpdate][subchanAI] : I am ai is not hex string prefixed with 0x.`
+        //       )
+        //     }
+        //   })
+        // })
+        // describe('subchanBI', () => {
+        //   it('does throw an error when subchanBI is not a strict hex', async () => {
+        //     try {
+        //       Connext.recoverSignerFromVCStateUpdate({
+        //         sig: '0xc1912',
+        //         vcId: '0xc1912',
+        //         nonce: 100,
+        //         partyA: '0x627306090abaB3A6e1400e9345bC60c78a8BEf57',
+        //         partyB: '0x627306090abaB3A6e1400e9345bC60c78a8BEf57',
+        //         partyI: '0x627306090abaB3A6e1400e9345bC60c78a8BEf57',
+        //         subchanAI: '0xc1912',
+        //         subchanBI: 'invalid'
+        //       })
+        //     } catch (e) {
+        //       assert.equal(
+        //         e.message,
+        //         `[recoverSignerFromVCStateUpdate][subchanBI] : invalid is not hex string prefixed with 0x.`
+        //       )
+        //     }
+        //   })
+        // })
         describe('balanceA', () => {
           it('does throw an error when subchanBI is not a strict hex', async () => {
             try {
@@ -988,45 +1000,45 @@ describe('Connext', async () => {
           }
         })
       })
-      describe('subchanAI', () => {
-        it('does throw an error when subchanAI is not a strict hex', async () => {
-          try {
-            Connext.createVCStateUpdateFingerprint({
-              vcId: '0xc1912',
-              nonce: 100,
-              partyA: '0x627306090abaB3A6e1400e9345bC60c78a8BEf57',
-              partyB: '0x627306090abaB3A6e1400e9345bC60c78a8BEf57',
-              partyI: '0x627306090abaB3A6e1400e9345bC60c78a8BEf57',
-              subchanAI: 'I am ai'
-            })
-          } catch (e) {
-            assert.equal(
-              e.message,
-              `[createVCStateUpdateFingerprint][subchanAI] : I am ai is not hex string prefixed with 0x.`
-            )
-          }
-        })
-      })
-      describe('subchanBI', () => {
-        it('does throw an error when subchanBI is not a strict hex', async () => {
-          try {
-            Connext.createVCStateUpdateFingerprint({
-              vcId: '0xc1912',
-              nonce: 100,
-              partyA: '0x627306090abaB3A6e1400e9345bC60c78a8BEf57',
-              partyB: '0x627306090abaB3A6e1400e9345bC60c78a8BEf57',
-              partyI: '0x627306090abaB3A6e1400e9345bC60c78a8BEf57',
-              subchanAI: '0xc1912',
-              subchanBI: 'invalid'
-            })
-          } catch (e) {
-            assert.equal(
-              e.message,
-              `[createVCStateUpdateFingerprint][subchanBI] : invalid is not hex string prefixed with 0x.`
-            )
-          }
-        })
-      })
+      // describe('subchanAI', () => {
+      //   it('does throw an error when subchanAI is not a strict hex', async () => {
+      //     try {
+      //       Connext.createVCStateUpdateFingerprint({
+      //         vcId: '0xc1912',
+      //         nonce: 100,
+      //         partyA: '0x627306090abaB3A6e1400e9345bC60c78a8BEf57',
+      //         partyB: '0x627306090abaB3A6e1400e9345bC60c78a8BEf57',
+      //         partyI: '0x627306090abaB3A6e1400e9345bC60c78a8BEf57',
+      //         subchanAI: 'I am ai'
+      //       })
+      //     } catch (e) {
+      //       assert.equal(
+      //         e.message,
+      //         `[createVCStateUpdateFingerprint][subchanAI] : I am ai is not hex string prefixed with 0x.`
+      //       )
+      //     }
+      //   })
+      // })
+      // describe('subchanBI', () => {
+      //   it('does throw an error when subchanBI is not a strict hex', async () => {
+      //     try {
+      //       Connext.createVCStateUpdateFingerprint({
+      //         vcId: '0xc1912',
+      //         nonce: 100,
+      //         partyA: '0x627306090abaB3A6e1400e9345bC60c78a8BEf57',
+      //         partyB: '0x627306090abaB3A6e1400e9345bC60c78a8BEf57',
+      //         partyI: '0x627306090abaB3A6e1400e9345bC60c78a8BEf57',
+      //         subchanAI: '0xc1912',
+      //         subchanBI: 'invalid'
+      //       })
+      //     } catch (e) {
+      //       assert.equal(
+      //         e.message,
+      //         `[createVCStateUpdateFingerprint][subchanBI] : invalid is not hex string prefixed with 0x.`
+      //       )
+      //     }
+      //   })
+      // })
       describe('balanceA', () => {
         it('does throw an error when subchanBI is not a strict hex', async () => {
           try {
@@ -1160,8 +1172,8 @@ describe('ingridClientRequests', () => {
   it('getLatestVirtualDoubleSignedStateUpdate', async () => {
     const client = new Connext({ web3 }, createFakeWeb3())
     client.ingridUrl = 'ingridUrl'
-    const params = { channelId: '0xc12' }
-    const url = `${client.ingridUrl}/virtualchannel/${params.channelId}/lateststate/doublesigned`
+    const channelId = '0xc12'
+    const url = `${client.ingridUrl}/virtualchannel/${channelId}/lateststate/doublesigned`
     const mock = new MockAdapter(axios)
     mock.onGet().reply(() => {
       return [
@@ -1171,7 +1183,9 @@ describe('ingridClientRequests', () => {
         }
       ]
     })
-    const result = await client.getLatestVirtualDoubleSignedStateUpdate(params)
+    const result = await client.getLatestVirtualDoubleSignedStateUpdate(
+      channelId
+    )
     assert.deepEqual(result, { data: {} })
   })
 
