@@ -91,7 +91,7 @@ class Connext {
       ingridAddress = '',
       watcherUrl = '',
       ingridUrl = '',
-      contractAddress = '0x3ba7c2578b59e0e1ccfee9a20d92f043c0e0b3e6'
+      contractAddress = '0xf25186b5081ff5ce73482ad761db0eb0d25abfbf'
     },
     web3Lib = Web3
   ) {
@@ -655,44 +655,9 @@ class Connext {
       throw new Error('Not your virtual channel.')
     }
 
-    // verify signatures
-    const signerA = Connext.recoverSignerFromVCStateUpdate({
-      sig: sigA,
-      vcId: channelId,
-      nonce: latestVcState.nonce,
-      partyA: latestVcState.partyA,
-      partyB: latestVcState.partyB,
-      partyI: latestVcState.partyI,
-      subchanAI: latestVcState.subchanAI,
-      subchanBI: latestVcState.subchanBI,
-      balanceA: latestVcState.balanceA,
-      balanceB: latestVcState.balanceB
-    }) // should be partyA
-    const signerB = Connext.recoverSignerFromVCStateUpdate({
-      sig: sigB,
-      vcId: channelId,
-      nonce: latestVcState.nonce,
-      partyA: latestVcState.partyA,
-      partyB: latestVcState.partyB,
-      partyI: latestVcState.partyI,
-      subchanAI: latestVcState.subchanAI,
-      subchanBI: latestVcState.subchanBI,
-      balanceA: latestVcState.balanceA,
-      balanceB: latestVcState.balanceB
-    }) // should be accounts[0]
-    if (signerB !== vc.partyB || signerA !== vc.partyA) {
-      throw new Error('Incorrect signer detected on state.')
-    }
-    // vc update is signed by correct people
-    // it is their vc
+    // have ingrid decompose since this is the happy case closing
+    const results = await this.getDecomposedLcStates(channelId)
 
-    // generate LcUpdate
-    const lcStateUpdate = await this.createDecomposedLcUpdates(latestVcState)
-    // post to ingrid
-    const results = await this.fastCloseVcHandler({
-      vcId: channelId,
-      sigA: lcStateUpdate.sigA
-    })
     return results
   }
 
@@ -1644,7 +1609,7 @@ class Connext {
       )
       .send({
         from: accounts[0],
-        gas: 3000000 // FIX THIS, WHY HAPPEN, TRUFFLE CONFIG???
+        gas: 4700000 // FIX THIS, WHY HAPPEN, TRUFFLE CONFIG???
       })
     return result
   }
@@ -1758,7 +1723,7 @@ class Connext {
     sigA,
     sigB
   }) {
-    const methodName = 'updateLcStateContractHandler'
+    const methodName = 'settleVcContractHandler'
     // validate
     const isAddress = { presence: true, isAddress: true }
     const isPositiveInt = { presence: true, isPositiveInt: true }
@@ -1979,6 +1944,7 @@ class Connext {
     return response.data
   }
 
+  // HELPER FUNCTION TO HAVE INGRID SET UP VC
   async openVc ({ sig, balanceA, to, vcRootHash }) {
     // validate params
     const methodName = 'openVc'
@@ -2020,6 +1986,7 @@ class Connext {
     return response.data
   }
 
+  // ingrid verifies the vc0s and sets up vc and countersigns lc updates
   async joinVcHandler ({ sig, vcRootHash, channelId }) {
     // validate params
     const methodName = 'joinVcHandler'
@@ -2347,7 +2314,7 @@ class Connext {
   // requests both decomposed lc state updates from ingrid.
   // returns labeled lc state object (i.e. indexed by lc channel id)
   // lcState obj should match whats submitted to createLcUpdate
-  async getDecomposedLcStates ({ vcId }) {
+  async getDecomposedLcStates (vcId) {
     // validate params
     const methodName = 'getDecomposedLcStates'
     const isHexStrict = { presence: true, isHexStrict: true }
@@ -2356,7 +2323,7 @@ class Connext {
       methodName,
       'vcId'
     )
-    const response = await axios.get(
+    const response = await axios.post(
       `${this.ingridUrl}/virtualchannel/${vcId}/decompose`
     )
     return response.data
