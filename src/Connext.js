@@ -567,15 +567,20 @@ class Connext {
     )
     // get the vc
     const vc = await this.getChannel(channelId)
-
-    const sig = await this.createVCStateUpdate({
+    const vc1 = {
       vcId: channelId,
       nonce: vc.nonce + 1,
       partyA: vc.partyA,
       partyB: vc.partyB,
       balanceA: balance,
-      balanceB: vc.balanceB + (vc.balanceA - balance) // type issues?
-    })
+      balanceB: Web3.utils.toBN(
+        Web3.utils.toBN(vc.balanceB) + (Web3.utils.toBN(vc.balanceA) - balance)
+      ) // type issues?
+    }
+
+    const sig = await this.createVCStateUpdate(vc1)
+    console.log('vc1:', vc1)
+    console.log('vc1 sigA:', sig)
     // post signed update to watcher
     const response = await this.vcStateUpdateHandler({
       channelId,
@@ -1954,6 +1959,30 @@ class Connext {
     )
     const response = await axios.get(
       `${this.ingridUrl}/virtualchannel/${channelId}`
+    )
+    return response.data
+  }
+
+  /**
+   * Returns an object representing the virtual channel in the database.
+   *
+   * @param {String} channelId - the ID of the virtual channel
+   */
+  async getChannelByParties ({ partyA, partyB }) {
+    const methodName = 'getChannelByParties'
+    const isAddress = { presence: true, isAddress: true }
+    Connext.validatorsResponseToError(
+      validate.single(partyA, isAddress),
+      methodName,
+      'partyA'
+    )
+    Connext.validatorsResponseToError(
+      validate.single(partyB, isAddress),
+      methodName,
+      'partyB'
+    )
+    const response = await axios.get(
+      `${this.ingridUrl}/virtualchannel?a=${agentA}&b=${agentB}`
     )
     return response.data
   }
