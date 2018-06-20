@@ -75,6 +75,7 @@ class Connext {
    *
    * Create an instance of the Connext client.
    *
+   * 
    * @example
    * const Connext = require('connext')
    * const connext = new Connext(web3)
@@ -111,8 +112,12 @@ class Connext {
    * Requests a challenge timer for the ledger channel from ingrid.
    *
    * Use web3 to call openLC function on ledgerChannel.
+   * 
    * Ingrid will open with 0 balance, and can call the deposit function to
    * add deposits based on user needs.
+   * 
+   * In the case where Ingrid is unresponsive, the function LCOpenTimeout() can be called
+   * by the client to recover the funds.
    *
    * @example
    * // get a BN
@@ -163,7 +168,7 @@ class Connext {
      */
     const contractResult = await this.createLedgerChannelContractHandler({
       lcId,
-      // challenge,
+      challenge,
       initialDeposit
     })
     console.log(contractResult)
@@ -173,7 +178,9 @@ class Connext {
   }
 
   /**
-   * Add a deposit to an existing ledger channel. Calls contract function "deposit"
+   * Add a deposit to an existing ledger channel. Calls contract function "deposit".
+   * 
+   * Can be used by either party in a ledger channel.
    *
    * @example
    * // get a BN
@@ -211,87 +218,100 @@ class Connext {
    * @returns {String} Flag indicating whether the channel was consensus-closed or if lc was challenge-closed.
    */
   async withdraw () {
-    const lcId = await this.getLcId({})
-    const accounts = await this.web3.eth.getAccounts()
+    const lcId = await this.getLcId()
     const lcState = await this.getLatestLedgerStateUpdate({
       ledgerChannelId: lcId
     })
-    /**
-     * lcState = {
-     *  sigA,
-     *  sigI,
-     *  nonce,
-     *  openVCs,
-     *  vcRootHash,
-     *  partyA,
-     *  partyI,
-     *  balanceA,
-     *  balanceI
-     * }
-     */
-    // check ingrid signed
-    // TO DO: probably should check with values that don't come from
-    // the same
-    const signer = Connext.recoverSignerFromLCStateUpdate({
-      sig: lcState.sigI,
-      isClose: false,
-      lcId,
-      nonce: lcState.nonce,
-      openVCs: lcState.openVCs,
-      vcRootHash: lcState.vcRootHash,
-      partyA: lcState.partyA,
-      partyI: lcState.partyI,
-      balanceA: lcState.balanceA,
-      balanceI: lcState.balanceI
-    })
-    if (signer !== this.ingridAddress) {
-      throw new Error('Ingrid did not sign this state update.')
-    }
-    // generate same update with fast close flag and post
-    const sigParams = {
-      isClose: true,
-      lcId,
-      nonce: lcState.nonce,
-      openVCs: lcState.openVCs,
-      vcRootHash: lcState.vcRootHash,
-      partyA: lcState.partyA,
-      partyI: lcState.partyI,
-      balanceA: lcState.balanceA,
-      balanceI: lcState.balanceI
-    }
-    const sig = await this.createLCStateUpdate(sigParams)
+    // /**
+    //  * lcState = {
+    //  *  sigA,
+    //  *  sigI,
+    //  *  nonce,
+    //  *  openVCs,
+    //  *  vcRootHash,
+    //  *  partyA,
+    //  *  partyI,
+    //  *  balanceA,
+    //  *  balanceI
+    //  * }
+    //  */
+    // // check ingrid signed
+    // // TO DO: probably should check with values that don't come from
+    // // the same source
+    // const signer = Connext.recoverSignerFromLCStateUpdate({
+    //   sig: lcState.sigI,
+    //   isClose: false,
+    //   lcId,
+    //   nonce: lcState.nonce,
+    //   openVCs: lcState.openVCs,
+    //   vcRootHash: lcState.vcRootHash,
+    //   partyA: lcState.partyA,
+    //   partyI: lcState.partyI,
+    //   balanceA: lcState.balanceA,
+    //   balanceI: lcState.balanceI
+    // })
+    // if (signer !== this.ingridAddress) {
+    //   throw new Error('Ingrid did not sign this state update.')
+    // }
+    // // generate same update with fast close flag and post
+    // const sigParams = {
+    //   isClose: true,
+    //   lcId,
+    //   nonce: lcState.nonce,
+    //   openVCs: lcState.openVCs,
+    //   vcRootHash: lcState.vcRootHash,
+    //   partyA: lcState.partyA,
+    //   partyI: lcState.partyI,
+    //   balanceA: lcState.balanceA,
+    //   balanceI: lcState.balanceI
+    // }
+    // const sig = await this.createLCStateUpdate(sigParams)
 
-    const fastCloseResponse = await this.fastCloseLcHandler({ sig, lcId })
-    let response
-    if (fastCloseResponse) {
-      // call consensus close channel
-      response = await this.consensusCloseChannelContractHandler({
-        lcId,
-        nonce: lcState.nonce,
-        balanceA: lcState.balanceA,
-        balanceI: lcState.balanceI,
-        sigA: sig,
-        sigI: lcState.sigI
-      })
-    } else {
-      // call updateLCState
-      /// //////////////////////////////////////////////////////////////////
-      // NOTE: HERE YOU PING THE WATCHER SO THEY KEEP TRACK OF TIMEOUTS //
-      /// ////////////////////////////////////////////////////////////////
+    // const channelFastClosed = await this.fastCloseLcHandler({ sig, lcId })
+    
+    // if (channelFastClosed) {
+    //   // call consensus close channel
+    //   // INGRID SHOULD CALL CONSENSUS CLOSE CHANNEL IF VERIFIED
+    //   response = await this.consensusCloseChannelContractHandler({
+    //     lcId,
+    //     nonce: lcState.nonce,
+    //     balanceA: lcState.balanceA,
+    //     balanceI: lcState.balanceI,
+    //     sigA: sig,
+    //     sigI: lcState.sigI
+    //   })
+    // } else {
+    //   // call updateLCState
+    //   const response = await this.updateLcStateContractHandler({
+    //     // challenge flag..?
+    //     lcId,
+    //     nonce: lcState.nonce,
+    //     openVCs: lcState.openVCs,
+    //     balanceA: lcState.balanceA,
+    //     balanceI: lcState.balanceI,
+    //     vcRootHash: lcState.vcRootHash,
+    //     sigA: sig,
+    //     sigI: lcState.sigI
+    //   })
+    //   return response
+    // }
 
-      response = await this.updateLcStateContractHandler({
-        // challenge flag..?
-        lcId,
-        nonce: lcState.nonce,
-        openVCs: lcState.openVCs,
-        balanceA: lcState.balanceA,
-        balanceI: lcState.balanceI,
-        vcRootHash: lcState.vcRootHash,
-        sigA: sig,
-        sigI: lcState.sigI
-      })
-    }
-    return response
+
+    // if (!channelFastClosed) {
+    //   // call updateLCState
+    //   const response = await this.updateLcStateContractHandler({
+    //     // challenge flag..?
+    //     lcId,
+    //     nonce: lcState.nonce,
+    //     openVCs: lcState.openVCs,
+    //     balanceA: lcState.balanceA,
+    //     balanceI: lcState.balanceI,
+    //     vcRootHash: lcState.vcRootHash,
+    //     sigA: sig,
+    //     sigI: lcState.sigI
+    //   })
+    //   return response
+    // }
   }
 
   /**
@@ -305,9 +325,10 @@ class Connext {
    *   // wait out challenge timer
    *   await connext.withdrawFinal()
    * }
+   * 
    */
   async withdrawFinal () {
-    const lcId = await this.getLcId({})
+    const lcId = await this.getLcId()
     const lc = await this.getLc({ lcId })
     if (lc.openVCs > 0) {
       throw new Error('Close open VCs before withdraw final.')
@@ -332,7 +353,7 @@ class Connext {
    */
   async checkpoint () {
     // get latest ingrid signed state update
-    const lcId = await this.getLcId({})
+    const lcId = await this.getLcId()
     const lcState = await this.getLatestLedgerStateUpdate({
       ledgerChannelId: lcId
     })
@@ -412,8 +433,8 @@ class Connext {
         'deposit'
       )
     }
-    const lcIdA = await this.getLcId({})
-    const lcIdB = await this.getLcId({ partyA: to })
+    const lcIdA = await this.getLcId()
+    const lcIdB = await this.getLcId(to)
     // validate the subchannels exist
     if (lcIdB === null || lcIdA === null) {
       throw new Error('Missing one or more required subchannels for VC.')
@@ -470,7 +491,7 @@ class Connext {
 
     const vc = await this.getChannel({ channelId })
 
-    const lcIdB = await this.getLcId({})
+    const lcIdB = await this.getLcId()
 
     const vc0 = {
       vcId: channelId,
@@ -1302,11 +1323,11 @@ class Connext {
     let subchanAI, subchanBI
     // is this partyA or B?
     if (accounts[0] === partyA) {
-      subchanAI = await this.getLcId({})
-      subchanBI = await this.getLcId({ partyA: partyB })
+      subchanAI = await this.getLcId()
+      subchanBI = await this.getLcId(partyB)
     } else if (accounts[0] === partyB) {
-      subchanAI = await this.getLcId({ partyA })
-      subchanBI = await this.getLcId({})
+      subchanAI = await this.getLcId(partyA)
+      subchanBI = await this.getLcId()
     } else {
       throw new Error('Not your virtual channel.')
     }
@@ -1442,7 +1463,7 @@ class Connext {
       'depositInWei'
     )
     // find ledger channel by mine and ingrids address
-    const lcId = await this.getLcId({})
+    const lcId = await this.getLcId()
     // call LC method
     const accounts = await this.web3.eth.getAccounts()
     const result = await this.channelManagerInstance.deposit(
@@ -1807,10 +1828,17 @@ class Connext {
   // ***************************************
   // *********** INGRID HELPERS ************
   // ***************************************
+  /**
+   * @example
+   * // returns highest nonce ledger channel state update
+   * const lcState = await connext.getLatestLedgerStateUpdate('0x01')
+   * @param {HexString} ledgerChannelId
+   * @returns {Object} containing the latest signed state update for the ledger channel
+   */
   async getLatestLedgerStateUpdate (ledgerChannelId) {
     // should return Object lcState where:
     //  * lcState = {
-    //  *  sigB,
+    //  *  sigI,
     //  *  sigA,
     //  *  nonce,
     //  *  openVCs,
@@ -1835,7 +1863,7 @@ class Connext {
     return response.data
   }
 
-  async getLcId ({ partyA = null }) {
+  async getLcId (partyA = null) {
     const methodName = 'getLcId'
     const isAddress = { presence: true, isAddress: true }
     if (partyA) {
