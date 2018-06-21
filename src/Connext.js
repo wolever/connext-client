@@ -1680,12 +1680,12 @@ class Connext {
   async initVcStateContractHandler ({
     subchanId,
     vcId,
+    nonce,
     partyA,
     partyB,
     balanceA,
     balanceB,
     sigA,
-    sigB
   }) {
     const methodName = 'initVcStateContractHandler'
     // validate
@@ -1693,6 +1693,7 @@ class Connext {
     const isHexStrict = { presence: true, isHexStrict: true }
     const isBN = { presence: true, isBN: true }
     const isHex = { presence: true, isHex: true }
+    const isPositiveInt = { presence: true, isPositiveInt: true }
     Connext.validatorsResponseToError(
       validate.single(subchanId, isHexStrict),
       methodName,
@@ -1702,6 +1703,11 @@ class Connext {
       validate.single(vcId, isHexStrict),
       methodName,
       'vcId'
+    )
+    Connext.validatorsResponseToError(
+      validate.single(nonce, isPositiveInt),
+      methodName,
+      'nonce'
     )
     Connext.validatorsResponseToError(
       validate.single(partyA, isAddress),
@@ -1728,28 +1734,24 @@ class Connext {
       methodName,
       'sigA'
     )
-    Connext.validatorsResponseToError(
-      validate.single(sigB, isHex),
-      methodName,
-      'sigB'
-    )
     const accounts = await this.web3.eth.getAccounts()
     // generate proof from lc
-    const vc0s = await this.getVcInitialStates(subchan)
+    const vc0s = await this.getVcInitialStates(subchanId)
     const vcRootHash = Connext.generateVcRootHash({ vc0s })
     let proof = [vcRootHash]
-    proof = this.web3.utils.soliditySha3({ type: 'bytes32', value: proof })
-    const results = await this.channelManagerInstance.methods.initVCState(
+    proof = Utils.marshallState(proof)
+    // proof = this.web3.utils.soliditySha3({ type: 'bytes32', value: vcRootHash })
+    console.log('proof:', proof)
+    const results = await this.channelManagerInstance.methods.initVCstate(
       subchanId,
       vcId,
       proof,
-      0,
+      nonce,
       partyA,
       partyB,
       balanceA,
       balanceB,
-      sigA,
-      sigB).send(
+      sigA).send(
       {
         from: accounts[0]
       }

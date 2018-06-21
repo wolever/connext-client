@@ -845,7 +845,61 @@ describe('Connext', async () => {
 
   describe('byzantineCloseChannelContractHandler', () => {})
 
-  describe('initVcStateContractHandler', () => {})
+  describe('initVcStateContractHandler', () => {
+    const port = process.env.ETH_PORT ? process.env.ETH_PORT : '9545'
+    web3 = new Web3(`ws://localhost:${port}`)
+    let client = new Connext({ web3 }, Web3)
+    describe('real Web3 and valid parameters', () => {
+      it.only('should init a virtual channel state on chain', async () => {
+        // get accounts
+        const accounts = await client.web3.eth.getAccounts()
+        partyA = accounts[0]
+        partyB = accounts[1]
+        ingridAddress = client.ingridAddress = accounts[2]
+        // generate initial vc state
+        const vc0 = {
+          vcId: Web3.utils.padRight('0xc12', 64),
+          nonce: 0,
+          partyA: partyA,
+          partyB: partyB,
+          partyI: ingridAddress,
+          subchanId: '0x01',
+          balanceA: Web3.utils.toBN(Web3.utils.toWei('2', 'ether')),
+          balanceB: Web3.utils.toBN(Web3.utils.toWei('0', 'ether'))
+        }
+        const vc1 = {
+          vcId: '0xc34',
+          nonce: 0,
+          partyA: partyA,
+          partyB: partyB,
+          partyI: ingridAddress,
+          subchanId: '0x02',
+          balanceA: Web3.utils.toBN(Web3.utils.toWei('2', 'ether')),
+          balanceB: Web3.utils.toBN(Web3.utils.toWei('0', 'ether'))
+        }
+        // generate sigA
+        const hash = Connext.createVCStateUpdateFingerprint(vc0)
+        const sigA = await client.web3.eth.sign(hash, accounts[0])
+        vc0.sigA = sigA
+        console.log(vc0)
+        // mock urls
+        const mock = new MockAdapter(axios)
+        mock.onGet().reply(() => {
+          return [
+            200,
+            [
+                // returns list of vc initial states
+                vc0,
+                vc1
+              ]
+          ]
+        })
+        // client call
+        const results = await client.initVcStateContractHandler(vc0)
+        assert.equal(results.transactionHash, ':)')
+      })
+    })
+  })
 
   describe('settleVcContractHandler', () => {})
 
