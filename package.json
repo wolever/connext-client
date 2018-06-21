@@ -20,7 +20,6 @@
   "files": [
     "dist",
     "artifacts",
-    "node_modules",
     "index.d.ts"
   ],
   "standard": {
@@ -52,7 +51,6 @@
   "devDependencies": {
     "axios-mock-adapter": "^1.15.0",
     "babel-cli": "^6.26.0",
-    "babel-plugin-transform-async-to-generator": "^6.24.1",
     "babel-plugin-transform-runtime": "^6.23.0",
     "babel-preset-env": "^1.7.0",
     "babel-preset-es2015": "^6.24.1",
@@ -66,6 +64,7 @@
   },
   "dependencies": {
     "axios": "^0.16.2",
+    "babel-runtime": "^6.26.0",
     "bignumber.js": "^7.2.1",
     "dotenv": "^6.0.0",
     "ethereumjs-abi": "^0.6.5",
