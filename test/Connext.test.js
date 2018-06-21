@@ -674,12 +674,11 @@ describe('Connext', async () => {
         lcId = '0x01'
         const deposit = Web3.utils.toBN(Web3.utils.toWei('5', 'ether'))
         const mock = new MockAdapter(axios)
-        mock.onGet(`${client.ingridUrl}/ledgerchannel?a=${partyA}`).reply(() => {
-          return [
-            200,
-            lcId
-          ]
-        })
+        mock
+          .onGet(`${client.ingridUrl}/ledgerchannel?a=${partyA}`)
+          .reply(() => {
+            return [200, lcId]
+          })
         const response = await client.depositContractHandler(deposit)
         assert.ok(
           response.transactionHash !== null &&
@@ -695,101 +694,95 @@ describe('Connext', async () => {
     web3 = new Web3(`ws://localhost:${port}`)
     let client = new Connext({ web3 }, Web3)
     describe('Web3 and contract properly initialized, valid parameters', async () => {
-      it(
-        'should call updateLcState on the channel manager instance with no open VCs',
-        async () => {
-          const accounts = await client.web3.eth.getAccounts()
-          partyA = accounts[0]
-          ingridAddress = client.ingridAddress = lc0.partyI = accounts[2]
-          lcId = '0x01'
-          const params = {
-            isClose: false,
-            lcId: lcId,
-            nonce: 2,
-            openVCs: 0,
-            vcRootHash: emptyRootHash,
-            partyA: partyA,
-            partyI: ingridAddress,
-            balanceA: Web3.utils.toBN(Web3.utils.toWei('4', 'ether')),
-            balanceI: Web3.utils.toBN(Web3.utils.toWei('1', 'ether'))
-          }
-          const hashI = await Connext.createLCStateUpdateFingerprint(params)
-          params.unlockedAccountPresent = true
-          params.sigA = await client.createLCStateUpdate(params)
-          params.sigI = await client.web3.eth.sign(hashI, accounts[2])
-          console.log('PARAMS:', params)
-          console.log('hashI:', hashI)
-          // console.log('sigI:', paramssigI)
-          // console.log('sigA:', sigA)
-
-          const response = await client.updateLcStateContractHandler(params)
-          assert.ok(
-            response.transactionHash !== null &&
-              response.transactionHash !== undefined
-          )
+      it('should call updateLcState on the channel manager instance with no open VCs', async () => {
+        const accounts = await client.web3.eth.getAccounts()
+        partyA = accounts[0]
+        ingridAddress = client.ingridAddress = lc0.partyI = accounts[2]
+        lcId = '0x01'
+        const params = {
+          isClose: false,
+          lcId: lcId,
+          nonce: 2,
+          openVCs: 0,
+          vcRootHash: emptyRootHash,
+          partyA: partyA,
+          partyI: ingridAddress,
+          balanceA: Web3.utils.toBN(Web3.utils.toWei('4', 'ether')),
+          balanceI: Web3.utils.toBN(Web3.utils.toWei('1', 'ether'))
         }
-      )
-      it(
-        'should call updateLcState on the channel manager instance open VCs',
-        async () => {
-          const accounts = await client.web3.eth.getAccounts()
-          partyA = accounts[0]
-          partyB = accounts[1]
-          ingridAddress = client.ingridAddress = lc0.partyI = accounts[2]
-          lcId = '0x01'
-          const vc0 = {
-            isClose: false,
-            vcId: '0xc12',
-            nonce: 0,
-            partyA: partyA,
-            partyB: partyB,
-            partyI: ingridAddress,
-            subchanAI: '0x01',
-            subchanBI: '0x02',
-            balanceA: Web3.utils.toBN(Web3.utils.toWei('1', 'ether')),
-            balanceB: Web3.utils.toBN(Web3.utils.toWei('0', 'ether'))
-          }
-          const vc1 = {
-            isClose: false,
-            vcId: '0xc13',
-            nonce: 0,
-            partyA: partyA,
-            partyB: partyB,
-            partyI: ingridAddress,
-            subchanAI: '0x03',
-            subchanBI: '0x04',
-            balanceA: Web3.utils.toBN(Web3.utils.toWei('1', 'ether')),
-            balanceB: Web3.utils.toBN(Web3.utils.toWei('0', 'ether'))
-          }
-          const vc0s = []
-          vc0s.push(vc0)
-          vc0s.push(vc1)
-          const vcRootHash1 = Connext.generateVcRootHash({ vc0s })
-          const params = {
-            isClose: false,
-            lcId: lcId,
-            nonce: 3,
-            openVCs: 2,
-            vcRootHash: vcRootHash1,
-            partyA: partyA,
-            partyI: ingridAddress,
-            balanceA: Web3.utils.toBN(Web3.utils.toWei('2', 'ether')),
-            balanceI: Web3.utils.toBN(Web3.utils.toWei('3', 'ether'))
-          }
-          const hash = await Connext.createLCStateUpdateFingerprint(params)
-          params.unlockedAccountPresent = true
-          params.sigA = await client.createLCStateUpdate(params)
-          params.sigI = await client.web3.eth.sign(hash, accounts[2])
-          console.log('PARAMSA:', params)
-          console.log('hashA:', hash)
+        const hashI = await Connext.createLCStateUpdateFingerprint(params)
+        params.unlockedAccountPresent = true
+        params.sigA = await client.createLCStateUpdate(params)
+        params.sigI = await client.web3.eth.sign(hashI, accounts[2])
+        console.log('PARAMS:', params)
+        console.log('hashI:', hashI)
+        // console.log('sigI:', paramssigI)
+        // console.log('sigA:', sigA)
 
-          const response = await client.updateLcStateContractHandler(params)
-          assert.ok(
-            response.transactionHash !== null &&
-              response.transactionHash !== undefined
-          )
+        const response = await client.updateLcStateContractHandler(params)
+        assert.ok(
+          response.transactionHash !== null &&
+            response.transactionHash !== undefined
+        )
+      })
+      it('should call updateLcState on the channel manager instance open VCs', async () => {
+        const accounts = await client.web3.eth.getAccounts()
+        partyA = accounts[0]
+        partyB = accounts[1]
+        ingridAddress = client.ingridAddress = lc0.partyI = accounts[2]
+        lcId = '0x01'
+        const vc0 = {
+          isClose: false,
+          vcId: '0xc12',
+          nonce: 0,
+          partyA: partyA,
+          partyB: partyB,
+          partyI: ingridAddress,
+          subchanAI: '0x01',
+          subchanBI: '0x02',
+          balanceA: Web3.utils.toBN(Web3.utils.toWei('1', 'ether')),
+          balanceB: Web3.utils.toBN(Web3.utils.toWei('0', 'ether'))
         }
-      )
+        const vc1 = {
+          isClose: false,
+          vcId: '0xc13',
+          nonce: 0,
+          partyA: partyA,
+          partyB: partyB,
+          partyI: ingridAddress,
+          subchanAI: '0x03',
+          subchanBI: '0x04',
+          balanceA: Web3.utils.toBN(Web3.utils.toWei('1', 'ether')),
+          balanceB: Web3.utils.toBN(Web3.utils.toWei('0', 'ether'))
+        }
+        const vc0s = []
+        vc0s.push(vc0)
+        vc0s.push(vc1)
+        const vcRootHash1 = Connext.generateVcRootHash({ vc0s })
+        const params = {
+          isClose: false,
+          lcId: lcId,
+          nonce: 3,
+          openVCs: 2,
+          vcRootHash: vcRootHash1,
+          partyA: partyA,
+          partyI: ingridAddress,
+          balanceA: Web3.utils.toBN(Web3.utils.toWei('2', 'ether')),
+          balanceI: Web3.utils.toBN(Web3.utils.toWei('3', 'ether'))
+        }
+        const hash = await Connext.createLCStateUpdateFingerprint(params)
+        params.unlockedAccountPresent = true
+        params.sigA = await client.createLCStateUpdate(params)
+        params.sigI = await client.web3.eth.sign(hash, accounts[2])
+        console.log('PARAMSA:', params)
+        console.log('hashA:', hash)
+
+        const response = await client.updateLcStateContractHandler(params)
+        assert.ok(
+          response.transactionHash !== null &&
+            response.transactionHash !== undefined
+        )
+      })
     })
   })
 
@@ -855,10 +848,12 @@ describe('Connext', async () => {
         const accounts = await client.web3.eth.getAccounts()
         partyA = accounts[0]
         partyB = accounts[1]
+        let vcId = Connext.getNewChannelId()
+        console.log('VC ID 1: ', vcId)
         ingridAddress = client.ingridAddress = accounts[2]
         // generate initial vc state
         const vc0 = {
-          vcId: Web3.utils.padRight('0xc12', 64),
+          vcId: vcId,
           nonce: 0,
           partyA: partyA,
           partyB: partyB,
@@ -867,8 +862,10 @@ describe('Connext', async () => {
           balanceA: Web3.utils.toBN(Web3.utils.toWei('2', 'ether')),
           balanceB: Web3.utils.toBN(Web3.utils.toWei('0', 'ether'))
         }
+        vcId = Connext.getNewChannelId()
+        console.log('VC ID 2: ', vcId)
         const vc1 = {
-          vcId: '0xc34',
+          vcId: vcId,
           nonce: 0,
           partyA: partyA,
           partyB: partyB,
@@ -888,10 +885,10 @@ describe('Connext', async () => {
           return [
             200,
             [
-                // returns list of vc initial states
-                vc0,
-                vc1
-              ]
+              // returns list of vc initial states
+              vc0,
+              vc1
+            ]
           ]
         })
         // client call
@@ -1013,7 +1010,7 @@ describe('Connext', async () => {
     web3 = new Web3(`ws://localhost:${port}`)
     let client = new Connext({ web3 }, Web3)
     describe('createVCStateUpdate with real web3.utils and valid params', () => {
-      it('should return a valid signature.', async () => {
+      it.only('should return a valid signature.', async () => {
         const accounts = await web3.eth.getAccounts()
         partyA = accounts[0]
         partyB = accounts[1]
@@ -1041,7 +1038,7 @@ describe('Connext', async () => {
         })
         assert.equal(
           sig,
-          '0x30565d3de1709474d36df47983053ae622e90784cf081755317e2fd1c07c86551986ec306838b3757e53bdfe1cde8b5e29b9996f35bb76fb280cca2920a287c300'
+          '0x9d63257d51cd06751116f35a2746bc03002bfae742f8e276cdc817265d1e32a0063fece7ff96e44f7dad1e9b8d1de865743f53d06fcab9673707a4e8ba4dbfaa01'
         )
       })
     })
@@ -1057,21 +1054,24 @@ describe('Connext', async () => {
       partyB = accounts[1]
       ingridAddress = accounts[2]
       describe('should recover the address of person who signed', () => {
-        it('should return signer 0x627306090abab3a6e1400e9345bc60c78a8bef57', () => {
-          const signer = Connext.recoverSignerFromVCStateUpdate({
-            sig: '0x30565d3de1709474d36df47983053ae622e90784cf081755317e2fd1c07c86551986ec306838b3757e53bdfe1cde8b5e29b9996f35bb76fb280cca2920a287c300',
-            vcId: '0xc1912',
-            nonce: 0,
-            partyA: partyA,
-            partyB: partyB,
-            partyI: ingridAddress,
-            subchanAI: '0xc1912',
-            subchanBI: '0xc1912',
-            balanceA: Web3.utils.toBN('0'),
-            balanceB: Web3.utils.toBN('0')
-          })
-          assert.equal(signer, accounts[0].toLowerCase())
-        })
+        it.only(
+          'should return signer 0x627306090abab3a6e1400e9345bc60c78a8bef57',
+          () => {
+            const signer = Connext.recoverSignerFromVCStateUpdate({
+              sig: '0x9d63257d51cd06751116f35a2746bc03002bfae742f8e276cdc817265d1e32a0063fece7ff96e44f7dad1e9b8d1de865743f53d06fcab9673707a4e8ba4dbfaa01',
+              vcId: '0xc1912',
+              nonce: 0,
+              partyA: partyA,
+              partyB: partyB,
+              partyI: ingridAddress,
+              subchanAI: '0xc1912',
+              subchanBI: '0xc1912',
+              balanceA: Web3.utils.toBN('0'),
+              balanceB: Web3.utils.toBN('0')
+            })
+            assert.equal(signer, accounts[0].toLowerCase())
+          }
+        )
       })
     })
 
