@@ -224,10 +224,14 @@ class Connext {
     console.log(lcId)
     const lcState = await this.getLatestLedgerStateUpdate(lcId)
     if (Number(lcState.openVCs) !== 0) {
-      throw new Error(`LC id ${lcId} still has open virtual channels. Number: ${lcState.openVCs}`)
+      throw new Error(
+        `LC id ${lcId} still has open virtual channels. Number: ${lcState.openVCs}`
+      )
     }
     if (lcState.vcRootHash !== '0x0') {
-      throw new Error(`vcRootHash for lcId ${lcId} does not match empty root hash. Value: ${lcState.vcRootHash}`)
+      throw new Error(
+        `vcRootHash for lcId ${lcId} does not match empty root hash. Value: ${lcState.vcRootHash}`
+      )
     }
     // /**
     //  * lcState = {
@@ -273,9 +277,9 @@ class Connext {
       balanceI: Web3.utils.toBN(lcState.balanceI)
     }
     const sig = await this.createLCStateUpdate(sigParams)
-    console.log('withdraw sigA:',sig)
+    console.log('withdraw sigA:', sig)
     const sigI = await this.fastCloseLcHandler({ sig, lcId })
-    console.log('closing channel sigI:',sigI)
+    console.log('closing channel sigI:', sigI)
     let response
     if (sigI) {
       // call consensus close channel
@@ -330,7 +334,9 @@ class Connext {
     //   throw new Error('Ledger channel is not in settlement state.')
     // }
     if (lc.updateLcTimeout < new Date().getTime()) {
-      throw new Error(`[${methodName}] Ledger channel is still in challenge phase.`)
+      throw new Error(
+        `[${methodName}] Ledger channel is still in challenge phase.`
+      )
     }
     const results = await this.byzantineCloseChannelContractHandler(lcId)
     return results
@@ -434,7 +440,9 @@ class Connext {
     const lcIdB = await this.getLcId(to)
     // validate the subchannels exist
     if (lcIdB === null || lcIdA === null) {
-      throw new Error(`[${methodName}] Missing one or more required subchannels for VC.`)
+      throw new Error(
+        `[${methodName}] Missing one or more required subchannels for VC.`
+      )
     }
     // get ledger channel A
     const lcA = await this.getLc(lcIdA)
@@ -504,7 +512,7 @@ class Connext {
       balanceB: Web3.utils.toBN(0)
     }
     const sig = await this.createVCStateUpdate(vc0)
-    console.log('vc0:',vc0)
+    console.log('vc0:', vc0)
     console.log('sigB of vc0:', sig)
     // add vc0 to initial states
     let vc0s = await this.getVcInitialStates(vc.subchanBI)
@@ -621,7 +629,8 @@ class Connext {
     const vc = await this.getChannel(channelId)
     const subchanAI = await this.getLcId(vc.partyA)
     const subchanBI = await this.getLcId(vc.partyB)
-    const balanceB = Web3.utils.toBN(vc.balanceB) + (Web3.utils.toBN(vc.balanceA) - balance)
+    const balanceB =
+      Web3.utils.toBN(vc.balanceB) + (Web3.utils.toBN(vc.balanceA) - balance)
     const signer = Connext.recoverSignerFromVCStateUpdate({
       sig,
       vcId: channelId,
@@ -636,9 +645,15 @@ class Connext {
     })
     if (accounts[0].toLowerCase() === vc.partyB && signer !== vc.partyA) {
       throw new Error(`[${methodName}] partyA did not sign this state update.`)
-    } else if (accounts[0].toLowerCase() === vc.partyA && signer !== vc.partyB) {
+    } else if (
+      accounts[0].toLowerCase() === vc.partyA &&
+      signer !== vc.partyB
+    ) {
       throw new Error(`[${methodName}] partyB did not sign this state update.`)
-    } else if (accounts[0].toLowerCase() !== vc.partyA && accounts[0].toLowerCase() !== vc.partyB) {
+    } else if (
+      accounts[0].toLowerCase() !== vc.partyA &&
+      accounts[0].toLowerCase() !== vc.partyB
+    ) {
       throw new Error(`[${methodName}] Not your virtual channel`)
     }
     // generate sigB
@@ -683,9 +698,14 @@ class Connext {
     )
     const accounts = await this.web3.eth.getAccounts()
     // get latest double signed updates
-    const latestVcState = await this.getLatestVirtualDoubleSignedStateUpdate(channelId)
+    const latestVcState = await this.getLatestVirtualDoubleSignedStateUpdate(
+      channelId
+    )
     console.log(latestVcState)
-    if (latestVcState.partyA !== accounts[0].toLowerCase() && latestVcState.partyB !== accounts[0].toLowerCase()) {
+    if (
+      latestVcState.partyA !== accounts[0].toLowerCase() &&
+      latestVcState.partyB !== accounts[0].toLowerCase()
+    ) {
       throw new Error(`[${methodName}] Not your virtual channel.`)
     }
 
@@ -789,7 +809,7 @@ class Connext {
     channels.forEach(async channel => {
       // async ({ channelId, balance }) maybe?
       console.log('Closing channel:', channel.channelId)
-      await this.closeChannel(channel.channelId )
+      await this.closeChannel(channel.channelId)
       console.log('Channel closed.')
     })
   }
@@ -1100,6 +1120,9 @@ class Connext {
     balanceB
   }) {
     const methodName = 'createVCStateUpdateFingerprint'
+    // typecast balances incase chained
+    balanceA = Web3.utils.toBN(balanceA)
+    balanceB = Web3.utils.toBN(balanceB)
     // validate
     const isHexStrict = { presence: true, isHexStrict: true }
     const isBN = { presence: true, isBN: true }
@@ -1161,6 +1184,9 @@ class Connext {
   }) {
     const methodName = 'recoverSignerFromVCStateUpdate'
     // validate
+    // typecast balances incase chained
+    balanceA = Web3.utils.toBN(balanceA)
+    balanceB = Web3.utils.toBN(balanceB)
     // validatorOpts'
     const isHex = { presence: true, isHex: true }
     const isHexStrict = { presence: true, isHexStrict: true }
@@ -1289,24 +1315,24 @@ class Connext {
     )
     // get accounts
     const accounts = await this.web3.eth.getAccounts()
-    // get subchans
-    let subchanAI, subchanBI
-    // is this partyA or B?
-    if (accounts[0].toLowerCase() === partyA) {
-      subchanAI = await this.getLcId()
-      subchanBI = await this.getLcId(partyB)
-    } else if (accounts[0].toLowerCase() === partyB) {
-      subchanAI = await this.getLcId(partyA)
-      subchanBI = await this.getLcId()
-    } else {
-      throw new Error(`[${methodName}] Not your virtual channel.`)
-    }
+    // // get subchans
+    // let subchanAI, subchanBI
+    // // is this partyA or B?
+    // if (accounts[0].toLowerCase() === partyA) {
+    //   subchanAI = await this.getLcId()
+    //   subchanBI = await this.getLcId(partyB)
+    // } else if (accounts[0].toLowerCase() === partyB) {
+    //   subchanAI = await this.getLcId(partyA)
+    //   subchanBI = await this.getLcId()
+    // } else {
+    //   throw new Error(`[${methodName}] Not your virtual channel.`)
+    // }
 
-    // keep in here? probably separate out into a validation of state update
-    // params fn
-    if (subchanAI === null || subchanBI === null) {
-      throw new Error(`[${methodName}] Missing one or more required subchannels.`)
-    }
+    // // keep in here? probably separate out into a validation of state update
+    // // params fn
+    // if (subchanAI === null || subchanBI === null) {
+    //   throw new Error(`[${methodName}] Missing one or more required subchannels.`)
+    // }
 
     // generate and sign hash
     const hash = Connext.createVCStateUpdateFingerprint({
@@ -1438,8 +1464,8 @@ class Connext {
         from: accounts[0]
       })
     if (!result.transactionHash) {
-        throw new Error(`[${methodName}] LCOpenTimeout transaction failed.`)
-      }
+      throw new Error(`[${methodName}] LCOpenTimeout transaction failed.`)
+    }
     return result
   }
 
@@ -1456,14 +1482,15 @@ class Connext {
     const lcId = await this.getLcId()
     // call LC method
     const accounts = await this.web3.eth.getAccounts()
-    const result = await this.channelManagerInstance.methods.deposit(
-      lcId, // PARAM NOT IN CONTRACT YET, SHOULD BE
-      accounts[0]).send(
-      {
+    const result = await this.channelManagerInstance.methods
+      .deposit(
+        lcId, // PARAM NOT IN CONTRACT YET, SHOULD BE
+        accounts[0]
+      )
+      .send({
         from: accounts[0],
         value: depositInWei
-      }
-    )
+      })
     if (!result.transactionHash) {
       throw new Error(`[${methodName}] deposit transaction failed.`)
     }
@@ -1523,7 +1550,9 @@ class Connext {
         gas: 3000000 // FIX THIS, WHY HAPPEN, TRUFFLE CONFIG???
       })
     if (!result.transactionHash) {
-      throw new Error(`[${methodName}] consensusCloseChannel transaction failed.`)
+      throw new Error(
+        `[${methodName}] consensusCloseChannel transaction failed.`
+      )
     }
     return result
   }
@@ -1647,14 +1676,15 @@ class Connext {
       'lcId'
     )
     const accounts = await this.web3.eth.getAccounts()
-    const results = await this.channelManagerInstance.methods.byzantineCloseChannel(
-      lcId).send(
-      {
+    const results = await this.channelManagerInstance.methods
+      .byzantineCloseChannel(lcId)
+      .send({
         from: accounts[0]
-      }
-    )
+      })
     if (!result.transactionHash) {
-      throw new Error(`[${methodName}] byzantineCloseChannel transaction failed.`)
+      throw new Error(
+        `[${methodName}] byzantineCloseChannel transaction failed.`
+      )
     }
     return results
   }
@@ -1667,7 +1697,7 @@ class Connext {
     partyB,
     balanceA,
     balanceB,
-    sigA,
+    sigA
   }) {
     const methodName = 'initVcStateContractHandler'
     // validate
@@ -1719,28 +1749,31 @@ class Connext {
     const accounts = await this.web3.eth.getAccounts()
     // generate proof from lc
     const vc0s = await this.getVcInitialStates(subchanId)
+    console.log('vc0s:', vc0s)
     const vcRootHash = Connext.generateVcRootHash({ vc0s })
     let proof = [vcRootHash]
     proof = Utils.marshallState(proof)
     // proof = this.web3.utils.soliditySha3({ type: 'bytes32', value: vcRootHash })
     console.log('proof:', proof)
-    const results = await this.channelManagerInstance.methods.initVCstate(
-      subchanId,
-      vcId,
-      proof,
-      nonce,
-      partyA,
-      partyB,
-      balanceA,
-      balanceB,
-      sigA).send(
-      {
-        from: accounts[0]
-      }
-    )
-    if (!results.transactionHash) {
-      throw new Error(`[${methodName}] initVCState transaction failed.`)
-    }
+    const results = await this.channelManagerInstance.methods
+      .initVCstate(
+        subchanId,
+        vcId,
+        proof,
+        nonce,
+        partyA,
+        partyB,
+        balanceA,
+        balanceB,
+        sigA
+      )
+      .send({
+        from: accounts[0],
+        gas: 4700000
+      })
+    // if (!results.transactionHash) {
+    //   throw new Error(`[${methodName}] initVCState transaction failed.`)
+    // }
     return results
   }
 
@@ -1808,20 +1841,21 @@ class Connext {
       'sigB'
     )
     const accounts = await this.web3.eth.getAccounts()
-    const results = await this.channelManagerInstance.methods.settleVC(
-      subchan,
-      vcId,
-      nonce,
-      partyA,
-      partyB,
-      balanceA,
-      balanceB,
-      sigA,
-      sigB).send(
-      {
+    const results = await this.channelManagerInstance.methods
+      .settleVC(
+        subchan,
+        vcId,
+        nonce,
+        partyA,
+        partyB,
+        balanceA,
+        balanceB,
+        sigA,
+        sigB
+      )
+      .send({
         from: accounts[0]
-      }
-    )
+      })
     if (!results.transactionHash) {
       throw new Error(`[${methodName}] settleVC transaction failed.`)
     }
