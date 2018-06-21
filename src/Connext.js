@@ -2,7 +2,7 @@ const axios = require('axios')
 const channelManagerAbi = require('../artifacts/LedgerChannel.json')
 const util = require('ethereumjs-util')
 const Web3 = require('web3')
-const validate = require('validate.js')
+import validate from "validate.js"
 const MerkleTree = require('./helpers/MerkleTree')
 const Utils = require('./helpers/utils')
 const crypto = require('crypto')
