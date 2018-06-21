@@ -662,6 +662,33 @@ describe('Connext', async () => {
     })
   })
 
+  describe('depositContractHandler', () => {
+    // init web3
+    const port = process.env.ETH_PORT ? process.env.ETH_PORT : '9545'
+    web3 = new Web3(`ws://localhost:${port}`)
+    let client = new Connext({ web3 }, Web3)
+    describe('Web3 and contract properly initialized, valid parameters', async () => {
+      it('should call deposit on the channel manager instance', async () => {
+        const accounts = await client.web3.eth.getAccounts()
+        ingridAddress = client.ingridAddress = accounts[2]
+        lcId = '0x01'
+        const deposit = Web3.utils.toBN(Web3.utils.toWei('5', 'ether'))
+        const mock = new MockAdapter(axios)
+        mock.onGet(`${client.ingridUrl}/ledgerchannel?a=${partyA}`).reply(() => {
+          return [
+            200,
+            lcId
+          ]
+        })
+        const response = await client.depositContractHandler(deposit)
+        assert.ok(
+          response.transactionHash !== null &&
+            response.transactionHash !== undefined
+        )
+      })
+    })
+  })
+
   describe('updateLcStateContractHandler', () => {
     // init web3
     const port = process.env.ETH_PORT ? process.env.ETH_PORT : '9545'
@@ -776,31 +803,28 @@ describe('Connext', async () => {
         'should call consensusCloseChannel on the channel manager instance',
         async () => {
           const accounts = await client.web3.eth.getAccounts()
-          lc0.partyA = accounts[0]
-          ingridAddress = client.ingridAddress = lc0.partyI = accounts[2]
-          const vcRootHash = await Connext.generateVcRootHash({ vc0s: [] })
-          lc0.vcRootHash = vcRootHash
-          lc0.lcId = '0x01' // add lcid to obj
+          partyA = accounts[0]
+          ingridAddress = client.ingridAddress = accounts[2]
+          lcId = '0x01' // add lcid to obj
           const params = {
             isClose: true,
-            lcId: lc0.lcId,
-            nonce: 2,
-            openVCs: lc0.openVCs,
-            vcRootHash: vcRootHash,
-            partyA: lc0.partyA,
-            partyI: lc0.partyI,
-            balanceA: Web3.utils.toBN(Web3.utils.toWei('3', 'ether')),
-            balanceI: Web3.utils.toBN(Web3.utils.toWei('2', 'ether'))
+            lcId: lcId,
+            nonce: 5,
+            openVCs: 0,
+            vcRootHash: emptyRootHash,
+            partyA: partyA,
+            partyI: ingridAddress,
+            balanceA: Web3.utils.toBN(Web3.utils.toWei('0', 'ether')),
+            balanceI: Web3.utils.toBN(Web3.utils.toWei('5', 'ether'))
           }
           const hashI = await Connext.createLCStateUpdateFingerprint(params)
           params.unlockedAccountPresent = true
           const sigA = await client.createLCStateUpdate(params)
-
           const sigI = await client.web3.eth.sign(hashI, accounts[2])
-          // console.log('params:', params)
-          // console.log('hashI:', hashI)
-          // console.log('sigI:', sigI)
-          // console.log('sigA:', sigA)
+          console.log('params:', params)
+          console.log('hashI:', hashI)
+          console.log('sigI:', sigI)
+          console.log('sigA:', sigA)
 
           const result = await client.consensusCloseChannelContractHandler({
             lcId: params.lcId,
@@ -814,7 +838,6 @@ describe('Connext', async () => {
             result.transactionHash !== null &&
               result.transactionHash !== undefined
           )
-          // assert.equal(result, accounts[0])
         }
       ).timeout(5000)
     })

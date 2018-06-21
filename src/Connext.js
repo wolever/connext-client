@@ -201,7 +201,7 @@ class Connext {
       'depositInWei'
     )
     // call contract handler
-    const result = await this.depositContractHandler({ depositInWei })
+    const result = await this.depositContractHandler(depositInWei)
     return result
   }
 
@@ -1461,7 +1461,7 @@ class Connext {
     return result
   }
 
-  async depositContractHandler ({ depositInWei }) {
+  async depositContractHandler (depositInWei) {
     const methodName = 'depositContractHandler'
     // validate
     const isBN = { presence: true, isBN: true }
