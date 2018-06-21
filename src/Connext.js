@@ -1642,7 +1642,7 @@ class Connext {
         openVCs,
         balanceA,
         balanceI,
-        vcRootHash,
+        Web3.utils.padRight(vcRootHash, 64),
         sigA,
         sigI
       )
