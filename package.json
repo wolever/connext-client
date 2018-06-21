@@ -1,6 +1,6 @@
 {
   "name": "connext",
-  "version": "0.0.6",
+  "version": "0.0.7",
   "description": "Containerized state channels",
   "main": "dist/index.js",
   "scripts": {
@@ -19,7 +19,9 @@
   },
   "files": [
     "dist",
-    "artifacts"
+    "artifacts",
+    "node_modules",
+    "index.d.ts"
   ],
   "standard": {
     "ignore": [

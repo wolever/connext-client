@@ -1096,7 +1096,6 @@ class Connext {
     nonce,
     partyA,
     partyB,
-    partyI,
     balanceA,
     balanceB
   }) {
@@ -1129,12 +1128,6 @@ class Connext {
     )
 
     Connext.validatorsResponseToError(
-      validate.single(partyI, isAddress),
-      methodName,
-      'partyI'
-    )
-
-    Connext.validatorsResponseToError(
       validate.single(balanceA, isBN),
       methodName,
       'balanceA'
@@ -1151,7 +1144,6 @@ class Connext {
       { type: 'uint256', value: nonce },
       { type: 'address', value: partyA },
       { type: 'address', value: partyB },
-      { type: 'address', value: partyI },
       { type: 'uint256', value: balanceA },
       { type: 'uint256', value: balanceB }
     )
@@ -1164,7 +1156,6 @@ class Connext {
     nonce,
     partyA,
     partyB,
-    partyI,
     balanceA,
     balanceB
   }) {
@@ -1207,12 +1198,6 @@ class Connext {
     )
 
     Connext.validatorsResponseToError(
-      validate.single(partyI, isAddress),
-      methodName,
-      'partyI'
-    )
-
-    Connext.validatorsResponseToError(
       validate.single(balanceA, isBN),
       methodName,
       'balanceA'
@@ -1229,7 +1214,6 @@ class Connext {
       nonce,
       partyA,
       partyB,
-      partyI,
       balanceA,
       balanceB
     })
@@ -1255,7 +1239,6 @@ class Connext {
     nonce,
     partyA,
     partyB,
-    partyI = this.ingridAddress,
     balanceA,
     balanceB,
     // unlockedAccountPresent = false // if true, use sign over personal.sign
@@ -1331,7 +1314,6 @@ class Connext {
       nonce,
       partyA,
       partyB,
-      partyI,
       balanceA,
       balanceB
     })
