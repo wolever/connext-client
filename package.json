@@ -64,6 +64,7 @@
   },
   "dependencies": {
     "axios": "^0.16.2",
+    "bignumber.js": "^7.2.1",
     "dotenv": "^6.0.0",
     "ethereumjs-abi": "^0.6.5",
     "ethereumjs-util": "^5.2.0",
