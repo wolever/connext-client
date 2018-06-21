@@ -19,7 +19,8 @@
   },
   "files": [
     "dist",
-    "artifacts"
+    "artifacts",
+    "node_modules"
   ],
   "standard": {
     "ignore": [
