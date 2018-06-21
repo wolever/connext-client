@@ -607,7 +607,7 @@ describe('Connext', async () => {
         const balanceA = Web3.utils.toBN(Web3.utils.toWei('5', 'ether'))
         const response = await client.createLedgerChannelContractHandler({
           ingridAddress,
-          lcId: lcId,
+          lcId: '0x4b7c97c3ae6abca2ff2ba4e31ee594ac5e1b1f12d8fd2097211569f80dbb7d08',
           initialDeposit: balanceA
         })
         assert.ok(Web3.utils.isHexStrict(response.transactionHash))
@@ -651,7 +651,19 @@ describe('Connext', async () => {
         const accounts = await client.web3.eth.getAccounts()
         client.ingridAddress = accounts[2]
         const params = {
-          lcId: '0x01'
+          lcId: '0x4b7c97c3ae6abca2ff2ba4e31ee594ac5e1b1f12d8fd2097211569f80dbb7d08' // subchan AI ID
+        }
+        const response = await client.joinLedgerChannelContractHandler(params)
+        assert.ok(
+          response.transactionHash !== null &&
+            response.transactionHash !== undefined
+        )
+      })
+      it('should call joinChannel on the channel manager instance', async () => {
+        const accounts = await client.web3.eth.getAccounts()
+        client.ingridAddress = accounts[2]
+        const params = {
+          lcId: '0x9d6bfafec5f20b6a493bef73c7773713bd426d29148ec35aff12077578f81f72' // subchan BI ID
         }
         const response = await client.joinLedgerChannelContractHandler(params)
         assert.ok(
@@ -846,39 +858,29 @@ describe('Connext', async () => {
       it.only('should init a virtual channel state on chain', async () => {
         // get accounts
         const accounts = await client.web3.eth.getAccounts()
+        const subchanId =
+          '0x4b7c97c3ae6abca2ff2ba4e31ee594ac5e1b1f12d8fd2097211569f80dbb7d08'
         partyA = accounts[0]
         partyB = accounts[1]
-        let vcId = Connext.getNewChannelId()
-        console.log('VC ID 1: ', vcId)
         ingridAddress = client.ingridAddress = accounts[2]
-        // generate initial vc state
-        const vc0 = {
-          vcId: vcId,
-          nonce: 0,
-          partyA: partyA,
-          partyB: partyB,
-          partyI: ingridAddress,
-          subchanId: '0x01',
-          balanceA: Web3.utils.toBN(Web3.utils.toWei('2', 'ether')),
-          balanceB: Web3.utils.toBN(Web3.utils.toWei('0', 'ether'))
-        }
-        vcId = Connext.getNewChannelId()
-        console.log('VC ID 2: ', vcId)
-        const vc1 = {
-          vcId: vcId,
-          nonce: 0,
-          partyA: partyA,
-          partyB: partyB,
-          partyI: ingridAddress,
-          subchanId: '0x02',
-          balanceA: Web3.utils.toBN(Web3.utils.toWei('2', 'ether')),
-          balanceB: Web3.utils.toBN(Web3.utils.toWei('0', 'ether'))
-        }
+        const vcId = Connext.getNewChannelId()
+        console.log(vcId)
+        const nonce = 0
+        const balanceA = Web3.utils.toBN(Web3.utils.toWei('2', 'ether'))
+        const balanceB = Web3.utils.toBN(Web3.utils.toWei('0', 'ether'))
+
         // generate sigA
-        const hash = Connext.createVCStateUpdateFingerprint(vc0)
+        const hash = Connext.createVCStateUpdateFingerprint({
+          vcId,
+          nonce,
+          partyA,
+          partyB,
+          balanceA,
+          balanceB
+        })
         const sigA = await client.web3.eth.sign(hash, accounts[0])
-        vc0.sigA = sigA
-        console.log(vc0)
+        console.log('hash:', hash)
+        console.log('sigA:', sigA)
         // mock urls
         const mock = new MockAdapter(axios)
         mock.onGet().reply(() => {
@@ -886,14 +888,34 @@ describe('Connext', async () => {
             200,
             [
               // returns list of vc initial states
-              vc0,
-              vc1
+              {
+                subchanId,
+                vcId,
+                nonce,
+                partyA,
+                partyB,
+                balanceA,
+                balanceB,
+                sigA
+              }
             ]
           ]
         })
         // client call
-        const results = await client.initVcStateContractHandler(vc0)
-        assert.equal(results.transactionHash, ':)')
+        const results = await client.initVcStateContractHandler({
+          subchanId,
+          vcId,
+          nonce,
+          partyA,
+          partyB,
+          balanceA,
+          balanceB,
+          sigA
+        })
+        assert.ok(
+          results.transactionHash !== null &&
+          results.transactionHash !== undefined
+        )
       })
     })
   })
@@ -1010,7 +1032,7 @@ describe('Connext', async () => {
     web3 = new Web3(`ws://localhost:${port}`)
     let client = new Connext({ web3 }, Web3)
     describe('createVCStateUpdate with real web3.utils and valid params', () => {
-      it.only('should return a valid signature.', async () => {
+      it('should return a valid signature.', async () => {
         const accounts = await web3.eth.getAccounts()
         partyA = accounts[0]
         partyB = accounts[1]
@@ -1054,24 +1076,21 @@ describe('Connext', async () => {
       partyB = accounts[1]
       ingridAddress = accounts[2]
       describe('should recover the address of person who signed', () => {
-        it.only(
-          'should return signer 0x627306090abab3a6e1400e9345bc60c78a8bef57',
-          () => {
-            const signer = Connext.recoverSignerFromVCStateUpdate({
-              sig: '0x9d63257d51cd06751116f35a2746bc03002bfae742f8e276cdc817265d1e32a0063fece7ff96e44f7dad1e9b8d1de865743f53d06fcab9673707a4e8ba4dbfaa01',
-              vcId: '0xc1912',
-              nonce: 0,
-              partyA: partyA,
-              partyB: partyB,
-              partyI: ingridAddress,
-              subchanAI: '0xc1912',
-              subchanBI: '0xc1912',
-              balanceA: Web3.utils.toBN('0'),
-              balanceB: Web3.utils.toBN('0')
-            })
-            assert.equal(signer, accounts[0].toLowerCase())
-          }
-        )
+        it('should return signer 0x627306090abab3a6e1400e9345bc60c78a8bef57', () => {
+          const signer = Connext.recoverSignerFromVCStateUpdate({
+            sig: '0x9d63257d51cd06751116f35a2746bc03002bfae742f8e276cdc817265d1e32a0063fece7ff96e44f7dad1e9b8d1de865743f53d06fcab9673707a4e8ba4dbfaa01',
+            vcId: '0xc1912',
+            nonce: 0,
+            partyA: partyA,
+            partyB: partyB,
+            partyI: ingridAddress,
+            subchanAI: '0xc1912',
+            subchanBI: '0xc1912',
+            balanceA: Web3.utils.toBN('0'),
+            balanceB: Web3.utils.toBN('0')
+          })
+          assert.equal(signer, accounts[0].toLowerCase())
+        })
       })
     })
 
