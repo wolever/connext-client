@@ -1,6 +1,6 @@
 {
   "name": "connext",
-  "version": "0.0.5",
+  "version": "0.0.6",
   "description": "Containerized state channels",
   "main": "dist/index.js",
   "scripts": {
