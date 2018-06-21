@@ -20,7 +20,8 @@
   "files": [
     "dist",
     "artifacts",
-    "node_modules"
+    "node_modules",
+    "index.d.ts"
   ],
   "standard": {
     "ignore": [
