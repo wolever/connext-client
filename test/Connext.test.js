@@ -8,7 +8,6 @@ const MerkleTree = require('../src/helpers/MerkleTree')
 const Utils = require('../src/helpers/utils')
 const Web3 = require('web3')
 const channelManagerAbi = require('../artifacts/LedgerChannel.json')
-// const fakeChannelManagerAbi = require('../artifacts/Ledger.json')
 const { initWeb3, getWeb3 } = require('../web3')
 
 // named variables
@@ -141,18 +140,12 @@ describe('Connext', async () => {
           // when requesting subchanBI id
           let url = `${client.ingridUrl}/ledgerchannel?a=${partyA}`
           mock.onGet(url).reply(() => {
-            return [
-              200,
-              subchanAI
-            ]
+            return [200, subchanAI]
           })
           // when requesting subchanBI id
           url = `${client.ingridUrl}/ledgerchannel?a=${partyB}`
           mock.onGet(url).reply(() => {
-            return [
-              200,
-              subchanBI
-            ]
+            return [200, subchanBI]
           })
           // when getting subchanAI object
           url = `${client.ingridUrl}/ledgerchannel/${subchanAI}`
@@ -375,7 +368,11 @@ describe('Connext', async () => {
             ]
           })
           // client results
-          const results = await client.updateBalance({ channelId, balanceA, balanceB })
+          const results = await client.updateBalance({
+            channelId,
+            balanceA,
+            balanceB
+          })
           assert.deepEqual(results, { data: {} })
         })
       })
@@ -577,10 +574,7 @@ describe('Connext', async () => {
           // when getting lcId
           let url = `${client.ingridUrl}/ledgerchannel?a=${partyA}`
           mock.onGet(url).reply(() => {
-            return [
-              200,
-              lcId
-            ]
+            return [200, lcId]
           })
           // when requesting ingrid sign closing lc udpate
           url = `${client.ingridUrl}/ledgerchannel/${lcId}/fastclose`
@@ -610,16 +604,42 @@ describe('Connext', async () => {
       it('should call createChannel on the channel manager instance', async () => {
         const accounts = await client.web3.eth.getAccounts()
         ingridAddress = accounts[2]
-        partyA = lc0.partyA = accounts[0]
-        partyB = vc0.partyB = accounts[1]
-        lc0.lcId = '0x01' // add lcid to obj
+        const balanceA = Web3.utils.toBN(Web3.utils.toWei('5', 'ether'))
+        const lcId = '0x01' // add lcid to obj
         const response = await client.createLedgerChannelContractHandler({
           ingridAddress,
-          lcId: lc0.lcId,
-          initialDeposit: lc0.balanceA
+          lcId: lcId,
+          initialDeposit: balanceA
         })
         assert.ok(Web3.utils.isHexStrict(response.transactionHash))
       })
+    })
+  })
+
+  describe('LCOpenTimeoutContractHandler', () => {
+    // init web3
+    const port = process.env.ETH_PORT ? process.env.ETH_PORT : '9545'
+    web3 = new Web3(`ws://localhost:${port}`)
+    let client = new Connext({ web3 }, Web3)
+    describe('Web3 and contract properly initialized, valid parameters', () => {
+      it.only(
+        'should call LCOpenTimeout on the channel manager instance',
+        async () => {
+          // get initial account balance
+          const accounts = await client.web3.eth.getAccounts()
+          const initialBalance = await client.web3.eth.getBalance(accounts[0])
+          const lcId = '0x01'
+          const response = await client.LCOpenTimeoutContractHandler(lcId)
+          const initialDeposit = Web3.utils.toBN(Web3.utils.toWei('5', 'ether'))
+          const finalBalance = await client.web3.eth.getBalance(accounts[0])
+          assert.ok(
+            Web3.utils.fromWei(
+              Web3.utils.toBN(finalBalance - initialBalance),
+              'ether'
+            )
+          )
+        }
+      )
     })
   })
 
@@ -1436,7 +1456,6 @@ describe('Connext', async () => {
     })
   })
 })
-
 
 describe('ingridClientRequests', () => {
   let mock
