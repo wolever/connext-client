@@ -13,9 +13,10 @@ const { initWeb3, getWeb3 } = require('../web3')
 
 // named variables
 let web3 = { currentProvider: 'mock' }
-let partyA // accounts[0], hardcoded is truffle develop accts
-let partyB // accounts[1]
-let ingridAddress // accounts[2]
+let partyA = '0x627306090abaB3A6e1400e9345bC60c78a8BEf57'
+let partyB = '0xf17f52151EbEF6C7334FAD080c5704D77216b732' // accounts[1]
+let ingridAddress = '0xC5fdf4076b8F3A5357c5E395ab970B5B54098Fef'
+let ingridUrl = 'ingridUrl'
 
 const emptyRootHash = Connext.generateVcRootHash({ vc0s: [] })
 
@@ -53,7 +54,7 @@ describe('Connext', async () => {
     it('should create a connext client with real web3 and channel manager', async () => {
       const port = process.env.ETH_PORT ? process.env.ETH_PORT : '9545'
       web3 = new Web3(`ws://localhost:${port}`)
-      let client = new Connext({ web3 }, Web3)
+      let client = new Connext({ web3, ingridAddress, ingridUrl }, Web3)
       assert.ok(typeof client === 'object')
     })
   })
@@ -61,17 +62,15 @@ describe('Connext', async () => {
   describe('register(initialDeposit)', async () => {
     const port = process.env.ETH_PORT ? process.env.ETH_PORT : '9545'
     web3 = new Web3(`ws://localhost:${port}`)
-    let client = new Connext({ web3 }, Web3)
+    let client = new Connext({ web3, ingridAddress, ingridUrl }, Web3)
     describe('register with real web3 and valid params', () => {
       describe('ingrid is responsive and returns correct results', () => {
         it('should create a ledger channel with ingrid and bond initial deposit', async () => {
           // params
           const accounts = await client.web3.eth.getAccounts()
           partyA = lc0.partyA = accounts[0]
-          ingridAddress = client.ingridAddress = lc0.partyI = accounts[2]
           const initialDeposit = Web3.utils.toBN(Web3.utils.toWei('5', 'ether'))
           // url requests
-          client.ingridUrl = 'ingridUrl'
           let url = `${client.ingridUrl}/ledgerchannel/timer`
           const mock = new MockAdapter(axios)
           mock.onGet(url).reply(() => {
@@ -144,13 +143,7 @@ describe('Connext', async () => {
           mock.onGet(url).reply(() => {
             return [
               200,
-              {
-                data: {
-                  ledgerChannel: {
-                    id: subchanAI
-                  }
-                }
-              }
+              subchanAI
             ]
           })
           // when requesting subchanBI id
@@ -158,13 +151,7 @@ describe('Connext', async () => {
           mock.onGet(url).reply(() => {
             return [
               200,
-              {
-                data: {
-                  ledgerChannel: {
-                    id: subchanBI
-                  }
-                }
-              }
+              subchanBI
             ]
           })
           // when getting subchanAI object
@@ -173,24 +160,20 @@ describe('Connext', async () => {
             return [
               200,
               {
-                data: {
-                  ledgerChannel: {
-                    id: subchanAI,
-                    partyA: partyA,
-                    partyI: ingridAddress,
-                    balanceA: Web3.utils.toBN(Web3.utils.toWei('5', 'ether')),
-                    balanceI: Web3.utils.toBN(Web3.utils.toWei('0', 'ether')),
-                    vcRootHash: emptyRootHash,
-                    isOpen: true,
-                    isUpdateLCSettling: false,
-                    openVCs: 0
-                  }
-                }
+                id: subchanAI,
+                partyA: partyA,
+                partyI: ingridAddress,
+                balanceA: Web3.utils.toBN(Web3.utils.toWei('5', 'ether')),
+                balanceI: Web3.utils.toBN(Web3.utils.toWei('0', 'ether')),
+                vcRootHash: emptyRootHash,
+                isOpen: true,
+                isUpdateLCSettling: false,
+                openVCs: 0
               }
             ]
           })
           // when getting intial states of open vcs
-          url = `${client.ingridUrl}/ledgerchannel/${subchanAI}/virtualchannel/initialstate`
+          url = `${client.ingridUrl}/ledgerchannel/${subchanAI}/virtualchannel/initialstates`
           mock.onGet(url).reply(() => {
             return [
               200,
@@ -330,7 +313,8 @@ describe('Connext', async () => {
           // take from console.log of above, has to be better way of doing this
           const channelId =
             '0x16fa1fb8a0c0c3eb5d44f5beaf5b27560e13b069fb111e1a4337d1663c11e9a6'
-          const balance = Web3.utils.toBN(Web3.utils.toWei('4', 'ether'))
+          const balanceA = Web3.utils.toBN(Web3.utils.toWei('4', 'ether'))
+          const balanceB = Web3.utils.toBN(Web3.utils.toWei('1', 'ether'))
           // url requests
           client.ingridUrl = 'ingridUrl'
           const mock = new MockAdapter(axios)
@@ -391,7 +375,7 @@ describe('Connext', async () => {
             ]
           })
           // client results
-          const results = await client.updateBalance({ channelId, balance })
+          const results = await client.updateBalance({ channelId, balanceA, balanceB })
           assert.deepEqual(results, { data: {} })
         })
       })
@@ -554,7 +538,7 @@ describe('Connext', async () => {
     let client = new Connext({ web3 }, Web3)
     describe('Web3 and contract properly initialized', () => {
       describe('Ingrid, partyA, and partyB are responsive and honest actors', () => {
-        it.only('should call withdraw to close a ledger channel', async () => {
+        it('should call withdraw to close a ledger channel', async () => {
           // params
           const lcId = '0x01'
           const balanceA = Web3.utils.toBN(Web3.utils.toWei('5', 'ether'))
@@ -595,13 +579,7 @@ describe('Connext', async () => {
           mock.onGet(url).reply(() => {
             return [
               200,
-              {
-                data: {
-                  ledgerChannel: {
-                    id: lcId
-                  }
-                }
-              }
+              lcId
             ]
           })
           // when requesting ingrid sign closing lc udpate
@@ -617,7 +595,7 @@ describe('Connext', async () => {
 
           // client results
           const results = await client.withdraw()
-          assert.ok(Web3.utils.isHexStrict(response.transactionHash))
+          assert.ok(Web3.utils.isHexStrict(results.transactionHash))
         }).timeout(5000)
       })
     })
@@ -779,7 +757,7 @@ describe('Connext', async () => {
       it('should create an empty 32 byte buffer vcRootHash when no VCs are provided', () => {
         const vc0s = []
         const vcRootHash = Connext.generateVcRootHash({ vc0s })
-        assert.equal('0x', vcRootHash)
+        assert.equal('0x0', vcRootHash)
       })
 
       it('should create a vcRootHash containing vcs', async () => {
@@ -814,52 +792,6 @@ describe('Connext', async () => {
           vcRootHash
         )
       })
-
-      // it.only('should correctly validate if VCs are in root hash', async () => {
-      //   // generate vc0s and merkle tree
-      //   const accounts = await client.web3.eth.getAccounts()
-      //   partyA = accounts[0]
-      //   partyB = accounts[1]
-      //   ingridAddress = accounts[2]
-      //   const vc0 = {
-      //     vcId: '0x1',
-      //     nonce: 0,
-      //     partyA: partyA,
-      //     partyB: partyB,
-      //     partyI: ingridAddress,
-      //     balanceA: Web3.utils.toBN(1000),
-      //     balanceB: Web3.utils.toBN(0)
-      //   }
-      //   const vc1 = {
-      //     vcId: '0x2',
-      //     nonce: 0,
-      //     partyA: partyA,
-      //     partyB: partyB,
-      //     partyI: ingridAddress,
-      //     balanceA: Web3.utils.toBN(1000),
-      //     balanceB: Web3.utils.toBN(0)
-      //   }
-      //   const vc0s = []
-      //   vc0s.push(vc0)
-      //   vc0s.push(vc1)
-      //   // generate tree
-      //   let elems = vc0s.map(vc0 => {
-      //     const hash = Connext.createVCStateUpdateFingerprint(vc0)
-      //     const vcBuf = Utils.hexToBuffer(hash)
-      //     return vcBuf
-      //   })
-      //   const merkle = new MerkleTree.default(elems)
-      //   // vcRootHash from test above
-      //   const vcRootHash =
-      //     '0xbc8a7623f3fd4779a4510b266265248fc8dfbc1a28988c9d8284a87419b2643c'
-      //   // generate proof
-      //   let proof = merkle.proof(Web3.utils.hexToBytes(vcRootHash))
-      //   // proof = Utils.marshallState(proof)
-      //   // set root
-      //   console.log(proof)
-      //   const isContained = merkle.verify(proof, vcRootHash)
-      //   assert.equal(isContained, false)
-      // })
     })
   })
 
@@ -1545,33 +1477,11 @@ describe('ingridClientRequests', () => {
     const url = `${client.ingridUrl}/ledgerchannel/timer`
     const mock = new MockAdapter(axios)
     mock.onGet().reply(() => {
-      return [
-        200,
-        {
-          data: {}
-        }
-      ]
+      return [200, 3600]
     })
     const res = await client.getLedgerChannelChallengeTimer('address')
-    assert.deepEqual(res, {})
-  })
-
-  it('fastCloseVcHandler', async () => {
-    const client = new Connext({ web3 }, createFakeWeb3())
-    const params = { vcId: '0xc12', sigA: '0xc12' }
-    client.ingridUrl = 'ingridUrl'
-    const url = `${client.ingridUrl}/virtualChannel/${params.vcId}/fastclose`
-    const mock = new MockAdapter(axios)
-    mock.onPost().reply(() => {
-      return [
-        200,
-        {
-          data: {}
-        }
-      ]
-    })
-    const result = await client.fastCloseVcHandler(params)
-    assert.deepEqual(result, { data: {} })
+    console.log(res)
+    assert.deepEqual(res, 3600)
   })
 
   it('getLatestVirtualDoubleSignedStateUpdate', async () => {
@@ -1622,7 +1532,8 @@ describe('ingridClientRequests', () => {
     const params = {
       channelId: '0xc12',
       sig: '0xc12',
-      balance: Web3.utils.toBN(10)
+      balanceA: Web3.utils.toBN(10),
+      balanceB: Web3.utils.toBN(10)
     }
     const url = `${client.ingridUrl}/virtualchannel/${params.channelId}/update`
     const mock = new MockAdapter(axios)
@@ -1648,40 +1559,29 @@ describe('ingridClientRequests', () => {
     mock.onPost().reply(() => {
       return [
         200,
-        {
-          data: {}
-        }
+        true // if ingrid agrees to be the hub for vc for agentB
       ]
     })
     const result = await client.joinVcHandler(params)
-    assert.deepEqual(result, { data: {} })
+    assert.deepEqual(result, true)
   })
   it('openVc', async () => {
-    const client = new Connext({ web3 }, createFakeWeb3())
-    const fakeAccounts = ['address']
-    client.web3.eth.getAccounts = () => {
-      return new Promise((resolve, reject) => {
-        return resolve(fakeAccounts)
-      })
-    }
-    client.ingridUrl = 'ingridUrl'
+    const client = new Connext({ web3, ingridAddress, ingridUrl }, Web3)
     const params = {
       sig: '0xc12',
       balanceA: Web3.utils.toBN(10),
-      to: '0xC501E4e8aC8da07D9eC89122d375412477f561B1',
+      to: partyB,
       vcRootHash: '0xc12'
     }
-    const url = `${client.ingridUrl}/virtualchannel/open?a=${fakeAccounts[0]}`
+    console.log(openVcUrl)
     const mock = new MockAdapter(axios)
     mock.onPost().reply(() => {
       return [
         200,
-        {
-          data: {}
-        }
+        true // if ingrid agrees to open vc for agentA
       ]
     })
     const result = await client.openVc(params)
-    assert.deepEqual(result, { data: {} })
+    assert.deepEqual(result, true)
   })
 })
