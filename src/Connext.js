@@ -222,6 +222,12 @@ class Connext {
   async withdraw () {
     const lcId = await this.getLcId()
     const lcState = await this.getLatestLedgerStateUpdate(lcId)
+    if (Number(lcState.openVCs) !== 0) {
+      throw new Error(`LC id ${lcId} still has open virtual channels. Number: ${lcState.openVCs}`)
+    }
+    if (lcState.vcRootHash !== '0x0') {
+      throw new Error(`vcRootHash for lcId ${lcId} does not match empty root hash. Value: ${lcState.vcRootHash}`)
+    }
     // /**
     //  * lcState = {
     //  *  sigA,
@@ -653,8 +659,7 @@ class Connext {
   /**
    * Closes specified channel using latest double signed update.
    *
-   * Generates a decomposed LC update containing the updated balances and VCRoot to Ingrid from latest
-   * double signed VC update.
+   * Requests Ingrid to decompose into LC update based on latest double signed virtual channel state.
    *
    * @example
    * await connext.fastCloseChannel(10)
@@ -673,15 +678,18 @@ class Connext {
     // get latest double signed updates
     const latestVcState = await this.getLatestVirtualDoubleSignedStateUpdate(channelId)
     console.log(latestVcState)
-    if (
-      latestVcState.partyA !== accounts[0].toLowerCase() &&
-      latestVcState.partyB !== accounts[0].toLowerCase()
-    ) {
+    let isPartyA
+    if (latestVcState.partyA !== accounts[0].toLowerCase()) {
+        isPartyA = true
+    } else if(latestVcState.partyB !== accounts[0].toLowerCase()){
+      isPartyA = false
+    } else if (latestVcState.partyA !== accounts[0].toLowerCase() && latestVcState.partyB !== accounts[0].toLowerCase()) {
       throw new Error('Not your virtual channel.')
     }
 
     // have ingrid decompose since this is the happy case closing
     const results = await this.requestDecomposeLC(channelId)
+    // NOTE: client doesnt sign lc update, it is just generated
 
     return results
   }
