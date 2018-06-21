@@ -1418,7 +1418,7 @@ class Connext {
       {
         from: accounts[0],
         value: initialDeposit,
-        gas: 3000000 // FIX THIS, WHY HAPPEN, TRUFFLE CONFIG???
+        gas: 3000000 // NOT GREAT
       }
       )
     // should be transaction receipt in form:
@@ -1440,10 +1440,18 @@ class Connext {
     return result
   }
 
-  async LCOpenTimeoutContractHandler () {
+  async LCOpenTimeoutContractHandler (lcId) {
+    const methodName = 'LCOpenTimeoutContractHandler'
+    // validate
+    const isHexStrict = { presence: true, isHexStrict: true }
+    Connext.validatorsResponseToError(
+      validate.single(lcId, isHexStrict),
+      methodName,
+      'lcId'
+    )
     const accounts = await this.web3.eth.getAccounts()
     const result = await this.channelManagerInstance.methods
-      .LCOpenTimeout()
+      .LCOpenTimeout(lcId)
       .send({
         from: accounts[0]
       })
