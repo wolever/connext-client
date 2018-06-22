@@ -2018,6 +2018,29 @@ class Connext {
   }
 
   /**
+   * Returns object representing the ledger channel between partyA and Ingrid
+   * 
+   * @param {String} partyA - partyA in ledger channel. Default is accounts[0]
+   * @returns {Object} Ledger channel object
+   */
+  async getLcByPartyA (partyA = null) {
+    const methodName = 'getLcByPartyA'
+    const isAddress = { presence: true, isAddress: true }
+    if (partyA !== null) {
+      Connext.validatorsResponseToError(
+        validate.single(partyA, isAddress),
+        methodName,
+        'partyA'
+      )
+    } else {
+      const accounts = await this.web3.eth.getAccounts()
+      partyA = accounts[0]
+    }
+    const response = await axios.get(`${this.ingridUrl}/ledgerchannel/a/${partyA}`)
+    return response.data
+  }
+
+  /**
    * Returns the default ledger channel challenge period from ingrid.
    *
    * Challenge timers are used when constructing an LC.
