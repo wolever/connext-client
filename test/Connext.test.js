@@ -601,7 +601,7 @@ describe('Connext', async () => {
     web3 = new Web3(`ws://localhost:${port}`)
     let client = new Connext({ web3 }, Web3)
     describe('Web3 and contract properly initialized, valid parameters', () => {
-      it('should call createChannel on the channel manager instance', async () => {
+      it.only('should call createChannel on the channel manager instance', async () => {
         const accounts = await client.web3.eth.getAccounts()
         ingridAddress = accounts[2]
         const balanceA = Web3.utils.toBN(Web3.utils.toWei('5', 'ether'))
@@ -647,7 +647,7 @@ describe('Connext', async () => {
     web3 = new Web3(`ws://localhost:${port}`)
     let client = new Connext({ web3 }, Web3)
     describe('Web3 and contract properly initialized, valid parameters', async () => {
-      it('should call joinChannel on the channel manager instance', async () => {
+      it.only('should call joinChannel on the channel manager instance', async () => {
         const accounts = await client.web3.eth.getAccounts()
         client.ingridAddress = accounts[2]
         const params = {
@@ -706,15 +706,15 @@ describe('Connext', async () => {
     web3 = new Web3(`ws://localhost:${port}`)
     let client = new Connext({ web3 }, Web3)
     describe('Web3 and contract properly initialized, valid parameters', async () => {
-      it('should call updateLcState on the channel manager instance with no open VCs', async () => {
+      it.only('should call updateLcState on the channel manager instance with no open VCs', async () => {
         const accounts = await client.web3.eth.getAccounts()
         partyA = accounts[0]
         ingridAddress = client.ingridAddress = lc0.partyI = accounts[2]
-        lcId = '0x01'
+        lcId = '0x4b7c97c3ae6abca2ff2ba4e31ee594ac5e1b1f12d8fd2097211569f80dbb7d08'
         const params = {
           isClose: false,
           lcId: lcId,
-          nonce: 2,
+          nonce: 1,
           openVCs: 0,
           vcRootHash: emptyRootHash,
           partyA: partyA,
@@ -974,7 +974,7 @@ describe('Connext', async () => {
     web3 = new Web3(`ws://localhost:${port}`)
     let client = new Connext({ web3 }, Web3)
     describe('real Web3 and valid parameters', () => {
-      it.only('should settle a vc state on chain', async () => {
+      it('should settle a vc state on chain', async () => {
         // get accounts
         const subchanId =
           '0x4b7c97c3ae6abca2ff2ba4e31ee594ac5e1b1f12d8fd2097211569f80dbb7d08'
@@ -993,7 +993,24 @@ describe('Connext', async () => {
     })
   })
 
-  describe('byzantineCloseChannelContractHandler', () => {})
+  describe('byzantineCloseChannelContractHandler', () => {
+    const port = process.env.ETH_PORT ? process.env.ETH_PORT : '9545'
+    web3 = new Web3(`ws://localhost:${port}`)
+    let client = new Connext({ web3 }, Web3)
+    describe('real Web3 and valid parameters', () => {
+      it.only('should settle a vc state on chain', async () => {
+        // get accounts
+        const lcId =
+          '0x4b7c97c3ae6abca2ff2ba4e31ee594ac5e1b1f12d8fd2097211569f80dbb7d08'
+        // client call
+        const results = await client.byzantineCloseChannelContractHandler(lcId)
+        assert.ok(
+          results.transactionHash !== null &&
+          results.transactionHash !== undefined
+        )
+      })
+    })
+  })
 
 
   describe('generateVcRootHash', () => {
