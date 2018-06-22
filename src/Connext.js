@@ -353,9 +353,7 @@ class Connext {
   async checkpoint () {
     // get latest ingrid signed state update
     const lcId = await this.getLcId()
-    const lcState = await this.getLatestLedgerStateUpdate({
-      ledgerChannelId: lcId
-    })
+    const lcState = await this.getLatestLedgerStateUpdate(lcId)
     const signer = Connext.recoverSignerFromLCStateUpdate({
       sig: lcState.sigI,
       isClose: false,
@@ -365,8 +363,8 @@ class Connext {
       vcRootHash: lcState.vcRootHash,
       partyA: lcState.partyA,
       partyI: lcState.partyI,
-      balanceA: lcState.balanceA,
-      balanceI: lcState.balanceI
+      balanceA: Web3.utils.toBN(lcState.balanceA),
+      balanceI: Web3.utils.toBN(lcState.balanceI)
     })
     if (signer !== this.ingridAddress.toLowerCase()) {
       throw new Error(`[${methodName}] Hub did not sign this state update.`)
@@ -377,15 +375,15 @@ class Connext {
       openVCs: lcState.openVCs,
       vcRootHash: lcState.vcRootHash,
       partyA: lcState.partyA,
-      balanceA: lcState.balanceA,
-      balanceI: lcState.balanceI
+      balanceA: Web3.utils.toBN(lcState.balanceA),
+      balanceI: Web3.utils.toBN(lcState.balanceI)
     })
     const result = await this.updateLcStateContractHandler({
       lcId,
       nonce: lcState.nonce,
       openVCs: lcState.openVCs,
-      balanceA: lcState.balanceA,
-      balanceI: lcState.balanceI,
+      balanceA: Web3.utils.toBN(lcState.balanceA),
+      balanceI: Web3.utils.toBN(lcState.balanceI),
       vcRootHash: lcState.vcRootHash,
       sigA: sig,
       sigI: lcState.sigI
