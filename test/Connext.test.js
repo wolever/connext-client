@@ -601,7 +601,7 @@ describe('Connext', async () => {
     web3 = new Web3(`ws://localhost:${port}`)
     let client = new Connext({ web3 }, Web3)
     describe('Web3 and contract properly initialized, valid paramereters', () => {
-      it.only('should update the mapping in the contract when checkpointed', async () => {
+      it('should update the mapping in the contract when checkpointed', async () => {
         const accounts = await client.web3.eth.getAccounts()
         const lcId = '0x4b7c97c3ae6abca2ff2ba4e31ee594ac5e1b1f12d8fd2097211569f80dbb7d08'
         const balanceA = Web3.utils.toBN(Web3.utils.toWei('2', 'ether'))
@@ -639,6 +639,52 @@ describe('Connext', async () => {
 
         // actual request
         const results = await client.checkpoint()
+        assert.ok(Web3.utils.isHexStrict(response.transactionHash))
+      })
+    })
+  })
+
+  describe('withdrawFinal', () => {
+    // init web3
+    const port = process.env.ETH_PORT ? process.env.ETH_PORT : '9545'
+    web3 = new Web3(`ws://localhost:${port}`)
+    let client = new Connext({ web3, ingridAddress, ingridUrl }, Web3)
+    describe('Web3 and contract properly initialized, valid parameters', () => {
+      it.only('should call withdrawFinal on lc that has been settled on chain', async () => {
+        const accounts = await client.web3.eth.getAccounts()
+        partyA = accounts[0]
+        ingridAddress = client.ingridAddress = accounts[2]
+        const lcId = '0x4b7c97c3ae6abca2ff2ba4e31ee594ac5e1b1f12d8fd2097211569f80dbb7d08'
+        const balanceA = Web3.utils.toBN(Web3.utils.toWei('4', 'ether'))
+        const balanceI = Web3.utils.toBN(Web3.utils.toWei('1', 'ether'))
+        const params = {
+          isClose: false,
+          lcId: lcId,
+          nonce: 1,
+          openVCs: 0,
+          vcRootHash: emptyRootHash,
+          partyA: partyA,
+          partyI: ingridAddress,
+          balanceA: balanceA,
+          balanceI: balanceI,
+          isSettling: true
+        }
+
+        // url requests
+        client.ingridUrl = 'ingridUrl'
+        const mock = new MockAdapter(axios)
+        // when requesting subchanBI id
+        let url = `${client.ingridUrl}/ledgerchannel?a=${partyA}`
+        mock.onGet(url).reply(() => {
+          return [200, lcId]
+        })
+        // calling getLc
+        url = `${client.ingridUrl}/ledgerchannel/${lcId}`
+        mock.onGet(url).reply(() => {
+          return [200, params]
+        })
+        const response = await client.withdrawFinal()
+        // assert.equal(response, ':)')
         assert.ok(Web3.utils.isHexStrict(response.transactionHash))
       })
     })
