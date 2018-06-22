@@ -1667,28 +1667,6 @@ class Connext {
     return result
   }
 
-  async byzantineCloseChannelContractHandler (lcId) {
-    const methodName = 'byzantineCloseChannelContractHandler'
-    const isHexStrict = { presence: true, isHexStrict: true }
-    Connext.validatorsResponseToError(
-      validate.single(lcId, isHexStrict),
-      methodName,
-      'lcId'
-    )
-    const accounts = await this.web3.eth.getAccounts()
-    const results = await this.channelManagerInstance.methods
-      .byzantineCloseChannel(lcId)
-      .send({
-        from: accounts[0]
-      })
-    if (!result.transactionHash) {
-      throw new Error(
-        `[${methodName}] byzantineCloseChannel transaction failed.`
-      )
-    }
-    return results
-  }
-
   async initVcStateContractHandler ({
     subchanId,
     vcId,
@@ -1854,6 +1832,55 @@ class Connext {
       })
     if (!results.transactionHash) {
       throw new Error(`[${methodName}] settleVC transaction failed.`)
+    }
+    return results
+  }
+
+  async closeVirtualChannelContractHandler ({lcId, vcId}) {
+    const methodName = 'closeVirtualChannelContractHandler'
+    const isHexStrict = { presence: true, isHexStrict: true }
+    Connext.validatorsResponseToError(
+      validate.single(lcId, isHexStrict),
+      methodName,
+      'lcId'
+    )
+    Connext.validatorsResponseToError(
+      validate.single(vcId, isHexStrict),
+      methodName,
+      'vcId'
+    )
+    const accounts = await this.web3.eth.getAccounts()
+    const results = await this.channelManagerInstance.methods
+      .closeVirtualChannel(lcId, vcId)
+      .send({
+        from: accounts[0]
+      })
+    if (!results.transactionHash) {
+      throw new Error(
+        `[${methodName}] transaction failed.`
+      )
+    }
+    return results
+  }
+
+  async byzantineCloseChannelContractHandler (lcId) {
+    const methodName = 'byzantineCloseChannelContractHandler'
+    const isHexStrict = { presence: true, isHexStrict: true }
+    Connext.validatorsResponseToError(
+      validate.single(lcId, isHexStrict),
+      methodName,
+      'lcId'
+    )
+    const accounts = await this.web3.eth.getAccounts()
+    const results = await this.channelManagerInstance.methods
+      .byzantineCloseChannel(lcId)
+      .send({
+        from: accounts[0]
+      })
+    if (!result.transactionHash) {
+      throw new Error(
+        `[${methodName}] transaction failed.`
+      )
     }
     return results
   }
