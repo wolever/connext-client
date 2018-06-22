@@ -855,7 +855,7 @@ describe('Connext', async () => {
     web3 = new Web3(`ws://localhost:${port}`)
     let client = new Connext({ web3 }, Web3)
     describe('real Web3 and valid parameters', () => {
-      it.only('should init a virtual channel state on chain', async () => {
+      it('should init a virtual channel state on chain', async () => {
         // get accounts
         const accounts = await client.web3.eth.getAccounts()
         const subchanId =
@@ -920,7 +920,56 @@ describe('Connext', async () => {
     })
   })
 
-  describe('settleVcContractHandler', () => {})
+  describe('settleVcContractHandler', () => {
+    const port = process.env.ETH_PORT ? process.env.ETH_PORT : '9545'
+    web3 = new Web3(`ws://localhost:${port}`)
+    let client = new Connext({ web3 }, Web3)
+    describe('real Web3 and valid parameters', () => {
+      it.only('should settle a vc state on chain', async () => {
+        // get accounts
+        const accounts = await client.web3.eth.getAccounts()
+        const subchanId =
+          '0x4b7c97c3ae6abca2ff2ba4e31ee594ac5e1b1f12d8fd2097211569f80dbb7d08'
+        partyA = accounts[0]
+        partyB = accounts[1]
+        ingridAddress = client.ingridAddress = accounts[2]
+        const vcId = "0x6c08ce0d3bcacaf067e75801c2e8aa5a29dd19a20ba773a2918d73765e255941"
+        console.log(vcId)
+        const nonce = 2
+        const balanceA = Web3.utils.toBN(Web3.utils.toWei('0', 'ether'))
+        const balanceB = Web3.utils.toBN(Web3.utils.toWei('2', 'ether'))
+
+        // generate sigA
+        const hash = Connext.createVCStateUpdateFingerprint({
+          vcId,
+          nonce,
+          partyA,
+          partyB,
+          balanceA,
+          balanceB
+        })
+        const sigA = await client.web3.eth.sign(hash, accounts[0])
+        console.log('hash:', hash)
+        console.log('sigA:', sigA)
+        
+        // client call
+        const results = await client.settleVcContractHandler({
+          subchan: subchanId,
+          vcId,
+          nonce,
+          partyA,
+          partyB,
+          balanceA,
+          balanceB,
+          sigA,
+        })
+        assert.ok(
+          results.transactionHash !== null &&
+          results.transactionHash !== undefined
+        )
+      })
+    })
+  })
 
   describe('generateVcRootHash', () => {
     const port = process.env.ETH_PORT ? process.env.ETH_PORT : '9545'
