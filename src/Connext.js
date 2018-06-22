@@ -324,19 +324,15 @@ class Connext {
    *
    */
   async withdrawFinal () {
+    const methodName = 'withdrawFinal'
     const lcId = await this.getLcId()
     const lc = await this.getLc(lcId)
     if (lc.openVCs > 0) {
       throw new Error(`[${methodName}] Close open VCs before withdraw final.`)
     }
-    // to do: dependent on lc
-    // if (!lc.isSettling) {
-    //   throw new Error('Ledger channel is not in settlement state.')
-    // }
-    if (lc.updateLcTimeout < new Date().getTime()) {
-      throw new Error(
-        `[${methodName}] Ledger channel is still in challenge phase.`
-      )
+    // to do: dependent on lc status
+    if (!lc.isSettling) {
+      throw new Error('Ledger channel is not in settlement state.')
     }
     const results = await this.byzantineCloseChannelContractHandler(lcId)
     return results
@@ -1944,7 +1940,6 @@ class Connext {
       partyA = accounts[0]
     }
     // get my LC with ingrid
-
     const response = await axios.get(
       `${this.ingridUrl}/ledgerchannel?a=${partyA}`
     )
