@@ -325,8 +325,7 @@ class Connext {
    */
   async withdrawFinal () {
     const methodName = 'withdrawFinal'
-    const lcId = await this.getLcId()
-    const lc = await this.getLc(lcId)
+    const lc = await this.getLcByPartyA()
     if (lc.openVCs > 0) {
       throw new Error(`[${methodName}] Close open VCs before withdraw final.`)
     }
@@ -334,7 +333,7 @@ class Connext {
     if (!lc.isSettling) {
       throw new Error('Ledger channel is not in settlement state.')
     }
-    const results = await this.byzantineCloseChannelContractHandler(lcId)
+    const results = await this.byzantineCloseChannelContractHandler(lc.channelId)
     return results
   }
 
@@ -430,7 +429,7 @@ class Connext {
         'deposit'
       )
     }
-    const lcIdA = await this.getLcId()
+    const lcA = await this.getLcByPartyA()
     const lcIdB = await this.getLcId(to)
     // validate the subchannels exist
     if (lcIdB === null || lcIdA === null) {
@@ -438,11 +437,9 @@ class Connext {
         `[${methodName}] Missing one or more required subchannels for VC.`
       )
     }
-    // get ledger channel A
-    const lcA = await this.getLc(lcIdA)
     // generate initial vcstate
     const vcId = Connext.getNewChannelId()
-    console.log('subchanAI id:', lcIdA)
+    console.log('subchanAI id:', lcA.channelId)
     console.log('subchanBI id:', lcIdB)
     console.log('openChannel vcID:', vcId)
     const vc0 = {
@@ -451,14 +448,14 @@ class Connext {
       partyA: lcA.partyA,
       partyB: to,
       partyI: this.ingridAddress,
-      subchanAI: lcIdA,
+      subchanAI: lcA.channelId,
       subchanBI: lcIdB,
       balanceA: deposit || Web3.utils.toBN(lcA.balanceA),
       balanceB: Web3.utils.toBN(0)
     }
     const sigVC0 = await this.createVCStateUpdate(vc0)
     console.log('sigVC0:', vc0)
-    let vc0s = await this.getVcInitialStates(lcIdA) // array of vc state objs
+    let vc0s = await this.getVcInitialStates(lcA.channelId) // array of vc state objs
     vc0s.push(vc0)
     const newVcRootHash = Connext.generateVcRootHash({
       vc0s
@@ -2005,8 +2002,8 @@ class Connext {
    *
    * @param {String} lcId - the ledgerchannel id
    */
-  async getLc (lcId) {
-    const methodName = 'getLc'
+  async getLcById (lcId) {
+    const methodName = 'getLcById'
     const isHexStrict = { presence: true, isHexStrict: true }
     Connext.validatorsResponseToError(
       validate.single(lcId, isHexStrict),
@@ -2398,14 +2395,14 @@ class Connext {
     let lc, lcState, vc0s
     if (accounts[0].toLowerCase() === partyA) {
       // accounts[0] is vcpartyA, lcAgentA is paying money
-      lc = await this.getLc(subchanAI)
+      lc = await this.getLcById(subchanAI)
       vc0s = await this.getVcInitialStates(subchanAI)
       lcState.lcId = subchanAI
       lcState.balanceA = lc.balanceA - balanceB // balanceB in VC is amount A paid
       lcState.balanceI = lc.balanceI + balanceB
     } else if (accounts[0].toLowerCase() === partyB) {
       // accounts[0] is partyB, vcAgentA is making money
-      lc = await this.getLc(subchanBI)
+      lc = await this.getLcById(subchanBI)
       vc0s = await this.getVcInitialStates(subchanBI)
       lcState.lcId = subchanBI
       lcState.balanceA = lc.balanceA + balanceB // lc balance inc. by amount earned

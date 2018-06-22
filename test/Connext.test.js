@@ -2005,8 +2005,36 @@ describe('ingridClientRequests', () => {
       })
     })
 
+    describe('getLcById', async () => {
+      it.only('should return lc with specified ID', async() => {
+        const accounts = await client.web3.eth.getAccounts()
+        ingridAddress = client.ingridAddress = accounts[2]
+        ledgerChannel = {
+          "state": 0, // status of ledger channel
+          "balanceA": "10000",
+          "balanceI": "0",
+          "channelId": "0x1000000000000000000000000000000000000000000000000000000000000000",
+          "partyA": partyA,
+          "partyI": ingridAddress,
+          "nonce": 0,
+          "openVcs": 0,
+          "vcRootHash": emptyRootHash
+        }
+        url = `${client.ingridUrl}/ledgerchannel/${ledgerChannel.channelId}`
+        mock.onGet(url).reply(() => {
+          return [
+            200,
+            ledgerChannel
+          ]
+        })
+        const res = await client.getLcById(ledgerChannel.channelId)
+        assert.deepEqual(res, ledgerChannel)
+      })
+
+    })
+
     describe('getLcByPartyA', async () => {
-      it.only('should return lc with partyA = accounts[0] if partyA is not supplied', async() => {
+      it('should return lc with partyA = accounts[0] if partyA is not supplied', async() => {
         const accounts = await client.web3.eth.getAccounts()
         partyA = accounts[0]
         partyB = accounts[1]
@@ -2032,7 +2060,7 @@ describe('ingridClientRequests', () => {
         const res = await client.getLcByPartyA()
         assert.equal(res.partyA, partyA)
       })
-      it.only('should return lc with agentA = accounts[1]', async() => {
+      it('should return lc with agentA = accounts[1]', async() => {
         const accounts = await client.web3.eth.getAccounts()
         partyA = accounts[0]
         partyB = accounts[1]
