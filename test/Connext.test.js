@@ -595,13 +595,62 @@ describe('Connext', async () => {
     })
   })
 
+  describe('checkpoint', () => {
+    // init web3
+    const port = process.env.ETH_PORT ? process.env.ETH_PORT : '9545'
+    web3 = new Web3(`ws://localhost:${port}`)
+    let client = new Connext({ web3 }, Web3)
+    describe('Web3 and contract properly initialized, valid paramereters', () => {
+      it.only('should update the mapping in the contract when checkpointed', async () => {
+        const accounts = await client.web3.eth.getAccounts()
+        const lcId = '0x4b7c97c3ae6abca2ff2ba4e31ee594ac5e1b1f12d8fd2097211569f80dbb7d08'
+        const balanceA = Web3.utils.toBN(Web3.utils.toWei('2', 'ether'))
+        const balanceI = Web3.utils.toBN(Web3.utils.toWei('3', 'ether'))
+        partyA = accounts[0]
+        ingridAddress = client.ingridAddress = lc0.partyI = accounts[2]
+        const params = {
+          isClose: false,
+          lcId: lcId,
+          nonce: 1,
+          openVCs: 0,
+          vcRootHash: emptyRootHash,
+          partyA: partyA,
+          partyI: ingridAddress,
+          balanceA: balanceA,
+          balanceI: balanceI,
+          sigA: ''
+        }
+        const hash = await Connext.createLCStateUpdateFingerprint(params)
+        const sigI = await client.web3.eth.sign(hash, accounts[2])
+        params.sigI = sigI
+        // mock client requests
+        const mock = new MockAdapter(axios)
+        // calling getLcId
+        mock.onGet(`${client.ingridUrl}/ledgerchannel?a=${partyA}`).reply(() => {
+          return [200, lcId]
+        })
+        // calling getLatestLedgerStateUpdate
+        mock.onGet(`${client.ingridUrl}/ledgerchannel/${lcId}/lateststate`).reply(() => {
+          return [
+            200,
+            params
+          ]
+        })
+
+        // actual request
+        const results = await client.checkpoint()
+        assert.ok(Web3.utils.isHexStrict(response.transactionHash))
+      })
+    })
+  })
+
   describe('createLedgerChannelContractHandler', () => {
     // init web3
     const port = process.env.ETH_PORT ? process.env.ETH_PORT : '9545'
     web3 = new Web3(`ws://localhost:${port}`)
     let client = new Connext({ web3 }, Web3)
     describe('Web3 and contract properly initialized, valid parameters', () => {
-      it.only('should call createChannel on the channel manager instance', async () => {
+      it('should call createChannel on the channel manager instance', async () => {
         const accounts = await client.web3.eth.getAccounts()
         ingridAddress = accounts[2]
         const balanceA = Web3.utils.toBN(Web3.utils.toWei('5', 'ether'))
@@ -647,7 +696,7 @@ describe('Connext', async () => {
     web3 = new Web3(`ws://localhost:${port}`)
     let client = new Connext({ web3 }, Web3)
     describe('Web3 and contract properly initialized, valid parameters', async () => {
-      it.only('should call joinChannel on the channel manager instance', async () => {
+      it('should call joinChannel on the channel manager instance', async () => {
         const accounts = await client.web3.eth.getAccounts()
         client.ingridAddress = accounts[2]
         const params = {
@@ -706,7 +755,7 @@ describe('Connext', async () => {
     web3 = new Web3(`ws://localhost:${port}`)
     let client = new Connext({ web3 }, Web3)
     describe('Web3 and contract properly initialized, valid parameters', async () => {
-      it.only('should call updateLcState on the channel manager instance with no open VCs', async () => {
+      it('should call updateLcState on the channel manager instance with no open VCs', async () => {
         const accounts = await client.web3.eth.getAccounts()
         partyA = accounts[0]
         ingridAddress = client.ingridAddress = lc0.partyI = accounts[2]
@@ -998,7 +1047,7 @@ describe('Connext', async () => {
     web3 = new Web3(`ws://localhost:${port}`)
     let client = new Connext({ web3 }, Web3)
     describe('real Web3 and valid parameters', () => {
-      it.only('should settle a vc state on chain', async () => {
+      it('should settle a vc state on chain', async () => {
         // get accounts
         const lcId =
           '0x4b7c97c3ae6abca2ff2ba4e31ee594ac5e1b1f12d8fd2097211569f80dbb7d08'
