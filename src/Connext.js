@@ -563,7 +563,7 @@ class Connext {
     )
     // get the vc
     const vc = await this.getChannel(channelId)
-    // calculate new balanceB
+    // generate new state update
     const state = {
       vcId: channelId,
       nonce: vc.nonce + 1,
@@ -572,7 +572,6 @@ class Connext {
       balanceA: Web3.utils.toBN(balanceA),
       balanceB: Web3.utils.toBN(balanceB)
     }
-
     const sig = await this.createVCStateUpdate(state)
     console.log('state:', state)
     console.log('state sigA:', sig)
@@ -1750,7 +1749,7 @@ class Connext {
   }
 
   async settleVcContractHandler ({
-    subchan,
+    subchanId,
     vcId,
     nonce,
     partyA,
@@ -1768,9 +1767,9 @@ class Connext {
     const isBN = { presence: true, isBN: true }
     const isHex = { presence: true, isHex: true }
     Connext.validatorsResponseToError(
-      validate.single(subchan, isHexStrict),
+      validate.single(subchanId, isHexStrict),
       methodName,
-      'subchan'
+      'subchanId'
     )
     Connext.validatorsResponseToError(
       validate.single(vcId, isHexStrict),
@@ -1810,7 +1809,7 @@ class Connext {
     const accounts = await this.web3.eth.getAccounts()
     const results = await this.channelManagerInstance.methods
       .settleVC(
-        subchan,
+        subchanId,
         vcId,
         nonce,
         partyA,
@@ -2524,38 +2523,35 @@ class Connext {
       methodName,
       'vcId'
     )
-    const accounts = await this.getAccounts()
+    const accounts = await this.web3.eth.getAccounts()
     const vc0 = await this.getVcInitialState(vcId)
     let subchan
-    if (accounts[0] === vc0.agentA) {
+    if (accounts[0] === vc0.partyA) {
       subchan = vc0.subchanAI
-    } else if (accounts[0] == vc0.agentB) {
+    } else if (accounts[0] == vc0.partyB) {
       subchan = vc0.subchanBI
     }
     const initResult = await this.initVcStateContractHandler({
-      subchan,
+      subchanId: subchan,
       vcId,
       partyA: vc0.partyA,
       partyB: vc0.partyB,
-      balanceA: vc0.balanceA,
-      balanceB: vc0.balanceB,
+      balanceA: Web3.utils.toBN(vc0.balanceA),
+      balanceB: Web3.utils.toBN(vc0.balanceB),
       sigA: vc0.sigA,
-      sigB: vc0.sigB
+      nonce: vc0.nonce
     })
     if (initResult) {
-      const vcState = await this.getLatestVirtualDoubleSignedStateUpdate({
-        vcId
-      })
+      const vcState = await this.getLatestVirtualDoubleSignedStateUpdate(vcId)
       const settleResult = await this.settleVcContractHandler({
-        subchan,
+        subchanId: subchan,
         vcId,
         nonce: vcState.nonce,
         partyA: vcState.partyA,
         partyB: vcState.partyB,
-        balanceA: vcState.balanceA,
-        balanceB: vcState.balanceB,
+        balanceA: Web3.utils.toBN(vcState.balanceA),
+        balanceB: Web3.utils.toBN(vcState.balanceB),
         sigA: vcState.sigA,
-        sigB: vcState.sigB
       })
       return settleResult
     } else {

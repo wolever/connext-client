@@ -132,9 +132,9 @@ describe('Connext', async () => {
           partyB = accounts[1]
           ingridAddress = client.ingridAddress = accounts[2]
           const subchanAI =
-            '0xc06672adc237aeabb9d8046b34ce7b7f783461f4fe1f8ce7e2efb740c64e3c6d'
+            '0x73507f1b3aba85ff6794f4d27fa8e4cbf6daf294c09912c4856428e1e1b2c610'
           const subchanBI =
-            '0x271e72f1c740ef558f8702b0ba953c0fc30a4598bdc0e25633a8dcdc8bd0814d'
+            '0x129ef8385463750d5557c11ee3a2acbb935e1702d342f287aaa0123bfa82a707'
           // url requests
           client.ingridUrl = 'ingridUrl'
           const mock = new MockAdapter(axios)
@@ -171,9 +171,7 @@ describe('Connext', async () => {
           mock.onGet(url).reply(() => {
             return [
               200,
-              {
-                data: []
-              }
+              []
             ]
           })
           // when posting to client
@@ -209,11 +207,11 @@ describe('Connext', async () => {
           partyB = accounts[1]
           ingridAddress = client.ingridAddress = accounts[2]
           const channelId =
-            '0x16fa1fb8a0c0c3eb5d44f5beaf5b27560e13b069fb111e1a4337d1663c11e9a6'
+            '0xc025e912181796cf8c15c86558ad580b6ab4a6779c0965d70ba25dc6509a0e13'
           const subchanAI =
-            '0xc06672adc237aeabb9d8046b34ce7b7f783461f4fe1f8ce7e2efb740c64e3c6d'
+            '0x73507f1b3aba85ff6794f4d27fa8e4cbf6daf294c09912c4856428e1e1b2c610'
           const subchanBI =
-            '0x271e72f1c740ef558f8702b0ba953c0fc30a4598bdc0e25633a8dcdc8bd0814d'
+            '0x129ef8385463750d5557c11ee3a2acbb935e1702d342f287aaa0123bfa82a707'
           // url requests
           client.ingridUrl = 'ingridUrl'
           const mock = new MockAdapter(axios)
@@ -228,8 +226,8 @@ describe('Connext', async () => {
                 partyA: partyA,
                 partyB: partyB,
                 partyI: ingridAddress,
-                subchanAI: '0xc06672adc237aeabb9d8046b34ce7b7f783461f4fe1f8ce7e2efb740c64e3c6d',
-                subchanBI: '0x271e72f1c740ef558f8702b0ba953c0fc30a4598bdc0e25633a8dcdc8bd0814d',
+                subchanAI: subchanAI,
+                subchanBI: subchanBI,
                 balanceA: Web3.utils.toBN(Web3.utils.toWei('5', 'ether')),
                 balanceB: Web3.utils.toBN('0')
               }
@@ -244,7 +242,7 @@ describe('Connext', async () => {
               {
                 data: {
                   ledgerChannel: {
-                    id: '0x271e72f1c740ef558f8702b0ba953c0fc30a4598bdc0e25633a8dcdc8bd0814d'
+                    id: subchanBI
                   }
                 }
               }
@@ -258,20 +256,18 @@ describe('Connext', async () => {
               {
                 data: {
                   ledgerChannel: {
-                    id: '0xc06672adc237aeabb9d8046b34ce7b7f783461f4fe1f8ce7e2efb740c64e3c6d'
+                    id: subchanAI
                   }
                 }
               }
             ]
           })
           // when requesting vc initial states
-          url = `${client.ingridUrl}/ledgerchannel/${subchanBI}/virtualchannel/initialstate`
+          url = `${client.ingridUrl}/ledgerchannel/${subchanBI}/virtualchannel/initialstates`
           mock.onGet(url).reply(() => {
             return [
               200,
-              {
-                data: []
-              }
+              []
             ]
           })
           // when posting to ingrid
@@ -306,13 +302,15 @@ describe('Connext', async () => {
           ingridAddress = client.ingridAddress = accounts[2]
           // take from console.log of above, has to be better way of doing this
           const channelId =
-            '0x16fa1fb8a0c0c3eb5d44f5beaf5b27560e13b069fb111e1a4337d1663c11e9a6'
+            '0xc025e912181796cf8c15c86558ad580b6ab4a6779c0965d70ba25dc6509a0e13'
+          const subchanAI = '0x73507f1b3aba85ff6794f4d27fa8e4cbf6daf294c09912c4856428e1e1b2c610'
+          const subchanBI = '0x129ef8385463750d5557c11ee3a2acbb935e1702d342f287aaa0123bfa82a707'
           const balanceA = Web3.utils.toBN(Web3.utils.toWei('4', 'ether'))
           const balanceB = Web3.utils.toBN(Web3.utils.toWei('1', 'ether'))
           // url requests
           client.ingridUrl = 'ingridUrl'
           const mock = new MockAdapter(axios)
-          // when requesting the virtual channel object
+          // when requesting the virtual channel object before updating balance
           let url = `${client.ingridUrl}/virtualchannel/${channelId}`
           mock.onGet(url).reply(() => {
             return [
@@ -323,8 +321,8 @@ describe('Connext', async () => {
                 partyA: partyA,
                 partyB: partyB,
                 partyI: ingridAddress,
-                subchanAI: '0xc06672adc237aeabb9d8046b34ce7b7f783461f4fe1f8ce7e2efb740c64e3c6d',
-                subchanBI: '0x271e72f1c740ef558f8702b0ba953c0fc30a4598bdc0e25633a8dcdc8bd0814d',
+                subchanAI: subchanAI,
+                subchanBI: subchanBI,
                 balanceA: Web3.utils.toBN(Web3.utils.toWei('5', 'ether')),
                 balanceB: Web3.utils.toBN('0')
               }
@@ -339,7 +337,7 @@ describe('Connext', async () => {
               {
                 data: {
                   ledgerChannel: {
-                    id: '0xc06672adc237aeabb9d8046b34ce7b7f783461f4fe1f8ce7e2efb740c64e3c6d'
+                    id: subchanAI
                   }
                 }
               }
@@ -353,7 +351,7 @@ describe('Connext', async () => {
               {
                 data: {
                   ledgerChannel: {
-                    id: '0x271e72f1c740ef558f8702b0ba953c0fc30a4598bdc0e25633a8dcdc8bd0814d'
+                    id: subchanBI
                   }
                 }
               }
@@ -363,9 +361,7 @@ describe('Connext', async () => {
           mock.onPost().reply(() => {
             return [
               200,
-              {
-                data: {}
-              }
+              {}
             ]
           })
           // client results
@@ -374,7 +370,7 @@ describe('Connext', async () => {
             balanceA,
             balanceB
           })
-          assert.deepEqual(results, { data: {} })
+          assert.deepEqual(results, {})
         })
       })
     })
@@ -650,7 +646,7 @@ describe('Connext', async () => {
     web3 = new Web3(`ws://localhost:${port}`)
     let client = new Connext({ web3, ingridAddress, ingridUrl }, Web3)
     describe('Web3 and contract properly initialized, valid parameters', () => {
-      it.only('should call withdrawFinal on lc that has been settled on chain', async () => {
+      it('should call withdrawFinal on lc that has been settled on chain', async () => {
         const accounts = await client.web3.eth.getAccounts()
         partyA = accounts[0]
         ingridAddress = client.ingridAddress = accounts[2]
@@ -685,6 +681,108 @@ describe('Connext', async () => {
         })
         const response = await client.withdrawFinal()
         // assert.equal(response, ':)')
+        assert.ok(Web3.utils.isHexStrict(response.transactionHash))
+      })
+    })
+  })
+
+  describe('byzantineCloseVc', () => {
+    // init web3
+    const port = process.env.ETH_PORT ? process.env.ETH_PORT : '9545'
+    web3 = new Web3(`ws://localhost:${port}`)
+    let client = new Connext({ web3, ingridAddress, ingridUrl }, Web3)
+    describe('Web3 and contract properly initialized, valid parameters', () => {
+      it.only('should call byzantineCloseVc which calls initVC and settleVC on contract', async () => {
+        const accounts = await client.web3.eth.getAccounts()
+        partyA = accounts[0]
+        partyB = accounts[1]
+        ingridAddress = client.ingridAddress = accounts[2]
+        const vcId = '0xc025e912181796cf8c15c86558ad580b6ab4a6779c0965d70ba25dc6509a0e13'
+        const subchanAIId = '0x73507f1b3aba85ff6794f4d27fa8e4cbf6daf294c09912c4856428e1e1b2c610'
+        const subchanBIId = '0x129ef8385463750d5557c11ee3a2acbb935e1702d342f287aaa0123bfa82a707'
+        // initial state
+        let state = {
+          vcId,
+          subchanAI: subchanAIId,
+          subchanBI: subchanBIId,
+          nonce: 0,
+          partyA,
+          partyB,
+          balanceA: Web3.utils.toBN(Web3.utils.toWei('5', 'ether')),
+          balanceB: Web3.utils.toBN(Web3.utils.toWei('0', 'ether')),
+        }
+        const hash0 = Connext.createVCStateUpdateFingerprint(state)
+        const sigA0 = await client.web3.eth.sign(hash0, accounts[0])
+        const sigB0 = await client.web3.eth.sign(hash0, accounts[1])
+        // state 1
+        state.nonce = 1
+        state.balanceA = Web3.utils.toBN(Web3.utils.toWei('4', 'ether'))
+        state.balanceB = Web3.utils.toBN(Web3.utils.toWei('1', 'ether'))
+        const hash1 = Connext.createVCStateUpdateFingerprint(state)
+        const sigA1 = await client.web3.eth.sign(hash1, accounts[0])
+        const sigB1 = await client.web3.eth.sign(hash1, accounts[1])
+        // url requests
+        const mock = new MockAdapter(axios)
+        // when requesting initial state of VC
+        let url = `${client.ingridUrl}/virtualchannel/${vcId}/intialstate`
+        mock.onGet(url).reply(() => {
+          return [
+            200,
+            {
+              vcId,
+              subchanAI: subchanAIId,
+              subchanBI: subchanBIId,
+              nonce: 0,
+              partyA,
+              partyB,
+              balanceA: Web3.utils.toBN(Web3.utils.toWei('5', 'ether')),
+              balanceB: Web3.utils.toBN(Web3.utils.toWei('0', 'ether')),
+              sigA: sigA0,
+              sigB: sigB0
+            }
+          ]
+        })
+        // when requesting latest double signed state of VC
+        url = `${client.ingridUrl}/virtualchannel/${vcId}/lateststate/doublesigned`
+        mock.onGet(url).reply(() => {
+          return [
+            200,
+            {
+              vcId,
+              subchanAI: subchanAIId,
+              subchanBI: subchanBIId,
+              nonce: 1,
+              partyA,
+              partyB,
+              balanceA: Web3.utils.toBN(Web3.utils.toWei('4', 'ether')),
+              balanceB: Web3.utils.toBN(Web3.utils.toWei('1', 'ether')),
+              sigA: sigA1,
+              sigB: sigB1
+            }
+          ]
+        })
+        // when requesting initial states of the subchanAI
+        url = `${client.ingridUrl}/ledgerchannel/${subchanAIId}/virtualchannel/initialstates`
+        mock.onGet(url).reply(() => {
+          return [
+            200,
+            [
+              // returns list of vc initial states
+              {
+                subchanAIId,
+                vcId,
+                nonce: 0,
+                partyA,
+                partyB,
+                balanceA: Web3.utils.toBN(Web3.utils.toWei('5', 'ether')),
+                balanceB: Web3.utils.toBN(Web3.utils.toWei('0', 'ether')),
+                sigA: sigA0
+              }
+            ]
+          ]
+        })
+
+        const response = await client.byzantineCloseVc(vcId)
         assert.ok(Web3.utils.isHexStrict(response.transactionHash))
       })
     })
@@ -742,11 +840,11 @@ describe('Connext', async () => {
     web3 = new Web3(`ws://localhost:${port}`)
     let client = new Connext({ web3 }, Web3)
     describe('Web3 and contract properly initialized, valid parameters', async () => {
-      it('should call joinChannel on the channel manager instance', async () => {
+      it('should call joinChannel on the channel manager instance (subchanAI)', async () => {
         const accounts = await client.web3.eth.getAccounts()
         client.ingridAddress = accounts[2]
         const params = {
-          lcId: '0x4b7c97c3ae6abca2ff2ba4e31ee594ac5e1b1f12d8fd2097211569f80dbb7d08' // subchan AI ID
+          lcId: '0x73507f1b3aba85ff6794f4d27fa8e4cbf6daf294c09912c4856428e1e1b2c610' // subchan AI ID
         }
         const response = await client.joinLedgerChannelContractHandler(params)
         assert.ok(
@@ -754,11 +852,11 @@ describe('Connext', async () => {
             response.transactionHash !== undefined
         )
       })
-      it('should call joinChannel on the channel manager instance', async () => {
+      it('should call joinChannel on the channel manager instance (subchanBI)', async () => {
         const accounts = await client.web3.eth.getAccounts()
         client.ingridAddress = accounts[2]
         const params = {
-          lcId: '0x9d6bfafec5f20b6a493bef73c7773713bd426d29148ec35aff12077578f81f72' // subchan BI ID
+          lcId: '0x129ef8385463750d5557c11ee3a2acbb935e1702d342f287aaa0123bfa82a707' // subchan BI ID
         }
         const response = await client.joinLedgerChannelContractHandler(params)
         assert.ok(
