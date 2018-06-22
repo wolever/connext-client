@@ -1877,7 +1877,7 @@ class Connext {
       .send({
         from: accounts[0]
       })
-    if (!result.transactionHash) {
+    if (!results.transactionHash) {
       throw new Error(
         `[${methodName}] transaction failed.`
       )
