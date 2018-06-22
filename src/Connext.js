@@ -1835,11 +1835,6 @@ class Connext {
       methodName,
       'sigA'
     )
-    Connext.validatorsResponseToError(
-      validate.single(sigB, isHex),
-      methodName,
-      'sigB'
-    )
     const accounts = await this.web3.eth.getAccounts()
     const results = await this.channelManagerInstance.methods
       .settleVC(
@@ -1850,11 +1845,12 @@ class Connext {
         partyB,
         balanceA,
         balanceB,
-        sigA,
-        sigB
+        sigA
       )
       .send({
-        from: accounts[0]
+        from: accounts[0],
+        gas: 4700000
+
       })
     if (!results.transactionHash) {
       throw new Error(`[${methodName}] settleVC transaction failed.`)
