@@ -618,7 +618,7 @@ describe('Connext', async () => {
           partyI: ingridAddress,
           balanceA: balanceA,
           balanceI: balanceI,
-          sigA: ''
+          sigA: ' '
         }
         const hash = await Connext.createLCStateUpdateFingerprint(params)
         const sigI = await client.web3.eth.sign(hash, accounts[2])
