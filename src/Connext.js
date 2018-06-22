@@ -735,24 +735,17 @@ class Connext {
     )
 
     // get decomposed lc updates from ingrid
-    const accounts = await this.web3.eth.getAccounts()
-    const vc = await this.getChannel(channelId)
-    // your vc? which agent?
-    let subchan
-    if (accounts[0].toLowerCase() === vc.partyA) {
-      subchan = vc.subchanAI
-    } else if (accounts[0].toLowerCase() === vc.partyB) {
-      subchan = vc.subchanBI
-    } else {
-      throw new Error(`[${methodName}] Not your channel to close.`)
-    }
+    const subchan = await this.getLcId()   
     // ping ingrid for decomposed updates
     // if doesnt respond, then settleVC for all VCIDs in LC
-    const lcStates = await this.getDecomposedLcStates({ vcId: channelId })
+    let lcStates = await this.getDecomposedLcStates(channelId)
     // the lc update for this subchan should be signed by ingrid
     // should you just call checkpoint to update the LC on chain with this?
-    if (lcStates) {
+    if (lcStates[subchan]) {
       // const result = await this.checkpoint() // maybe just post update cosig to ingrid?
+      // type casting, returns not as BN type so validation fails
+      lcStates[subchan].balanceA = Web3.utils.toBN(lcStates[subchan].balanceA)
+      lcStates[subchan].balanceI = Web3.utils.toBN(lcStates[subchan].balanceI)
       const sig = await this.createLCStateUpdate(lcStates[subchan])
       // post sig to ingrid
       const result = await axios.post(
@@ -761,7 +754,7 @@ class Connext {
           sig
         }
       )
-      return result
+      return result.data
     } else {
       // ingrid MIA, call settle vc on chain for each vcID
       // get initial states of VCs
