@@ -692,7 +692,7 @@ describe('Connext', async () => {
     web3 = new Web3(`ws://localhost:${port}`)
     let client = new Connext({ web3, ingridAddress, ingridUrl }, Web3)
     describe('Web3 and contract properly initialized, valid parameters', () => {
-      it.only('should call byzantineCloseVc which calls initVC and settleVC on contract', async () => {
+      it('should call byzantineCloseVc which calls initVC and settleVC on contract', async () => {
         const accounts = await client.web3.eth.getAccounts()
         partyA = accounts[0]
         partyB = accounts[1]
@@ -787,6 +787,75 @@ describe('Connext', async () => {
       })
     })
   })
+
+  describe('closeChannel', () => {
+    // init web3
+    const port = process.env.ETH_PORT ? process.env.ETH_PORT : '9545'
+    web3 = new Web3(`ws://localhost:${port}`)
+    let client = new Connext({ web3, ingridAddress, ingridUrl }, Web3)
+    describe('Valid parameters and correct web3', () => {
+     it.only('should call closeChannel on given channelId, decomposing into state updates', async () => {
+        // parameters
+        const accounts = await client.web3.eth.getAccounts()
+        partyA = accounts[0]
+        partyB = accounts[1]
+        ingridAddress = client.ingridAddress = accounts[2]
+        const vcId = '0xc025e912181796cf8c15c86558ad580b6ab4a6779c0965d70ba25dc6509a0e13'
+        const subchanAIId = '0x73507f1b3aba85ff6794f4d27fa8e4cbf6daf294c09912c4856428e1e1b2c610'
+        const subchanBIId = '0x129ef8385463750d5557c11ee3a2acbb935e1702d342f287aaa0123bfa82a707'
+        
+        // url requests
+        const mock = new MockAdapter(axios)
+        // when requesting subchanBI id
+        let url = `${client.ingridUrl}/ledgerchannel?a=${partyA}`
+        mock.onGet(url).reply(() => {
+          return [200, subchanAIId]
+        })
+        // when requesting decomposed ledger state updates
+        url = `${client.ingridUrl}/virtualchannel/${vcId}/decompose`
+        const data = {}
+        data[subchanAIId] = {
+          lcId: subchanAIId,
+          nonce: 1,
+          openVCs: 1,
+          vcRootHash: '0x421b9af3b91f2475a26671ea9217e632a6e7f5573b82343f1d5260b2a6f145a4',
+          partyA,
+          partyI: ingridAddress,
+          balanceA: Web3.utils.toBN('0'),
+          balanceI: Web3.utils.toBN(Web3.utils.toWei('5', 'ether'))
+        }
+        data[subchanBIId] = {}
+        mock.onGet(url).reply(() => {
+          return [
+            200,
+            data
+          ]
+        })
+        // on posting sig to client
+        mock.onPost().reply(() => {
+          return [
+            200,
+            ':)'
+          ]
+        })
+
+        const response = await client.closeChannel(vcId)
+        assert.equal(response, ':)')
+     })
+   })
+ })
+
+ describe('closeChannels', () => {
+    // init web3
+    const port = process.env.ETH_PORT ? process.env.ETH_PORT : '9545'
+    web3 = new Web3(`ws://localhost:${port}`)
+    let client = new Connext({ web3, ingridAddress, ingridUrl }, Web3)
+    describe('Valid parameters and correct web3', () => {
+      it('should call closeChannels, which calls closeChannel on an array of channelIds', () => {
+
+      })
+    })
+ })
 
   describe('createLedgerChannelContractHandler', () => {
     // init web3
