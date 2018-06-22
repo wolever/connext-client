@@ -71,13 +71,13 @@ describe('Connext', async () => {
           partyA = lc0.partyA = accounts[0]
           const initialDeposit = Web3.utils.toBN(Web3.utils.toWei('5', 'ether'))
           // url requests
-          let url = `${client.ingridUrl}/ledgerchannel/timer`
+          let url = `${client.ingridUrl}/ledgerchannel/challenge`
           const mock = new MockAdapter(axios)
           mock.onGet(url).reply(() => {
             return [
               200,
               {
-                data: 3600
+                challenge: 3600
               }
             ]
           })
@@ -794,7 +794,7 @@ describe('Connext', async () => {
     web3 = new Web3(`ws://localhost:${port}`)
     let client = new Connext({ web3, ingridAddress, ingridUrl }, Web3)
     describe('Valid parameters and correct web3', () => {
-     it.only('should call closeChannel on given channelId, decomposing into state updates', async () => {
+     it('should call closeChannel on given channelId, decomposing into state updates', async () => {
         // parameters
         const accounts = await client.web3.eth.getAccounts()
         partyA = accounts[0]
@@ -1998,16 +1998,13 @@ describe('ingridClientRequests', () => {
   })
 
   it('getLedgerChannelChallengeTimer', async () => {
-    const client = new Connext({ web3 }, createFakeWeb3())
-    client.ingridUrl = 'ingridUrl'
-    const ledgerChannelId = 'address'
-    const url = `${client.ingridUrl}/ledgerchannel/timer`
+    const client = new Connext({ web3, ingridAddress, ingridUrl }, createFakeWeb3())
+    const url = `${client.ingridUrl}/ledgerchannel/challenge`
     const mock = new MockAdapter(axios)
-    mock.onGet().reply(() => {
-      return [200, 3600]
+    mock.onGet(url).reply(() => {
+      return [200, { challenge: 3600 }]
     })
-    const res = await client.getLedgerChannelChallengeTimer('address')
-    console.log(res)
+    const res = await client.getLedgerChannelChallengeTimer(lcId)
     assert.deepEqual(res, 3600)
   })
 

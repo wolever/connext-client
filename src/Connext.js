@@ -2024,8 +2024,12 @@ class Connext {
    *
    */
   async getLedgerChannelChallengeTimer () {
-    const response = await axios.get(`${this.ingridUrl}/ledgerchannel/timer`)
-    return response.data
+    const response = await axios.get(`${this.ingridUrl}/ledgerchannel/challenge`)
+    if (response.data) {
+      return response.data.challenge
+    } else {
+      return response.data
+    }
   }
 
   // posts signature of lc0 to ingrid
