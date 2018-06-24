@@ -1,8 +1,9 @@
-const axios = require('axios')
+let axios = require('axios')
+
 const channelManagerAbi = require('../artifacts/LedgerChannel.json')
 const util = require('ethereumjs-util')
 import Web3 from 'web3'
-import validate from "validate.js"
+import validate from 'validate.js'
 const MerkleTree = require('./helpers/MerkleTree')
 const Utils = require('./helpers/utils')
 const crypto = require('crypto')
@@ -92,7 +93,8 @@ class Connext {
       ingridAddress = '',
       watcherUrl = '',
       ingridUrl = '',
-      contractAddress = '0xf25186b5081ff5ce73482ad761db0eb0d25abfbf'
+      contractAddress = '0x31713144d9ae2501e644a418dd9035ed840b1660',
+      hubAuth = 's%3AE_xMockGuJVqvIFRbP0RCXOYH5SRGHOe.zgEpYQg2KnkoFsdeD1CzAMLsu%2BmHET3FINdfZgw9xhs'
     },
     web3Lib = Web3
   ) {
@@ -104,6 +106,20 @@ class Connext {
       channelManagerAbi.abi,
       contractAddress
     )
+    this.config = {
+      headers: {
+        Cookie: `hub.sid=${hubAuth};`,
+        Authorization: `Bearer ${hubAuth}`
+      },
+      withAuth: true
+    }
+    this.axiosInstance = axios.create({
+      baseURL: ingridUrl,
+      headers: {
+        Cookie: `hub.sid=${hubAuth};`,
+        Authorization: `Bearer ${hubAuth}`
+      }
+    })
   }
 
   // WALLET FUNCTIONS
@@ -333,7 +349,9 @@ class Connext {
     if (!lc.isSettling) {
       throw new Error('Ledger channel is not in settlement state.')
     }
-    const results = await this.byzantineCloseChannelContractHandler(lc.channelId)
+    const results = await this.byzantineCloseChannelContractHandler(
+      lc.channelId
+    )
     return results
   }
 
@@ -663,7 +681,8 @@ class Connext {
         channelId,
         sig: sigB,
         balance
-      }
+      },
+      this.config
     )
     return response.data
   }
@@ -732,7 +751,7 @@ class Connext {
     )
 
     // get decomposed lc updates from ingrid
-    const subchan = await this.getLcId()   
+    const subchan = await this.getLcId()
     // ping ingrid for decomposed updates
     // if doesnt respond, then settleVC for all VCIDs in LC
     let lcStates = await this.getDecomposedLcStates(channelId)
@@ -749,7 +768,8 @@ class Connext {
         `${this.ingridUrl}/ledgerchannel/${subchan}/cosign`,
         {
           sig
-        }
+        },
+        this.config
       )
       return result.data
     } else {
@@ -1811,7 +1831,6 @@ class Connext {
       .send({
         from: accounts[0],
         gas: 4700000
-
       })
     if (!results.transactionHash) {
       throw new Error(`[${methodName}] settleVC transaction failed.`)
@@ -1819,7 +1838,7 @@ class Connext {
     return results
   }
 
-  async closeVirtualChannelContractHandler ({lcId, vcId}) {
+  async closeVirtualChannelContractHandler ({ lcId, vcId }) {
     const methodName = 'closeVirtualChannelContractHandler'
     const isHexStrict = { presence: true, isHexStrict: true }
     Connext.validatorsResponseToError(
@@ -1839,9 +1858,7 @@ class Connext {
         from: accounts[0]
       })
     if (!results.transactionHash) {
-      throw new Error(
-        `[${methodName}] transaction failed.`
-      )
+      throw new Error(`[${methodName}] transaction failed.`)
     }
     return results
   }
@@ -1861,9 +1878,7 @@ class Connext {
         from: accounts[0]
       })
     if (!results.transactionHash) {
-      throw new Error(
-        `[${methodName}] transaction failed.`
-      )
+      throw new Error(`[${methodName}] transaction failed.`)
     }
     return results
   }
@@ -1874,6 +1889,15 @@ class Connext {
   static validatorsResponseToError (validatorResponse, methodName, varName) {
     if (validatorResponse !== undefined) {
       const errorMessage = `[${methodName}][${varName}] : ${validatorResponse}`
+      throw new Error(errorMessage)
+    }
+  }
+
+  static hubsResponseToError (errorResponse, methodName, parameters = null) {
+    if (errorResponse !== undefined) {
+      const errorMessage = parameters
+        ? `[${methodName}] failed with parameters [${parameters}]. Status: ${errorResponse.status}, Url: ${errorResponse.config.url}`
+        : `[${methodName}] failed. Status: ${errorResponse.response.status}. Url: ${errorResponse.config.url}. Response: ${errorResponse.response.data}`
       throw new Error(errorMessage)
     }
   }
@@ -1903,7 +1927,8 @@ class Connext {
       'ledgerChannelId'
     )
     const response = await axios.get(
-      `${this.ingridUrl}/ledgerchannel/${ledgerChannelId}/lateststate`
+      `${this.ingridUrl}/ledgerchannel/${ledgerChannelId}/lateststate`,
+      this.config
     )
     return response.data
   }
@@ -1930,7 +1955,8 @@ class Connext {
     }
     // get my LC with ingrid
     const response = await axios.get(
-      `${this.ingridUrl}/ledgerchannel?a=${partyA}`
+      `${this.ingridUrl}/ledgerchannel?a=${partyA}`,
+      this.config
     )
     return response.data
   }
@@ -1949,7 +1975,8 @@ class Connext {
       'channelId'
     )
     const response = await axios.get(
-      `${this.ingridUrl}/virtualchannel/${channelId}`
+      `${this.ingridUrl}/virtualchannel/${channelId}`,
+      this.config
     )
     return response.data
   }
@@ -1973,7 +2000,8 @@ class Connext {
       'partyB'
     )
     const response = await axios.get(
-      `${this.ingridUrl}/virtualchannel?a=${partyA}&b=${partyB}`
+      `${this.ingridUrl}/virtualchannel?a=${partyA}&b=${partyB}`,
+      this.config
     )
     return response.data
   }
@@ -2010,13 +2038,16 @@ class Connext {
       methodName,
       'lcId'
     )
-    const response = await axios.get(`${this.ingridUrl}/ledgerchannel/${lcId}`)
+    const response = await axios.get(
+      `${this.ingridUrl}/ledgerchannel/${lcId}`,
+      this.config
+    )
     return response.data
   }
 
   /**
    * Returns object representing the ledger channel between partyA and Ingrid
-   * 
+   *
    * @param {String} partyA - partyA in ledger channel. Default is accounts[0]
    * @returns {Object} Ledger channel object
    */
@@ -2033,7 +2064,10 @@ class Connext {
       const accounts = await this.web3.eth.getAccounts()
       partyA = accounts[0]
     }
-    const response = await axios.get(`${this.ingridUrl}/ledgerchannel/a/${partyA}`)
+    const response = await axios.get(
+      `${this.ingridUrl}/ledgerchannel/a/${partyA}`,
+      this.config
+    )
     return response.data
   }
 
@@ -2044,11 +2078,14 @@ class Connext {
    *
    */
   async getLedgerChannelChallengeTimer () {
-    const response = await axios.get(`${this.ingridUrl}/ledgerchannel/challenge`)
-    if (response.data) {
+    const methodName = 'getLedgerChannelChallengeTimer'
+    try {
+      const response = await this.axiosInstance.get(
+        `${this.ingridUrl}/ledgerchannel/challenge`
+      )
       return response.data.challenge
-    } else {
-      return response.data
+    } catch (e) {
+      Connext.hubsResponseToError(e, methodName)
     }
   }
 
@@ -2076,14 +2113,11 @@ class Connext {
       'lcId'
     )
 
-    const accounts = await this.web3.eth.getAccounts()
+    console.log(`${this.ingridUrl}/ledgerchannel/${lcId}/request`)
     const response = await axios.post(
-      `${this.ingridUrl}/ledgerchannel/join?a=${accounts[0]}`,
-      {
-        lcId,
-        sig,
-        balanceA
-      }
+      `${this.ingridUrl}/ledgerchannel/${lcId}/request`,
+      {},
+      this.config
     )
     return response.data
   }
@@ -2126,7 +2160,8 @@ class Connext {
         balanceA,
         to,
         vcRootHash
-      }
+      },
+      this.config
     )
     return response.data
   }
@@ -2158,7 +2193,8 @@ class Connext {
       {
         sig,
         vcRootHash
-      }
+      },
+      this.config
     )
     return response.data
   }
@@ -2189,7 +2225,8 @@ class Connext {
       `${this.ingridUrl}/ledgerchannel/${lcId}/fastclose`,
       {
         sig
-      }
+      },
+      this.config
     )
     return response.data
   }
@@ -2226,7 +2263,8 @@ class Connext {
         sig,
         balanceA,
         balanceB
-      }
+      },
+      this.config
     )
     return response.data
   }
@@ -2257,7 +2295,8 @@ class Connext {
       {
         sig,
         balance
-      }
+      },
+      this.config
     )
     return response.data
   }
@@ -2294,7 +2333,8 @@ class Connext {
       'channelId'
     )
     const response = await axios.get(
-      `${this.ingridUrl}/virtualchannel/${channelId}/lateststate/doublesigned`
+      `${this.ingridUrl}/virtualchannel/${channelId}/lateststate/doublesigned`,
+      this.config
     )
     return response.data
   }
@@ -2443,7 +2483,8 @@ class Connext {
       'lcId'
     )
     const response = await axios.get(
-      `${this.ingridUrl}/ledgerchannel/${lcId}/virtualchannel/initialstates`
+      `${this.ingridUrl}/ledgerchannel/${lcId}/virtualchannel/initialstates`,
+      this.config
     )
     return response.data
   }
@@ -2472,7 +2513,8 @@ class Connext {
       'vcId'
     )
     const response = await axios.get(
-      `${this.ingridUrl}/virtualchannel/${vcId}/intialstate`
+      `${this.ingridUrl}/virtualchannel/${vcId}/intialstate`,
+      this.config
     )
     return response.data
   }
@@ -2494,7 +2536,8 @@ class Connext {
       'vcId'
     )
     const response = await axios.get(
-      `${this.ingridUrl}/virtualchannel/${vcId}/decompose`
+      `${this.ingridUrl}/virtualchannel/${vcId}/decompose`,
+      this.config
     )
     return response.data
   }
@@ -2512,7 +2555,8 @@ class Connext {
       'vcId'
     )
     const response = await axios.post(
-      `${this.ingridUrl}/virtualchannel/${vcId}/decompose`
+      `${this.ingridUrl}/virtualchannel/${vcId}/decompose`,
+      this.config
     )
     return response.data
   }
@@ -2568,7 +2612,7 @@ class Connext {
         partyB: vcState.partyB,
         balanceA: Web3.utils.toBN(vcState.balanceA),
         balanceB: Web3.utils.toBN(vcState.balanceB),
-        sigA: vcState.sigA,
+        sigA: vcState.sigA
       })
       return settleResult
     } else {
