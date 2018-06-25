@@ -1350,7 +1350,7 @@ class Connext {
     let elems, vcRootHash
     if (vc0s.length === 0) {
       // reset to initial value -- no open VCs
-      vcRootHash = '0x0'
+      vcRootHash = '0x0000000000000000000000000000000000000000000000000000000000000000'
     } else {
       elems = vc0s.map(vc0 => {
         // vc0 is the initial state of each vc
