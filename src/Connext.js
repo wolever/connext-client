@@ -189,11 +189,12 @@ class Connext {
     if (contractResult.transactionHash) {
       console.log('tx hash:', contractResult.transactionHash)
     } else {
-      throw new Error(`[${methodName}] Transaction was not successfully mined.`)
+      throw new Error(`[${methodName}] transaction was not successfully mined.`)
     }
-    // ping ingrid
-    const response = this.requestJoinLc({ lcId, sig, balanceA: initialDeposit })
-    return response
+    return lcId
+    // // ping ingrid
+    // const response = this.requestJoinLc({ lcId, sig, balanceA: initialDeposit })
+    // return response
   }
 
   /**
@@ -1464,7 +1465,8 @@ class Connext {
     const result = await this.channelManagerInstance.methods
       .LCOpenTimeout(lcId)
       .send({
-        from: accounts[0]
+        from: accounts[0],
+        gas: 470000
       })
     if (!result.transactionHash) {
       throw new Error(`[${methodName}] LCOpenTimeout transaction failed.`)
@@ -1572,7 +1574,7 @@ class Connext {
     )
     if (deposit) {
       Connext.validatorsResponseToError(
-        validate.single(lcId, isBN),
+        validate.single(deposit, isBN),
         methodName,
         'deposit'
       )
@@ -1896,7 +1898,7 @@ class Connext {
   static hubsResponseToError (errorResponse, methodName, parameters = null) {
     if (errorResponse !== undefined) {
       const errorMessage = parameters
-        ? `[${methodName}] failed with parameters [${parameters}]. Status: ${errorResponse.status}, Url: ${errorResponse.config.url}`
+        ? `[${methodName}] failed with parameters ${JSON.stringify(parameters)}. Status: ${errorResponse.response.status}. Url: ${errorResponse.config.url}. Response: ${errorResponse.response.data}`
         : `[${methodName}] failed. Status: ${errorResponse.response.status}. Url: ${errorResponse.config.url}. Response: ${errorResponse.response.data}`
       throw new Error(errorMessage)
     }
@@ -1926,10 +1928,7 @@ class Connext {
       methodName,
       'ledgerChannelId'
     )
-    const response = await axios.get(
-      `${this.ingridUrl}/ledgerchannel/${ledgerChannelId}/lateststate`,
-      this.config
-    )
+    const response = await this.axiosInstance.get(`${this.ingridUrl}/ledgerchannel/${ledgerChannelId}/lateststate`)
     return response.data
   }
 
@@ -2038,10 +2037,8 @@ class Connext {
       methodName,
       'lcId'
     )
-    const response = await axios.get(
-      `${this.ingridUrl}/ledgerchannel/${lcId}`,
-      this.config
-    )
+    const response = await this.axiosInstance.get(
+      `${this.ingridUrl}/ledgerchannel/${lcId}`)
     return response.data
   }
 
@@ -2064,10 +2061,14 @@ class Connext {
       const accounts = await this.web3.eth.getAccounts()
       partyA = accounts[0]
     }
-    const response = await axios.get(
-      `${this.ingridUrl}/ledgerchannel/a/${partyA}`,
-      this.config
-    )
+    // try {
+    // const response = await this.axiosInstance.get(
+    //   `${this.ingridUrl}/ledgerchannel/a/${partyA.toLowerCase()}`    )
+    // } catch (e) {
+    //   Connext.hubsResponseToError(e, methodName, { partyA })
+    // }
+        const response = await this.axiosInstance.get(
+      `${this.ingridUrl}/ledgerchannel/a/${partyA.toLowerCase()}`    )
     return response.data
   }
 
@@ -2079,47 +2080,39 @@ class Connext {
    */
   async getLedgerChannelChallengeTimer () {
     const methodName = 'getLedgerChannelChallengeTimer'
-    try {
-      const response = await this.axiosInstance.get(
-        `${this.ingridUrl}/ledgerchannel/challenge`
-      )
-      return response.data.challenge
-    } catch (e) {
-      Connext.hubsResponseToError(e, methodName)
-    }
+    // try {
+    //   const response = await this.axiosInstance.get(
+    //     `${this.ingridUrl}/ledgerchannel/challenge`
+    //   )
+    //   return response.data.challenge
+    // } catch (e) {
+    //   Connext.hubsResponseToError(e, methodName)
+    // }
+    console.log(this.ingridUrl)
+    const response = await this.axiosInstance.get(
+      `${this.ingridUrl}/ledgerchannel/challenge`
+    )
   }
 
   // posts signature of lc0 to ingrid
   // requests to open a ledger channel with the hub
-  async requestJoinLc ({ lcId, sig, balanceA }) {
+  // async requestJoinLc ({ lcId, sig, balanceA }) {
+  async requestJoinLc(lcId) {
     // validate params
     const methodName = 'requestJoinLc'
-    const isHex = { presence: true, isHex: true }
     const isHexStrict = { presence: true, isHexStrict: true }
-    const isBN = { presence: true, isBN: true }
-    Connext.validatorsResponseToError(
-      validate.single(sig, isHex),
-      methodName,
-      'sig'
-    )
-    Connext.validatorsResponseToError(
-      validate.single(balanceA, isBN),
-      methodName,
-      'balanceA'
-    )
     Connext.validatorsResponseToError(
       validate.single(lcId, isHexStrict),
       methodName,
       'lcId'
     )
-
-    console.log(`${this.ingridUrl}/ledgerchannel/${lcId}/request`)
-    const response = await axios.post(
-      `${this.ingridUrl}/ledgerchannel/${lcId}/request`,
-      {},
-      this.config
-    )
-    return response.data
+    try {
+      const response = await this.axiosInstance.post(
+        `${this.ingridUrl}/ledgerchannel/${lcId}/request`)
+        return response.data
+    } catch (e) {
+      return null
+    }
   }
 
   // HELPER FUNCTION TO HAVE INGRID SET UP VC
@@ -2257,14 +2250,13 @@ class Connext {
       methodName,
       'balanceB'
     )
-    const response = await axios.post(
+    const response = await this.axiosInstance.post(
       `${this.ingridUrl}/virtualchannel/${channelId}/update`,
       {
         sig,
         balanceA,
         balanceB
-      },
-      this.config
+      }
     )
     return response.data
   }
@@ -2290,13 +2282,12 @@ class Connext {
       methodName,
       'balance'
     )
-    const response = await axios.post(
+    const response = await this.axiosInstance.post(
       `${this.ingridUrl}/virtualchannel/${channelId}/cosign`,
       {
         sig,
         balance
-      },
-      this.config
+      }
     )
     return response.data
   }
@@ -2332,9 +2323,8 @@ class Connext {
       methodName,
       'channelId'
     )
-    const response = await axios.get(
+    const response = await this.axiosInstance.get(
       `${this.ingridUrl}/virtualchannel/${channelId}/lateststate/doublesigned`,
-      this.config
     )
     return response.data
   }
@@ -2618,6 +2608,53 @@ class Connext {
     } else {
       return initResult
     }
+  }
+
+  /**
+   * Sends a signed ledger channel update to the hub. Only updates balances, use other functions to update VC information.
+   * 
+   * @param {Object} params - input parameters
+   * @param {String} params.sig - signature of partyA
+   * @param {String} params.lcId - ledger channel Id you are updating
+   * @param {BigNumber} params.balanceA - update balance of partyA
+   * @param {BigNumber} params.balanceI - update balance of partyI
+   */
+  async sendLCStateBalanceUpdate ({ sig, lcId, balanceA, balanceI }) {
+    // validate params
+    const methodName = 'updateLCstate'
+    const isHex = { presence: true, isHex: true }
+    const isHexStrict = { presence: true, isHexStrict: true }
+    const isBN = { presence: true, isBN: true }
+    const isPositiveInt = { presence: true, isPositiveInt: true }
+    Connext.validatorsResponseToError(
+      validate.single(lcId, isHex),
+      methodName,
+      'sig'
+    )
+    Connext.validatorsResponseToError(
+      validate.single(lcId, isHexStrict),
+      methodName,
+      'lcId'
+    )
+    Connext.validatorsResponseToError(
+      validate.single(balanceA, isBN),
+      methodName,
+      'balanceA'
+    )
+    Connext.validatorsResponseToError(
+      validate.single(balanceI, isBN),
+      methodName,
+      'balanceI'
+    )
+    const response = await this.axiosInstance.post(
+      `${this.ingridUrl}/ledgerchannel/${lcId}/updatestate`, 
+      {
+        sig,
+        balanceA,
+        balanceI
+      }
+    )
+    return response.data
   }
 }
 

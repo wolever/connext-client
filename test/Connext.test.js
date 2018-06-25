@@ -2,7 +2,7 @@ const assert = require('assert')
 const Connext = require('../src/Connext')
 const axios = require('axios')
 const MockAdapter = require('axios-mock-adapter')
-const { createFakeWeb3 } = require('./Helpers')
+const { createFakeWeb3, retry, pause, backoff } = require('./Helpers')
 const sinon = require('sinon')
 const MerkleTree = require('../src/helpers/MerkleTree')
 const Utils = require('../src/helpers/utils')
@@ -10,13 +10,13 @@ const Web3 = require('web3')
 const channelManagerAbi = require('../artifacts/LedgerChannel.json')
 const { initWeb3, getWeb3 } = require('../web3')
 
-// dev variables
+// timeout
 
 // named variables
-let web3 = { currentProvider: 'mock' }
-let partyA = '0xC501E4e8aC8da07D9eC89122d375412477f561B1' // accounts[0] in truffledev
-let partyB = '0x1f7E369EE9De5e62BA6c68C20D82AeFF84CB4C18' // accounts[1]
-let ingridAddress = '0x2c86bF8a3Fb43CE005d6897dCbBe6338912A14cc'
+let web3
+let partyA // accounts[0] in truffledev
+let partyB // accounts[1]
+let ingridAddress // accounts[2]
 let ingridUrl = process.env.INGRID_URL_DEV
 let lcId = '0x01'
 
@@ -35,18 +35,6 @@ let lc0 = {
   unlockedAccountPresent: true
 }
 
-let vc0 = {
-  vcId: '0xc12',
-  nonce: 0,
-  partyA: '0x627306090abab3a6e1400e9345bc60c78a8bef57',
-  partyB: '0xf17f52151ebef6c7334fad080c5704d77216b732',
-  partyI: '0xc5fdf4076b8f3a5357c5e395ab970b5b54098fef',
-  subchanAI: '0x01',
-  subchanBI: '0x02',
-  balanceA: Web3.utils.toBN(Web3.utils.toWei('2', 'ether')),
-  balanceB: Web3.utils.toBN(Web3.utils.toWei('2', 'ether'))
-}
-
 describe('Connext', async () => {
   describe('client init', () => {
     it('should create a connext client with a fake version of web3', async () => {
@@ -56,6 +44,7 @@ describe('Connext', async () => {
     it('should create a connext client with real web3 and channel manager', async () => {
       const port = process.env.ETH_PORT ? process.env.ETH_PORT : '9545'
       web3 = new Web3(`ws://localhost:${port}`)
+      let ingridUrl = process.env.INGRID_URL_DEV
       let client = new Connext({ web3, ingridAddress, ingridUrl }, Web3)
       assert.ok(typeof client === 'object')
     })
@@ -67,10 +56,12 @@ describe('Connext', async () => {
     let client = new Connext({ web3, ingridAddress, ingridUrl }, Web3)
     describe('register with real web3 and valid params', () => {
       describe('ingrid is responsive and returns correct results', () => {
-        it('should create a ledger channel with ingrid and bond initial deposit', async () => {
+        let lcId
+        it('should return lcID of channel created on contract', async () => {
           // params
           const accounts = await client.web3.eth.getAccounts()
           partyA = lc0.partyA = accounts[0]
+          client.ingridAddress = accounts[2]
           const initialDeposit = Web3.utils.toBN(Web3.utils.toWei('5', 'ether'))
           // // url requests
           // let url = `${client.ingridUrl}/ledgerchannel/challenge`
@@ -92,14 +83,16 @@ describe('Connext', async () => {
           //     }
           //   ]
           // })
-          const results = await client.register(initialDeposit)
-          assert.deepEqual(
-            {
-              data: {}
-            },
-            results
+          lcId = await client.register(initialDeposit)
+          assert.ok(
+            Web3.utils.isHex(lcId)
           )
-        })
+        }).timeout(5000)
+        it('should request ingrid joins ledger channel until confirmation is recieved', async () => {
+          lcId = '0x2364f2c0d779c26bccae2df89a75499d89166e7228c444d29d36fd8652dc0fb6'
+          const response = backoff(3, await client.requestJoinLc(lcId))
+          assert.equal(response, ';)')
+        }).timeout(5000)
         it('should generate a string to enter into truffle develop to create subchanBI with accounts[1] and ingrid', async () => {
           // params
           const accounts = await client.web3.eth.getAccounts()
@@ -107,7 +100,7 @@ describe('Connext', async () => {
           ingridAddress = client.ingridAddress = lc0.partyI = accounts[2]
           const initialDeposit = Web3.utils.toBN(Web3.utils.toWei('5', 'ether'))
           // call create channel on contract
-          const lcId = await Connext.getNewChannelId()
+          const lcId = Connext.getNewChannelId()
           const command = `LedgerChannel.deployed().then(i => i.createChannel('${lcId}', '${ingridAddress.toLowerCase()}', {from: '${partyB.toLowerCase()}', value: ${initialDeposit}}))`
           console.log('lcId, subchan BI:', lcId)
           console.log(
@@ -805,7 +798,7 @@ describe('Connext', async () => {
         const vcId = '0xc025e912181796cf8c15c86558ad580b6ab4a6779c0965d70ba25dc6509a0e13'
         const subchanAIId = '0x73507f1b3aba85ff6794f4d27fa8e4cbf6daf294c09912c4856428e1e1b2c610'
         const subchanBIId = '0x129ef8385463750d5557c11ee3a2acbb935e1702d342f287aaa0123bfa82a707'
-        
+
         // url requests
         const mock = new MockAdapter(axios)
         // when requesting subchanBI id
@@ -889,19 +882,19 @@ describe('Connext', async () => {
         const accounts = await client.web3.eth.getAccounts()
         ingridAddress = accounts[2]
         const balanceA = Web3.utils.toBN(Web3.utils.toWei('5', 'ether'))
-        const lcId = '0x02' // add lcid to obj
+        const lcId = '0xa6585504ea64ee76da1238482f08f6918e7a5e1c77418f6072af19530940cc04' // add lcid to obj
         const response = await client.createLedgerChannelContractHandler({
           ingridAddress,
           lcId: lcId,
           initialDeposit: balanceA
         })
         assert.ok(Web3.utils.isHexStrict(response.transactionHash))
-      })
+      }).timeout(5000)
       it('should call LCOpenTimeout on the channel manager instance to delete created channel', async () => {
-        const lcId = '0x02'
+        const lcId = '0xa6585504ea64ee76da1238482f08f6918e7a5e1c77418f6072af19530940cc04'
         const results = await client.LCOpenTimeoutContractHandler(lcId)
         assert.ok(Web3.utils.isHexStrict(results.transactionHash))
-      })
+      }).timeout(5000)
     })
   })
 
@@ -915,26 +908,27 @@ describe('Connext', async () => {
         const accounts = await client.web3.eth.getAccounts()
         client.ingridAddress = accounts[2]
         const params = {
-          lcId: '0x73507f1b3aba85ff6794f4d27fa8e4cbf6daf294c09912c4856428e1e1b2c610' // subchan AI ID
+          lcId: '0xb1029cf0849ee7f558dbfe224284277c2727ecb64c4673267454d932dbb10b0b', // subchan AI ID,
+          deposit: Web3.utils.toBN(Web3.utils.toWei('5', 'ether'))
         }
         const response = await client.joinLedgerChannelContractHandler(params)
         assert.ok(
           response.transactionHash !== null &&
             response.transactionHash !== undefined
         )
-      })
+      }).timeout(5000)
       it('should call joinChannel on the channel manager instance (subchanBI)', async () => {
         const accounts = await client.web3.eth.getAccounts()
         client.ingridAddress = accounts[2]
         const params = {
-          lcId: '0x129ef8385463750d5557c11ee3a2acbb935e1702d342f287aaa0123bfa82a707' // subchan BI ID
+          lcId: '0x26574bf9ba599888f05c27dc1e45a2de36c4b5975abcdba601a4c2f2b79028dd' // subchan BI ID
         }
         const response = await client.joinLedgerChannelContractHandler(params)
         assert.ok(
           response.transactionHash !== null &&
             response.transactionHash !== undefined
         )
-      })
+      }).timeout(5000)
     })
   })
 
@@ -1213,7 +1207,7 @@ describe('Connext', async () => {
         const sigA = await client.web3.eth.sign(hash, accounts[0])
         console.log('hash:', hash)
         console.log('sigA:', sigA)
-        
+
         // client call
         const results = await client.settleVcContractHandler({
           subchan: subchanId,
@@ -1275,7 +1269,6 @@ describe('Connext', async () => {
       })
     })
   })
-
 
   describe('generateVcRootHash', () => {
     const port = process.env.ETH_PORT ? process.env.ETH_PORT : '9545'
@@ -1975,7 +1968,7 @@ describe('Connext', async () => {
   })
 })
 
-describe.only('ingridClientRequests', () => {
+describe('ingridClientRequests', () => {
   let url
   let mock
   let ledgerChannel
@@ -1989,6 +1982,40 @@ describe.only('ingridClientRequests', () => {
     })
 
     describe('getLatestLedgerStateUpdate', () => {
+      // it('should return the latest ledger channel state', async () => {
+        // // create ledger channel
+        // const balanceA = Web3.utils.toBN(Web3.utils.toWei('5', 'ether'))
+        // const lcId = await client.register(balanceA)
+        // // wait for ingrid to join lc
+        // const joinResponse = backoff(3, await client.requestJoinLc(lcId))
+        // if (joinResponse) {
+        //   // make a state update
+        //   const state = {
+        //     isClose: false,
+        //     lcId,
+        //     nonce: 1,
+        //     openVCs: 0,
+        //     vcRootHash: emptyRootHash,
+        //     partyA,
+        //     partyI: ingridAddress,
+        //     balanceA: Web3.utils.toBN(Web3.utils.toWei('4', 'ether')),
+        //     balanceI: Web3.utils.toBN(Web3.utils.toWei('6', 'ether'))
+        //   }
+        //   const sigA = client.createLCStateUpdate(state)
+        //   // post state update to ingrid
+        //   const stateUpdateResponse = await client.sendLCStateBalanceUpdate({
+        //     sig: sigA,
+        //     lcId,
+        //     balanceA: state.balanceA,
+        //     balanceI: state.balanceI
+        //   })
+        //   if (stateUpdateResponse) {
+        //     const response = await client.getLatestLedgerStateUpdate(lcId)
+        //   }
+        // }
+        // const response = await client.getLatestLedgerStateUpdate(lcId)
+        // assert.equal(response, ';)')
+      // })
       it('mocked ingrid request', async () => {
         client.ingridUrl = 'ingridUrl'
         const ledgerChannelId = '0xc12'
@@ -2007,25 +2034,35 @@ describe.only('ingridClientRequests', () => {
     })
 
     describe('getLedgerChannelChallengeTimer', () => {
-      it.only('should return the default time of 3600 seconds to local host', async () => {
+      it('should return the default time of 3600 seconds to local host', async () => {
         client.ingridUrl = ingridUrl
         const response = await client.getLedgerChannelChallengeTimer()
         assert.equal(response, 3600)
       })
-      it('mocked ingrid request', async () => {
-        client.ingridUrl = 'ingridUrl'
-        url = `${client.ingridUrl}/ledgerchannel/challenge`
-        // const mock = new MockAdapter(axios)
-        mock.onGet(url).reply(() => {
-          return [200, { challenge: 3600 }]
-        })
-        const res = await client.getLedgerChannelChallengeTimer()
-        console.log(res)
-        assert.equal(res, 3600)
+    })
+
+    describe('requestJoinLc', () => {
+      it('should request that ingrid joins the ledger channel with given lcID', async () => {
+        const lcID = '0xa6585504ea64ee76da1238482f08f6918e7a5e1c77418f6072af19530940cc04'
+        const response = await client.requestJoinLc(lcId)
+        assert.equal(response, {})
       })
     })
 
     describe('getLcById', async () => {
+      it('should return the ledger channel object with that id', async () => {
+        // const accounts = await client.web3.eth.getAccounts()
+        // client.ingridAddress = accounts[2]
+        // const initialDeposit = Web3.utils.toBN(Web3.utils.toWei('5', 'ether'))
+        // const lcId = await client.register(initialDeposit)
+        // console.log(lcId)
+        // await client.joinLedgerChannelContractHandler({lcId, deposit: initialDeposit})
+
+        const lcId = '0x2364f2c0d779c26bccae2df89a75499d89166e7228c444d29d36fd8652dc0fb6'
+
+        const response = await client.getLcById(lcId)
+        assert.equal(response.channelId, lcId)
+      }).timeout(10000)
       it('mocked ingrid request', async() => {
         client.ingridUrl = 'ingridUrl'
         const accounts = await client.web3.eth.getAccounts()
@@ -2055,6 +2092,18 @@ describe.only('ingridClientRequests', () => {
     })
 
     describe('getLcByPartyA', async () => {
+      it('should return ledger channel between ingrid and accounts[0] when no partyA', async() => {
+        const accounts = await client.web3.eth.getAccounts()
+        const res = await client.getLcByPartyA()
+        assert.equal(res.partyA, accounts[0])
+      })
+      it('should return ledger channel between ingrid and partyA = accounts[1]', async() => {
+        const accounts = await client.web3.eth.getAccounts()
+        partyA = accounts[1].toLowerCase()
+        const res = await client.getLcByPartyA(partyA)
+        assert.equal(res.partyA, partyA)
+      })
+
       it('mocked ingrid request, agentA supplied', async() => {
         client.ingridUrl = 'ingridUrl'
         const accounts = await client.web3.eth.getAccounts()
@@ -2082,7 +2131,7 @@ describe.only('ingridClientRequests', () => {
         const res = await client.getLcByPartyA()
         assert.equal(res.partyA, partyA)
       })
-      it('mocked ingrid request, agentA supplied', async() => {
+      it('mocked ingrid request, agentA supplied', async () => {
         const accounts = await client.web3.eth.getAccounts()
         partyA = accounts[0]
         partyB = accounts[1]
@@ -2101,6 +2150,11 @@ describe.only('ingridClientRequests', () => {
     })
 
     describe('getLatestVirtualDoubleSignedStateUpdate', async () => {
+      it('should return the latest double signed vc state', async () => {
+        const channelId = ''
+        const response = await client.getLatestLedgerStateUpdate(channelId)
+        assert.equal(response, ';)')
+      })
       it('mocked ingrid request', async () => {
         const channelId = '0xc12'
         url = `${client.ingridUrl}/virtualchannel/${channelId}/lateststate/doublesigned`
@@ -2120,6 +2174,15 @@ describe.only('ingridClientRequests', () => {
     })
 
     describe('cosignVcStateUpdateHandler', async () => {
+      // it ('should cosign the latest vc updated state', async () => {
+      //   const params = {
+      //     channelId: '0xc12',
+      //     sig: '0xc12',
+      //     balance: Web3.utils.toBN(3)
+      //   }
+      //   const response = client.cosignVcStateUpdateHandler(params)
+      //   assert.equal(response, ';)')
+      // })
       it('mocked ingrid request', async () => {
         const params = {
           channelId: '0xc12',
@@ -2179,7 +2242,6 @@ describe.only('ingridClientRequests', () => {
         assert.deepEqual(result, true)
       })
     })
-
 
     describe('openVc', async () => {
       it('mocked ingrid request', async () => {

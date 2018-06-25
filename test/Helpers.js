@@ -23,6 +23,20 @@ export const createFakeWeb3 = (eth, utils) => {
 }
 
 export const retry = (retries, fn) => {
+  // return new Promise((resolve, reject) => {
+  //   let error
+  //   let attempt = () => {
+  //     if (retries === 0) {
+  //       reject(error)
+  //     } else {
+  //       fn().then(resolve).catc((e) => {
+  //         retries--
+  //         error = e
+  //         setTimeout(fn)
+  //       })
+  //     }
+  //   }
+  // })
   return fn().catch(
     err => (retries > 1 ? retry(retries - 1, fn) : Promise.reject(err))
   )
