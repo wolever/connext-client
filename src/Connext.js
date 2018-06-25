@@ -238,7 +238,6 @@ class Connext {
    */
   async withdraw () {
     const lcId = await this.getLcId()
-    console.log(lcId)
     const lcState = await this.getLatestLedgerStateUpdate(lcId)
     if (Number(lcState.openVCs) !== 0) {
       throw new Error(
@@ -250,22 +249,7 @@ class Connext {
         `vcRootHash for lcId ${lcId} does not match empty root hash. Value: ${lcState.vcRootHash}`
       )
     }
-    // /**
-    //  * lcState = {
-    //  *  sigA,
-    //  *  sigI,
-    //  *  nonce,
-    //  *  openVCs,
-    //  *  vcRootHash,
-    //  *  partyA,
-    //  *  partyI,
-    //  *  balanceA,
-    //  *  balanceI
-    //  * }
-    //  */
-    // check ingrid signed
-    // TO DO: probably should check with values that don't come from
-    // the same source
+
     const signer = Connext.recoverSignerFromLCStateUpdate({
       sig: lcState.sigI,
       isClose: false,
@@ -278,7 +262,7 @@ class Connext {
       balanceA: Web3.utils.toBN(lcState.balanceA),
       balanceI: Web3.utils.toBN(lcState.balanceI)
     })
-    if (signer !== this.ingridAddress.toLowerCase()) {
+    if (signer !== this.ingridAddress) {
       throw new Error(`[${methodName}] Ingrid did not sign this state update.`)
     }
     // generate same update with fast close flag and post
@@ -672,14 +656,13 @@ class Connext {
     })
     console.log('sig:', sigB)
     // post sig to hub
-    const response = await axios.post(
+    const response = await this.axiosInstance.post(
       `${this.ingridUrl}/virtualchannel/${channelId}/cosign`,
       {
         channelId,
         sig: sigB,
         nonce
-      },
-      this.config
+      }
     )
     return response.data
   }
@@ -704,22 +687,20 @@ class Connext {
     )
     const accounts = await this.web3.eth.getAccounts()
     // get latest double signed updates
-    const latestVcState = await this.getLatestVirtualDoubleSignedStateUpdate(
-      channelId
-    )
-    console.log(latestVcState)
-    if (
-      latestVcState.partyA !== accounts[0].toLowerCase() &&
-      latestVcState.partyB !== accounts[0].toLowerCase()
+    const vc = await this.getChannel(channelId)
+    if (vc.partyI !== accounts[0].toLowerCase() && // for dev testing
+      vc.partyA !== accounts[0].toLowerCase() &&
+      vc.partyB !== accounts[0].toLowerCase()
     ) {
       throw new Error(`[${methodName}] Not your virtual channel.`)
     }
 
     // have ingrid decompose since this is the happy case closing
-    const results = await this.requestDecomposeLC(channelId)
+    const response = await this.axiosInstance.post(
+      `${this.ingridUrl}/virtualchannel/${vcId}/close`
+    )
+    return response.data.deposit
     // NOTE: client doesnt sign lc update, it is just generated
-
-    return results
   }
 
   /**
@@ -761,12 +742,11 @@ class Connext {
       lcStates[subchan].balanceI = Web3.utils.toBN(lcStates[subchan].balanceI)
       const sig = await this.createLCStateUpdate(lcStates[subchan])
       // post sig to ingrid
-      const result = await axios.post(
+      const result = await this.axiosInstance.post(
         `${this.ingridUrl}/ledgerchannel/${subchan}/cosign`,
         {
           sig
-        },
-        this.config
+        }
       )
       return result.data
     } else {
@@ -1984,9 +1964,8 @@ class Connext {
       methodName,
       'partyB'
     )
-    const response = await axios.get(
-      `${this.ingridUrl}/virtualchannel?a=${partyA}&b=${partyB}`,
-      this.config
+    const response = await this.axiosInstance.get(
+      `${this.ingridUrl}/virtualchannel?a=${partyA}&b=${partyB}`
     )
     return response.data
   }
@@ -2211,12 +2190,11 @@ class Connext {
       methodName,
       'lcId'
     )
-    const response = await axios.post(
+    const response = await this.axiosInstance.post(
       `${this.ingridUrl}/ledgerchannel/${lcId}/fastclose`,
       {
         sig
-      },
-      this.config
+      }
     )
     return response.data
   }
@@ -2505,9 +2483,8 @@ class Connext {
       methodName,
       'vcId'
     )
-    const response = await axios.get(
-      `${this.ingridUrl}/virtualchannel/${vcId}/intialstate`,
-      this.config
+    const response = await this.axiosInstance.get(
+      `${this.ingridUrl}/virtualchannel/${vcId}/intialstate`
     )
     return response.data
   }
@@ -2528,28 +2505,8 @@ class Connext {
       methodName,
       'vcId'
     )
-    const response = await axios.get(
-      `${this.ingridUrl}/virtualchannel/${vcId}/decompose`,
-      this.config
-    )
-    return response.data
-  }
-
-  // asks ingrid to decompose virtual channel at latest double signed update
-  // to ledger channel updates
-  // called from fastCloseChannel
-  async requestDecomposeLC (vcId) {
-    // validate params
-    const methodName = 'requestDecomposeLC'
-    const isHexStrict = { presence: true, isHexStrict: true }
-    Connext.validatorsResponseToError(
-      validate.single(vcId, isHexStrict),
-      methodName,
-      'vcId'
-    )
-    const response = await axios.post(
-      `${this.ingridUrl}/virtualchannel/${vcId}/decompose`,
-      this.config
+    const response = await this.axiosInstance.get(
+      `${this.ingridUrl}/virtualchannel/${vcId}/decompose`
     )
     return response.data
   }
