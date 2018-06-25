@@ -1361,7 +1361,7 @@ describe('Connext', async () => {
       partyB = accounts[1]
       ingridAddress = accounts[2]
       describe('should recover the address of person who signed', () => {
-        it('should return signer 0x627306090abab3a6e1400e9345bc60c78a8bef57', async () => {
+        it('should return signer == accounts[0]', async () => {
           let sigParams = {
             isClose: false,
             lcId: '0xc1912',
@@ -1434,7 +1434,7 @@ describe('Connext', async () => {
       partyB = accounts[1]
       ingridAddress = accounts[2]
       describe('should recover the address of person who signed', () => {
-        it('should return signer 0x627306090abab3a6e1400e9345bc60c78a8bef57', async () => {
+        it('should return signer == accounts[1]', async () => {
           let sigParams = {
             vcId: '0xc1912',
             nonce: 0,
@@ -1447,7 +1447,7 @@ describe('Connext', async () => {
           const sig = await client.createVCStateUpdate(sigParams)
           sigParams.sig = sig
           const signer = Connext.recoverSignerFromVCStateUpdate(sigParams)
-          assert.equal(signer, accounts[0].toLowerCase())
+          assert.equal(signer, accounts[1].toLowerCase())
         })
       })
     })

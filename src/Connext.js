@@ -99,7 +99,7 @@ class Connext {
     web3Lib = Web3
   ) {
     this.web3 = new web3Lib(web3.currentProvider) // convert legacy web3 0.x to 1.x
-    this.ingridAddress = ingridAddress
+    this.ingridAddress = ingridAddress.toLowerCase()
     this.watcherUrl = watcherUrl
     this.ingridUrl = ingridUrl
     this.channelManagerInstance = new this.web3.eth.Contract(
@@ -451,7 +451,7 @@ class Connext {
     const lcA = await this.getLcByPartyA()
     const lcIdB = await this.getLcId(to)
     // validate the subchannels exist
-    if (lcIdB === null || lcIdA === null) {
+    if (lcIdB === null || lcA === null) {
       throw new Error(
         `[${methodName}] Missing one or more required subchannels for VC.`
       )
@@ -465,7 +465,7 @@ class Connext {
       vcId,
       nonce: 0,
       partyA: lcA.partyA,
-      partyB: to,
+      partyB: to.toLowerCase(),
       partyI: this.ingridAddress,
       subchanAI: lcA.channelId,
       subchanBI: lcIdB,
@@ -473,7 +473,7 @@ class Connext {
       balanceB: Web3.utils.toBN(0)
     }
     const sigVC0 = await this.createVCStateUpdate(vc0)
-    console.log('sigVC0:', vc0)
+    console.log('sigVC0:', sigVC0)
     let vc0s = await this.getVcInitialStates(lcA.channelId) // array of vc state objs
     vc0s.push(vc0)
     const newVcRootHash = Connext.generateVcRootHash({
@@ -482,9 +482,13 @@ class Connext {
     console.log('newVcRootHash:', newVcRootHash)
     // ping ingrid
     const result = await this.openVc({
+      channelId: vcId,
+      partyA: lcA.partyA,
+      partyB: to.toLowerCase(),
+      partyI: this.ingridAddress,
       balanceA: deposit || Web3.utils.toBN(lcA.balanceA),
-      to,
-      vcRootHash: newVcRootHash,
+      subchanAtoI: lcA.channelId,
+      subchanBtoI: lcIdB,
       sig: sigVC0
     })
     return result
@@ -525,19 +529,14 @@ class Connext {
     console.log('vc0:', vc0)
     console.log('sigB of vc0:', sig)
     // add vc0 to initial states
-    let vc0s = await this.getVcInitialStates(vc.subchanBI)
+    let vc0s = await this.getVcInitialStates(vc.subchanBtoI)
     vc0s.push(vc0)
-    const newVcRootHash = Connext.generateVcRootHash({
-      vc0s
-    })
-    console.log('newVcRootHash for subchanBI:', newVcRootHash)
     // ping ingrid with vc0 (hub decomposes to lc)
     const result = await this.joinVcHandler({
       sig: sig,
-      vcRootHash: newVcRootHash,
       channelId
     })
-    return result.data
+    return result
   }
 
   /**
@@ -585,8 +584,8 @@ class Connext {
       nonce: vc.nonce + 1,
       partyA: vc.partyA,
       partyB: vc.partyB,
-      balanceA: Web3.utils.toBN(balanceA),
-      balanceB: Web3.utils.toBN(balanceB)
+      balanceA: balanceA,
+      balanceB: balanceB
     }
     const sig = await this.createVCStateUpdate(state)
     console.log('state:', state)
@@ -596,7 +595,8 @@ class Connext {
       channelId,
       sig,
       balanceA,
-      balanceB
+      balanceB,
+      nonce: vc.nonce + 1
     })
     return response
   }
@@ -612,11 +612,11 @@ class Connext {
    * @param {String} params.sig Signature received from "A" party to be verified before co-signing.
    * @returns {String} Returns signature of balance update.
    */
-  async cosignBalanceUpdate ({ channelId, balance, sig }) {
+  async cosignBalanceUpdate ({ channelId, nonce, sig }) {
     // validate params
     const methodName = 'cosignBalanceUpdate'
     const isHexStrict = { presence: true, isHexStrict: true }
-    const isBN = { presence: true, isBN: true }
+    const isPositiveInt = { presence: true, isPositiveInt: true }
     const isHex = { presence: true, isHex: true }
     Connext.validatorsResponseToError(
       validate.single(channelId, isHexStrict),
@@ -624,55 +624,51 @@ class Connext {
       'channelId'
     )
     Connext.validatorsResponseToError(
-      validate.single(balance, isBN),
-      methodName,
-      'balance'
-    )
-    Connext.validatorsResponseToError(
       validate.single(sig, isHex),
       methodName,
       'sig'
     )
+    Connext.validatorsResponseToError(
+      validate.single(sig, isPositiveInt),
+      methodName,
+      'nonce'
+    )
     // check sig
     const accounts = await this.web3.eth.getAccounts()
     const vc = await this.getChannel(channelId)
-    const subchanAI = await this.getLcId(vc.partyA)
-    const subchanBI = await this.getLcId(vc.partyB)
-    const balanceB =
-      Web3.utils.toBN(vc.balanceB) + (Web3.utils.toBN(vc.balanceA) - balance)
     const signer = Connext.recoverSignerFromVCStateUpdate({
       sig,
       vcId: channelId,
-      nonce: vc.nonce, // will this be stored in vc after updateState?
+      nonce: nonce,
       partyA: vc.partyA,
       partyB: vc.partyB,
-      partyI: this.ingridAddress,
-      subchanAI,
-      subchanBI,
-      balanceA: balance,
-      balanceB: Web3.utils.toBN(balanceB) // will this be stored in vc after updateState?
+      balanceA: Web3.utils.toBN(vc.balanceA),
+      balanceB: Web3.utils.toBN(vc.balanceB)
     })
-    if (accounts[0].toLowerCase() === vc.partyB && signer !== vc.partyA) {
-      throw new Error(`[${methodName}] partyA did not sign this state update.`)
-    } else if (
-      accounts[0].toLowerCase() === vc.partyA &&
-      signer !== vc.partyB
-    ) {
-      throw new Error(`[${methodName}] partyB did not sign this state update.`)
-    } else if (
-      accounts[0].toLowerCase() !== vc.partyA &&
-      accounts[0].toLowerCase() !== vc.partyB
-    ) {
-      throw new Error(`[${methodName}] Not your virtual channel`)
-    }
+    // if (!process.env.DEV) {
+      if (accounts[0].toLowerCase() === vc.partyB && signer !== vc.partyA) {
+        throw new Error(`[${methodName}] partyA did not sign this state update.`)
+      } else if (
+        accounts[0].toLowerCase() === vc.partyA &&
+        signer !== vc.partyB
+      ) {
+        throw new Error(`[${methodName}] partyB did not sign this state update.`)
+      } else if (
+        accounts[0].toLowerCase() !== vc.partyA &&
+        accounts[0].toLowerCase() !== vc.partyB
+      ) {
+        throw new Error(`[${methodName}] Not your virtual channel`)
+      }
+    // }
+    
     // generate sigB
     const sigB = await this.createVCStateUpdate({
       vcId: channelId,
-      nonce: vc.nonce, // will this be stored in vc after updateState?
+      nonce: nonce,
       partyA: vc.partyA,
       partyB: vc.partyB,
-      balanceA: balance,
-      balanceB: Web3.utils.toBN(balanceB) // will this be stored in vc after updateState?
+      balanceA: Web3.utils.toBN(vc.balanceA),
+      balanceB: Web3.utils.toBN(vc.balanceB)
     })
     console.log('sig:', sigB)
     // post sig to hub
@@ -681,7 +677,7 @@ class Connext {
       {
         channelId,
         sig: sigB,
-        balance
+        nonce
       },
       this.config
     )
@@ -1165,6 +1161,7 @@ class Connext {
       methodName,
       'balanceB'
     )
+
     // generate state update to sign
     const hash = Web3.utils.soliditySha3(
       { type: 'bytes32', value: vcId },
@@ -1271,9 +1268,11 @@ class Connext {
     partyB,
     balanceA,
     balanceB,
-    // unlockedAccountPresent = false // if true, use sign over personal.sign
-    unlockedAccountPresent = true // CHANGE TO DEFAULT FALSE WHEN NOT TESTING
+    unlockedAccountPresent = false // if true, use sign over personal.sign
   }) {
+    if (process.env.DEV) {
+      unlockedAccountPresent = true
+    }
     // validate
     const methodName = 'createVCStateUpdate'
     // validate
@@ -1319,25 +1318,6 @@ class Connext {
     )
     // get accounts
     const accounts = await this.web3.eth.getAccounts()
-    // // get subchans
-    // let subchanAI, subchanBI
-    // // is this partyA or B?
-    // if (accounts[0].toLowerCase() === partyA) {
-    //   subchanAI = await this.getLcId()
-    //   subchanBI = await this.getLcId(partyB)
-    // } else if (accounts[0].toLowerCase() === partyB) {
-    //   subchanAI = await this.getLcId(partyA)
-    //   subchanBI = await this.getLcId()
-    // } else {
-    //   throw new Error(`[${methodName}] Not your virtual channel.`)
-    // }
-
-    // // keep in here? probably separate out into a validation of state update
-    // // params fn
-    // if (subchanAI === null || subchanBI === null) {
-    //   throw new Error(`[${methodName}] Missing one or more required subchannels.`)
-    // }
-
     // generate and sign hash
     const hash = Connext.createVCStateUpdateFingerprint({
       vcId,
@@ -1349,9 +1329,13 @@ class Connext {
     })
     let sig
     if (unlockedAccountPresent) {
-      sig = await this.web3.eth.sign(hash, accounts[0])
+      if (process.env.DEV) {
+        sig = await this.web3.eth.sign(hash, accounts[1])
+      } else {
+        sig = await this.web3.eth.sign(hash, accounts[0])
+      } 
     } else {
-      sig = await this.web3.eth.personal.sign(hash, accounts[0])
+        sig = await this.web3.eth.personal.sign(hash, accounts[0])
     }
     return sig
   }
@@ -1950,14 +1934,17 @@ class Connext {
       )
     } else {
       const accounts = await this.web3.eth.getAccounts()
-      partyA = accounts[0]
+      if (process.env.DEV) {
+        partyA = accounts[1]
+      } else {
+        partyA = accounts[0]
+      }
     }
     // get my LC with ingrid
-    const response = await axios.get(
-      `${this.ingridUrl}/ledgerchannel?a=${partyA}`,
-      this.config
+    const response = await this.axiosInstance.get(
+      `${this.ingridUrl}/ledgerchannel/a/${partyA.toLowerCase()}` 
     )
-    return response.data
+    return response.data.channelId
   }
 
   /**
@@ -1973,9 +1960,8 @@ class Connext {
       methodName,
       'channelId'
     )
-    const response = await axios.get(
-      `${this.ingridUrl}/virtualchannel/${channelId}`,
-      this.config
+    const response = await this.axiosInstance.get(
+      `${this.ingridUrl}/virtualchannel/${channelId}`
     )
     return response.data
   }
@@ -2059,7 +2045,11 @@ class Connext {
       )
     } else {
       const accounts = await this.web3.eth.getAccounts()
-      partyA = accounts[0]
+      if (process.env.DEV) {
+        partyA = accounts[1]
+      } else {
+        partyA = accounts[0]
+      }
     }
     // try {
     // const response = await this.axiosInstance.get(
@@ -2068,7 +2058,8 @@ class Connext {
     //   Connext.hubsResponseToError(e, methodName, { partyA })
     // }
         const response = await this.axiosInstance.get(
-      `${this.ingridUrl}/ledgerchannel/a/${partyA.toLowerCase()}`    )
+      `${this.ingridUrl}/ledgerchannel/a/${partyA.toLowerCase()}`    
+    )
     return response.data
   }
 
@@ -2109,23 +2100,39 @@ class Connext {
     try {
       const response = await this.axiosInstance.post(
         `${this.ingridUrl}/ledgerchannel/${lcId}/request`)
-        return response.data
+      return response.data.txHash
     } catch (e) {
       return null
     }
   }
 
   // HELPER FUNCTION TO HAVE INGRID SET UP VC
-  async openVc ({ sig, balanceA, to, vcRootHash }) {
+  async openVc ({ channelId, partyA, partyB, partyI = this.ingridAddress, balanceA, subchanAtoI, subchanBtoI, sig }) {
     // validate params
     const methodName = 'openVc'
     const isAddress = { presence: true, isAddress: true }
     const isHex = { presence: true, isHex: true }
+    const isHexStrict = { presence: true, isHexStrict: true }
     const isBN = { presence: true, isBN: true }
     Connext.validatorsResponseToError(
-      validate.single(sig, isHex),
+      validate.single(channelId, isHexStrict),
       methodName,
-      'sig'
+      'channelId'
+    )
+    Connext.validatorsResponseToError(
+      validate.single(partyA, isAddress),
+      methodName,
+      'partyA'
+    )
+    Connext.validatorsResponseToError(
+      validate.single(partyB, isAddress),
+      methodName,
+      'partyB'
+    )
+    Connext.validatorsResponseToError(
+      validate.single(partyI, isAddress),
+      methodName,
+      'partyI'
     )
     Connext.validatorsResponseToError(
       validate.single(balanceA, isBN),
@@ -2133,34 +2140,31 @@ class Connext {
       'balanceA'
     )
     Connext.validatorsResponseToError(
-      validate.single(to, isAddress),
+      validate.single(subchanAtoI, isHexStrict),
       methodName,
-      'to'
+      'subchanAtoI'
     )
     Connext.validatorsResponseToError(
-      validate.single(vcRootHash, isHex),
+      validate.single(subchanBtoI, isHexStrict),
       methodName,
-      'vcRootHash'
+      'subchanBtoI'
+    )
+    Connext.validatorsResponseToError(
+      validate.single(sig, isHex),
+      methodName,
+      'sig'
     )
 
-    const accounts = await this.web3.eth.getAccounts()
     // ingrid should add vc params to db
-    console.log(`${this.ingridUrl}/virtualchannel/open?a=${accounts[0]}`)
-    const response = await axios.post(
-      `${this.ingridUrl}/virtualchannel/open?a=${accounts[0]}`,
-      {
-        sig,
-        balanceA,
-        to,
-        vcRootHash
-      },
-      this.config
+    const response = await this.axiosInstance.post(
+      `${this.ingridUrl}/virtualchannel/`,
+      { channelId, partyA, partyB, partyI, balanceA: balanceA.toString(), subchanAtoI, subchanBtoI, sig }
     )
-    return response.data
+    return response.data.channelId
   }
 
   // ingrid verifies the vc0s and sets up vc and countersigns lc updates
-  async joinVcHandler ({ sig, vcRootHash, channelId }) {
+  async joinVcHandler ({ sig, channelId }) {
     // validate params
     const methodName = 'joinVcHandler'
     const isHexStrict = { presence: true, isHexStrict: true }
@@ -2171,25 +2175,18 @@ class Connext {
       'sig'
     )
     Connext.validatorsResponseToError(
-      validate.single(vcRootHash, isHex),
-      methodName,
-      'vcRootHash'
-    )
-    Connext.validatorsResponseToError(
       validate.single(channelId, isHexStrict),
       methodName,
       'channelId'
     )
     // ingrid should verify vcS0A and vcS0b
-    const response = await axios.post(
+    const response = await this.axiosInstance.post(
       `${this.ingridUrl}/virtualchannel/${channelId}/join`,
       {
-        sig,
-        vcRootHash
-      },
-      this.config
+        sig
+      }
     )
-    return response.data
+    return response.data.channelId
   }
 
   // posts to ingrid endpoint to decompose ledger channel
@@ -2223,13 +2220,14 @@ class Connext {
     )
     return response.data
   }
-
-  async vcStateUpdateHandler ({ channelId, sig, balanceA, balanceB }) {
+  
+  async vcStateUpdateHandler ({ channelId, sig, balanceA, balanceB, nonce }) {
     // validate params
     const methodName = 'vcStateUpdateHandler'
     const isHexStrict = { presence: true, isHexStrict: true }
     const isHex = { presence: true, isHex: true }
     const isBN = { presence: true, isBN: true }
+    const isPositiveInt = { presence: true, isPositiveInt: true }
     Connext.validatorsResponseToError(
       validate.single(sig, isHex),
       methodName,
@@ -2250,12 +2248,18 @@ class Connext {
       methodName,
       'balanceB'
     )
+    Connext.validatorsResponseToError(
+      validate.single(balanceB, isPositiveInt),
+      methodName,
+      'balanceB'
+    )
     const response = await this.axiosInstance.post(
       `${this.ingridUrl}/virtualchannel/${channelId}/update`,
       {
         sig,
-        balanceA,
-        balanceB
+        balanceA: balanceA.toString(),
+        balanceB: balanceB.toString(),
+        nonce
       }
     )
     return response.data
@@ -2472,9 +2476,8 @@ class Connext {
       methodName,
       'lcId'
     )
-    const response = await axios.get(
-      `${this.ingridUrl}/ledgerchannel/${lcId}/virtualchannel/initialstates`,
-      this.config
+    const response = await this.axiosInstance.get(
+      `${this.ingridUrl}/ledgerchannel/${lcId}/vcinitialstates`
     )
     return response.data
   }
