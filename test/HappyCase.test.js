@@ -189,4 +189,25 @@ describe('creating a virtual channel between partyA and partyB', () => {
 
   //     it.only('partyB cosigns the virtual channel state update', async () => {})
   //   })
+
+  it('should fast close the virtual channel', async () => {
+    // vcId = '0x1891b8428e9f413edd3001d9f8be40c40fa83dd291ad8480594fd1ff878cfd50'
+    const deposit = await client.fastCloseChannel(vcId)
+    assert.equal(deposit, balanceA)
+  })
 })
+
+// describe('Withdrawing from ledger channels', () => {
+//     it('should withdraw funds from subchanAI', async () => {
+//         response = await client.withdraw()
+//         assert.ok(Web3.utils.isHex(response))
+//     })
+
+//     it('should withdraw funds from subchanBI by calling consensusCloseChannelContractHandler', async () => {
+//         lcB = await client.getLatestLedgerStateUpdate(subchanBI)
+//         let response = await client.consensusCloseChannelContractHandler({
+//             lcId: ,
+
+//         })
+//     })
+// })
