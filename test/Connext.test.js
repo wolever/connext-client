@@ -508,7 +508,7 @@ describe('Connext', async () => {
           assert.ok(Web3.utils.isHexStrict(response.transactionHash))
         }).timeout(5000)
 
-        it.only('should call createChannel on the channel manager instance (subchanBI)', async () => {
+        it('should call createChannel on the channel manager instance (subchanBI)', async () => {
           balanceB = Web3.utils.toBN(Web3.utils.toWei('5', 'ether'))
           subchanBI = Connext.getNewChannelId()
           console.log('subchanBI:', subchanBI)
@@ -562,7 +562,7 @@ describe('Connext', async () => {
               response.transactionHash !== undefined
           )
         }).timeout(5000)
-        it.only('should call joinChannel on the channel manager instance (subchanBI)', async () => {
+        it('should call joinChannel on the channel manager instance (subchanBI)', async () => {
           const params = {
             lcId: subchanBI, // subchan AI ID,
             deposit: balanceI,
@@ -578,23 +578,14 @@ describe('Connext', async () => {
     })
 
     describe('depositContractHandler', () => {
-      // init web3
-      const port = process.env.ETH_PORT ? process.env.ETH_PORT : '9545'
-      web3 = new Web3(`ws://localhost:${port}`)
-      let client = new Connext({ web3 }, Web3)
       describe('Web3 and contract properly initialized, valid parameters', async () => {
         it('should call deposit on the channel manager instance', async () => {
-          const accounts = await client.web3.eth.getAccounts()
-          ingridAddress = client.ingridAddress = accounts[2]
-          lcId = '0x01'
-          const deposit = Web3.utils.toBN(Web3.utils.toWei('5', 'ether'))
-          const mock = new MockAdapter(axios)
-          mock
-            .onGet(`${client.ingridUrl}/ledgerchannel?a=${partyA}`)
-            .reply(() => {
-              return [200, lcId]
-            })
-          const response = await client.depositContractHandler(deposit)
+          subchanAI = '0x4b7c97c3ae6abca2ff2ba4e31ee594ac5e1b1f12d8fd2097211569f80dbb7d08'
+          response = await client.depositContractHandler({
+            depositInWei: Web3.utils.toBN(Web3.utils.toWei('1', 'ether')),
+            recipient: partyA, 
+            sender: partyA 
+          })
           assert.ok(
             response.transactionHash !== null &&
               response.transactionHash !== undefined
