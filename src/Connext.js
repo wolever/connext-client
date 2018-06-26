@@ -1603,10 +1603,7 @@ class Connext {
     const result = await this.channelManagerInstance.methods
       .updateLCstate(
         lcId,
-        nonce,
-        openVcs,
-        balanceA,
-        balanceI,
+        [ nonce, openVcs, balanceA, balanceI ],
         Web3.utils.padRight(vcRootHash, 64),
         sigA,
         sigI
