@@ -962,6 +962,7 @@ class Connext {
       methodName,
       'balanceB'
     )
+    const hubBond = balanceA.add(balanceB)
 
     // generate state update to sign
     const hash = Web3.utils.soliditySha3(
@@ -969,6 +970,7 @@ class Connext {
       { type: 'uint256', value: nonce },
       { type: 'address', value: partyA },
       { type: 'address', value: partyB },
+      { type: 'uint256', value: hubBond },
       { type: 'uint256', value: balanceA },
       { type: 'uint256', value: balanceB }
     )
