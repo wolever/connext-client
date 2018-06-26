@@ -492,32 +492,40 @@ describe('Connext', async () => {
     })
   })
 
-  describe('client contract handlers', () => {
+  describe.only('client contract handlers', () => {
     describe('createLedgerChannelContractHandler', () => {
-      // init web3
-      const port = process.env.ETH_PORT ? process.env.ETH_PORT : '9545'
-      web3 = new Web3(`ws://localhost:${port}`)
-      let client = new Connext({ web3 }, Web3)
       describe('Web3 and contract properly initialized, valid parameters', () => {
-        it('should call createChannel on the channel manager instance', async () => {
-          const accounts = await client.web3.eth.getAccounts()
-          ingridAddress = accounts[2]
-          const balanceA = Web3.utils.toBN(Web3.utils.toWei('5', 'ether'))
-          const response = await client.createLedgerChannelContractHandler({
+        it('should call createChannel on the channel manager instance (subchanAI)', async () => {
+          balanceA = Web3.utils.toBN(Web3.utils.toWei('5', 'ether'))
+          subchanAI = '0x4b7c97c3ae6abca2ff2ba4e31ee594ac5e1b1f12d8fd2097211569f80dbb7d08'
+          response = await client.createLedgerChannelContractHandler({
             ingridAddress,
-            lcId: '0x4b7c97c3ae6abca2ff2ba4e31ee594ac5e1b1f12d8fd2097211569f80dbb7d08',
-            initialDeposit: balanceA
+            lcId: subchanAI,
+            initialDeposit: balanceA,
+            challenge: 5,
+            sender: partyA
           })
           assert.ok(Web3.utils.isHexStrict(response.transactionHash))
-        })
+        }).timeout(5000)
+
+        it.only('should call createChannel on the channel manager instance (subchanBI)', async () => {
+          balanceB = Web3.utils.toBN(Web3.utils.toWei('5', 'ether'))
+          subchanBI = Connext.getNewChannelId()
+          console.log('subchanBI:', subchanBI)
+          response = await client.createLedgerChannelContractHandler({
+            ingridAddress,
+            lcId: subchanBI,
+            initialDeposit: balanceB,
+            challenge: 5,
+            sender: partyB
+          })
+          assert.ok(Web3.utils.isHexStrict(response.transactionHash))
+        }).timeout(5000)
       })
     })
 
     describe('LCOpenTimeoutContractHandler', () => {
       // init web3
-      const port = process.env.ETH_PORT ? process.env.ETH_PORT : '9545'
-      web3 = new Web3(`ws://localhost:${port}`)
-      let client = new Connext({ web3 }, Web3)
       describe('Web3 and contract properly initialized, valid parameters', () => {
         it('should call createChannel on the channel manager instance to create channel to delete', async () => {
           const accounts = await client.web3.eth.getAccounts()
@@ -540,17 +548,13 @@ describe('Connext', async () => {
     })
 
     describe('joinLedgerChannelContractHandler', () => {
-      // init web3
-      const port = process.env.ETH_PORT ? process.env.ETH_PORT : '9545'
-      web3 = new Web3(`ws://localhost:${port}`)
-      let client = new Connext({ web3 }, Web3)
       describe('Web3 and contract properly initialized, valid parameters', async () => {
         it('should call joinChannel on the channel manager instance (subchanAI)', async () => {
-          const accounts = await client.web3.eth.getAccounts()
-          client.ingridAddress = accounts[2]
+          balanceI = Web3.utils.toBN(Web3.utils.toWei('5', 'ether'))
           const params = {
-            lcId: '0xb1029cf0849ee7f558dbfe224284277c2727ecb64c4673267454d932dbb10b0b', // subchan AI ID,
-            deposit: Web3.utils.toBN(Web3.utils.toWei('5', 'ether'))
+            lcId: subchanAI, // subchan AI ID,
+            deposit: balanceI,
+            sender: ingridAddress
           }
           const response = await client.joinLedgerChannelContractHandler(params)
           assert.ok(
@@ -558,11 +562,11 @@ describe('Connext', async () => {
               response.transactionHash !== undefined
           )
         }).timeout(5000)
-        it('should call joinChannel on the channel manager instance (subchanBI)', async () => {
-          const accounts = await client.web3.eth.getAccounts()
-          client.ingridAddress = accounts[2]
+        it.only('should call joinChannel on the channel manager instance (subchanBI)', async () => {
           const params = {
-            lcId: '0x26574bf9ba599888f05c27dc1e45a2de36c4b5975abcdba601a4c2f2b79028dd' // subchan BI ID
+            lcId: subchanBI, // subchan AI ID,
+            deposit: balanceI,
+            sender: ingridAddress
           }
           const response = await client.joinLedgerChannelContractHandler(params)
           assert.ok(
@@ -952,13 +956,13 @@ describe('Connext', async () => {
       const port = process.env.ETH_PORT ? process.env.ETH_PORT : '9545'
       web3 = new Web3(`ws://localhost:${port}`)
       let client = new Connext({ web3 }, Web3)
-      describe.only('recoverSignerFromLCStateUpdate with real web3.utils and valid params', async () => {
+      describe('recoverSignerFromLCStateUpdate with real web3.utils and valid params', async () => {
         const accounts = await web3.eth.getAccounts()
         partyA = accounts[1]
         partyB = accounts[2]
         ingridAddress = accounts[0]
         describe('should recover the address of person who signed', () => {
-          it.only('should return signer == accounts[1]', async () => {
+          it('should return signer == accounts[1]', async () => {
             let sigParams = {
               isClose: false,
               lcId: '0xc1912',
@@ -1022,7 +1026,7 @@ describe('Connext', async () => {
       })
     })
 
-    describe.only('recoverSignerFromVCStateUpdate', () => {
+    describe('recoverSignerFromVCStateUpdate', () => {
       const port = process.env.ETH_PORT ? process.env.ETH_PORT : '9545'
       web3 = new Web3(`ws://localhost:${port}`)
       let client = new Connext({ web3 }, Web3)
@@ -1032,7 +1036,7 @@ describe('Connext', async () => {
         partyB = accounts[2]
         ingridAddress = accounts[0]
         describe('should recover the address of person who signed', () => {
-          it.only('should return signer == accounts[1]', async () => {
+          it('should return signer == accounts[1]', async () => {
             let sigParams = {
               vcId: '0xc1912',
               nonce: 0,

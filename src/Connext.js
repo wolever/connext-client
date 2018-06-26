@@ -1281,8 +1281,8 @@ class Connext {
   async createLedgerChannelContractHandler ({
     ingridAddress = this.ingridAddress,
     lcId,
-    // challenge,
     initialDeposit,
+    challenge,
     sender = null
   }) {
     const methodName = 'createLedgerChannelContractHandler'
@@ -1291,6 +1291,7 @@ class Connext {
     const isHexStrict = { presence: true, isHexStrict: true }
     const isBN = { presence: true, isBN: true }
     const isAddress = { presence: true, isAddress: true }
+    const isPositiveInt = { presence: true, isPositiveInt: true }
     Connext.validatorsResponseToError(
       validate.single(ingridAddress, isAddress),
       methodName,
@@ -1301,11 +1302,11 @@ class Connext {
       methodName,
       'lcId'
     )
-    // Connext.validatorsResponseToError(
-    //   validate.single(challenge, isPositiveInt),
-    //   methodName,
-    //   'challenge'
-    // )
+    Connext.validatorsResponseToError(
+      validate.single(challenge, isPositiveInt),
+      methodName,
+      'challenge'
+    )
     Connext.validatorsResponseToError(
       validate.single(initialDeposit, isBN),
       methodName,
@@ -1323,7 +1324,7 @@ class Connext {
     }
     
     const result = await this.channelManagerInstance.methods
-      .createChannel(lcId, ingridAddress)
+      .createChannel(lcId, ingridAddress, challenge)
       .send(
         // in contract yet?
         // challenge,
