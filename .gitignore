@@ -3,4 +3,3 @@ dist/
 notes.txt
 test/apiRoutes.js
 .env
-test/HappyCase.test.js
