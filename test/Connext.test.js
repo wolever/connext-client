@@ -216,13 +216,12 @@ describe('Connext', async () => {
       })
     })
 
-  describe('withdraw from ledger channel', () => {
-    it('should withdraw all funds from the ledger channel for partyA', async () => {
-      response = await client.withdraw()
-      assert.ok(Web3.utils.isHex(response.transactionHash))
-    }).timeout(5000)
-  })
-    
+    describe('withdraw from ledger channel', () => {
+      it('should withdraw all funds from the ledger channel for partyA', async () => {
+        response = await client.withdraw()
+        assert.ok(Web3.utils.isHex(response.transactionHash))
+      }).timeout(5000)
+    })
   })
 
   describe('checkpoint', () => {
