@@ -318,23 +318,23 @@ class Connext {
     )
     // get channel
     const vc = await this.getChannelById(channelId)
+    const lc = await this.getLcByPartyA()
     const vc0 = {
       vcId: channelId,
       nonce: 0,
       partyA: vc.partyA, // depending on ingrid for this value
       partyB: vc.partyB,
-      partyI: vc.partyI,
       balanceA: Web3.utils.toBN(vc.balanceA), // depending on ingrid for this value
       balanceB: Web3.utils.toBN(0),
-      signer: vc.partyA
+      signer: vc.partyB
     }
-    const sig = await this.createVCStateUpdate(vc0)
-    // add vc0 to initial states
-    let vc0s = await this.getVcInitialStates(vc.subchanBtoI)
-    vc0s.push(vc0)
+    const vcSig = await this.createVCStateUpdate(vc0)
+    // generate lcSig
+    const lcSig = await this.createLCUpdateOnVCOpen({ vc0, lc, signer: vc.partyB })
     // ping ingrid with vc0 (hub decomposes to lc)
     const result = await this.joinVcHandler({
-      sig: sig,
+      vcSig,
+      lcSig,
       channelId
     })
     return result
