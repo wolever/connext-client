@@ -57,3 +57,7 @@ export const backoff = (retries, fn, delay = 500) => {
         : Promise.reject(err))
   )
 }
+
+export const timeout = ms => {
+  return new Promise(resolve => setTimeout(resolve, ms))
+}
