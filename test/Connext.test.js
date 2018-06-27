@@ -595,19 +595,12 @@ describe('Connext', async () => {
     })
 
     describe('updateLcStateContractHandler', () => {
-      // init web3
-      const port = process.env.ETH_PORT ? process.env.ETH_PORT : '9545'
-      web3 = new Web3(`ws://localhost:${port}`)
-      let client = new Connext({ web3 }, Web3)
       describe('Web3 and contract properly initialized, valid parameters', async () => {
         it('should call updateLcState on the channel manager instance with no open VCs', async () => {
-          const accounts = await client.web3.eth.getAccounts()
-          partyA = accounts[0]
-          ingridAddress = client.ingridAddress = lc0.partyI = accounts[2]
-          lcId = '0x4b7c97c3ae6abca2ff2ba4e31ee594ac5e1b1f12d8fd2097211569f80dbb7d08'
+          subchanAI = '0x4b7c97c3ae6abca2ff2ba4e31ee594ac5e1b1f12d8fd2097211569f80dbb7d08'
           const params = {
             isClose: false,
-            lcId: lcId,
+            lcId: subchanAI,
             nonce: 1,
             openVCs: 0,
             vcRootHash: emptyRootHash,
@@ -632,63 +625,44 @@ describe('Connext', async () => {
           )
         })
         it('should call updateLcState on the channel manager instance open VCs', async () => {
-          const accounts = await client.web3.eth.getAccounts()
-          partyA = accounts[0]
-          partyB = accounts[1]
-          ingridAddress = client.ingridAddress = lc0.partyI = accounts[2]
-          lcId = '0x01'
+          subchanAI = '0x4b7c97c3ae6abca2ff2ba4e31ee594ac5e1b1f12d8fd2097211569f80dbb7d08'
+          vcId = '0xc12'
           const vc0 = {
             isClose: false,
-            vcId: '0xc12',
+            vcId: vcId,
             nonce: 0,
             partyA: partyA,
             partyB: partyB,
-            partyI: ingridAddress,
-            subchanAI: '0x01',
-            subchanBI: '0x02',
             balanceA: Web3.utils.toBN(Web3.utils.toWei('1', 'ether')),
             balanceB: Web3.utils.toBN(Web3.utils.toWei('0', 'ether'))
           }
-          const vc1 = {
-            isClose: false,
-            vcId: '0xc13',
-            nonce: 0,
-            partyA: partyA,
-            partyB: partyB,
-            partyI: ingridAddress,
-            subchanAI: '0x03',
-            subchanBI: '0x04',
-            balanceA: Web3.utils.toBN(Web3.utils.toWei('1', 'ether')),
-            balanceB: Web3.utils.toBN(Web3.utils.toWei('0', 'ether'))
-          }
-          const vc0s = []
+          let vc0s = []
           vc0s.push(vc0)
-          vc0s.push(vc1)
           const vcRootHash1 = Connext.generateVcRootHash({ vc0s })
-          const params = {
+          let lc1 = {
             isClose: false,
-            lcId: lcId,
-            nonce: 3,
-            openVCs: 2,
+            lcId: subchanAI,
+            nonce: 1,
+            openVcs: 1,
             vcRootHash: vcRootHash1,
             partyA: partyA,
             partyI: ingridAddress,
-            balanceA: Web3.utils.toBN(Web3.utils.toWei('2', 'ether')),
-            balanceI: Web3.utils.toBN(Web3.utils.toWei('3', 'ether'))
+            balanceA: Web3.utils.toBN(Web3.utils.toWei('5', 'ether')),
+            balanceI: Web3.utils.toBN(Web3.utils.toWei('4', 'ether')),
+            signer: partyA
           }
-          const hash = await Connext.createLCStateUpdateFingerprint(params)
-          params.unlockedAccountPresent = true
-          params.sigA = await client.createLCStateUpdate(params)
-          params.sigI = await client.web3.eth.sign(hash, accounts[2])
-          console.log('PARAMSA:', params)
-          console.log('hashA:', hash)
-
-          const response = await client.updateLcStateContractHandler(params)
+          const sigA = await client.createLCStateUpdate(lc1)
+          lc1.signer = ingridAddress
+          const sigI = await client.createLCStateUpdate(lc1)
+          lc1.sigA = sigA
+          lc1.sigI = sigI
+          lc1.sender = partyA
+          const response = await client.updateLcStateContractHandler(lc1)
           assert.ok(
             response.transactionHash !== null &&
               response.transactionHash !== undefined
           )
-        })
+        }).timeout(5000)
       })
     })
 

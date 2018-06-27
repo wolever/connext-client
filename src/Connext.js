@@ -1254,10 +1254,12 @@ class Connext {
       methodName,
       'vc0s'
     )
-    let elems, vcRootHash
+    const emptyRootHash = '0x0000000000000000000000000000000000000000000000000000000000000000'
+    let vcRootHash
+    let elems = []
     if (vc0s.length === 0) {
       // reset to initial value -- no open VCs
-      vcRootHash = '0x0000000000000000000000000000000000000000000000000000000000000000'
+      vcRootHash = emptyRootHash
     } else {
       elems = vc0s.map(vc0 => {
         // vc0 is the initial state of each vc
@@ -1266,6 +1268,10 @@ class Connext {
         const vcBuf = Utils.hexToBuffer(hash)
         return vcBuf
       })
+      if (elems.length % 2 !== 0) {
+        // cant have odd number of leaves
+        elems.push(Utils.hexToBuffer(emptyRootHash))
+      }
       const merkle = new MerkleTree.default(elems)
       vcRootHash = Utils.bufferToHex(merkle.getRoot())
     }
