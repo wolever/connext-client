@@ -962,6 +962,7 @@ class Connext {
       methodName,
       'balanceB'
     )
+    const hubBond = balanceA.add(balanceB)
 
     // generate state update to sign
     const hash = Web3.utils.soliditySha3(
@@ -969,6 +970,7 @@ class Connext {
       { type: 'uint256', value: nonce },
       { type: 'address', value: partyA },
       { type: 'address', value: partyB },
+      { type: 'uint256', value: hubBond },
       { type: 'uint256', value: balanceA },
       { type: 'uint256', value: balanceB }
     )
@@ -1252,23 +1254,47 @@ class Connext {
       methodName,
       'vc0s'
     )
-    let elems, vcRootHash
+    const emptyRootHash = '0x0000000000000000000000000000000000000000000000000000000000000000'
+    let vcRootHash
+    let elems = []
     if (vc0s.length === 0) {
       // reset to initial value -- no open VCs
-      vcRootHash = '0x0000000000000000000000000000000000000000000000000000000000000000'
+      vcRootHash = emptyRootHash
     } else {
-      elems = vc0s.map(vc0 => {
-        // vc0 is the initial state of each vc
-        // hash each initial state and convert hash to buffer
-        const hash = Connext.createVCStateUpdateFingerprint(vc0)
-        const vcBuf = Utils.hexToBuffer(hash)
-        return vcBuf
-      })
-      const merkle = new MerkleTree.default(elems)
+      const merkle = Connext.generateMerkleTree(vc0s)
       vcRootHash = Utils.bufferToHex(merkle.getRoot())
     }
 
     return vcRootHash
+  }
+
+  static generateMerkleTree (vc0s) {
+    const methodName = 'generateVcRootHash'
+    const isArray = { presence: true, isArray: true }
+    Connext.validatorsResponseToError(
+      validate.single(vc0s, isArray),
+      methodName,
+      'vc0s'
+    )
+    if (vc0s.length === 0) {
+      throw new Error('Cannot create a Merkle tree with 0 leaves.')
+    }
+    const emptyRootHash = '0x0000000000000000000000000000000000000000000000000000000000000000'
+    let merkle
+    let elems = vc0s.map(vc0 => {
+      // vc0 is the initial state of each vc
+      // hash each initial state and convert hash to buffer
+      const hash = Connext.createVCStateUpdateFingerprint(vc0)
+      const vcBuf = Utils.hexToBuffer(hash)
+      return vcBuf
+    })
+    if (elems.length % 2 !== 0) {
+      // cant have odd number of leaves
+      elems.push(Utils.hexToBuffer(emptyRootHash))
+    }
+    merkle = new MerkleTree.default(elems)
+
+    return merkle
   }
 
   // HELPER FUNCTIONS
@@ -1281,8 +1307,8 @@ class Connext {
   async createLedgerChannelContractHandler ({
     ingridAddress = this.ingridAddress,
     lcId,
-    // challenge,
     initialDeposit,
+    challenge,
     sender = null
   }) {
     const methodName = 'createLedgerChannelContractHandler'
@@ -1291,6 +1317,7 @@ class Connext {
     const isHexStrict = { presence: true, isHexStrict: true }
     const isBN = { presence: true, isBN: true }
     const isAddress = { presence: true, isAddress: true }
+    const isPositiveInt = { presence: true, isPositiveInt: true }
     Connext.validatorsResponseToError(
       validate.single(ingridAddress, isAddress),
       methodName,
@@ -1301,11 +1328,11 @@ class Connext {
       methodName,
       'lcId'
     )
-    // Connext.validatorsResponseToError(
-    //   validate.single(challenge, isPositiveInt),
-    //   methodName,
-    //   'challenge'
-    // )
+    Connext.validatorsResponseToError(
+      validate.single(challenge, isPositiveInt),
+      methodName,
+      'challenge'
+    )
     Connext.validatorsResponseToError(
       validate.single(initialDeposit, isBN),
       methodName,
@@ -1323,7 +1350,7 @@ class Connext {
     }
     
     const result = await this.channelManagerInstance.methods
-      .createChannel(lcId, ingridAddress)
+      .createChannel(lcId, ingridAddress, challenge)
       .send(
         // in contract yet?
         // challenge,
@@ -1602,10 +1629,7 @@ class Connext {
     const result = await this.channelManagerInstance.methods
       .updateLCstate(
         lcId,
-        nonce,
-        openVcs,
-        balanceA,
-        balanceI,
+        [ nonce, openVcs, balanceA, balanceI ],
         Web3.utils.padRight(vcRootHash, 64),
         sigA,
         sigI
@@ -1689,11 +1713,28 @@ class Connext {
       sender = accounts[0]
     }
     // generate proof from lc
+    const stateHash = Connext.createVCStateUpdateFingerprint({
+      vcId,
+      nonce,
+      partyA,
+      partyB,
+      balanceA,
+      balanceB
+    })
     const vc0s = await this.getVcInitialStates(subchanId)
     const vcRootHash = Connext.generateVcRootHash({ vc0s })
-    let proof = [vcRootHash]
+    let merkle = Connext.generateMerkleTree(vc0s)
+    let mproof = merkle.proof(vcRootHash)
+
+    let proof = []
+    for(var i=0; i<mproof.length; i++){
+      proof.push(Utils.bufferToHex(mproof[i]))
+    }
+
+    proof.unshift(stateHash)
+
     proof = Utils.marshallState(proof)
-    // proof = this.web3.utils.soliditySha3({ type: 'bytes32', value: vcRootHash })
+
     const results = await this.channelManagerInstance.methods
       .initVCstate(
         subchanId,
