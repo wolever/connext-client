@@ -708,6 +708,41 @@ class Connext {
     })
   }
 
+  /**
+   * Cosigns the latest ingrid-signed ledger state update.
+   * 
+   * @param {Object} params
+   * @param {String} params.lcId - ledger channel id
+   * @param {Number} params.nonce - nonce of update you are cosigning
+   */
+  async cosignLCUpdate({ lcId, nonce }) {
+    const methodName = 'closeChannels'
+    const isHexStrict = { presence: true, isHexStrict: true }
+    const isPositiveInt = { presence: true, isPositiveInt: true }
+    Connext.validatorsResponseToError(
+      validate.single(lcId, isHexStrict),
+      methodName,
+      'lcId'
+    )
+    Connext.validatorsResponseToError(
+      validate.single(nonce, isHexStrict),
+      methodName,
+      'nonce'
+    )
+    let latestState = await this.getLatestLedgerStateUpdate()
+    if (latestState.nonce !== nonce) {
+      throw new Error('Latest state nonce is not the nonce you wanted to close with.')
+    }
+    latestState.signer = latestState.partyA
+    const sigA = await this.createLCStateUpdate(latestState)
+    const response = await this.axiosInstance.post(
+      `${this.ingridUrl}/ledgerchannel/${lcId}/update/${nonce}/cosign`,
+      {
+        sig: sigA
+      }
+    )
+  }
+
 
   // ***************************************
   // *********** STATIC METHODS ************
@@ -1958,7 +1993,7 @@ class Connext {
       'ledgerChannelId'
     )
     const response = await this.axiosInstance.get(
-      `${this.ingridUrl}/ledgerchannel/${ledgerChannelId}/lateststate`
+      `${this.ingridUrl}/ledgerchannel/${ledgerChannelId}/update/latest/sig[]=sigI`
     )
     return response.data
   }
