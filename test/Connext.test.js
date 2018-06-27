@@ -87,7 +87,7 @@ describe('Connext', async () => {
     })
   })
 
-  describe.only('happy case functionality' , () => {
+  describe('happy case functionality' , () => {
     describe('creating subchans', () => {
       // register function hardcodes from accounts[0]
       // to accurately test, must open channels directly with contract
@@ -179,7 +179,7 @@ describe('Connext', async () => {
     
     describe('creating a virtual channel between partyA and partyB', () => {
       
-      it.only('partyA should create a virtual channel with 5 eth in it', async () => {
+      it('partyA should create a virtual channel with 5 eth in it', async () => {
         vcId = await client.openChannel({ to: partyB })
         assert.ok(Web3.utils.isHexStrict(vcId))
       })
