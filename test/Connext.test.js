@@ -179,11 +179,9 @@ describe('Connext', async () => {
     
     describe('creating a virtual channel between partyA and partyB', () => {
       
-      it.only('partyA should create a virtual channel with 5 eth in it', async () => {
-        // initialDeposit = Web3.utils.toBN(1000)
+      it('partyA should create a virtual channel with 5 eth in it', async () => {
         vcId = await client.openChannel({ to: partyB })
-        assert.equal(vcId, ';)')
-        // assert.ok(Web3.utils.isHexStrict(vcId))
+        assert.ok(Web3.utils.isHexStrict(vcId))
       })
     
       it('partyB should join the virtual channel with 0 eth', async () => {
