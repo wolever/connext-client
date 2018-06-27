@@ -2,15 +2,13 @@ const assert = require('assert')
 const Connext = require('../src/Connext')
 const axios = require('axios')
 const MockAdapter = require('axios-mock-adapter')
-const { createFakeWeb3, retry, pause, backoff } = require('./Helpers')
+const { createFakeWeb3, timeout } = require('./Helpers')
 const sinon = require('sinon')
 const MerkleTree = require('../src/helpers/MerkleTree')
 const Utils = require('../src/helpers/utils')
 const Web3 = require('web3')
 const channelManagerAbi = require('../artifacts/LedgerChannel.json')
 const { initWeb3, getWeb3 } = require('../web3')
-const util = require('util')
-const setTimeoutPromise = util.promisify(setTimeout)
 
 // named variables
 // on init
@@ -89,7 +87,7 @@ describe('Connext', async () => {
     })
   })
 
-  describe('happy case functionality' , () => {
+  describe.only('happy case functionality' , () => {
     describe('creating subchans', () => {
       // register function hardcodes from accounts[0]
       // to accurately test, must open channels directly with contract
@@ -104,14 +102,14 @@ describe('Connext', async () => {
         ).timeout(5000)
     
         it('should request hub joins subchanAI', async () => {
-            // response = await setTimeoutPromise(10000, client.requestJoinLc(subchanAI))
+          // response = await Promise.all([client.requestJoinLc(subchanAI), timeout(15000)])
           subchanAI =
-            '0x155fc99eff1aee0a4deb5464c89e1f402f7d75b8d46ffce036fe9da637b92815'
+            '0x03f11cbb8570a47e1b12dd8266c39df1c77f21e18737b31db9b63471807d6227'
           response = await client.requestJoinLc(subchanAI)
           console.log(response)
           //   assert.equal(response.txHash, ':)')
           assert.ok(Web3.utils.isHex(response))
-        }).timeout(17000)
+        }).timeout(20000)
       })
     
       describe('calling functions on contract', () => {
@@ -143,21 +141,21 @@ describe('Connext', async () => {
         it('should create subchanBI on channel manager instance', async () => {
           // hardcode contract call, accounts[0] is encoded in client
           response = await client.channelManagerInstance.methods
-            .createChannel(subchanBI, ingridAddress)
+            .createChannel(subchanBI, ingridAddress, 3600)
             .send({ from: partyB, value: initialDeposit, gas: 3000000 })
           assert.ok(Web3.utils.isHex(response.transactionHash))
           //   assert.equal(response.transactionHash, ';)')
         }).timeout(7000)
 
         it('should request hub joins subchanBI', async () => {
-          // response = await setTimeoutPromise(12000, client.requestJoinLc(subchanBI))
+          // response = await Promise.all([client.requestJoinLc(subchanBI), timeout(15000)])
           subchanBI =
-            '0x6f07fa7337fb0585dcc365ccd2ff626ef4b12c1fb818464ef8ae1b24ecaddce9'
+            '0x44e87f5ecdd91e71b6d469f721757a3f5d9a46b956481f4ac7891ec610083f28'
           response = await client.requestJoinLc(subchanBI)
           console.log(response)
           //   assert.equal(response.txHash, ':)')
           assert.ok(Web3.utils.isHex(response))
-        }).timeout(17000)
+        }).timeout(20000)
 
         it(
           'should force ingrid to join both subchans by calling it on contract',
@@ -181,7 +179,7 @@ describe('Connext', async () => {
     
     describe('creating a virtual channel between partyA and partyB', () => {
       
-      it('partyA should create a virtual channel with 5 eth in it', async () => {
+      it.only('partyA should create a virtual channel with 5 eth in it', async () => {
         vcId = await client.openChannel({ to: partyB })
         assert.ok(Web3.utils.isHexStrict(vcId))
       })
@@ -492,7 +490,7 @@ describe('Connext', async () => {
     })
   })
 
-  describe.only('client contract handlers', () => {
+  describe('client contract handlers', () => {
     describe('createLedgerChannelContractHandler', () => {
       describe('Web3 and contract properly initialized, valid parameters', () => {
         it('should call createChannel on the channel manager instance (subchanAI)', async () => {
@@ -710,7 +708,7 @@ describe('Connext', async () => {
 
     describe('initVcStateContractHandler', () => {
       describe('real Web3 and valid parameters', () => {
-        it.only('should init a virtual channel state on chain', async () => {
+        it('should init a virtual channel state on chain', async () => {
           // get accounts
           subchanAI =
             '0x4b7c97c3ae6abca2ff2ba4e31ee594ac5e1b1f12d8fd2097211569f80dbb7d08'

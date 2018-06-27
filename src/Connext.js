@@ -68,6 +68,22 @@ validate.validators.isPositiveInt = value => {
   }
 }
 
+validate.validators.isVCStateObj = value => {
+  if (!value.balanceA || !value.balanceB || !value.partyA || !value.partyB || !value.nonce || !value.channelId) {
+    return null
+  } else {
+    return `${JSON.stringify(value)} is not a valid virtual channel state object.`
+  }
+}
+
+validate.validators.isLCObj = value => {
+  if (!value.state || !value.balanceA || !value.balanceI || !value.channelId || !value.partyA || !value.partyI || !value.nonce || !value.openVcs || !value.vcRootHash) {
+    return null
+  } else {
+    return `${JSON.stringify(value)} is not a valid ledger channel object.`
+  }
+}
+
 // const logger = (arrayOfValidatorReturns) => arrayOfValidatorReturns.map((()console.log)
 
 /**
@@ -282,17 +298,16 @@ class Connext {
       signer: lcA.partyA
     }
     const sigVC0 = await this.createVCStateUpdate(vc0)
+    const sigAtoI = await this.createLCUpdateOnVCOpen({ vc0, lc: lcA })
 
     // ping ingrid
     const result = await this.openVc({
       channelId: vcId,
       partyA: lcA.partyA,
       partyB: to.toLowerCase(),
-      partyI: this.ingridAddress,
       balanceA: deposit || Web3.utils.toBN(lcA.balanceA),
-      subchanAtoI: lcA.channelId,
-      subchanBtoI: lcIdB,
-      sig: sigVC0
+      vcSig: sigVC0,
+      lcSig: sigAtoI
     })
     return result
   }
@@ -319,23 +334,23 @@ class Connext {
     )
     // get channel
     const vc = await this.getChannelById(channelId)
+    const lc = await this.getLcByPartyA()
     const vc0 = {
       vcId: channelId,
       nonce: 0,
       partyA: vc.partyA, // depending on ingrid for this value
       partyB: vc.partyB,
-      partyI: vc.partyI,
       balanceA: Web3.utils.toBN(vc.balanceA), // depending on ingrid for this value
       balanceB: Web3.utils.toBN(0),
-      signer: vc.partyA
+      signer: vc.partyB
     }
-    const sig = await this.createVCStateUpdate(vc0)
-    // add vc0 to initial states
-    let vc0s = await this.getVcInitialStates(vc.subchanBtoI)
-    vc0s.push(vc0)
+    const vcSig = await this.createVCStateUpdate(vc0)
+    // generate lcSig
+    const lcSig = await this.createLCUpdateOnVCOpen({ vc0, lc, signer: vc.partyB })
     // ping ingrid with vc0 (hub decomposes to lc)
     const result = await this.joinVcHandler({
-      sig: sig,
+      vcSig,
+      lcSig,
       channelId
     })
     return result
@@ -641,31 +656,37 @@ class Connext {
       'channelId'
     )
 
-    // get decomposed lc updates from ingrid
-    const subchan = await this.getLcId()
-    // ping ingrid for decomposed updates
-    // if doesnt respond, then settleVC for all VCIDs in LC
-    let lcStates = await this.getDecomposedLcStates(channelId)
-    // the lc update for this subchan should be signed by ingrid
-    // should you just call checkpoint to update the LC on chain with this?
-    if (lcStates[subchan]) {
-      // const result = await this.checkpoint() // maybe just post update cosig to ingrid?
-      // type casting, returns not as BN type so validation fails
-      lcStates[subchan].balanceA = Web3.utils.toBN(lcStates[subchan].balanceA)
-      lcStates[subchan].balanceI = Web3.utils.toBN(lcStates[subchan].balanceI)
-      lcStates[subchan].signer = lcStates[subchan].partyA
-      const sig = await this.createLCStateUpdate(lcStates[subchan])
-      // post sig to ingrid
-      const result = await this.axiosInstance.post(
-        `${this.ingridUrl}/ledgerchannel/${subchan}/cosign`,
-        {
-          sig
-        }
-      )
-      return result.data
+    // get latest state in vc
+    const vcN = await this.getLatestVCStateUpdate(channelId)
+    // get partyA ledger channel
+    const subchan = await this.getLcByPartyA()
+    // who should sign lc state update from vc
+    let isPartyAInVC
+    if (vcN.partyA === subchan.partyA) {
+      isPartyAInVC = true
     } else {
-      // ingrid MIA, call settle vc on chain for each vcID
-      // get initial states of VCs
+      isPartyAInVC = false
+    }
+    // generate decomposed lc update
+    const sigAtoI = await this.createLCUpdateOnVCClose({ 
+      vcN, 
+      subchan, 
+      signer: isPartyAInVC ? vcN.partyA : vcN.partyB 
+    })
+    // request ingrid closes vc with this update
+    const fastCloseResult = await this.axiosInstance.post(
+      `${this.ingridUrl}/virtualchannel/${vcN.channelid}/close`,
+      {
+        lcSig: sigAtoI,
+        vcNonce: vcN.nonce,
+        ledgerChannelId: subchan.channelId
+      }
+    )
+    if (fastCloseResult.data && fastCloseResult.data.sigI) {
+      // ingrid didnt cosign the ledger update
+      // take to chain
+      return fastCloseResult.data.sigI
+    } else {
       const result = await this.byzantineCloseVc(channelId)
       return result
     }
@@ -2256,12 +2277,12 @@ class Connext {
   }
 
   // HELPER FUNCTION TO HAVE INGRID SET UP VC
-  async openVc ({ channelId, partyA, partyB, partyI = this.ingridAddress, balanceA, subchanAtoI, subchanBtoI, sig }) {
+  async openVc ({ channelId, partyA, partyB, balanceA, vcSig, lcSig }) {
     // validate params
     const methodName = 'openVc'
+    const isHexStrict = { presence: true, isHex: true }
     const isAddress = { presence: true, isAddress: true }
     const isHex = { presence: true, isHex: true }
-    const isHexStrict = { presence: true, isHexStrict: true }
     const isBN = { presence: true, isBN: true }
     Connext.validatorsResponseToError(
       validate.single(channelId, isHexStrict),
@@ -2279,35 +2300,27 @@ class Connext {
       'partyB'
     )
     Connext.validatorsResponseToError(
-      validate.single(partyI, isAddress),
-      methodName,
-      'partyI'
-    )
-    Connext.validatorsResponseToError(
       validate.single(balanceA, isBN),
       methodName,
       'balanceA'
     )
     Connext.validatorsResponseToError(
-      validate.single(subchanAtoI, isHexStrict),
+      validate.single(vcSig, isHex),
       methodName,
-      'subchanAtoI'
+      'vcSig'
     )
     Connext.validatorsResponseToError(
-      validate.single(subchanBtoI, isHexStrict),
+      validate.single(lcSig, isHex),
       methodName,
-      'subchanBtoI'
-    )
-    Connext.validatorsResponseToError(
-      validate.single(sig, isHex),
-      methodName,
-      'sig'
+      'lcSig'
     )
 
+
     // ingrid should add vc params to db
+    console.log({ channelId, partyA, partyB, balanceA: balanceA.toString(), lcSig, vcSig })
     const response = await this.axiosInstance.post(
       `${this.ingridUrl}/virtualchannel/`,
-      { channelId, partyA, partyB, partyI, balanceA: balanceA.toString(), subchanAtoI, subchanBtoI, sig }
+      { channelId, partyA, partyB, balanceA: balanceA.toString(), lcSig, vcSig }
     )
     return response.data.channelId
   }
@@ -2417,8 +2430,6 @@ class Connext {
    * Generates the decomposed ledger channel updates needed when opening a virtual channel.
    *
    * @param {Object} params
-   * @param {String} params.sigA - signature of partyA on opening virtual channel state
-   * @param {String} params.sigB - signature of partyB on opening virtual channel state
    * @param {String} params.vcId - virtual channel id
    * @param {Number} params.nonce - nonce of the virtual channel
    * @param {String} params.partyA - wallet address of partyA
@@ -2429,7 +2440,48 @@ class Connext {
    * @param {BigNumber} params.balanceA - balanceA in the virtual channel
    * @param {BigNumber} params.balanceB - balanceB in the virtual channel
    */
-  async createLCUpdatesOnVCOpen ({}) { }
+  async createLCUpdateOnVCOpen ({ vc0, lc, signer = null }) {
+    const methodName = 'createLCUpdateOnVCOpen'
+    const isAddress = { presence: true, isAddress: true }
+    const isVCStateObj = { presence: true, isVCStateObj: true }
+    const isLCObj = { presence: true, isLCObj: true }
+    Connext.validatorsResponseToError(
+      validate.single(vc0, isVCStateObj),
+      methodName,
+      'vc0'
+    )
+    Connext.validatorsResponseToError(
+      validate.single(lc, isLCObj),
+      methodName,
+      'lc'
+    )
+    if (signer) {
+      Connext.validatorsResponseToError(
+        validate.single(signer, isAddress),
+        methodName,
+        'signer'
+      )
+    }
+
+    let vcInitialStates = await this.getVcInitialStates(lc.channelId)
+    vcInitialStates.push(vc0) // add new vc state to hash
+    let newRootHash = Connext.generateVcRootHash({vc0s: vcInitialStates})
+    const updateAtoI = {
+      lcId: lc.channelId,
+      nonce: lc.nonce + 1,
+      openVcs: vcInitialStates.length,
+      vcRootHash: newRootHash,
+      partyA: vc0.partyA,
+      partyI: this.ingridAddress,
+      balanceA: Web3.utils.toBN(lc.balanceA).sub(Web3.utils.toBN(vc0.balanceA)),
+      balanceI: Web3.utils.toBN(lc.balanceI).sub(Web3.utils.toBN(vc0.balanceB)),
+      signer: signer ? signer : vc0.partyA
+    }
+    const sigAtoI = await this.createLCStateUpdate(updateAtoI)
+    console.log('updateAtoI:', updateAtoI)
+    console.log('sigAtoI:', sigAtoI)
+    return sigAtoI
+  }
 
   /**
   * Generates the decomposed ledger channel updates needed when closing a virtual channel.
@@ -2447,7 +2499,49 @@ class Connext {
   * @param {BigNumber} params.balanceA - balanceA in the virtual channel
   * @param {BigNumber} params.balanceB - balanceB in the virtual channel
   */
- async createLCUpdatesOnVCClose ({}) { }
+ async createLCUpdateOnVCClose ({ vcN, subchan, signer = null }) {
+  const methodName = 'createLCUpdateOnVCClose'
+  const isAddress = { presence: true, isAddress: true }
+  const isVCStateObj = { presence: true, isVCStateObj: true }
+  const isLCObj = { presence: true, isLCObj: true }
+  Connext.validatorsResponseToError(
+    validate.single(vc0, isVCStateObj),
+    methodName,
+    'vc0'
+  )
+  Connext.validatorsResponseToError(
+    validate.single(subchan, isLCObj),
+    methodName,
+    'subchan'
+  )
+  if (signer) {
+    Connext.validatorsResponseToError(
+      validate.single(signer, isAddress),
+      methodName,
+      'signer'
+    )
+  }
+  let vcInitialStates = this.getVcInitialStates(lcA.channelId)
+  // array of state objects, which include the channel id and nonce
+  // remove initial state of vcN
+  vcInitialStates.filter((val) => val.channelId !== vcN.channelId)
+  const newRootHash = Connext.generateVcRootHash(vcInitialStates)
+  const updateAtoI = {
+    lcId: lc.channelId,
+    nonce: lc.nonce + 1,
+    openVcs: vcInitialStates.length,
+    vcRootHash: newRootHash,
+    partyA: vcN.partyA,
+    partyI: this.ingridAddress,
+    balanceA: Web3.utils.toBN(lc.balanceA).add(Web3.utils.toBN(vcN.balanceA)),
+    balanceI: Web3.utils.toBN(lc.balanceI).add(Web3.utils.toBN(vcN.balanceB)),
+    signer: signer ? signer : vcN.partyA
+  }
+  const sigAtoI = await this.createLCStateUpdate(updateAtoI)
+  console.log('updateAtoI:', updateAtoI)
+  console.log('sigAtoI:', sigAtoI)
+  return sigAtoI
+ }
 
   // settles all vcs on chain in the case of a dispute (used in close channel)
   // first calls init vc
