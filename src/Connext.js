@@ -640,31 +640,37 @@ class Connext {
       'channelId'
     )
 
-    // get decomposed lc updates from ingrid
-    const subchan = await this.getLcId()
-    // ping ingrid for decomposed updates
-    // if doesnt respond, then settleVC for all VCIDs in LC
-    let lcStates = await this.getDecomposedLcStates(channelId)
-    // the lc update for this subchan should be signed by ingrid
-    // should you just call checkpoint to update the LC on chain with this?
-    if (lcStates[subchan]) {
-      // const result = await this.checkpoint() // maybe just post update cosig to ingrid?
-      // type casting, returns not as BN type so validation fails
-      lcStates[subchan].balanceA = Web3.utils.toBN(lcStates[subchan].balanceA)
-      lcStates[subchan].balanceI = Web3.utils.toBN(lcStates[subchan].balanceI)
-      lcStates[subchan].signer = lcStates[subchan].partyA
-      const sig = await this.createLCStateUpdate(lcStates[subchan])
-      // post sig to ingrid
-      const result = await this.axiosInstance.post(
-        `${this.ingridUrl}/ledgerchannel/${subchan}/cosign`,
-        {
-          sig
-        }
-      )
-      return result.data
+    // get latest state in vc
+    const vcN = await this.getLatestVCStateUpdate(channelId)
+    // get partyA ledger channel
+    const subchan = await this.getLcByPartyA()
+    // who should sign lc state update from vc
+    let isPartyAInVC
+    if (vcN.partyA === subchan.partyA) {
+      isPartyAInVC = true
     } else {
-      // ingrid MIA, call settle vc on chain for each vcID
-      // get initial states of VCs
+      isPartyAInVC = false
+    }
+    // generate decomposed lc update
+    const sigAtoI = await this.createLCUpdateOnVCClose({ 
+      vcN, 
+      lcA, 
+      signer: isPartyAInVC ? vcN.partyA : vcN.partyB 
+    })
+    // request ingrid closes vc with this update
+    const fastCloseResult = await this.axiosInstance.post(
+      `${this.ingridUrl}/virtualchannel/${vcN.channelid}/close`,
+      {
+        lcSig: sigAtoI,
+        vcNonce: vcN.nonce,
+        ledgerChannelId: subchan.channelId
+      }
+    )
+    if (fastCloseResult.data && fastCloseResult.data.sigI) {
+      // ingrid didnt cosign the ledger update
+      // take to chain
+      return fastCloseResult.data.sigI
+    } else {
       const result = await this.byzantineCloseVc(channelId)
       return result
     }
@@ -2470,7 +2476,42 @@ class Connext {
   * @param {BigNumber} params.balanceA - balanceA in the virtual channel
   * @param {BigNumber} params.balanceB - balanceB in the virtual channel
   */
- async createLCUpdatesOnVCClose ({}) { }
+ async createLCUpdateOnVCClose ({ vcN, lcA, signer = null }) {
+  // const methodName = 'createLCUpdateOnVCClose'
+  // const isAddress = { presence: true, isAddress: true }
+  // const isVCStateObj = { presence: true, isVCStateObj: true }
+  // const isLCObj = { presence: true, isLCObj: true }
+  // Connext.validatorsResponseToError(
+  //   validate.single(vc0, isVCStateObj),
+  //   methodName,
+  //   'vc0'
+  // )
+  // Connext.validatorsResponseToError(
+  //   validate.single(lc, icLCObj),
+  //   methodName,
+  //   'lc'
+  // )
+  let vcInitialStates = this.getVcInitialStates(lcA.channelId)
+  // array of state objects, which include the channel id and nonce
+  // remove initial state of vcN
+  vcInitialStates.filter((val) => val.channelId !== vcN.channelId)
+  const newRootHash = Connext.generateVcRootHash(vcInitialStates)
+  const updateAtoI = {
+    lcId: lc.channelId,
+    nonce: lc.nonce + 1,
+    openVcs: vcInitialStates.length,
+    vcRootHash: newRootHash,
+    partyA: vcN.partyA,
+    partyI: this.ingridAddress,
+    balanceA: Web3.utils.toBN(lc.balanceA).add(Web3.utils.toBN(vcN.balanceA)),
+    balanceI: Web3.utils.toBN(lc.balanceI).add(Web3.utils.toBN(vcN.balanceB)),
+    signer: signer ? signer : vcN.partyA
+  }
+  const sigAtoI = await this.createLCStateUpdate(updateAtoI)
+  console.log('updateAtoI:', updateAtoI)
+  console.log('sigAtoI:', sigAtoI)
+  return sigAtoI
+ }
 
   // settles all vcs on chain in the case of a dispute (used in close channel)
   // first calls init vc
