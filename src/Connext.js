@@ -708,6 +708,41 @@ class Connext {
     })
   }
 
+  // /**
+  //  * Cosigns the latest ingrid-signed ledger state update.
+  //  * 
+  //  * @param {Object} params
+  //  * @param {String} params.lcId - ledger channel id
+  //  * @param {Number} params.nonce - nonce of update you are cosigning
+  //  */
+  async cosignLCUpdate({ lcId, nonce }) {
+    const methodName = 'closeChannels'
+    const isHexStrict = { presence: true, isHexStrict: true }
+    const isPositiveInt = { presence: true, isPositiveInt: true }
+    Connext.validatorsResponseToError(
+      validate.single(lcId, isHexStrict),
+      methodName,
+      'lcId'
+    )
+    Connext.validatorsResponseToError(
+      validate.single(nonce, isPositiveInt),
+      methodName,
+      'nonce'
+    )
+    let latestState = await this.getLatestLedgerStateUpdate()
+    if (latestState.nonce !== nonce) {
+      throw new Error('Latest state nonce is not the nonce you wanted to close with.')
+    }
+    latestState.signer = latestState.partyA
+    const sigA = await this.createLCStateUpdate(latestState)
+    const response = await this.axiosInstance.post(
+      `${this.ingridUrl}/ledgerchannel/${lcId}/update/${nonce}/cosign`,
+      {
+        sig: sigA
+      }
+    )
+  }
+
 
   // ***************************************
   // *********** STATIC METHODS ************
@@ -1958,7 +1993,7 @@ class Connext {
       'ledgerChannelId'
     )
     const response = await this.axiosInstance.get(
-      `${this.ingridUrl}/ledgerchannel/${ledgerChannelId}/lateststate`
+      `${this.ingridUrl}/ledgerchannel/${ledgerChannelId}/update/latest/sig[]=sigI`
     )
     return response.data
   }
@@ -2379,11 +2414,11 @@ class Connext {
   }
 
   /**
-   * Generates the decomposed ledger channel updates needed when closing a virtual channel.
+   * Generates the decomposed ledger channel updates needed when opening a virtual channel.
    *
    * @param {Object} params
-   * @param {String} params.sigA - signature of partyA on closing virtual channel state
-   * @param {String} params.sigB - signature of partyB on closing virtual channel state
+   * @param {String} params.sigA - signature of partyA on opening virtual channel state
+   * @param {String} params.sigB - signature of partyB on opening virtual channel state
    * @param {String} params.vcId - virtual channel id
    * @param {Number} params.nonce - nonce of the virtual channel
    * @param {String} params.partyA - wallet address of partyA
@@ -2394,7 +2429,25 @@ class Connext {
    * @param {BigNumber} params.balanceA - balanceA in the virtual channel
    * @param {BigNumber} params.balanceB - balanceB in the virtual channel
    */
-  async createDecomposedLcUpdates ({}) { }
+  async createLCUpdatesOnVCOpen ({}) { }
+
+  /**
+  * Generates the decomposed ledger channel updates needed when closing a virtual channel.
+  *
+  * @param {Object} params
+  * @param {String} params.sigA - signature of partyA on closing virtual channel state
+  * @param {String} params.sigB - signature of partyB on closing virtual channel state
+  * @param {String} params.vcId - virtual channel id
+  * @param {Number} params.nonce - nonce of the virtual channel
+  * @param {String} params.partyA - wallet address of partyA
+  * @param {String} params.partyB - wallet address of partyB
+  * @param {String} params.partyI - wallet address of Ingrid
+  * @param {String} params.subchanAI - ledger channel id of the ledger channel between partyA and partyI
+  * @param {String} params.subchanBI - ledger channel id of the ledger channel between partyB and partyI
+  * @param {BigNumber} params.balanceA - balanceA in the virtual channel
+  * @param {BigNumber} params.balanceB - balanceB in the virtual channel
+  */
+ async createLCUpdatesOnVCClose ({}) { }
 
   // settles all vcs on chain in the case of a dispute (used in close channel)
   // first calls init vc
@@ -2455,53 +2508,6 @@ class Connext {
     } else {
       return initResult
     }
-  }
-
-  /**
-   * Sends a signed ledger channel update to the hub. Only updates balances, use other functions to update VC information.
-   * 
-   * @param {Object} params - input parameters
-   * @param {String} params.sig - signature of partyA
-   * @param {String} params.lcId - ledger channel Id you are updating
-   * @param {BigNumber} params.balanceA - update balance of partyA
-   * @param {BigNumber} params.balanceI - update balance of partyI
-   */
-  async sendLCStateBalanceUpdate ({ sig, lcId, balanceA, balanceI }) {
-    // validate params
-    const methodName = 'updateLCstate'
-    const isHex = { presence: true, isHex: true }
-    const isHexStrict = { presence: true, isHexStrict: true }
-    const isBN = { presence: true, isBN: true }
-    const isPositiveInt = { presence: true, isPositiveInt: true }
-    Connext.validatorsResponseToError(
-      validate.single(lcId, isHex),
-      methodName,
-      'sig'
-    )
-    Connext.validatorsResponseToError(
-      validate.single(lcId, isHexStrict),
-      methodName,
-      'lcId'
-    )
-    Connext.validatorsResponseToError(
-      validate.single(balanceA, isBN),
-      methodName,
-      'balanceA'
-    )
-    Connext.validatorsResponseToError(
-      validate.single(balanceI, isBN),
-      methodName,
-      'balanceI'
-    )
-    const response = await this.axiosInstance.post(
-      `${this.ingridUrl}/ledgerchannel/${lcId}/updatestate`, 
-      {
-        sig,
-        balanceA,
-        balanceI
-      }
-    )
-    return response.data
   }
 }
 
