@@ -68,6 +68,22 @@ validate.validators.isPositiveInt = value => {
   }
 }
 
+validate.validators.isVCStateObj = value => {
+  if (!value.balanceA || !value.balanceB || !value.partyA || !value.partyB || !value.nonce || !value.channelId) {
+    return null
+  } else {
+    return `${JSON.stringify(value)} is not a valid virtual channel state object.`
+  }
+}
+
+validate.validators.isLCObj = value => {
+  if (!value.state || !value.balanceA || !value.balanceI || !value.channelId || !value.partyA || !value.partyI || !value.nonce || !value.openVcs || !value.vcRootHash) {
+    return null
+  } else {
+    return `${JSON.stringify(value)} is not a valid ledger channel object.`
+  }
+}
+
 // const logger = (arrayOfValidatorReturns) => arrayOfValidatorReturns.map((()console.log)
 
 /**
@@ -654,7 +670,7 @@ class Connext {
     // generate decomposed lc update
     const sigAtoI = await this.createLCUpdateOnVCClose({ 
       vcN, 
-      lcA, 
+      subchan, 
       signer: isPartyAInVC ? vcN.partyA : vcN.partyB 
     })
     // request ingrid closes vc with this update
@@ -2425,20 +2441,27 @@ class Connext {
    * @param {BigNumber} params.balanceB - balanceB in the virtual channel
    */
   async createLCUpdateOnVCOpen ({ vc0, lc, signer = null }) {
-    // const methodName = 'createLCUpdateOnVCOpen'
-    // const isAddress = { presence: true, isAddress: true }
-    // const isVCStateObj = { presence: true, isVCStateObj: true }
-    // const isLCObj = { presence: true, isLCObj: true }
-    // Connext.validatorsResponseToError(
-    //   validate.single(vc0, isVCStateObj),
-    //   methodName,
-    //   'vc0'
-    // )
-    // Connext.validatorsResponseToError(
-    //   validate.single(lc, icLCObj),
-    //   methodName,
-    //   'lc'
-    // )
+    const methodName = 'createLCUpdateOnVCOpen'
+    const isAddress = { presence: true, isAddress: true }
+    const isVCStateObj = { presence: true, isVCStateObj: true }
+    const isLCObj = { presence: true, isLCObj: true }
+    Connext.validatorsResponseToError(
+      validate.single(vc0, isVCStateObj),
+      methodName,
+      'vc0'
+    )
+    Connext.validatorsResponseToError(
+      validate.single(lc, isLCObj),
+      methodName,
+      'lc'
+    )
+    if (signer) {
+      Connext.validatorsResponseToError(
+        validate.single(signer, isAddress),
+        methodName,
+        'signer'
+      )
+    }
 
     let vcInitialStates = await this.getVcInitialStates(lc.channelId)
     vcInitialStates.push(vc0) // add new vc state to hash
@@ -2476,21 +2499,28 @@ class Connext {
   * @param {BigNumber} params.balanceA - balanceA in the virtual channel
   * @param {BigNumber} params.balanceB - balanceB in the virtual channel
   */
- async createLCUpdateOnVCClose ({ vcN, lcA, signer = null }) {
-  // const methodName = 'createLCUpdateOnVCClose'
-  // const isAddress = { presence: true, isAddress: true }
-  // const isVCStateObj = { presence: true, isVCStateObj: true }
-  // const isLCObj = { presence: true, isLCObj: true }
-  // Connext.validatorsResponseToError(
-  //   validate.single(vc0, isVCStateObj),
-  //   methodName,
-  //   'vc0'
-  // )
-  // Connext.validatorsResponseToError(
-  //   validate.single(lc, icLCObj),
-  //   methodName,
-  //   'lc'
-  // )
+ async createLCUpdateOnVCClose ({ vcN, subchan, signer = null }) {
+  const methodName = 'createLCUpdateOnVCClose'
+  const isAddress = { presence: true, isAddress: true }
+  const isVCStateObj = { presence: true, isVCStateObj: true }
+  const isLCObj = { presence: true, isLCObj: true }
+  Connext.validatorsResponseToError(
+    validate.single(vc0, isVCStateObj),
+    methodName,
+    'vc0'
+  )
+  Connext.validatorsResponseToError(
+    validate.single(subchan, isLCObj),
+    methodName,
+    'subchan'
+  )
+  if (signer) {
+    Connext.validatorsResponseToError(
+      validate.single(signer, isAddress),
+      methodName,
+      'signer'
+    )
+  }
   let vcInitialStates = this.getVcInitialStates(lcA.channelId)
   // array of state objects, which include the channel id and nonce
   // remove initial state of vcN
