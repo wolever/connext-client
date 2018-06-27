@@ -667,44 +667,36 @@ describe('Connext', async () => {
     })
 
     describe('consensusCloseChannelContractHandler', () => {
-      // init web3
-      const port = process.env.ETH_PORT ? process.env.ETH_PORT : '9545'
-      web3 = new Web3(`ws://localhost:${port}`)
-      let client = new Connext({ web3 }, Web3)
       describe('Web3 and contract properly initialized, valid parameters', async () => {
         it(
           'should call consensusCloseChannel on the channel manager instance',
           async () => {
-            const accounts = await client.web3.eth.getAccounts()
-            partyA = accounts[0]
-            ingridAddress = client.ingridAddress = accounts[2]
-            lcId = '0x01' // add lcid to obj
-            const params = {
+            subchanBI = '0x942e8cf213d0bd51c0ba316869d6b3b1eee9060b8d5973e75060c94013fee4bd'
+            let params = {
               isClose: true,
-              lcId: lcId,
-              nonce: 5,
-              openVCs: 0,
+              lcId: subchanBI,
+              nonce: 1,
+              openVcs: 0,
               vcRootHash: emptyRootHash,
-              partyA: partyA,
+              partyA: partyB,
               partyI: ingridAddress,
               balanceA: Web3.utils.toBN(Web3.utils.toWei('0', 'ether')),
-              balanceI: Web3.utils.toBN(Web3.utils.toWei('5', 'ether'))
+              balanceI: Web3.utils.toBN(Web3.utils.toWei('5', 'ether')),
+              signer: partyB
             }
-            const hashI = await Connext.createLCStateUpdateFingerprint(params)
-            params.unlockedAccountPresent = true
-            const sigA = await client.createLCStateUpdate(params)
-            const sigI = await client.web3.eth.sign(hashI, accounts[2])
+            const sigB = await client.createLCStateUpdate(params)
+            params.signer = ingridAddress
+            const sigI = await client.createLCStateUpdate(params)
             console.log('params:', params)
-            console.log('hashI:', hashI)
             console.log('sigI:', sigI)
-            console.log('sigA:', sigA)
+            console.log('sigB:', sigB)
 
             const result = await client.consensusCloseChannelContractHandler({
               lcId: params.lcId,
               nonce: params.nonce,
               balanceA: params.balanceA,
               balanceI: params.balanceI,
-              sigA: sigA,
+              sigA: sigB,
               sigI: sigI
             })
             assert.ok(
