@@ -709,35 +709,26 @@ describe('Connext', async () => {
     })
 
     describe('initVcStateContractHandler', () => {
-      const port = process.env.ETH_PORT ? process.env.ETH_PORT : '9545'
-      web3 = new Web3(`ws://localhost:${port}`)
-      let client = new Connext({ web3 }, Web3)
       describe('real Web3 and valid parameters', () => {
-        it('should init a virtual channel state on chain', async () => {
+        it.only('should init a virtual channel state on chain', async () => {
           // get accounts
-          const accounts = await client.web3.eth.getAccounts()
-          const subchanId =
+          subchanAI =
             '0x4b7c97c3ae6abca2ff2ba4e31ee594ac5e1b1f12d8fd2097211569f80dbb7d08'
-          partyA = accounts[0]
-          partyB = accounts[1]
-          ingridAddress = client.ingridAddress = accounts[2]
-          const vcId = Connext.getNewChannelId()
-          console.log(vcId)
+          vcId = '0xc12'
           const nonce = 0
           const balanceA = Web3.utils.toBN(Web3.utils.toWei('2', 'ether'))
           const balanceB = Web3.utils.toBN(Web3.utils.toWei('0', 'ether'))
 
           // generate sigA
-          const hash = Connext.createVCStateUpdateFingerprint({
+          const sigA = await client.createVCStateUpdate({
             vcId,
             nonce,
             partyA,
             partyB,
             balanceA,
-            balanceB
+            balanceB,
+            signer: partyA
           })
-          const sigA = await client.web3.eth.sign(hash, accounts[0])
-          console.log('hash:', hash)
           console.log('sigA:', sigA)
           // mock urls
           const mock = new MockAdapter(axios)
@@ -747,7 +738,7 @@ describe('Connext', async () => {
               [
                 // returns list of vc initial states
                 {
-                  subchanId,
+                  subchanId: subchanAI,
                   vcId,
                   nonce,
                   partyA,
@@ -761,7 +752,7 @@ describe('Connext', async () => {
           })
           // client call
           const results = await client.initVcStateContractHandler({
-            subchanId,
+            subchanId: subchanAI,
             vcId,
             nonce,
             partyA,
