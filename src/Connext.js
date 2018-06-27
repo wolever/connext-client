@@ -725,7 +725,7 @@ class Connext {
       'lcId'
     )
     Connext.validatorsResponseToError(
-      validate.single(nonce, isHexStrict),
+      validate.single(nonce, isPositiveInt),
       methodName,
       'nonce'
     )
