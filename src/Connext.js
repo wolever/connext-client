@@ -404,6 +404,7 @@ class Connext {
    * Updates channel balance by provided ID.
    *
    * In the unidirectional scheme, this function is called by the "A" party only.
+   * 
    * Increments the nonce and generates a signed state update, which is then posted to the hub/watcher.
    *
    * @example
@@ -411,11 +412,11 @@ class Connext {
    *   channelId: 10,
    *   balance: web3.utils.toBN(web3.utils.toWei(0.5, 'ether'))
    * })
-   * @param {Object} params - The method object.
-   * @param {HexString} params.channelId ID of channel.
-   * @param {BigNumber} params.balanceA Channel balance in Wei (of "A" party).
-   * @param {BigNumber} params.balanceB Channel balance in Wei (of "B" party)
-   * @returns {String} Returns signature of balance update.
+   * @param {Object} params - the method object.
+   * @param {String} params.channelId - ID of channel.
+   * @param {BigNumber} params.balanceA - channel balance in Wei (of "A" party).
+   * @param {BigNumber} params.balanceB - channel balance in Wei (of "B" party)
+   * @returns {String} - returns signature of balance update.
    */
   async updateBalance ({ channelId, balanceA, balanceB }) {
     // validate params
