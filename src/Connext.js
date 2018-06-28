@@ -615,7 +615,7 @@ class Connext {
       const signer = Connext.recoverSignerFromLCStateUpdate({
         sig: lcState.sigI,
         isClose: false,
-        lcId,
+        channelId: lcId,
         nonce: lcState.nonce,
         openVcs: lcState.openVcs,
         vcRootHash: lcState.vcRootHash,
@@ -831,7 +831,7 @@ class Connext {
 
   static createLCStateUpdateFingerprint ({
     isClose,
-    lcId,
+    channelId,
     nonce,
     openVcs,
     vcRootHash,
@@ -858,9 +858,9 @@ class Connext {
     )
 
     Connext.validatorsResponseToError(
-      validate.single(lcId, isHexStrict),
+      validate.single(channelId, isHexStrict),
       methodName,
-      'lcId'
+      'channelId'
     )
     Connext.validatorsResponseToError(
       validate.single(nonce, isPositiveInt),
@@ -914,7 +914,7 @@ class Connext {
   static recoverSignerFromLCStateUpdate ({
     sig,
     isClose,
-    lcId,
+    channelId,
     nonce,
     openVcs,
     vcRootHash,
@@ -946,9 +946,9 @@ class Connext {
     )
 
     Connext.validatorsResponseToError(
-      validate.single(lcId, isHexStrict),
+      validate.single(channelId, isHexStrict),
       methodName,
-      'lcId'
+      'channelId'
     )
     Connext.validatorsResponseToError(
       validate.single(nonce, isPositiveInt),
@@ -989,7 +989,7 @@ class Connext {
     // generate fingerprint
     let fingerprint = Connext.createLCStateUpdateFingerprint({
       isClose,
-      lcId,
+      channelId,
       nonce,
       openVcs,
       vcRootHash,
@@ -1083,7 +1083,7 @@ class Connext {
 
   static recoverSignerFromVCStateUpdate ({
     sig,
-    vcId,
+    channelId,
     nonce,
     partyA,
     partyB,
@@ -1109,9 +1109,9 @@ class Connext {
     )
 
     Connext.validatorsResponseToError(
-      validate.single(vcId, isHexStrict),
+      validate.single(channelId, isHexStrict),
       methodName,
-      'vcId'
+      'channelId'
     )
     Connext.validatorsResponseToError(
       validate.single(nonce, isPositiveInt),
@@ -1144,7 +1144,7 @@ class Connext {
     )
 
     let fingerprint = Connext.createVCStateUpdateFingerprint({
-      channelId: vcId,
+      channelId,
       nonce,
       partyA,
       partyB,
@@ -1175,7 +1175,7 @@ class Connext {
 
   async createLCStateUpdate ({
     isClose = false, // default isnt close LC
-    lcId,
+    channelId,
     nonce,
     openVcs,
     vcRootHash,
@@ -1202,9 +1202,9 @@ class Connext {
       'isClose'
     )
     Connext.validatorsResponseToError(
-      validate.single(lcId, isHexStrict),
+      validate.single(channelId, isHexStrict),
       methodName,
-      'lcId'
+      'channelId'
     )
     Connext.validatorsResponseToError(
       validate.single(nonce, isPositiveInt),
@@ -1250,7 +1250,7 @@ class Connext {
     // personal sign?
     const hash = Connext.createLCStateUpdateFingerprint({
       isClose,
-      lcId,
+      channelId,
       nonce,
       openVcs,
       vcRootHash,
@@ -1273,7 +1273,7 @@ class Connext {
   }
 
   async createVCStateUpdate ({
-    vcId,
+    channelId,
     nonce,
     partyA,
     partyB,
@@ -1292,9 +1292,9 @@ class Connext {
     const isPositiveInt = { presence: true, isPositiveInt: true }
 
     Connext.validatorsResponseToError(
-      validate.single(vcId, isHexStrict),
+      validate.single(channelId, isHexStrict),
       methodName,
-      'vcId'
+      'channelId'
     )
     Connext.validatorsResponseToError(
       validate.single(nonce, isPositiveInt),
@@ -1329,7 +1329,7 @@ class Connext {
     const accounts = await this.web3.eth.getAccounts()
     // generate and sign hash
     const hash = Connext.createVCStateUpdateFingerprint({
-      channelId: vcId,
+      channelId,
       nonce,
       partyA,
       partyB,
