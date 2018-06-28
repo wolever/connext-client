@@ -980,6 +980,7 @@ class Connext {
     // typecast balances incase chained
     balanceA = Web3.utils.toBN(balanceA)
     balanceB = Web3.utils.toBN(balanceB)
+    console.log(channelId)
     // validate
     const isHexStrict = { presence: true, isHexStrict: true }
     const isBN = { presence: true, isBN: true }
@@ -2467,6 +2468,7 @@ class Connext {
     }
 
     let vcInitialStates = await this.getVcInitialStates(lc.channelId)
+    vc0.channelId = vc0.vcId
     vcInitialStates.push(vc0) // add new vc state to hash
     let newRootHash = Connext.generateVcRootHash({vc0s: vcInitialStates})
     const updateAtoI = {
