@@ -208,7 +208,7 @@ describe('Connext', async () => {
     
       it('partyB should join the virtual channel with 0 eth', async () => {
         // vcId = '0xf2ebd20931e9caa05912796ed318ee4ea25f0e5e48971b4bc8a3d674ab81c199'
-        response = await client.joinChannel(vcId)
+        response = await client.joinChannel(vcId, partyB)
         assert.equal(response, vcId)
       })
     })
