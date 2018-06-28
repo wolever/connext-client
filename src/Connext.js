@@ -298,7 +298,7 @@ class Connext {
       signer: lcA.partyA
     }
     const sigVC0 = await this.createVCStateUpdate(vc0)
-    const sigAtoI = await this.createLCUpdateOnVCOpen({ vc0, lc: lcA })
+    const sigAtoI = await this.createLCUpdateOnVCOpen({ vc0, lc: lcA, signer: vc0.partyA })
 
     // ping ingrid
     const result = await this.openVc({
@@ -334,7 +334,7 @@ class Connext {
     )
     // get channel
     const vc = await this.getChannelById(channelId)
-    const lc = await this.getLcByPartyA()
+    const lc = await this.getLcByPartyA(vc.partyB)
     const vc0 = {
       vcId: channelId,
       nonce: 0,
@@ -2329,15 +2329,20 @@ class Connext {
   }
 
   // ingrid verifies the vc0s and sets up vc and countersigns lc updates
-  async joinVcHandler ({ sig, channelId }) {
+  async joinVcHandler ({ lcSig, vcSig, channelId }) {
     // validate params
     const methodName = 'joinVcHandler'
     const isHexStrict = { presence: true, isHexStrict: true }
     const isHex = { presence: true, isHex: true }
     Connext.validatorsResponseToError(
-      validate.single(sig, isHex),
+      validate.single(vcSig, isHex),
       methodName,
-      'sig'
+      'vcSig'
+    )
+    Connext.validatorsResponseToError(
+      validate.single(lcSig, isHex),
+      methodName,
+      'lcSig'
     )
     Connext.validatorsResponseToError(
       validate.single(channelId, isHexStrict),
@@ -2348,7 +2353,8 @@ class Connext {
     const response = await this.axiosInstance.post(
       `${this.ingridUrl}/virtualchannel/${channelId}/join`,
       {
-        sig
+        vcSig,
+        lcSig
       }
     )
     return response.data.channelId
@@ -2443,7 +2449,7 @@ class Connext {
    * @param {BigNumber} params.balanceA - balanceA in the virtual channel
    * @param {BigNumber} params.balanceB - balanceB in the virtual channel
    */
-  async createLCUpdateOnVCOpen ({ vc0, lc, signer = null }) {
+  async createLCUpdateOnVCOpen ({ vc0, lc, signer }) {
     const methodName = 'createLCUpdateOnVCOpen'
     const isAddress = { presence: true, isAddress: true }
     const isVCStateObj = { presence: true, isVCStateObj: true }
@@ -2453,6 +2459,7 @@ class Connext {
       methodName,
       'vc0'
     )
+    console.log(lc)
     Connext.validatorsResponseToError(
       validate.single(lc, isLCObj),
       methodName,
@@ -2470,16 +2477,28 @@ class Connext {
     vc0.channelId = vc0.vcId
     vcInitialStates.push(vc0) // add new vc state to hash
     let newRootHash = Connext.generateVcRootHash({vc0s: vcInitialStates})
+    
+    // detect signer and if called on open or join
+    const accounts = await this.web3.eth.getAccounts()
+    if (accounts[0].toLowerCase() === vc0.partyA && signer === null) {
+      signer = vc0.partyA
+    } else if (accounts[0].toLowerCase() === vc0.partyB && signer === null) {
+      // no signer provided, set signer
+      signer = vc0.partyB
+    } else if (signer !== vc0.partyA || accounts[0].toLowerCase() !== vc0.partyA || signer !== vc0.partyB || accounts[0].toLowerCase() !== vc0.partyB ){
+      throw new Error('Not your virtual channel.')
+    }
+
     const updateAtoI = {
       lcId: lc.channelId,
       nonce: lc.nonce + 1,
       openVcs: vcInitialStates.length,
       vcRootHash: newRootHash,
-      partyA: vc0.partyA,
+      partyA: lc.partyA,
       partyI: this.ingridAddress,
-      balanceA: Web3.utils.toBN(lc.balanceA).sub(Web3.utils.toBN(vc0.balanceA)),
-      balanceI: Web3.utils.toBN(lc.balanceI).sub(Web3.utils.toBN(vc0.balanceB)),
-      signer: signer ? signer : vc0.partyA
+      balanceA: signer === vc0.agentA ? Web3.utils.toBN(lc.balanceA).sub(Web3.utils.toBN(vc0.balanceA)) : Web3.utils.toBN(lc.balanceA).sub(Web3.utils.toBN(vc0.balanceB)),
+      balanceI: signer === vc0.agentA ? Web3.utils.toBN(lc.balanceI).sub(Web3.utils.toBN(vc0.balanceB)) : Web3.utils.toBN(lc.balanceI).sub(Web3.utils.toBN(vc0.balanceA)),
+      signer: signer
     }
     const sigAtoI = await this.createLCStateUpdate(updateAtoI)
     console.log('updateAtoI:', updateAtoI)
