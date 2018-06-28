@@ -171,7 +171,7 @@ class Connext {
       )
     } else {
       const accounts = await this.web3.eth.getAccounts()
-      sender = accounts[0]
+      sender = accounts[0].toLowerCase().toLowerCase()
     }
     if (challenge) {
       Connext.validatorsResponseToError(
@@ -243,7 +243,7 @@ class Connext {
       )
     } else {
       const accounts = await this.web3.eth.getAccounts()
-      sender = accounts[0]
+      sender = accounts[0].toLowerCase().toLowerCase()
     }
     if (recipient) {
       Connext.validatorsResponseToError(
@@ -258,22 +258,24 @@ class Connext {
   }
 
    /**
-   * Opens a virtual channel between to and caller with Ingrid as the hub. Both users must have a ledger channel open with ingrid.
+   * Opens a virtual channel between "to" and caller with Ingrid as the hub. Both users must have a ledger channel open with ingrid.
    *
-   * If there is no deposit provided, then 100% of the ledger channel balance is added to VC deposit. This function is to be called by the "A" party in a unidirectional scheme.
+   * If there is no deposit provided, then 100% of the ledger channel balance is added to virtual channel deposit. This function is to be called by the "A" party in a unidirectional scheme.
    *
-   * Sends a proposed LC update for countersigning that updates the VCRootHash of the ledger channel state.
+   * Signs a copy of the initial virtual channel state, and generates a proposed ledger channel update to the hub for countersigning that updates the number of open virtual channels and the vcRootHash of the ledger channel state.
    *
-   * This proposed LC update (termed VC0 throughout documentation) serves as the opening certificate for the virtual channel.
+   * This proposed state update serves as the opening certificate for the virtual channel, and is used to verify Ingrid agreed to facilitate the creation of the virtual channel and take on the counterparty risk.
    *
    *
    * @example
    * const myFriendsAddress = "0x627306090abaB3A6e1400e9345bC60c78a8BEf57"
    * await connext.openChannel({ to: myFriendsAddress })
    *
-   * @param {Object} params - The method object.
-   * @param {String} params.to Wallet address to wallet for partyB in virtual channel
-   * @param {BigNumber} params.deposit User deposit for VC, in wei. Optional.
+   * @param {Object} params - the method object
+   * @param {String} params.to - ETH address you want to open a virtual channel with
+   * @param {BigNumber} params.deposit - (optional) deposit in wei for the virtual channel, defaults to the entire LC balance
+   * @param {String} params.sender - (optional) who is initiating the virtual channel creation, defaults to accounts[0]
+   * @returns {String} - the virtual channel ID recieved by Ingrid
    */
   // /**
   //  * add error handling for calling openChannel twice as a viewer or something
@@ -282,7 +284,7 @@ class Connext {
   //  *
   //  * validate the state update against lc is valid
   //  */
-  async openChannel ({ to, deposit = null }) {
+  async openChannel ({ to, deposit = null, sender = null }) {
     // validate params
     const methodName = 'openChannel'
     const isAddress = { presence: true, isAddress: true }
@@ -299,7 +301,18 @@ class Connext {
         'deposit'
       )
     }
-    const lcA = await this.getLcByPartyA()
+    if (sender) {
+      Connext.validatorsResponseToError(
+        validate.single(sender, isAddress),
+        methodName,
+        'sender'
+      )
+    } else {
+      const accounts = await this.web3.eth.getAccounts()
+      sender = accounts[0].toLowerCase().toLowerCase()
+    }
+
+    const lcA = await this.getLcByPartyA(sender)
     const lcIdB = await this.getLcId(to)
     // validate the subchannels exist
     if (lcIdB === null || lcA === null) {
@@ -312,19 +325,19 @@ class Connext {
     const vc0 = {
       vcId,
       nonce: 0,
-      partyA: lcA.partyA,
+      partyA: sender,
       partyB: to.toLowerCase(),
       balanceA: deposit || Web3.utils.toBN(lcA.balanceA),
       balanceB: Web3.utils.toBN(0),
-      signer: lcA.partyA
+      signer: sender
     }
     const sigVC0 = await this.createVCStateUpdate(vc0)
-    const sigAtoI = await this.createLCUpdateOnVCOpen({ vc0, lc: lcA, signer: vc0.partyA })
+    const sigAtoI = await this.createLCUpdateOnVCOpen({ vc0, lc: lcA, signer: sender })
 
     // ping ingrid
     const result = await this.openVc({
       channelId: vcId,
-      partyA: lcA.partyA,
+      partyA: sender,
       partyB: to.toLowerCase(),
       balanceA: deposit || Web3.utils.toBN(lcA.balanceA),
       vcSig: sigVC0,
@@ -1451,7 +1464,7 @@ class Connext {
       )
     } else {
       const accounts = await this.web3.eth.getAccounts()
-      sender = accounts[0]
+      sender = accounts[0].toLowerCase()
     }
     
     const result = await this.channelManagerInstance.methods
@@ -1489,7 +1502,7 @@ class Connext {
       )
     } else {
       const accounts = await this.web3.eth.getAccounts()
-      sender = accounts[0]
+      sender = accounts[0].toLowerCase()
     }
     const result = await this.channelManagerInstance.methods
       .LCOpenTimeout(lcId)
@@ -1521,7 +1534,7 @@ class Connext {
         'sender'
       )
     } else {
-      sender = accounts[0]
+      sender = accounts[0].toLowerCase()
     }
     if (recipient) {
       Connext.validatorsResponseToError(
@@ -1607,7 +1620,7 @@ class Connext {
       )
     } else {
       const accounts = await this.web3.eth.getAccounts()
-      sender = accounts[0]
+      sender = accounts[0].toLowerCase()
     }
     const result = await this.channelManagerInstance.methods
       .consensusCloseChannel(lcId, nonce, balanceA, balanceI, sigA, sigI)
@@ -1730,7 +1743,7 @@ class Connext {
       )
     } else {
       const accounts = await this.web3.eth.getAccounts()
-      sender = accounts[0]
+      sender = accounts[0].toLowerCase()
     }
     const result = await this.channelManagerInstance.methods
       .updateLCstate(
@@ -1817,7 +1830,7 @@ class Connext {
       )
     } else {
       const accounts = await this.web3.eth.getAccounts()
-      sender = accounts[0]
+      sender = accounts[0].toLowerCase()
     }
     if (proof === null) {
       // generate proof from lc
@@ -1934,7 +1947,7 @@ class Connext {
       )
     } else {
       const accounts = await this.web3.eth.getAccounts()
-      sender = accounts[0]
+      sender = accounts[0].toLowerCase()
     }
     const results = await this.channelManagerInstance.methods
       .settleVC(
@@ -1978,7 +1991,7 @@ class Connext {
       )
     } else {
       const accounts = await this.web3.eth.getAccounts()
-      sender = accounts[0]
+      sender = accounts[0].toLowerCase()
     }
     const results = await this.channelManagerInstance.methods
       .closeVirtualChannel(lcId, vcId)
@@ -2008,7 +2021,7 @@ class Connext {
       )
     } else {
       const accounts = await this.web3.eth.getAccounts()
-      sender = accounts[0]
+      sender = accounts[0].toLowerCase()
     }
         const results = await this.channelManagerInstance.methods
       .byzantineCloseChannel(lcId)
@@ -2369,9 +2382,7 @@ class Connext {
       'lcSig'
     )
 
-
     // ingrid should add vc params to db
-    console.log({ channelId, partyA, partyB, balanceA: balanceA.toString(), lcSig, vcSig })
     const response = await this.axiosInstance.post(
       `${this.ingridUrl}/virtualchannel/`,
       { channelId, partyA, partyB, balanceA: balanceA.toString(), lcSig, vcSig }
