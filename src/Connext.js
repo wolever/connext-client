@@ -83,12 +83,12 @@ class Connext {
    * @example
    * const Connext = require('connext')
    * const connext = new Connext(web3)
-   * @param {Object} params - the constructor object.
-   * @param {Web3} params.web3 - the web3 instance.
-   * @param {String} params.ingridAddress - ETH address of intermediary (defaults to Connext hub).
-   * @param {String} params.watcherUrl - url of watcher server (defaults to Connext hub).
-   * @param {String} params.ingridUrl - url of intermediary server (defaults to Connext hub).
-   * @param {String} params.contractAddress - address of deployed contract (defaults to latest deployed contract).
+   * @param {Object} params - the constructor object
+   * @param {Web3} params.web3 - the web3 instance
+   * @param {String} params.ingridAddress - ETH address of intermediary (defaults to Connext hub)
+   * @param {String} params.watcherUrl - url of watcher server (defaults to Connext hub)
+   * @param {String} params.ingridUrl - url of intermediary server (defaults to Connext hub)
+   * @param {String} params.contractAddress - address of deployed contract (defaults to latest deployed contract)
    * @param {String} params.hubAuth - token authorizing client package to make requests to hub
    */
   constructor (
@@ -150,7 +150,7 @@ class Connext {
    * @param {BigNumber} initialDeposit - deposit in wei
    * @param {String} sender - (optional) counterparty with hub in ledger channel, defaults to accounts[0]
    * @param {Number} challenge - (optional) challenge period in seconds
-   * @returns {String} - the ledger channel id of the created channel.
+   * @returns {String} - the ledger channel id of the created channel
    */
   async register (initialDeposit, sender = null, challenge = null) {
     // validate params
