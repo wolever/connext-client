@@ -68,22 +68,6 @@ validate.validators.isPositiveInt = value => {
   }
 }
 
-validate.validators.isVCStateObj = value => {
-  if (value.balanceA && value.balanceB && value.partyA && value.partyB && value.nonce && value.channelId) {
-    return null
-  } else {
-    return `${JSON.stringify(value)} is not a valid virtual channel state object.`
-  }
-}
-
-validate.validators.isLCObj = value => {
-  if (value.state && value.balanceA && value.balanceI && value.channelId && value.partyA && value.partyI && value.nonce && value.openVcs && value.vcRootHash) {
-    return null
-  } else {
-    return `${JSON.stringify(value)} is not a valid ledger channel object.`
-  }
-}
-
 // const logger = (arrayOfValidatorReturns) => arrayOfValidatorReturns.map((()console.log)
 
 /**
@@ -2459,18 +2443,6 @@ class Connext {
   async createLCUpdateOnVCOpen ({ vc0, lc, signer }) {
     const methodName = 'createLCUpdateOnVCOpen'
     const isAddress = { presence: true, isAddress: true }
-    const isVCStateObj = { presence: true, isVCStateObj: true }
-    const isLCObj = { presence: true, isLCObj: true }
-    Connext.validatorsResponseToError(
-      validate.single(vc0, isVCStateObj),
-      methodName,
-      'vc0'
-    )
-    Connext.validatorsResponseToError(
-      validate.single(lc, isLCObj),
-      methodName,
-      'lc'
-    )
     if (signer) {
       Connext.validatorsResponseToError(
         validate.single(signer, isAddress),
@@ -2531,18 +2503,6 @@ class Connext {
  async createLCUpdateOnVCClose ({ vcN, subchan, signer = null }) {
   const methodName = 'createLCUpdateOnVCClose'
   const isAddress = { presence: true, isAddress: true }
-  const isVCStateObj = { presence: true, isVCStateObj: true }
-  const isLCObj = { presence: true, isLCObj: true }
-  Connext.validatorsResponseToError(
-    validate.single(vcN, isVCStateObj),
-    methodName,
-    'vcN'
-  )
-  Connext.validatorsResponseToError(
-    validate.single(subchan, isLCObj),
-    methodName,
-    'subchan'
-  )
   if (signer) {
     Connext.validatorsResponseToError(
       validate.single(signer, isAddress),
@@ -2561,34 +2521,19 @@ class Connext {
   } else if (signer !== vcN.partyA && accounts[0].toLowerCase() !== vcN.partyA && signer !== vcN.partyB && accounts[0].toLowerCase() !== vcN.partyB ){
     throw new Error('Not your virtual channel.')
   }
-  // calculate new balances based on whos calling
-  let updatedBalanceA, updatedBalanceI
-  if (signer === vcN.partyA) {
-    // closer is paying money from lc to vc
-    // balA = lcBalA + vcRemainingBalA
-    updatedBalanceA = Web3.utils.toBN(subchan.balanceA).add(Web3.utils.toBN(vcN.balanceA))
-    // balI = lcBalI + vcBalB (gains payment for B)
-    updatedBalanceI = Web3.utils.toBN(subchan.balanceI).add(Web3.utils.toBN(vcN.balanceB))
-  } else if (signer === vcN.partyB) {
-    // balB = lcBalB + vcBalanceB
-    updatedBalanceA = Web3.utils.toBN(subchan.balanceA).add(Web3.utils.toBN(vcN.balanceB))
-    updateBalanceI = Web3.utils.toBN(subchan.balanceI).sub(Web3.utils.toBN(vcN.balanceB)).plus(Web3.utils.toBN(vcN.balanceA))
-  }
-
   let vcInitialStates = await this.getVcInitialStates(subchan.channelId)
   // array of state objects, which include the channel id and nonce
   // remove initial state of vcN
-  vcInitialStates.filter((val) => {
+  vcInitialStates = vcInitialStates.filter((val) => {
     console.log(vcN.channelId !== val.channelId)
     return val.channelId !== vcN.channelId
   })
-  console.log(vcInitialStates)
   const newRootHash = Connext.generateVcRootHash({ vc0s: vcInitialStates})
   
   const updateAtoI = {
     lcId: subchan.channelId,
     nonce: subchan.nonce + 1,
-    openVcs: vcInitialStates.length - 1,
+    openVcs: vcInitialStates.length,
     vcRootHash: newRootHash,
     partyA: vcN.partyA,
     partyI: this.ingridAddress,
@@ -2597,8 +2542,6 @@ class Connext {
     signer: signer
   }
   const sigAtoI = await this.createLCStateUpdate(updateAtoI)
-  console.log('updateAtoI:', updateAtoI)
-  console.log('sigAtoI:', sigAtoI)
   return sigAtoI
  }
 
