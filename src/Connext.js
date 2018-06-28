@@ -505,38 +505,56 @@ class Connext {
   async withdraw () {
     const lcId = await this.getLcId()
     const lc = await this.getLcById(lcId)
-    const lcState = await this.getLatestLedgerStateUpdate(lcId)
-    if (Number(lcState.openVcs) !== 0) {
-      throw new Error(
-        `LC id ${lcId} still has open virtual channels. Number: ${lcState.openVcs}`
-      )
-    }
-    if (lcState.vcRootHash !== Web3.utils.padRight('0x0', 64)) {
-      throw new Error(
-        `vcRootHash for lcId ${lcId} does not match empty root hash. Value: ${lcState.vcRootHash}`
-      )
+    let lcState = await this.getLatestLedgerStateUpdate(lcId)
+    if (lcState) {
+      // openVcs?
+      if (Number(lcState.openVcs) !== 0) {
+        throw new Error(
+          `LC id ${lcId} still has open virtual channels. Number: ${lcState.openVcs}`
+        )
+      }
+      // empty root hash?
+      if (lcState.vcRootHash !== Web3.utils.padRight('0x0', 64)) {
+        throw new Error(
+          `vcRootHash for lcId ${lcId} does not match empty root hash. Value: ${lcState.vcRootHash}`
+        )
+      }
+      // i-signed?
+      const signer = Connext.recoverSignerFromLCStateUpdate({
+        sig: lcState.sigI,
+        isClose: false,
+        lcId,
+        nonce: lcState.nonce,
+        openVcs: lcState.openVcs,
+        vcRootHash: lcState.vcRootHash,
+        partyA: lc.partyA,
+        partyI: this.ingridAddress,
+        balanceA: Web3.utils.toBN(lcState.balanceA),
+        balanceI: Web3.utils.toBN(lcState.balanceI)
+      })
+      if (signer !== this.ingridAddress) {
+        throw new Error(`[${methodName}] Ingrid did not sign this state update.`)
+      }
+    } else {
+      // PROBLEM: ingrid doesnt return lcState, just uses empty
+      lcState = {
+        isClose: false,
+        lcId,
+        nonce: 0,
+        openVcs: 0,
+        vcRootHash: Connext.generateVcRootHash({vc0s: []}),
+        partyA: lc.partyA,
+        partyI: this.ingridAddress,
+        balanceA: Web3.utils.toBN(lc.balanceA),
+        balanceI: Web3.utils.toBN(lc.balanceI)
+      }
     }
 
-    const signer = Connext.recoverSignerFromLCStateUpdate({
-      sig: lcState.sigI,
-      isClose: false,
-      lcId,
-      nonce: lcState.nonce,
-      openVcs: lcState.openVcs,
-      vcRootHash: lcState.vcRootHash,
-      partyA: lc.partyA,
-      partyI: this.ingridAddress,
-      balanceA: Web3.utils.toBN(lcState.balanceA),
-      balanceI: Web3.utils.toBN(lcState.balanceI)
-    })
-    if (signer !== this.ingridAddress) {
-      throw new Error(`[${methodName}] Ingrid did not sign this state update.`)
-    }
     // generate same update with fast close flag and post
     const sigParams = {
       isClose: true,
       lcId,
-      nonce: lcState.nonce,
+      nonce: lcState.nonce + 1,
       openVcs: lcState.openVcs,
       vcRootHash: lcState.vcRootHash,
       partyA: lc.partyA,
