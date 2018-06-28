@@ -579,12 +579,23 @@ class Connext {
    *
    * @example
    * const success = await connext.withdraw()
+   * @param {String} - (optional) who the transactions should be sent from, defaults to account[0]
    * @returns {Object} - contains the transaction hash of the resulting transaction, and a boolean indicating if it was fast closed
    * @returns {String} - the transaction hash of either consensusCloseChannel or withdrawFinal
    * @returns {Boolean} - true if successfully withdrawn, false if challenge process commences
    */
-  async withdraw () {
-    const lcId = await this.getLcId()
+  async withdraw (sender = null) {
+    if (sender) {
+      Connext.validatorsResponseToError(
+        validate.single(sender, isAddress),
+        methodName,
+        'sender'
+      )
+    } else {
+      const accounts = await this.web3.eth.getAccounts()
+      sender = accounts[0].toLowerCase().toLowerCase()
+    }
+    const lcId = await this.getLcId(sender)
     const lc = await this.getLcById(lcId)
     let lcState = await this.getLatestLedgerStateUpdate(lcId)
     if (lcState) {
@@ -642,7 +653,7 @@ class Connext {
       partyI: this.ingridAddress,
       balanceA: Web3.utils.toBN(lcState.balanceA),
       balanceI: Web3.utils.toBN(lcState.balanceI),
-      signer: lcState.partyA
+      signer: sender
     }
     const sig = await this.createLCStateUpdate(sigParams)
     const sigI = await this.fastCloseLcHandler({ sig, lcId })
@@ -656,7 +667,7 @@ class Connext {
         balanceI: Web3.utils.toBN(lcState.balanceI),
         sigA: sig,
         sigI: sigI,
-        sender: lcA.partyA
+        sender: sender
       })
       return { response, fastClosed: true }
     } else {
@@ -671,7 +682,7 @@ class Connext {
         vcRootHash: lcState.vcRootHash,
         sigA: sig,
         sigI: lcState.sigI,
-        sender: lcState.partyA
+        sender: sender
       })
       return { response, fastClosed: false }
     }
@@ -683,7 +694,7 @@ class Connext {
   // ***************************************
 
   /**
-   * Withdraw bonded funds from ledger channel after a channel is challenge-closed after the challenge period expires by calling withdrawFinal using Web3.
+   * Withdraw bonded funds from ledger channel after a channel is challenge-closed and the challenge period expires by calling withdrawFinal using Web3.
    *
    * Looks up LC by the account address of the client-side user.
    *
