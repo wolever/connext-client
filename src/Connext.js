@@ -132,23 +132,27 @@ class Connext {
   // ***************************************
 
   /**
-   * Opens a ledger channel with ingridAddress and bonds initialDeposit. Ledger channel challenge timer is determined by Ingrid.
+   * Opens a ledger channel with ingridAddress and bonds initialDeposit. 
+   * 
+   * Ledger channel challenge timer is determined by Ingrid (Hub) if the parameter is not supplied.
+   * 
+   * Sender defaults to accounts[0] if not supplied by register.
    *
-   * Uses web3 to call openLC function on the contract, and pings Ingrid with opening signature and initial deposit.
+   * Uses web3 to call createChannel function on the contract, and pings Ingrid with opening signature and initial deposit so she may join the channel.
    *
-   * Ingrid should verify the signature and call "joinChannel" on the contract.
-   *
-   * If Ingrid is unresponsive, the client function "LCOpenTimeoutContractHandler" can be called by the client to recover the funds, or the client can call the contract function directly.
+   * If Ingrid is unresponsive, or does not join the channel within the challenge period, the client function "LCOpenTimeoutContractHandler" can be called by the client to recover the funds.
    *
    * @example
-   * // get a BN
-   * const deposit = web3.utils.toBN(10000)
+   * // get a BN of a deposit value in wei
+   * const deposit = Web3.utils.toBN(Web3.utils.toWei('1', 'ether))
    * await connext.register(deposit)
    *
-   * @param {BigNumber} initialDeposit deposit in wei
+   * @param {BigNumber} initialDeposit - deposit in wei
+   * @param {String} sender - (optional) counterparty with hub in ledger channel, defaults to accounts[0]
+   * @param {Number} challenge - (optional) challenge period in seconds
    * @returns {String} result of calling openLedgerChannel on the channelManager instance.
    */
-  async register (initialDeposit) {
+  async register (initialDeposit, sender = null, challenge = null) {
     // validate params
     const methodName = 'register'
     const isBN = { presence: true, isBN: true }
@@ -157,20 +161,28 @@ class Connext {
       methodName,
       'initialDeposit'
     )
-    // get challenge timer from ingrid
-    const accounts = await this.web3.eth.getAccounts()
-    const challenge = await this.getLedgerChannelChallengeTimer()
-    // generate additional initial lc params
-    const nonce = 0
-    const openVcs = 0
-    const lcId = Connext.getNewChannelId()
-    const vcRootHash = Connext.generateVcRootHash({ vc0s: [] })
-    let partyA
-    if (process.env.DEV) {
-      partyA = accounts[1]
+    if (sender) {
+      Connext.validatorsResponseToError(
+        validate.single(sender, isAddress),
+        methodName,
+        'sender'
+      )
     } else {
-      partyA = accounts[0]
+      const accounts = await this.web3.eth.getAccounts()
+      sender = accounts[0]
     }
+    if (challenge) {
+      Connext.validatorsResponseToError(
+        validate.single(challenge, isPositiveInt),
+        methodName,
+        'isPositiveInt'
+      )
+    } else {
+      // get challenge timer from ingrid
+      challenge = await this.getLedgerChannelChallengeTimer()
+    }
+    // generate additional initial lc params
+    const lcId = Connext.getNewChannelId()
 
     // /**
     //  * Descriptive error message back to wallet here
@@ -185,7 +197,7 @@ class Connext {
       lcId,
       challenge,
       initialDeposit,
-      sender: partyA
+      sender
     })
     if (contractResult.transactionHash) {
       console.log('tx hash:', contractResult.transactionHash)
