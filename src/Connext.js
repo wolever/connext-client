@@ -463,48 +463,109 @@ class Connext {
   }
 
   /**
-   * Closes specified channel using latest double signed update.
+   * Closes a virtual channel.
    *
-   * Requests Ingrid to decompose into LC update based on latest double signed virtual channel state.
+   * Retrieves the latest signed virtual state update, and decomposes the virtual channel into their respective ledger channel updates.
+   * 
+   * The virtual channel agent who called this function signs the closing ledger-channel update, and forwards the signature to Ingrid.
+   * 
+   * Ingrid verifies the signature, returns her signature of the proposed virtual channel decomposition, and proposes the LC update for the other virtual channel participant. 
+   * 
+   * If Ingrid does not return her signature on the proposed virtual channel decomposition, the caller goes to chain by calling initVC and settleVC.
    *
    * @example
-   * await connext.fastCloseChannel(10)
-   * @param {String} channelId - virtual channel ID
+   * await connext.closeChannel({
+   *   channelId: 0xadsf11..,
+   *   balance: web3.utils.toBN(web3.utils.toWei(0.5, 'ether'))
+   * })
+   * @param {Number} channelId - ID of the virtual channel to close
    */
-  async fastCloseChannel ({ sig, signer, channelId }) {
+  async closeChannel (channelId) {
     // validate params
-    const methodName = 'fastCloseChannel'
-    const isHex = { presence: true, isHex: true }
+    const methodName = 'closeChannel'
     const isHexStrict = { presence: true, isHexStrict: true }
-    const isAddress = { presence: true, isAddress: true }
-    Connext.validatorsResponseToError(
-      validate.single(sig, isHex),
-      methodName,
-      'sig'
-    )
-    Connext.validatorsResponseToError(
-      validate.single(signer, isAddress),
-      methodName,
-      'isAddress'
-    )
     Connext.validatorsResponseToError(
       validate.single(channelId, isHexStrict),
       methodName,
       'channelId'
     )
 
-    const response = await this.axiosInstance.post(
-      `${this.ingridUrl}/virtualchannel/${channelId}/close`,
-      {
-        sig,
-        signer,
-      }
-    )
-    if (response.data.sig) {
-      return response.data.sig
+    // get latest state in vc
+    const vc = await this.getChannelById(channelId)
+    const vcN = await this.getLatestVCStateUpdate(channelId)
+    vcN.channelId = channelId
+    vcN.partyA = vc.partyA
+    vcN.partyB = vc.partyB
+    // get partyA ledger channel
+    const subchan = await this.getLcByPartyA()
+    // who should sign lc state update from vc
+    let isPartyAInVC
+    if (subchan.partyA === vcN.partyA) {
+      isPartyAInVC = true
+    } else if (subchan.partyA === vcN.partyB) {
+      isPartyAInVC = false
     } else {
-      return false
+      throw new Error('Not your virtual channel.')
     }
+
+    // generate decomposed lc update
+    const sigAtoI = await this.createLCUpdateOnVCClose({ 
+      vcN, 
+      subchan, 
+      signer: isPartyAInVC ? vcN.partyA : vcN.partyB 
+    })
+
+    // request ingrid closes vc with this update
+    const fastCloseSig = await this.fastCloseVCHandler({
+      sig: sigAtoI,
+      signer: isPartyAInVC ? vcN.partyA : vcN.partyB,
+      channelId: vcN.channelId
+    })
+
+    // to do: should verify ingrids signature
+    if (fastCloseSig) {
+      // ingrid cosigned proposed LC update
+      return fastCloseSig
+    } else {
+      // take to chain
+      const result = await this.byzantineCloseVc(channelId)
+      return result
+    }
+  }
+
+  /**
+   * Close many virtual channels by calling closeChannel on each channel ID in the provided array.
+   *
+   * @example
+   * const channels = [
+   *   {
+   *     channelId: 0xasd310..,
+   *     balance: web3.utils.toBN(web3.utils.toWei(0.5, 'ether'))
+   *   },
+   *   {
+   *     channelId: 0xadsf11..,
+   *     balance: web3.utils.toBN(web3.utils.toWei(0.2, 'ether'))
+   *   }
+   * ]
+   * await connext.closeChannels(channels)
+   * @param {String[]} channelIds - array of virtual channel IDs you wish to close
+   */
+  async closeChannels (channelIds) {
+    const methodName = 'closeChannels'
+    const isArray = { presence: true, isArray: true }
+    Connext.validatorsResponseToError(
+      validate.single(channels, isArray),
+      methodName,
+      'channels'
+    )
+    // should this try to fast close any of the channels?
+    // or just immediately force close in dispute many channels
+    channelIds.forEach(async channelId => {
+      // async ({ channelId, balance }) maybe?
+      console.log('Closing channel:', channelId)
+      await this.closeChannel(channelId)
+      console.log('Channel closed.')
+    })
   }
 
 
@@ -701,106 +762,6 @@ class Connext {
     })
 
     return result
-  }
-
-  /**
-   * Closes a channel in a dispute.
-   *
-   * Retrieves decomposed LC updates from Ingrid, and countersigns updates if needed (i.e. if they are recieving funds).
-   *
-   * Settle VC is called on chain for each vcID if Ingrid does not provide decomposed state updates, and closeVirtualChannel is called for each vcID.
-   *
-   * @example
-   * await connext.closeChannel({
-   *   channelId: 0xadsf11..,
-   *   balance: web3.utils.toBN(web3.utils.toWei(0.5, 'ether'))
-   * })
-   * @param {Object} params - Object containing { vcId, balance }
-   * @param {Number} params.channelId Virtual channel ID to close.
-   */
-  async closeChannel (channelId) {
-    // validate params
-    const methodName = 'closeChannel'
-    const isHexStrict = { presence: true, isHexStrict: true }
-    Connext.validatorsResponseToError(
-      validate.single(channelId, isHexStrict),
-      methodName,
-      'channelId'
-    )
-
-    // get latest state in vc
-    const vc = await this.getChannelById(channelId)
-    const vcN = await this.getLatestVCStateUpdate(channelId)
-    vcN.channelId = channelId
-    vcN.partyA = vc.partyA
-    vcN.partyB = vc.partyB
-    // get partyA ledger channel
-    const subchan = await this.getLcByPartyA()
-    // who should sign lc state update from vc
-    let isPartyAInVC
-    if (vcN.partyA === subchan.partyA) {
-      isPartyAInVC = true
-    } else {
-      isPartyAInVC = false
-    }
-    // generate decomposed lc update
-    const sigAtoI = await this.createLCUpdateOnVCClose({ 
-      vcN, 
-      subchan, 
-      signer: isPartyAInVC ? vcN.partyA : vcN.partyB 
-    })
-    // request ingrid closes vc with this update
-    const fastCloseSig = await this.fastCloseChannel({
-      sig: sigAtoI,
-      signer: isPartyAInVC ? vcN.partyA : vcN.partyB,
-      channelId: vcN.channelId
-    })
-    // to do: should verify ingrids signature
-    if (fastCloseSig) {
-      // ingrid cosigned proposed LC update
-      return fastCloseSig
-    } else {
-      // take to chain
-      const result = await this.byzantineCloseVc(channelId)
-      return result
-    }
-  }
-
-  /**
-   * Close many virtual channels
-   *
-   * @example
-   * const channels = [
-   *   {
-   *     channelId: 0xasd310..,
-   *     balance: web3.utils.toBN(web3.utils.toWei(0.5, 'ether'))
-   *   },
-   *   {
-   *     channelId: 0xadsf11..,
-   *     balance: web3.utils.toBN(web3.utils.toWei(0.2, 'ether'))
-   *   }
-   * ]
-   * await connext.closeChannels(channels)
-   * @param {Object[]} channels - Array of objects with {vcId, balance} to close
-   * @param {String} channels.$.channelId Channel ID to close
-   * @param {BigNumber} channels.$.balance Channel balance.
-   */
-  async closeChannels (channels) {
-    const methodName = 'closeChannels'
-    const isArray = { presence: true, isArray: true }
-    Connext.validatorsResponseToError(
-      validate.single(channels, isArray),
-      methodName,
-      'channels'
-    )
-    // should this try to fast close any of the channels?
-    // or just immediately force close in dispute many channels
-    channels.forEach(async channel => {
-      // async ({ channelId, balance }) maybe?
-      console.log('Closing channel:', channel.channelId)
-      await this.closeChannel(channel.channelId)
-      console.log('Channel closed.')
-    })
   }
 
   // /**
@@ -2431,6 +2392,51 @@ class Connext {
       }
     )
     return response.data.channelId
+  }
+
+  /**
+   * Closes specified channel using latest double signed update.
+   *
+   * Requests Ingrid to decompose into LC update based on latest double signed virtual channel state.
+   *
+   * @example
+   * await connext.fastCloseVCHandler(10)
+   * @param {String} channelId - virtual channel ID
+   */
+  async fastCloseVCHandler ({ sig, signer, channelId }) {
+    // validate params
+    const methodName = 'fastCloseVCHandler'
+    const isHex = { presence: true, isHex: true }
+    const isHexStrict = { presence: true, isHexStrict: true }
+    const isAddress = { presence: true, isAddress: true }
+    Connext.validatorsResponseToError(
+      validate.single(sig, isHex),
+      methodName,
+      'sig'
+    )
+    Connext.validatorsResponseToError(
+      validate.single(signer, isAddress),
+      methodName,
+      'isAddress'
+    )
+    Connext.validatorsResponseToError(
+      validate.single(channelId, isHexStrict),
+      methodName,
+      'channelId'
+    )
+
+    const response = await this.axiosInstance.post(
+      `${this.ingridUrl}/virtualchannel/${channelId}/close`,
+      {
+        sig,
+        signer,
+      }
+    )
+    if (response.data.sig) {
+      return response.data.sig
+    } else {
+      return false
+    }
   }
 
   // posts to ingrid endpoint to decompose ledger channel
