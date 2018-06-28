@@ -490,7 +490,7 @@ describe('Connext', async () => {
     })
   })
 
-  describe('client contract handlers', () => {
+  describe.only('client contract handlers', () => {
     describe('createLedgerChannelContractHandler', () => {
       describe('Web3 and contract properly initialized, valid parameters', () => {
         it('should call createChannel on the channel manager instance (subchanAI)', async () => {
@@ -593,7 +593,9 @@ describe('Connext', async () => {
     })
 
     describe('updateLcStateContractHandler', () => {
+      let sigAtoI
       describe('Web3 and contract properly initialized, valid parameters', async () => {
+
         it('should call updateLcState on the channel manager instance with no open VCs', async () => {
           subchanAI = '0x4b7c97c3ae6abca2ff2ba4e31ee594ac5e1b1f12d8fd2097211569f80dbb7d08'
           const params = {
@@ -708,62 +710,65 @@ describe('Connext', async () => {
 
     describe('initVcStateContractHandler', () => {
       describe('real Web3 and valid parameters', () => {
-        it('should init a virtual channel state on chain', async () => {
-          // get accounts
-          subchanAI =
-            '0x4b7c97c3ae6abca2ff2ba4e31ee594ac5e1b1f12d8fd2097211569f80dbb7d08'
-          vcId = '0xc12'
-          const nonce = 0
-          const balanceA = Web3.utils.toBN(Web3.utils.toWei('2', 'ether'))
-          const balanceB = Web3.utils.toBN(Web3.utils.toWei('0', 'ether'))
-
-          // generate sigA
-          const sigA = await client.createVCStateUpdate({
-            vcId,
-            nonce,
+        let proof, vc0
+        balanceA = Web3.utils.toBN(Web3.utils.toWei('5', 'ether'))
+        balanceI = Web3.utils.toBN(Web3.utils.toWei('5', 'ether'))
+        it('should generate a proof to submit to chain', async () => {
+          vc0 = {
+            channelId: '0x1000000000000000000000000000000000000000000000000000000000000000',
+            nonce: 0,
             partyA,
             partyB,
-            balanceA,
-            balanceB,
+            balanceA: Web3.utils.toBN(Web3.utils.toWei('2', 'ether')),
+            balanceB: Web3.utils.toBN(Web3.utils.toWei('0', 'ether'))
+          }
+          const stateHash = Connext.createVCStateUpdateFingerprint(vc0)
+          let vc0s = []
+          vc0s.push(vc0)
+
+          let merkle = Connext.generateMerkleTree(vc0s)
+          let mproof = merkle.proof(Utils.hexToBuffer(stateHash))
+
+          let proof = []
+          for(var i=0; i<mproof.length; i++){
+            proof.push(Utils.bufferToHex(mproof[i]))
+          }
+
+          proof.unshift(stateHash)
+
+          proof = Utils.marshallState(proof)
+          // console.log(proof)
+        })
+
+        it.only('should init a virtual channel state on chain', async () => {
+          const sigA = await client.createVCStateUpdate({
+            vcId: '0x1000000000000000000000000000000000000000000000000000000000000000',
+            nonce: 0,
+            partyA,
+            partyB,
+            balanceA: Web3.utils.toBN(Web3.utils.toWei('2', 'ether')),
+            balanceB: Web3.utils.toBN(Web3.utils.toWei('0', 'ether')),
             signer: partyA
           })
-          console.log('sigA:', sigA)
-          // mock urls
-          const mock = new MockAdapter(axios)
-          mock.onGet().reply(() => {
-            return [
-              200,
-              [
-                // returns list of vc initial states
-                {
-                  subchanId: subchanAI,
-                  vcId,
-                  nonce,
-                  partyA,
-                  partyB,
-                  balanceA,
-                  balanceB,
-                  sigA
-                }
-              ]
-            ]
-          })
+          
           // client call
           const results = await client.initVcStateContractHandler({
             subchanId: subchanAI,
-            vcId,
-            nonce,
+            vcId: '0x1000000000000000000000000000000000000000000000000000000000000000',
+            // proof: proof,
+            nonce: 0,
             partyA,
             partyB,
-            balanceA,
-            balanceB,
-            sigA
+            balanceA: Web3.utils.toBN(Web3.utils.toWei('2', 'ether')),
+            balanceB: Web3.utils.toBN(Web3.utils.toWei('0', 'ether')),
+            sigA,
+            sender: partyA
           })
           assert.ok(
             results.transactionHash !== null &&
             results.transactionHash !== undefined
           )
-        })
+        }).timeout(5000)
       })
     })
 
@@ -1259,7 +1264,7 @@ describe('Connext', async () => {
         describe('Should create a valid hash.', async () => {
           it('returns a hashed value', () => {
             const hash = Connext.createVCStateUpdateFingerprint({
-              vcId: '0xc1912',
+              channelId: '0xc1912',
               nonce: 0,
               partyA: partyA,
               partyB: partyB,
