@@ -1,4 +1,4 @@
-let axios = require('axios')
+const axios = require('axios')
 
 const channelManagerAbi = require('../artifacts/LedgerChannel.json')
 const util = require('ethereumjs-util')
@@ -432,7 +432,6 @@ class Connext {
       'channelId'
     )
 
-
     const response = await this.axiosInstance.post(
       `${this.ingridUrl}/virtualchannel/${channelId}/close`,
       {
@@ -440,7 +439,11 @@ class Connext {
         signer,
       }
     )
-    return response.data
+    if (response.data.sig) {
+      return response.data.sig
+    } else {
+      return false
+    }
   }
 
 
@@ -668,16 +671,17 @@ class Connext {
       signer: isPartyAInVC ? vcN.partyA : vcN.partyB 
     })
     // request ingrid closes vc with this update
-    const fastCloseResult = await this.fastCloseChannel({
+    const fastCloseSig = await this.fastCloseChannel({
       sig: sigAtoI,
       signer: isPartyAInVC ? vcN.partyA : vcN.partyB,
       channelId: vcN.channelId
     })
-    if (fastCloseResult.data) {
-      // ingrid didnt cosign the ledger update
-      // take to chain
-      return fastCloseResult.data.sigI
+    // to do: should verify ingrids signature
+    if (fastCloseSig) {
+      // ingrid cosigned proposed LC update
+      return fastCloseSig
     } else {
+      // take to chain
       const result = await this.byzantineCloseVc(channelId)
       return result
     }
