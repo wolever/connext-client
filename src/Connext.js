@@ -350,14 +350,14 @@ class Connext {
    * Joins channel by channelId with a deposit of 0 (unidirectional channels).
    *
    * This function is to be called by the "B" party in a unidirectional scheme.
-   * Sends opening cert (VC0) to message queue, so it is accessible by Ingrid and Watchers.
    *
    * @example
-   * const channelId = 10 // accessed by getChannelId method
+   * const channelId = 10 // pushed to partyB from Ingrid
    * await connext.joinChannel(channelId)
-   * @param {String} channelId - ID of the virtual channel.
+   * @param {String} channelId - ID of the virtual channel
+   * @param {String} sender - (optional) ETH address of the person joining the virtual channel (partyB)
    */
-  async joinChannel (channelId) {
+  async joinChannel (channelId, sender = null) {
     // validate params
     const methodName = 'joinChannel'
     const isHexStrict = { presence: true, isHexStrict: true }
@@ -366,21 +366,31 @@ class Connext {
       methodName,
       'channelId'
     )
-    // get channel
-    const vc = await this.getChannelById(channelId)
-    const lc = await this.getLcByPartyA(vc.partyB)
+    let vc
+    if (sender) {
+      Connext.validatorsResponseToError(
+        validate.single(sender, isAddress),
+        methodName,
+        'sender'
+      )
+    } else {
+      vc = await this.getChannelById(channelId)
+      sender = vc.partyB
+    }
+    // get channels
+    const lc = await this.getLcByPartyA(sender)
     const vc0 = {
       vcId: channelId,
       nonce: 0,
       partyA: vc.partyA, // depending on ingrid for this value
-      partyB: vc.partyB,
+      partyB: sender,
       balanceA: Web3.utils.toBN(vc.balanceA), // depending on ingrid for this value
       balanceB: Web3.utils.toBN(0),
-      signer: vc.partyB
+      signer: sender
     }
     const vcSig = await this.createVCStateUpdate(vc0)
     // generate lcSig
-    const lcSig = await this.createLCUpdateOnVCOpen({ vc0, lc, signer: vc.partyB })
+    const lcSig = await this.createLCUpdateOnVCOpen({ vc0, lc, signer: sender })
     // ping ingrid with vc0 (hub decomposes to lc)
     const result = await this.joinVcHandler({
       vcSig,
@@ -2240,7 +2250,7 @@ class Connext {
   }
 
   /**
-   * Returns the latest double signed virtual channel state as an object.
+   * Returns the latest signed virtual channel state as an object.
    *
    * Signatures from both parties are included as fields in that object.
    *
@@ -2257,7 +2267,7 @@ class Connext {
       'channelId'
     )
     const response = await this.axiosInstance.get(
-      `${this.ingridUrl}/virtualchannel/${channelId}/update/doublesigned`,
+      `${this.ingridUrl}/virtualchannel/${channelId}/update/latest`,
     )
     return response.data
   }
