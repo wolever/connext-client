@@ -568,11 +568,6 @@ class Connext {
     })
   }
 
-
-  // ***************************************
-  // ************* DISPUTE FNS *************
-  // ***************************************
-
   /**
    * Withdraws bonded funds from ledger channel with ingrid.
    * All virtual channels must be closed before a ledger channel can be closed.
@@ -584,8 +579,9 @@ class Connext {
    *
    * @example
    * const success = await connext.withdraw()
-   * @returns {boolean} Returns true if successfully withdrawn, false if challenge process commences.
-   * @returns {String} Flag indicating whether the channel was consensus-closed or if lc was challenge-closed.
+   * @returns {Object} - contains the transaction hash of the resulting transaction, and a boolean indicating if it was fast closed
+   * @returns {String} - the transaction hash of either consensusCloseChannel or withdrawFinal
+   * @returns {Boolean} - true if successfully withdrawn, false if challenge process commences
    */
   async withdraw () {
     const lcId = await this.getLcId()
@@ -662,6 +658,7 @@ class Connext {
         sigI: sigI,
         sender: lcA.partyA
       })
+      return { response, fastClosed: true }
     } else {
       // call updateLCState
       response = await this.updateLcStateContractHandler({
@@ -676,9 +673,14 @@ class Connext {
         sigI: lcState.sigI,
         sender: lcState.partyA
       })
+      return { response, fastClosed: false }
     }
-    return response
   }
+
+
+  // ***************************************
+  // ************* DISPUTE FNS *************
+  // ***************************************
 
   /**
    * Withdraw bonded funds from ledger channel after a channel is challenge-closed after the challenge period expires by calling withdrawFinal using Web3.
