@@ -95,9 +95,18 @@ describe('Connext', async () => {
         it(
           'should return an lcID created on the contract with partyA by calling register()',
           async () => {
-            subchanAI = await client.register(initialDeposit)
+            subchanAI = await client.register(initialDeposit, partyA)
             console.log('subchanAI:', subchanAI)
             assert.ok(Web3.utils.isHexStrict(subchanAI))
+          }
+        ).timeout(5000)
+
+        it(
+          'should return an lcID created on the contract with partyB by calling register()',
+          async () => {
+            subchanBI = await client.register(initialDeposit, partyB)
+            console.log('subchanBI:', subchanAI)
+            assert.ok(Web3.utils.isHexStrict(subchanBI))
           }
         ).timeout(5000)
     
@@ -110,6 +119,17 @@ describe('Connext', async () => {
           //   assert.equal(response.txHash, ':)')
           assert.ok(Web3.utils.isHex(response))
         }).timeout(20000)
+
+        it('should request hub joins subchanBI', async () => {
+          response = await Promise.all([client.requestJoinLc(subchanBI), timeout(15000)])
+          // subchanAI =
+          //   '0x1d0c9414b3258f8cfe92dfa0f1f63b12f1b11aa6dce8d95a3c4ebe5f01bcbe70'
+          // response = await client.requestJoinLc(subchanAI)
+          console.log(response)
+          //   assert.equal(response.txHash, ':)')
+          assert.ok(Web3.utils.isHex(response))
+        }).timeout(20000)
+
       })
     
       describe('calling functions on contract', () => {
@@ -188,7 +208,7 @@ describe('Connext', async () => {
     
       it('partyB should join the virtual channel with 0 eth', async () => {
         // vcId = '0xf2ebd20931e9caa05912796ed318ee4ea25f0e5e48971b4bc8a3d674ab81c199'
-        response = await client.joinChannel(vcId)
+        response = await client.joinChannel(vcId, partyB)
         assert.equal(response, vcId)
       })
     })
@@ -239,7 +259,7 @@ describe('Connext', async () => {
         ingridAddress = client.ingridAddress = lc0.partyI = accounts[2]
         const params = {
           isClose: false,
-          lcId: lcId,
+          channelId: lcId,
           nonce: 1,
           openVCs: 0,
           vcRootHash: emptyRootHash,
@@ -336,7 +356,7 @@ describe('Connext', async () => {
           const subchanBIId = '0x129ef8385463750d5557c11ee3a2acbb935e1702d342f287aaa0123bfa82a707'
           // initial state
           let state = {
-            vcId,
+            channelId: vcId,
             subchanAI: subchanAIId,
             subchanBI: subchanBIId,
             nonce: 0,
@@ -883,7 +903,7 @@ describe('Connext', async () => {
           client.ingridAddress = ingridAddress
           const sigParams = {
             isClose: false,
-            lcId: '0xc1912',
+            channelId: '0xc1912',
             nonce: 0,
             openVCs: 0,
             vcRootHash: '0xc1912',
@@ -918,7 +938,7 @@ describe('Connext', async () => {
           it('should return signer == accounts[1]', async () => {
             let sigParams = {
               isClose: false,
-              lcId: '0xc1912',
+              channelId: '0xc1912',
               nonce: 0,
               openVcs: 0,
               vcRootHash: '0xc1912',
@@ -960,7 +980,7 @@ describe('Connext', async () => {
             ]
           })
           const sigParams = {
-            vcId: '0xc1912',
+            channelId: '0xc1912',
             nonce: 0,
             partyA: partyA,
             partyB: partyB,
@@ -991,7 +1011,7 @@ describe('Connext', async () => {
         describe('should recover the address of person who signed', () => {
           it('should return signer == accounts[1]', async () => {
             let sigParams = {
-              vcId: '0xc1912',
+              channelId: '0xc1912',
               nonce: 0,
               partyA: partyA,
               partyB: partyB,
@@ -1012,7 +1032,7 @@ describe('Connext', async () => {
           try {
             Connext.recoverSignerFromVCStateUpdate({
               sig: '0xc1912',
-              vcId: '0xc1912',
+              channelId: '0xc1912',
               nonce: 100,
               partyA: '0x627306090abaB3A6e1400e9345bC60c78a8BEf57',
               partyB: '0x627306090abaB3A6e1400e9345bC60c78a8BEf57',
@@ -1037,7 +1057,7 @@ describe('Connext', async () => {
               try {
                 Connext.recoverSignerFromVCStateUpdate({
                   sig: '0xc1912',
-                  vcId: '0xc1912',
+                  channelId: '0xc1912',
                   nonce: 100,
                   partyA: '0x627306090abaB3A6e1400e9345bC60c78a8BEf57',
                   partyB: '0x627306090abaB3A6e1400e9345bC60c78a8BEf57',
