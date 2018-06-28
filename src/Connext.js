@@ -1,4 +1,4 @@
-let axios = require('axios')
+const axios = require('axios')
 
 const channelManagerAbi = require('../artifacts/LedgerChannel.json')
 const util = require('ethereumjs-util')
