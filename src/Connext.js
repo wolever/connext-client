@@ -145,7 +145,7 @@ class Connext {
    * @example
    * // get a BN of a deposit value in wei
    * const deposit = Web3.utils.toBN(Web3.utils.toWei('1', 'ether))
-   * await connext.register(deposit)
+   * const lcId = await connext.register(deposit)
    *
    * @param {BigNumber} initialDeposit - deposit in wei
    * @param {String} sender - (optional) counterparty with hub in ledger channel, defaults to accounts[0]
@@ -212,16 +212,19 @@ class Connext {
   /**
    * Adds a deposit to an existing ledger channel. Calls contract function "deposit".
    *
-   * Can be used by either party in a ledger channel.
+   * Can be used by any party who wants to deposit funds into a ledger channel.
    * 
    * If sender is not supplied, it defaults to accounts[0]. If the recipient is not supplied, it defaults to the sender.
    *
    * @example
    * // get a BN
    * const deposit = Web3.utils.toBN(Web3.utils.toWei('1','ether'))
-   * await connext.deposit(deposit)
+   * const txHash = await connext.deposit(deposit)
+   * 
    * @param {BigNumber} depositInWei - value of the deposit
-   * @param {String}
+   * @param {String} sender - (optional) ETH address sending funds to the ledger channel
+   * @param {String} recipient - (optional) ETH address recieving funds in their ledger channel
+   * @returns {String} - the transaction hash of the onchain deposit.
    */
   async deposit (depositInWei, sender = null, recipient = sender) {
     // validate params
@@ -1482,7 +1485,7 @@ class Connext {
     return result
   }
 
-  async depositContractHandler ({ depositInWei, recipient = null, sender = null }) {
+  async depositContractHandler ({ depositInWei, sender = null, recipient = sender }) {
     const methodName = 'depositContractHandler'
     // validate
     const isBN = { presence: true, isBN: true }
@@ -1493,16 +1496,6 @@ class Connext {
       'depositInWei'
     )
     const accounts = await this.web3.eth.getAccounts()
-    if (recipient) {
-      Connext.validatorsResponseToError(
-        validate.single(recipient, isAddress),
-        methodName,
-        'recipient'
-      )
-    } else {
-      // unspecified, defaults to active account
-      recipient = accounts[0]
-    }
     if (sender) {
       Connext.validatorsResponseToError(
         validate.single(sender, isAddress),
@@ -1512,9 +1505,20 @@ class Connext {
     } else {
       sender = accounts[0]
     }
+    if (recipient) {
+      Connext.validatorsResponseToError(
+        validate.single(recipient, isAddress),
+        methodName,
+        'recipient'
+      )
+    } else {
+      // unspecified, defaults to active account
+      recipient = sender
+    }
+  
 
     // find ledger channel by mine and ingrids address
-    const lcId = await this.getLcId()
+    const lcId = await this.getLcId(recipient)
     // call LC method
     const result = await this.channelManagerInstance.methods
       .deposit(
