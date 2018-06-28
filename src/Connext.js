@@ -969,7 +969,7 @@ class Connext {
   }
 
   static createVCStateUpdateFingerprint ({
-    vcId,
+    channelId,
     nonce,
     partyA,
     partyB,
@@ -986,9 +986,9 @@ class Connext {
     const isAddress = { presence: true, isAddress: true }
     const isPositiveInt = { presence: true, isPositiveInt: true }
     Connext.validatorsResponseToError(
-      validate.single(vcId, isHexStrict),
+      validate.single(channelId, isHexStrict),
       methodName,
-      'vcId'
+      'channelId'
     )
     Connext.validatorsResponseToError(
       validate.single(nonce, isPositiveInt),
@@ -1022,7 +1022,7 @@ class Connext {
 
     // generate state update to sign
     const hash = Web3.utils.soliditySha3(
-      { type: 'bytes32', value: vcId },
+      { type: 'bytes32', value: channelId },
       { type: 'uint256', value: nonce },
       { type: 'address', value: partyA },
       { type: 'address', value: partyB },
@@ -1096,7 +1096,7 @@ class Connext {
     )
 
     let fingerprint = Connext.createVCStateUpdateFingerprint({
-      vcId,
+      channelId: vcId,
       nonce,
       partyA,
       partyB,
@@ -1281,7 +1281,7 @@ class Connext {
     const accounts = await this.web3.eth.getAccounts()
     // generate and sign hash
     const hash = Connext.createVCStateUpdateFingerprint({
-      vcId,
+      channelId: vcId,
       nonce,
       partyA,
       partyB,
@@ -1312,7 +1312,6 @@ class Connext {
     )
     const emptyRootHash = '0x0000000000000000000000000000000000000000000000000000000000000000'
     let vcRootHash
-    let elems = []
     if (vc0s.length === 0) {
       // reset to initial value -- no open VCs
       vcRootHash = emptyRootHash
@@ -1703,13 +1702,14 @@ class Connext {
   async initVcStateContractHandler ({
     subchanId,
     vcId,
+    proof = null,
     nonce,
     partyA,
     partyB,
     balanceA,
     balanceB,
     sigA,
-    sender = null
+    sender = null,
   }) {
     const methodName = 'initVcStateContractHandler'
     // validate
@@ -1768,28 +1768,43 @@ class Connext {
       const accounts = await this.web3.eth.getAccounts()
       sender = accounts[0]
     }
-    // generate proof from lc
-    const stateHash = Connext.createVCStateUpdateFingerprint({
-      vcId,
-      nonce,
-      partyA,
-      partyB,
-      balanceA,
-      balanceB
-    })
-    const vc0s = await this.getVcInitialStates(subchanId)
-    const vcRootHash = Connext.generateVcRootHash({ vc0s })
-    let merkle = Connext.generateMerkleTree(vc0s)
-    let mproof = merkle.proof(vcRootHash)
+    if (proof === null) {
+      console.log(proof)
+      // generate proof from lc
+      const stateHash = Connext.createVCStateUpdateFingerprint({
+        channelId: vcId,
+        nonce,
+        partyA,
+        partyB,
+        balanceA,
+        balanceB
+      })
+      // const vc0s = await this.getVcInitialStates(subchanId)
+      const vc0 = {
+        channelId: '0x1000000000000000000000000000000000000000000000000000000000000000',
+        nonce: 0,
+        partyA,
+        partyB,
+        balanceA: Web3.utils.toBN(Web3.utils.toWei('2', 'ether')),
+        balanceB: Web3.utils.toBN(Web3.utils.toWei('0', 'ether'))
+      }
+      let vc0s = []
+      vc0s.push(vc0)
+      console.log(vc0s)
+      let merkle = Connext.generateMerkleTree(vc0s)
+      let mproof = merkle.proof(Utils.hexToBuffer(stateHash))
 
-    let proof = []
-    for(var i=0; i<mproof.length; i++){
-      proof.push(Utils.bufferToHex(mproof[i]))
+      proof = []
+      for(var i=0; i<mproof.length; i++){
+        proof.push(Utils.bufferToHex(mproof[i]))
+      }
+
+      proof.unshift(stateHash)
+
+      proof = Utils.marshallState(proof)
     }
 
-    proof.unshift(stateHash)
-
-    proof = Utils.marshallState(proof)
+    const hubBond = balanceA.add(balanceB)
 
     const results = await this.channelManagerInstance.methods
       .initVCstate(
@@ -1799,13 +1814,14 @@ class Connext {
         nonce,
         partyA,
         partyB,
+        hubBond,
         balanceA,
         balanceB,
         sigA
       )
       .send({
         from: sender,
-        gas: 4700000
+        gas: 6500000
       })
     // if (!results.transactionHash) {
     //   throw new Error(`[${methodName}] initVCState transaction failed.`)
@@ -1888,8 +1904,7 @@ class Connext {
         nonce,
         partyA,
         partyB,
-        balanceA,
-        balanceB,
+        [ balanceA, balanceB ],
         sigA
       )
       .send({
