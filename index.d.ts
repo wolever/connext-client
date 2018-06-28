@@ -72,7 +72,7 @@ declare namespace Connext {
 
   export interface LcUpdate {
     isClose: boolean;
-    lcId: string;
+    channelId: string;
     nonce: number;
     openVcs: number;
     vcRootHash: string;
