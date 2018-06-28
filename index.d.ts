@@ -31,17 +31,17 @@ declare class Connext {
 
   closeChannels(channels: Connext.Channel[]): Promise<any>;
 
-  static createLCStateUpdateFingerprint(
-    opts: Connext.LcUpdateFingerprint
-  ): string;
+  static createLCStateUpdateFingerprint(opts: Connext.LcUpdate): string;
 
   static recoverSignerFromLCStateUpdate(opts: Connext.RecoverLcUpdate): string;
 
-  static createVCStateUpdateFingerprint(
-    opts: Connext.VcUpdateFingerprint
-  ): string;
+  static createVCStateUpdateFingerprint(opts: Connext.VcUpdate): string;
 
   static recoverSignerFromVCStateUpdate(opts: Connext.RecoverVcUpdate): string;
+
+  static generateVcRootHash(vc0s: any): string;
+
+  static generateMerkleTree(vc0s: Connext.VcUpdate[]): string;
 }
 
 declare namespace Connext {
@@ -70,7 +70,7 @@ declare namespace Connext {
     sig: string;
   }
 
-  export interface LcUpdateFingerprint {
+  export interface LcUpdate {
     isClose: boolean;
     lcId: string;
     nonce: number;
@@ -82,11 +82,11 @@ declare namespace Connext {
     balanceI: BigNumber;
   }
 
-  export interface RecoverLcUpdate extends LcUpdateFingerprint {
+  export interface RecoverLcUpdate extends LcUpdate {
     sig: string;
   }
 
-  export interface VcUpdateFingerprint {
+  export interface VcUpdate {
     channelId: string;
     nonce: number;
     partyA: string;
@@ -95,8 +95,12 @@ declare namespace Connext {
     balanceB: BigNumber;
   }
 
-  export interface RecoverVcUpdate extends VcUpdateFingerprint {
+  export interface RecoverVcUpdate extends VcUpdate {
     sig: string;
+  }
+
+  export interface Vc0s {
+    vc0s: VcUpdate[];
   }
 
   export interface Channel {
