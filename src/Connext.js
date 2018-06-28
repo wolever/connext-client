@@ -1769,7 +1769,6 @@ class Connext {
       sender = accounts[0]
     }
     if (proof === null) {
-      console.log(proof)
       // generate proof from lc
       const stateHash = Connext.createVCStateUpdateFingerprint({
         channelId: vcId,
@@ -1779,18 +1778,7 @@ class Connext {
         balanceA,
         balanceB
       })
-      // const vc0s = await this.getVcInitialStates(subchanId)
-      const vc0 = {
-        channelId: '0x1000000000000000000000000000000000000000000000000000000000000000',
-        nonce: 0,
-        partyA,
-        partyB,
-        balanceA: Web3.utils.toBN(Web3.utils.toWei('2', 'ether')),
-        balanceB: Web3.utils.toBN(Web3.utils.toWei('0', 'ether'))
-      }
-      let vc0s = []
-      vc0s.push(vc0)
-      console.log(vc0s)
+      const vc0s = await this.getVcInitialStates(subchanId)
       let merkle = Connext.generateMerkleTree(vc0s)
       let mproof = merkle.proof(Utils.hexToBuffer(stateHash))
 
