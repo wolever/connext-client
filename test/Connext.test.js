@@ -102,10 +102,10 @@ describe('Connext', async () => {
         ).timeout(5000)
     
         it('should request hub joins subchanAI', async () => {
-          // response = await Promise.all([client.requestJoinLc(subchanAI), timeout(15000)])
-          subchanAI =
-            '0x03f11cbb8570a47e1b12dd8266c39df1c77f21e18737b31db9b63471807d6227'
-          response = await client.requestJoinLc(subchanAI)
+          response = await Promise.all([client.requestJoinLc(subchanAI), timeout(15000)])
+          // subchanAI =
+          //   '0x1d0c9414b3258f8cfe92dfa0f1f63b12f1b11aa6dce8d95a3c4ebe5f01bcbe70'
+          // response = await client.requestJoinLc(subchanAI)
           console.log(response)
           //   assert.equal(response.txHash, ':)')
           assert.ok(Web3.utils.isHex(response))
@@ -124,7 +124,7 @@ describe('Connext', async () => {
         it('should create subchanAI on channel manager instance', async () => {
           // hardcode contract call, accounts[0] is encoded in client
           response = await client.channelManagerInstance.methods
-            .createChannel(subchanAI, ingridAddress)
+            .createChannel(subchanAI, ingridAddress, 3600)
             .send({ from: partyA, value: initialDeposit, gas: 3000000 })
           assert.ok(Web3.utils.isHex(response.transactionHash))
         }).timeout(7000)
@@ -148,9 +148,9 @@ describe('Connext', async () => {
         }).timeout(7000)
 
         it('should request hub joins subchanBI', async () => {
-          // response = await Promise.all([client.requestJoinLc(subchanBI), timeout(15000)])
-          subchanBI =
-            '0x44e87f5ecdd91e71b6d469f721757a3f5d9a46b956481f4ac7891ec610083f28'
+          response = await Promise.all([client.requestJoinLc(subchanBI), timeout(15000)])
+          // subchanBI =
+          //   '0x44e87f5ecdd91e71b6d469f721757a3f5d9a46b956481f4ac7891ec610083f28'
           response = await client.requestJoinLc(subchanBI)
           console.log(response)
           //   assert.equal(response.txHash, ':)')
@@ -160,13 +160,15 @@ describe('Connext', async () => {
         it(
           'should force ingrid to join both subchans by calling it on contract',
           async () => {
+            // subchanBI = '0x8ce06cca33db99c97c0512c58f689b5f014825e6a58f737a89603a18e1a849cd'
+            // subchanAI = '0x3645c3e832e564b97d9bcb72fdf72aecc9160087d09dc709046499123a7fc9eb'
             let responseAI = await client.channelManagerInstance.methods
               .joinChannel(subchanAI)
-              .send({ from: ingridAddress, value: initialDeposit, gas: 3000000 })
+              .send({ from: ingridAddress, value: initialDeposit, gas: 4700000 })
     
             let responseBI = await client.channelManagerInstance.methods
               .joinChannel(subchanBI)
-              .send({ from: ingridAddress, value: initialDeposit, gas: 3000000 })
+              .send({ from: ingridAddress, value: initialDeposit, gas: 4700000 })
             // assert.equal(responseAI.transactionHash, ';)')
             assert.ok(
               Web3.utils.isHex(responseAI.transactionHash) &&
@@ -185,7 +187,7 @@ describe('Connext', async () => {
       })
     
       it('partyB should join the virtual channel with 0 eth', async () => {
-        vcId = '0x040f8ce1ffc6a3c4afe1f32ca801b78bfb3931bb1882513bd7e3ff44972cfc95'
+        vcId = '0xf2ebd20931e9caa05912796ed318ee4ea25f0e5e48971b4bc8a3d674ab81c199'
         response = await client.joinChannel(vcId)
         assert.equal(response, vcId)
       })
@@ -193,23 +195,23 @@ describe('Connext', async () => {
 
     describe('updating state in and closing a virtual channel between partyA and partyB', () => {
       it('partyA sends a state update in the virtual channel of 1 eth', async () => {
-        vcId = '0x040f8ce1ffc6a3c4afe1f32ca801b78bfb3931bb1882513bd7e3ff44972cfc95'
-        balanceA = Web3.utils.toBN(Web3.utils.toWei('3', 'ether'))
-        balanceB = Web3.utils.toBN(Web3.utils.toWei('2', 'ether'))
+        vcId = '0xf2ebd20931e9caa05912796ed318ee4ea25f0e5e48971b4bc8a3d674ab81c199'
+        balanceA = Web3.utils.toBN(Web3.utils.toWei('0.75', 'ether'))
+        balanceB = Web3.utils.toBN(Web3.utils.toWei('4.25', 'ether'))
         response = await client.updateBalance({
           channelId: vcId,
           balanceA,
           balanceB
         })
         assert.ok(
-          Web3.utils.toBN(response.balanceA) === balanceA &&
-            Web3.utils.toBN(response.balanceB) === balanceB
+          Web3.utils.toBN(response.balanceA).eq(balanceA) &&
+            Web3.utils.toBN(response.balanceB).eq(balanceB)
         )
       })
 
-      it('should fast close the virtual channel', async () => {
-        vcId = '0x040f8ce1ffc6a3c4afe1f32ca801b78bfb3931bb1882513bd7e3ff44972cfc95'
-        response = await client.fastCloseChannel(vcId)
+      it.only('should fast close the virtual channel', async () => {
+        vcId = '0xf2ebd20931e9caa05912796ed318ee4ea25f0e5e48971b4bc8a3d674ab81c199'
+        response = await client.closeChannel(vcId)
         assert.equal(response, vcId)
       })
     })
@@ -490,7 +492,7 @@ describe('Connext', async () => {
     })
   })
 
-  describe.only('client contract handlers', () => {
+  describe('client contract handlers', () => {
     describe('createLedgerChannelContractHandler', () => {
       describe('Web3 and contract properly initialized, valid parameters', () => {
         it('should call createChannel on the channel manager instance (subchanAI)', async () => {
@@ -578,11 +580,11 @@ describe('Connext', async () => {
     describe('depositContractHandler', () => {
       describe('Web3 and contract properly initialized, valid parameters', async () => {
         it('should call deposit on the channel manager instance', async () => {
-          subchanAI = '0x4b7c97c3ae6abca2ff2ba4e31ee594ac5e1b1f12d8fd2097211569f80dbb7d08'
+          subchanBI = '0xa69d5a26f6af375255adee27279434ec275111a504088858c438192c69fd958b'
           response = await client.depositContractHandler({
-            depositInWei: Web3.utils.toBN(Web3.utils.toWei('1', 'ether')),
-            recipient: partyA, 
-            sender: partyA 
+            depositInWei: Web3.utils.toBN(Web3.utils.toWei('5', 'ether')),
+            recipient: ingridAddress, 
+            sender: ingridAddress 
           })
           assert.ok(
             response.transactionHash !== null &&
@@ -740,7 +742,7 @@ describe('Connext', async () => {
           // console.log(proof)
         })
 
-        it.only('should init a virtual channel state on chain', async () => {
+        it('should init a virtual channel state on chain', async () => {
           const sigA = await client.createVCStateUpdate({
             vcId: '0x1000000000000000000000000000000000000000000000000000000000000000',
             nonce: 0,
