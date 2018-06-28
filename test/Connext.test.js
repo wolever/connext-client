@@ -95,9 +95,18 @@ describe('Connext', async () => {
         it(
           'should return an lcID created on the contract with partyA by calling register()',
           async () => {
-            subchanAI = await client.register(initialDeposit)
+            subchanAI = await client.register(initialDeposit, partyA)
             console.log('subchanAI:', subchanAI)
             assert.ok(Web3.utils.isHexStrict(subchanAI))
+          }
+        ).timeout(5000)
+
+        it(
+          'should return an lcID created on the contract with partyB by calling register()',
+          async () => {
+            subchanBI = await client.register(initialDeposit, partyB)
+            console.log('subchanBI:', subchanAI)
+            assert.ok(Web3.utils.isHexStrict(subchanBI))
           }
         ).timeout(5000)
     
@@ -110,6 +119,17 @@ describe('Connext', async () => {
           //   assert.equal(response.txHash, ':)')
           assert.ok(Web3.utils.isHex(response))
         }).timeout(20000)
+
+        it('should request hub joins subchanBI', async () => {
+          response = await Promise.all([client.requestJoinLc(subchanBI), timeout(15000)])
+          // subchanAI =
+          //   '0x1d0c9414b3258f8cfe92dfa0f1f63b12f1b11aa6dce8d95a3c4ebe5f01bcbe70'
+          // response = await client.requestJoinLc(subchanAI)
+          console.log(response)
+          //   assert.equal(response.txHash, ':)')
+          assert.ok(Web3.utils.isHex(response))
+        }).timeout(20000)
+
       })
     
       describe('calling functions on contract', () => {
