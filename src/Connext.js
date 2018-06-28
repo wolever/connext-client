@@ -980,7 +980,6 @@ class Connext {
     // typecast balances incase chained
     balanceA = Web3.utils.toBN(balanceA)
     balanceB = Web3.utils.toBN(balanceB)
-    console.log(channelId)
     // validate
     const isHexStrict = { presence: true, isHexStrict: true }
     const isBN = { presence: true, isBN: true }
