@@ -2485,7 +2485,7 @@ class Connext {
     } else if (accounts[0].toLowerCase() === vc0.partyB && signer === null) {
       // no signer provided, set signer
       signer = vc0.partyB
-    } else if (signer !== vc0.partyA || accounts[0].toLowerCase() !== vc0.partyA || signer !== vc0.partyB || accounts[0].toLowerCase() !== vc0.partyB ){
+    } else if (signer !== vc0.partyA && accounts[0].toLowerCase() !== vc0.partyA && signer !== vc0.partyB && accounts[0].toLowerCase() !== vc0.partyB ){
       throw new Error('Not your virtual channel.')
     }
 
@@ -2496,8 +2496,8 @@ class Connext {
       vcRootHash: newRootHash,
       partyA: lc.partyA,
       partyI: this.ingridAddress,
-      balanceA: signer === vc0.agentA ? Web3.utils.toBN(lc.balanceA).sub(Web3.utils.toBN(vc0.balanceA)) : Web3.utils.toBN(lc.balanceA).sub(Web3.utils.toBN(vc0.balanceB)),
-      balanceI: signer === vc0.agentA ? Web3.utils.toBN(lc.balanceI).sub(Web3.utils.toBN(vc0.balanceB)) : Web3.utils.toBN(lc.balanceI).sub(Web3.utils.toBN(vc0.balanceA)),
+      balanceA: signer === vc0.partyA ? Web3.utils.toBN(lc.balanceA).sub(Web3.utils.toBN(vc0.balanceA)) : Web3.utils.toBN(lc.balanceA).sub(Web3.utils.toBN(vc0.balanceB)),
+      balanceI: signer === vc0.partyA ? Web3.utils.toBN(lc.balanceI).sub(Web3.utils.toBN(vc0.balanceB)) : Web3.utils.toBN(lc.balanceI).sub(Web3.utils.toBN(vc0.balanceA)),
       signer: signer
     }
     const sigAtoI = await this.createLCStateUpdate(updateAtoI)
