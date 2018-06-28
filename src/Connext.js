@@ -83,12 +83,12 @@ class Connext {
    * @example
    * const Connext = require('connext')
    * const connext = new Connext(web3)
-   * @param {Object} params - The constructor object.
+   * @param {Object} params - the constructor object.
    * @param {Web3} params.web3 - the web3 instance.
-   * @param {String} params.ingridAddress Eth address of intermediary (defaults to Connext hub).
-   * @param {String} params.watcherUrl Url of watcher server (defaults to Connext hub).
-   * @param {String} params.ingridUrl Url of intermediary server (defaults to Connext hub).
-   * @param {String} params.contractAddress Address of deployed contract (defaults to latest deployed contract).
+   * @param {String} params.ingridAddress - ETH address of intermediary (defaults to Connext hub).
+   * @param {String} params.watcherUrl - url of watcher server (defaults to Connext hub).
+   * @param {String} params.ingridUrl - url of intermediary server (defaults to Connext hub).
+   * @param {String} params.contractAddress - address of deployed contract (defaults to latest deployed contract).
    * @param {String} params.hubAuth - token authorizing client package to make requests to hub
    */
   constructor (
@@ -150,12 +150,14 @@ class Connext {
    * @param {BigNumber} initialDeposit - deposit in wei
    * @param {String} sender - (optional) counterparty with hub in ledger channel, defaults to accounts[0]
    * @param {Number} challenge - (optional) challenge period in seconds
-   * @returns {String} result of calling openLedgerChannel on the channelManager instance.
+   * @returns {String} - the ledger channel id of the created channel.
    */
   async register (initialDeposit, sender = null, challenge = null) {
     // validate params
     const methodName = 'register'
     const isBN = { presence: true, isBN: true }
+    const isAddress = { presence: true, isAddress: true }
+    const isPositiveInt = { presence: true, isPositiveInt: true }
     Connext.validatorsResponseToError(
       validate.single(initialDeposit, isBN),
       methodName,
@@ -211,14 +213,17 @@ class Connext {
    * Adds a deposit to an existing ledger channel. Calls contract function "deposit".
    *
    * Can be used by either party in a ledger channel.
+   * 
+   * If sender is not supplied, it defaults to accounts[0]. If the recipient is not supplied, it defaults to the sender.
    *
    * @example
    * // get a BN
-   * const deposit = web3.utils.toBN(10000)
+   * const deposit = Web3.utils.toBN(Web3.utils.toWei('1','ether'))
    * await connext.deposit(deposit)
-   * @param {BigNumber} depositInWei - Value of the deposit.
+   * @param {BigNumber} depositInWei - value of the deposit
+   * @param {String}
    */
-  async deposit (depositInWei) {
+  async deposit (depositInWei, sender = null, recipient = sender) {
     // validate params
     const methodName = 'deposit'
     const isBN = { presence: true, isBN: true }
@@ -227,8 +232,25 @@ class Connext {
       methodName,
       'depositInWei'
     )
+    if (sender) {
+      Connext.validatorsResponseToError(
+        validate.single(sender, isAddress),
+        methodName,
+        'sender'
+      )
+    } else {
+      const accounts = await this.web3.eth.getAccounts()
+      sender = accounts[0]
+    }
+    if (recipient) {
+      Connext.validatorsResponseToError(
+        validate.single(recipient, isAddress),
+        methodName,
+        'recipient'
+      )
+    }
     // call contract handler
-    const result = await this.depositContractHandler({ depositInWei })
+    const result = await this.depositContractHandler({ depositInWei, recipient, sender })
     return result
   }
 
