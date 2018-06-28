@@ -187,7 +187,7 @@ describe('Connext', async () => {
       })
     
       it('partyB should join the virtual channel with 0 eth', async () => {
-        vcId = '0xf2ebd20931e9caa05912796ed318ee4ea25f0e5e48971b4bc8a3d674ab81c199'
+        // vcId = '0xf2ebd20931e9caa05912796ed318ee4ea25f0e5e48971b4bc8a3d674ab81c199'
         response = await client.joinChannel(vcId)
         assert.equal(response, vcId)
       })
@@ -195,9 +195,9 @@ describe('Connext', async () => {
 
     describe('updating state in and closing a virtual channel between partyA and partyB', () => {
       it('partyA sends a state update in the virtual channel of 1 eth', async () => {
-        vcId = '0xf2ebd20931e9caa05912796ed318ee4ea25f0e5e48971b4bc8a3d674ab81c199'
-        balanceA = Web3.utils.toBN(Web3.utils.toWei('0.75', 'ether'))
-        balanceB = Web3.utils.toBN(Web3.utils.toWei('4.25', 'ether'))
+        vcId = '0xbaea4652e4ed71f653439439b92e86c201707064e84576ffe951f88dfc6bfee5'
+        balanceA = Web3.utils.toBN(Web3.utils.toWei('4', 'ether'))
+        balanceB = Web3.utils.toBN(Web3.utils.toWei('1', 'ether'))
         response = await client.updateBalance({
           channelId: vcId,
           balanceA,
@@ -209,8 +209,8 @@ describe('Connext', async () => {
         )
       })
 
-      it.only('should fast close the virtual channel', async () => {
-        vcId = '0xf2ebd20931e9caa05912796ed318ee4ea25f0e5e48971b4bc8a3d674ab81c199'
+      it('should fast close the virtual channel', async () => {
+        // vcId = '0xf2ebd20931e9caa05912796ed318ee4ea25f0e5e48971b4bc8a3d674ab81c199'
         response = await client.closeChannel(vcId)
         assert.equal(response, vcId)
       })
