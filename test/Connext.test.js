@@ -30,8 +30,8 @@ let partyB
 let balanceA
 let balanceI
 let initialDeposit = Web3.utils.toBN(Web3.utils.toWei('5', 'ether'))
-let subchanAI = Connext.getNewChannelId()
-let subchanBI = Connext.getNewChannelId()
+let subchanAI
+let subchanBI
 
 // state objects
 let AI_LC0, BI_LC0, AB_VC0, AI_LC1, BI_LC1
