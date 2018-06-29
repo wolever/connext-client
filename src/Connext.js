@@ -2388,6 +2388,37 @@ class Connext {
   // *********** INGRID HELPERS ************
   // ***************************************
 
+  // requests ingrid deposits in a given subchan
+  /**
+   * Requests ingrid deposits into a given subchan.
+   * 
+   * @param {Object} params - the method object
+   * @param {String} params.lcId - id of the ledger channel
+   * @param {BN} params.deposit - the deposit in Wei  
+   */
+  async requestIngridDeposit({lcId, deposit}) {
+    const methodName = 'requestIngridDeposit'
+    const isHexStrict = { presence: true, isHexStrict: true }
+    const isBN = { presence: true, isBN: true }
+    Connext.validatorsResponseToError(
+      validate.single(lcId, isHexStrict),
+      methodName,
+      'lcId'
+    )
+    Connext.validatorsResponseToError(
+      validate.single(deposit, isBN),
+      methodName,
+      'isBN'
+    )
+    const response = await this.axiosInstance.post(
+      `${this.ingridUrl}/ledgerchannel/${lcId}/deposit`,
+      {
+        deposit: deposit.toString()
+      }
+    )
+    return response.data.txHash
+  } 
+
   // posts signature of lc0 to ingrid
   // requests to open a ledger channel with the hub
   // async requestJoinLc ({ lcId, sig, balanceA }) {
