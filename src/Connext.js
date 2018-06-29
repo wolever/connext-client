@@ -444,7 +444,7 @@ class Connext {
     const vc = await this.getChannelById(channelId)
     // generate new state update
     const state = {
-      vcId: channelId,
+      channelId,
       nonce: vc.nonce + 1,
       partyA: vc.partyA,
       partyB: vc.partyB,
