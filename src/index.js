@@ -1,3 +1,2 @@
-const Ethcalate = require('./Ethcalate')
-
-module.exports = Ethcalate
+const Connext = require('./Connext')
+module.exports = Connext
