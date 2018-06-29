@@ -313,10 +313,8 @@ class Connext {
       const accounts = await this.web3.eth.getAccounts()
       sender = accounts[0].toLowerCase().toLowerCase()
     }
-    console.log(sender)
 
     const lcA = await this.getLcByPartyA(sender)
-    console.log(lcA)
     const lcIdB = await this.getLcId(to)
     // validate the subchannels exist
     if (lcIdB === null || lcA === null) {
