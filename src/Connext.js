@@ -313,8 +313,10 @@ class Connext {
       const accounts = await this.web3.eth.getAccounts()
       sender = accounts[0].toLowerCase().toLowerCase()
     }
+    console.log(sender)
 
     const lcA = await this.getLcByPartyA(sender)
+    console.log(lcA)
     const lcIdB = await this.getLcId(to)
     // validate the subchannels exist
     if (lcIdB === null || lcA === null) {
@@ -325,7 +327,7 @@ class Connext {
     // generate initial vcstate
     const vcId = Connext.getNewChannelId()
     const vc0 = {
-      vcId,
+      channelId: vcId,
       nonce: 0,
       partyA: sender,
       partyB: to.toLowerCase(),
@@ -363,6 +365,7 @@ class Connext {
     // validate params
     const methodName = 'joinChannel'
     const isHexStrict = { presence: true, isHexStrict: true }
+    const isAddress = { presence: true, isAddress: true }
     Connext.validatorsResponseToError(
       validate.single(channelId, isHexStrict),
       methodName,
@@ -2202,7 +2205,7 @@ class Connext {
     }
     // get my LC with ingrid
     const response = await this.axiosInstance.get(
-      `${this.ingridUrl}/ledgerchannel/a/${partyA}` 
+      `${this.ingridUrl}/ledgerchannel/a/${partyA.toLowerCase()}` 
     )
     return response.data.channelId
   }
