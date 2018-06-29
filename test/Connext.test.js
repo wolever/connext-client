@@ -235,7 +235,7 @@ describe('Connext', async () => {
     describe('creating subchans', () => {
       // register function hardcodes from accounts[0]
       // to accurately test, must open channels directly with contract
-      describe('using register on client and timeouts for subchanAI', () => {
+      describe('using register on client and timeouts for subchans', () => {
         it(
           'should return an lcID created on the contract with partyA by calling register()',
           async () => {
@@ -344,6 +344,13 @@ describe('Connext', async () => {
     })
     
     describe('creating a virtual channel between partyA and partyB', () => {
+
+      it('should request that ingrid deposits 5 ETH in subchanBI', async () => {
+        subchanBI = '0x21ce9063809c5011218dfbd2ee76f112b1705dff59644876031dfc2b6527744a'
+        response = client.requestIngridDeposit({ lcId: subchanBI, deposit: initialDeposit })
+        // assert.equal(response, ':)')
+        assert.ok(Web3.utils.isHex(response))
+      }).timeout(5000) 
       
       it('partyA should create a virtual channel with 5 eth in it', async () => {
         vcId = await client.openChannel({ to: partyB })
