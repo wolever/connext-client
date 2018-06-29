@@ -32,9 +32,10 @@ let balanceI
 let initialDeposit = Web3.utils.toBN(Web3.utils.toWei('5', 'ether'))
 let subchanAI = '0x1c207f0960266a06fb5ce2e9d7b990b6489ca37c0f61c4afc34699fe42e96395'
 let subchanBI = '0x14b5dadcd4ccf2dbaec2600d3fc0eb440be926ecf6d27c6983ec1c097bf93fba'
+let vcId = '0x2000000000000000000000000000000000000000000000000000000000000000'
 
 // state objects
-let AI_LC0, BI_LC0, AB_VC0, AI_LC1, BI_LC1
+let AI_LC0, BI_LC0, AB_VC0, AI_LC1, BI_LC1, AB_VCN, AI_LC2, BI_LC2
 let hash
 let sigA_AI_LC0, sigI_AI_LC0, sigI_BI_LC0, sigB_BI_LC0 // initial lc state
 let sigA_AB_VC0, sigB_AB_VC0 // initial vc state
@@ -49,10 +50,6 @@ const emptyRootHash = Connext.generateVcRootHash({ vc0s: [] })
 
 describe('Connext', async () => {
 
-  describe('constant value generation', () => {
-    it('should create an instance of web3 to set the party variables', async ())
-  })
-
   describe('client init', () => {
     it('should create a connext client with a fake version of web3', async () => {
       client = new Connext({ web3 }, createFakeWeb3())
@@ -60,7 +57,7 @@ describe('Connext', async () => {
     })
 
     describe('real web3 and channel manager', () => {
-      it('should init web3 and generate static values for client testing', async () => {
+      it.only('should init web3 and generate static values for client testing', async () => {
         // set party variables
         const port = process.env.ETH_PORT ? process.env.ETH_PORT : '9545'
         web3 = new Web3(`ws://localhost:${port}`)
@@ -85,7 +82,7 @@ describe('Connext', async () => {
         // generate sigs
         hash = Connext.createLCStateUpdateFingerprint(AI_LC0)
         sigA_AI_LC0 = web3.eth.sign(hash, partyA)
-        sigI_AI_LC0 = web3.eth.sign(hash, partyI)
+        sigI_AI_LC0 = web3.eth.sign(hash, ingridAddress)
 
         // generate BI_LC0
         BI_LC0 = {
@@ -103,14 +100,14 @@ describe('Connext', async () => {
         // generate sigs of BI_LC0
         hash = Connext.createLCStateUpdateFingerprint(BI_LC0)
         sigB_BI_LC0 = web3.eth.sign(hash, partyB)
-        sigI_BI_LC0 = web3.eth.sign(hash, partyI)
+        sigI_BI_LC0 = web3.eth.sign(hash, ingridAddress)
 
         // generate vc0
         AB_VC0 = {
           state: 1,
           balanceA: initialDeposit,
           balanceB: Web3.utils.toBN('0'),
-          channelId: "0x2000000000000000000000000000000000000000000000000000000000000000",
+          channelId: vcId,
           partyA: partyA,
           partyB: partyB,
           partyI: ingridAddress,
@@ -124,13 +121,15 @@ describe('Connext', async () => {
         sigB_AB_VC0 = web3.eth.sign(hash, partyB)
 
         // generate lc1
+        let elems = []
+        elems.push(AB_VC0)
         AI_LC1 = {
           isClose: false,
           channelId: '0x1c207f0960266a06fb5ce2e9d7b990b6489ca37c0f61c4afc34699fe42e96395',
           state: 1,
           nonce: 1,
           openVcs: 1,
-          vcRootHash: Connext.generateVcRootHash({ vc0s: [].push(AB_VC0) }),
+          vcRootHash: Connext.generateVcRootHash({ vc0s: elems }),
           partyA,
           partyI: ingridAddress,
           balanceA: Web3.utils.toBN('0'),
@@ -139,7 +138,7 @@ describe('Connext', async () => {
         // generate sigs
         hash = Connext.createLCStateUpdateFingerprint(AI_LC1)
         sigA_AI_LC1 = web3.eth.sign(hash, partyA)
-        sigI_AI_LC1 = web3.eth.sign(hash, partyI)
+        sigI_AI_LC1 = web3.eth.sign(hash, ingridAddress)
 
         BI_LC1 = {
           isClose: false,
@@ -147,7 +146,7 @@ describe('Connext', async () => {
           state: 1,
           nonce: 1,
           openVcs: 1,
-          vcRootHash: Connext.generateVcRootHash({ vc0s: [].push(AB_VC0) }),
+          vcRootHash: Connext.generateVcRootHash({ vc0s: elems }),
           partyA: partyB,
           partyI: ingridAddress,
           balanceA: Web3.utils.toBN('0'),
@@ -156,14 +155,14 @@ describe('Connext', async () => {
         // generate sigs of BI_LC1
         hash = Connext.createLCStateUpdateFingerprint(BI_LC1)
         sigB_BI_LC1 = web3.eth.sign(hash, partyB)
-        sigI_BI_LC1 = web3.eth.sign(hash, partyI)
+        sigI_BI_LC1 = web3.eth.sign(hash, ingridAddress)
 
         // generate final vc state
         AB_VCN = {
           state: 1,
           balanceA: Web3.utils.toBN('0'),
           balanceB: initialDeposit,
-          channelId: "0x2000000000000000000000000000000000000000000000000000000000000000",
+          channelId: vcId,
           partyA: partyA,
           partyB: partyB,
           partyI: ingridAddress,
@@ -192,7 +191,7 @@ describe('Connext', async () => {
         // generate sigs
         hash = Connext.createLCStateUpdateFingerprint(AI_LC2)
         sigA_AI_LC2 = web3.eth.sign(hash, partyA)
-        sigI_AI_LC2 = web3.eth.sign(hash, partyI)
+        sigI_AI_LC2 = web3.eth.sign(hash, ingridAddress)
 
         BI_LC2 = {
           isClose: false,
@@ -209,7 +208,7 @@ describe('Connext', async () => {
         // generate sigs of BI_LC1
         hash = Connext.createLCStateUpdateFingerprint(BI_LC2)
         sigB_BI_LC2 = web3.eth.sign(hash, partyB)
-        sigI_BI_LC2 = web3.eth.sign(hash, partyI)
+        sigI_BI_LC2 = web3.eth.sign(hash, ingridAddress)
 
         assert.ok(partyA == AB_VC0.partyA)
       })
@@ -250,30 +249,30 @@ describe('Connext', async () => {
           'should return an lcID created on the contract with partyB by calling register()',
           async () => {
             subchanBI = await client.register(initialDeposit, partyB)
-            console.log('subchanBI:', subchanAI)
+            console.log('subchanBI:', subchanBI)
             assert.ok(Web3.utils.isHexStrict(subchanBI))
           }
         ).timeout(5000)
     
         it('should request hub joins subchanAI', async () => {
-          response = await Promise.all([client.requestJoinLc(subchanAI), timeout(15000)])
-          // subchanAI =
-          //   '0x1d0c9414b3258f8cfe92dfa0f1f63b12f1b11aa6dce8d95a3c4ebe5f01bcbe70'
-          // response = await client.requestJoinLc(subchanAI)
+          // response = await Promise.all([client.requestJoinLc(subchanAI), timeout(17000)])
+          subchanAI =
+            '0x00212aaf39227fe0e51569610be4da4a11b5dd9cd632619855dfb9d532c671d4'
+          response = await client.requestJoinLc(subchanAI)
           console.log(response)
           //   assert.equal(response.txHash, ':)')
           assert.ok(Web3.utils.isHex(response))
-        }).timeout(20000)
+        }).timeout(22000)
 
         it('should request hub joins subchanBI', async () => {
-          response = await Promise.all([client.requestJoinLc(subchanBI), timeout(15000)])
+          response = await Promise.all([client.requestJoinLc(subchanBI), timeout(17000)])
           // subchanAI =
           //   '0x1d0c9414b3258f8cfe92dfa0f1f63b12f1b11aa6dce8d95a3c4ebe5f01bcbe70'
           // response = await client.requestJoinLc(subchanAI)
           console.log(response)
           //   assert.equal(response.txHash, ':)')
           assert.ok(Web3.utils.isHex(response))
-        }).timeout(20000)
+        }).timeout(22000)
 
       })
     
@@ -1726,6 +1725,29 @@ describe('Connext', async () => {
 
 describe('ingridClientRequests: expecting correct responses', () => {
 
+  it('should init web3 and the connext client', async () => {
+    // set party variables
+    const port = process.env.ETH_PORT ? process.env.ETH_PORT : '9545'
+    web3 = new Web3(`ws://localhost:${port}`)
+    accounts = await web3.eth.getAccounts()
+    ingridAddress = accounts[0]
+    partyA = accounts[1]
+    partyB = accounts[2]
+    client = new Connext({
+      web3,
+      ingridAddress,
+      watcherUrl,
+      ingridUrl,
+      contractAddress,
+      hubAuth
+    })
+    assert.ok(
+      client.ingridAddress === ingridAddress.toLowerCase() &&
+        client.ingridUrl === ingridUrl &&
+        client.watcherUrl === watcherUrl
+    )
+  })
+
     describe('populate the database with an lc and a vc', () => {
       describe('generating LCs in database using contract calls', () => {
         it('should generate a unique id for subchanAI', () => {
@@ -1779,9 +1801,9 @@ describe('ingridClientRequests: expecting correct responses', () => {
       describe('requestJoinLc', () => {
         it('should return tx hash of ingrid joining channel', async () => {
           subchanAI = '0x00cdd51e75ebd5afed428d9d3c4d0d2d6928f4714ae6b1927bc8fa9f659096d9'
-          response = await setTimeoutPromise(10000, client.requestJoinLc(subchanAI))
+          response = await await Promise.all([client.requestJoinLc(subchanAI), timeout(15000)])
           assert.ok(Web3.utils.isHex(response))
-        }).timeout(17000)
+        }).timeout(20000)
       })
 
       describe('creating virtual channel in database', () => {
