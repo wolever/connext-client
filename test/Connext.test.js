@@ -30,8 +30,8 @@ let partyB
 let balanceA
 let balanceI
 let initialDeposit = Web3.utils.toBN(Web3.utils.toWei('5', 'ether'))
-let subchanAI
-let subchanBI
+let subchanAI = '0x1c207f0960266a06fb5ce2e9d7b990b6489ca37c0f61c4afc34699fe42e96395'
+let subchanBI = '0x14b5dadcd4ccf2dbaec2600d3fc0eb440be926ecf6d27c6983ec1c097bf93fba'
 
 // state objects
 let AI_LC0, BI_LC0, AB_VC0, AI_LC1, BI_LC1
@@ -72,7 +72,7 @@ describe('Connext', async () => {
         // generate AI_LC0
         AI_LC0 = {
           isClose: false,
-          channelId: '0x1c207f0960266a06fb5ce2e9d7b990b6489ca37c0f61c4afc34699fe42e96395',
+          channelId: subchanAI,
           state: 1,
           nonce: 0,
           openVcs: 0,
@@ -90,7 +90,7 @@ describe('Connext', async () => {
         // generate BI_LC0
         BI_LC0 = {
           isClose: false,
-          channelId: '0x14b5dadcd4ccf2dbaec2600d3fc0eb440be926ecf6d27c6983ec1c097bf93fba',
+          channelId: subchanBI,
           state: 1,
           nonce: 0,
           openVcs: 0,
@@ -114,8 +114,8 @@ describe('Connext', async () => {
           partyA: partyA,
           partyB: partyB,
           partyI: ingridAddress,
-          subchanAtoI: AI_LC0.channelId,
-          subchanBtoI: BI_LC0.channelId,
+          subchanAtoI: subchanAI,
+          subchanBtoI: subchanBI,
           nonce: 0
         }
         // generate sigs of AB_VC0
@@ -143,7 +143,7 @@ describe('Connext', async () => {
 
         BI_LC1 = {
           isClose: false,
-          channelId: '0x14b5dadcd4ccf2dbaec2600d3fc0eb440be926ecf6d27c6983ec1c097bf93fba',
+          channelId: subchanBI,
           state: 1,
           nonce: 1,
           openVcs: 1,
@@ -167,8 +167,8 @@ describe('Connext', async () => {
           partyA: partyA,
           partyB: partyB,
           partyI: ingridAddress,
-          subchanAtoI: AI_LC0.channelId,
-          subchanBtoI: BI_LC0.channelId,
+          subchanAtoI: subchanAI,
+          subchanBtoI: subchanBI,
           nonce: 1
         }
         // generate sigs of AB_VCN
@@ -179,7 +179,7 @@ describe('Connext', async () => {
         // generate lc2
         AI_LC2 = {
           isClose: false,
-          channelId: '0x1c207f0960266a06fb5ce2e9d7b990b6489ca37c0f61c4afc34699fe42e96395',
+          channelId: subchanAI,
           state: 1,
           nonce: 2,
           openVcs: 0,
@@ -196,7 +196,7 @@ describe('Connext', async () => {
 
         BI_LC2 = {
           isClose: false,
-          channelId: '0x14b5dadcd4ccf2dbaec2600d3fc0eb440be926ecf6d27c6983ec1c097bf93fba',
+          channelId: subchanBI,
           state: 1,
           nonce: 2,
           openVcs: 0,
