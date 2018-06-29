@@ -2,7 +2,7 @@ const assert = require('assert')
 const Connext = require('../src/Connext')
 const axios = require('axios')
 const MockAdapter = require('axios-mock-adapter')
-const { createFakeWeb3, timeout } = require('./Helpers')
+const { createFakeWeb3, timeout } = require('./helpers/utils')
 const sinon = require('sinon')
 const MerkleTree = require('../src/helpers/MerkleTree')
 const Utils = require('../src/helpers/utils')
@@ -30,60 +30,205 @@ let partyB
 let balanceA
 let balanceI
 let initialDeposit = Web3.utils.toBN(Web3.utils.toWei('5', 'ether'))
-let subchanAI // ids
-let subchanBI // ids
-let lcA // objects
-let lcB // objects
+let subchanAI = '0x1c207f0960266a06fb5ce2e9d7b990b6489ca37c0f61c4afc34699fe42e96395'
+let subchanBI = '0x14b5dadcd4ccf2dbaec2600d3fc0eb440be926ecf6d27c6983ec1c097bf93fba'
 
-// for virtual channel
-let vcId
-let balanceB
+// state objects
+let AI_LC0, BI_LC0, AB_VC0, AI_LC1, BI_LC1
+let hash
+let sigA_AI_LC0, sigI_AI_LC0, sigI_BI_LC0, sigB_BI_LC0 // initial lc state
+let sigA_AB_VC0, sigB_AB_VC0 // initial vc state
+let sigA_AI_LC1, sigI_AI_LC1, sigI_BI_LC1, sigB_BI_LC1 // sign to open vc
+let sigA_AB_VCN, sigB_AB_VCN // final vc update
+let sigA_AI_LC2, sigI_AI_LC2, sigI_BI_LC2, sigB_BI_LC2 // sign to close vc
 
 // hub response placeholder
 let response
 
-
 const emptyRootHash = Connext.generateVcRootHash({ vc0s: [] })
 
-let lc0 = {
-  isClose: false,
-  lcId: '0x01',
-  nonce: 0,
-  openVCs: 0,
-  vcRootHash: emptyRootHash,
-  partyA: '0x627306090abab3a6e1400e9345bc60c78a8bef57',
-  partyI: '0xc5fdf4076b8f3a5357c5e395ab970b5b54098fef',
-  balanceA: Web3.utils.toBN(Web3.utils.toWei('5', 'ether')),
-  balanceI: Web3.utils.toBN(Web3.utils.toWei('0', 'ether')),
-  unlockedAccountPresent: true
-}
-
 describe('Connext', async () => {
+
+  describe('constant value generation', () => {
+    it('should create an instance of web3 to set the party variables', async ())
+  })
+
   describe('client init', () => {
     it('should create a connext client with a fake version of web3', async () => {
       client = new Connext({ web3 }, createFakeWeb3())
       assert.ok(typeof client === 'object')
     })
-    it.only('should create a connext client with real web3 and channel manager', async () => {
-      const port = process.env.ETH_PORT ? process.env.ETH_PORT : '9545'
-      web3 = new Web3(`ws://localhost:${port}`)
-      accounts = await web3.eth.getAccounts()
-      partyA = accounts[1]
-      partyB = accounts[2]
-      ingridAddress = accounts[0]
-      client = new Connext({
-        web3,
-        ingridAddress,
-        watcherUrl,
-        ingridUrl,
-        contractAddress,
-        hubAuth
+
+    describe('real web3 and channel manager', () => {
+      it('should init web3 and generate static values for client testing', async () => {
+        // set party variables
+        const port = process.env.ETH_PORT ? process.env.ETH_PORT : '9545'
+        web3 = new Web3(`ws://localhost:${port}`)
+        accounts = await web3.eth.getAccounts()
+        ingridAddress = accounts[0]
+        partyA = accounts[1]
+        partyB = accounts[2]
+
+        // generate AI_LC0
+        AI_LC0 = {
+          isClose: false,
+          channelId: subchanAI,
+          state: 1,
+          nonce: 0,
+          openVcs: 0,
+          vcRootHash: emptyRootHash,
+          partyA,
+          partyI: ingridAddress,
+          balanceA: initialDeposit,
+          balanceI: Web3.utils.toBN('0')
+        }
+        // generate sigs
+        hash = Connext.createLCStateUpdateFingerprint(AI_LC0)
+        sigA_AI_LC0 = web3.eth.sign(hash, partyA)
+        sigI_AI_LC0 = web3.eth.sign(hash, partyI)
+
+        // generate BI_LC0
+        BI_LC0 = {
+          isClose: false,
+          channelId: subchanBI,
+          state: 1,
+          nonce: 0,
+          openVcs: 0,
+          vcRootHash: emptyRootHash,
+          partyA: partyB,
+          partyI: ingridAddress,
+          balanceA: initialDeposit,
+          balanceI: Web3.utils.toBN('0')
+        }
+        // generate sigs of BI_LC0
+        hash = Connext.createLCStateUpdateFingerprint(BI_LC0)
+        sigB_BI_LC0 = web3.eth.sign(hash, partyB)
+        sigI_BI_LC0 = web3.eth.sign(hash, partyI)
+
+        // generate vc0
+        AB_VC0 = {
+          state: 1,
+          balanceA: initialDeposit,
+          balanceB: Web3.utils.toBN('0'),
+          channelId: "0x2000000000000000000000000000000000000000000000000000000000000000",
+          partyA: partyA,
+          partyB: partyB,
+          partyI: ingridAddress,
+          subchanAtoI: subchanAI,
+          subchanBtoI: subchanBI,
+          nonce: 0
+        }
+        // generate sigs of AB_VC0
+        hash = Connext.createVCStateUpdateFingerprint(AB_VC0)
+        sigA_AB_VC0 = web3.eth.sign(hash, partyA)
+        sigB_AB_VC0 = web3.eth.sign(hash, partyB)
+
+        // generate lc1
+        AI_LC1 = {
+          isClose: false,
+          channelId: '0x1c207f0960266a06fb5ce2e9d7b990b6489ca37c0f61c4afc34699fe42e96395',
+          state: 1,
+          nonce: 1,
+          openVcs: 1,
+          vcRootHash: Connext.generateVcRootHash({ vc0s: [].push(AB_VC0) }),
+          partyA,
+          partyI: ingridAddress,
+          balanceA: Web3.utils.toBN('0'),
+          balanceI: initialDeposit
+        }
+        // generate sigs
+        hash = Connext.createLCStateUpdateFingerprint(AI_LC1)
+        sigA_AI_LC1 = web3.eth.sign(hash, partyA)
+        sigI_AI_LC1 = web3.eth.sign(hash, partyI)
+
+        BI_LC1 = {
+          isClose: false,
+          channelId: subchanBI,
+          state: 1,
+          nonce: 1,
+          openVcs: 1,
+          vcRootHash: Connext.generateVcRootHash({ vc0s: [].push(AB_VC0) }),
+          partyA: partyB,
+          partyI: ingridAddress,
+          balanceA: Web3.utils.toBN('0'),
+          balanceI: Web3.utils.toBN('0')
+        }
+        // generate sigs of BI_LC1
+        hash = Connext.createLCStateUpdateFingerprint(BI_LC1)
+        sigB_BI_LC1 = web3.eth.sign(hash, partyB)
+        sigI_BI_LC1 = web3.eth.sign(hash, partyI)
+
+        // generate final vc state
+        AB_VCN = {
+          state: 1,
+          balanceA: Web3.utils.toBN('0'),
+          balanceB: initialDeposit,
+          channelId: "0x2000000000000000000000000000000000000000000000000000000000000000",
+          partyA: partyA,
+          partyB: partyB,
+          partyI: ingridAddress,
+          subchanAtoI: subchanAI,
+          subchanBtoI: subchanBI,
+          nonce: 1
+        }
+        // generate sigs of AB_VCN
+        hash = Connext.createVCStateUpdateFingerprint(AB_VCN)
+        sigA_AB_VCN = web3.eth.sign(hash, partyA)
+        sigB_AB_VCN = web3.eth.sign(hash, partyB)
+
+        // generate lc2
+        AI_LC2 = {
+          isClose: false,
+          channelId: subchanAI,
+          state: 1,
+          nonce: 2,
+          openVcs: 0,
+          vcRootHash: emptyRootHash,
+          partyA,
+          partyI: ingridAddress,
+          balanceA: Web3.utils.toBN('0'),
+          balanceI: Web3.utils.toBN('0')
+        }
+        // generate sigs
+        hash = Connext.createLCStateUpdateFingerprint(AI_LC2)
+        sigA_AI_LC2 = web3.eth.sign(hash, partyA)
+        sigI_AI_LC2 = web3.eth.sign(hash, partyI)
+
+        BI_LC2 = {
+          isClose: false,
+          channelId: subchanBI,
+          state: 1,
+          nonce: 2,
+          openVcs: 0,
+          vcRootHash: emptyRootHash,
+          partyA: partyB,
+          partyI: ingridAddress,
+          balanceA: initialDeposit,
+          balanceI: Web3.utils.toBN('0')
+        }
+        // generate sigs of BI_LC1
+        hash = Connext.createLCStateUpdateFingerprint(BI_LC2)
+        sigB_BI_LC2 = web3.eth.sign(hash, partyB)
+        sigI_BI_LC2 = web3.eth.sign(hash, partyI)
+
+        assert.ok(partyA == AB_VC0.partyA)
       })
-      assert.ok(
-        client.ingridAddress === ingridAddress.toLowerCase() &&
-          client.ingridUrl === ingridUrl &&
-          client.watcherUrl === watcherUrl
-      )
+
+      it.only('should create a connext client with real web3 and channel manager', async () => {
+        client = new Connext({
+          web3,
+          ingridAddress,
+          watcherUrl,
+          ingridUrl,
+          contractAddress,
+          hubAuth
+        })
+        assert.ok(
+          client.ingridAddress === ingridAddress.toLowerCase() &&
+            client.ingridUrl === ingridUrl &&
+            client.watcherUrl === watcherUrl
+        )
+      })
     })
   })
 
