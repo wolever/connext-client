@@ -369,7 +369,7 @@ class Connext {
       methodName,
       'channelId'
     )
-    let vc
+    const vc = await this.getChannelById(channelId)
     if (sender) {
       Connext.validatorsResponseToError(
         validate.single(sender, isAddress),
@@ -377,13 +377,12 @@ class Connext {
         'sender'
       )
     } else {
-      vc = await this.getChannelById(channelId)
       sender = vc.partyB
     }
     // get channels
     const lc = await this.getLcByPartyA(sender)
     const vc0 = {
-      vcId: channelId,
+      channelId,
       nonce: 0,
       partyA: vc.partyA, // depending on ingrid for this value
       partyB: sender,
