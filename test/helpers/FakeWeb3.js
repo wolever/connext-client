@@ -19,3 +19,7 @@ export class fakeWeb3 {
     }
   }
 }
+
+export const createFakeWeb3 = (eth, utils) => {
+  return fakeWeb3
+}
