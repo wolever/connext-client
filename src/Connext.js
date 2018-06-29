@@ -311,7 +311,7 @@ class Connext {
       )
     } else {
       const accounts = await this.web3.eth.getAccounts()
-      sender = accounts[0].toLowerCase().toLowerCase()
+      sender = accounts[0].toLowerCase()
     }
 
     const lcA = await this.getLcByPartyA(sender)
@@ -2483,7 +2483,7 @@ class Connext {
     // ingrid should add vc params to db
     const response = await this.axiosInstance.post(
       `${this.ingridUrl}/virtualchannel/`,
-      { channelId, partyA, partyB, balanceA: balanceA.toString(), lcSig, vcSig }
+      { channelId, partyA: partyA.toLowerCase(), partyB: partyB.toLowerCase(), balanceA: balanceA.toString(), lcSig, vcSig }
     )
     return response.data.channelId
   }
@@ -2658,7 +2658,6 @@ class Connext {
     }
 
     let vcInitialStates = await this.getVcInitialStates(lc.channelId)
-    vc0.channelId = vc0.vcId
     vcInitialStates.push(vc0) // add new vc state to hash
     let newRootHash = Connext.generateVcRootHash({vc0s: vcInitialStates})
     
@@ -2674,7 +2673,7 @@ class Connext {
     }
 
     const updateAtoI = {
-      lcId: lc.channelId,
+      channelId: lc.channelId,
       nonce: lc.nonce + 1,
       openVcs: vcInitialStates.length,
       vcRootHash: newRootHash,
