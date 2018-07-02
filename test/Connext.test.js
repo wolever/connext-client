@@ -1815,10 +1815,33 @@ describe('ingridClientRequests: running local hub', () => {
           assert.ok(Web3.utils.isHex(response))
         }).timeout(20000)
 
-        it.only('should throw an error if the channel is not in contract', async () => {
+        it('should throw an error if the channel is not in contract', async () => {
           let subchan = '0x9d6f7f8230a387fa584dd9e4c45c53d22967e306b433c27acff9a11aaea76cc1'
-          response = await client.requestJoinLc(subchan)
-          assert.equal(response, ':)')
+          try {
+            response = await client.requestJoinLc(subchan)
+          } catch (e) {
+            assert.equal(e.statusCode, 401)
+          }
+        })
+
+        it('should throw an error if partyI is not ingrid', async () => {
+          subchanBI = '0x0b92647ba6be3e07b2c07218262ec2a55a093636cac5fdfe98da64da67db370b'
+          client.ingridAddress = accounts[4]
+          try {
+            response = await client.requestJoinLc(subchanBI)
+          } catch (e) {
+            client.ingridAddress = accounts[0] // reset in case of continuous testing
+            assert.equal(e.statusCode, 402)
+          }
+        })
+
+        it('should throw an error if it is past the joining period', async () => {
+          subchanBI = '0x0b92647ba6be3e07b2c07218262ec2a55a093636cac5fdfe98da64da67db370b'
+          try {
+            response = await client.requestJoinLc(subchanBI)
+          } catch (e) {
+            assert.equal(e.statusCode, 403)
+          }
         })
       })
 
