@@ -176,7 +176,7 @@ class Connext {
       )
     } else {
       const accounts = await this.web3.eth.getAccounts()
-      sender = accounts[0].toLowerCase().toLowerCase()
+      sender = accounts[0].toLowerCase()
     }
     if (challenge) {
       Connext.validatorsResponseToError(
