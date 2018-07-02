@@ -1585,8 +1585,6 @@ class Connext {
     const result = await this.channelManagerInstance.methods
       .createChannel(lcId, ingridAddress, challenge)
       .send(
-        // in contract yet?
-        // challenge,
       {
         from: sender,
         value: initialDeposit,
