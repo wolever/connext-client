@@ -4,7 +4,7 @@ const channelManagerAbi = require('../artifacts/LedgerChannel.json')
 const util = require('ethereumjs-util')
 import Web3 from 'web3'
 import validate from 'validate.js'
-import { LCOpenError, ParameterValidationError, ContractError, VCOpenError, LCUpdateError, VCUpdateError } from './helpers/Errors';
+import { LCOpenError, ParameterValidationError, ContractError, VCOpenError, LCUpdateError, VCUpdateError, LCCloseError } from './helpers/Errors';
 const MerkleTree = require('./helpers/MerkleTree')
 const Utils = require('./helpers/utils')
 const crypto = require('crypto')
@@ -698,7 +698,7 @@ class Connext {
       // call consensus close channel
       response = await this.consensusCloseChannelContractHandler({
         lcId,
-        nonce: lcState.nonce,
+        nonce: lcState.nonce + 1,
         balanceA: Web3.utils.toBN(lcState.balanceA),
         balanceI: Web3.utils.toBN(lcState.balanceI),
         sigA: sig,
@@ -1830,29 +1830,36 @@ class Connext {
       const accounts = await this.web3.eth.getAccounts()
       sender = accounts[0].toLowerCase()
     }
-    // // validate the requires
-    // const lc = await this.getLcById(lcId)
-    // if (lc.nonce < nonce) {
-    //   throw new ContractError(methodName, 'Channel ')
-    // }
-    // // assume num open vc is 0 and root hash is 0x0
-    // require(Channels[_lcID].sequence < _sequence);
-    // require(Channels[_lcID].balanceA + Channels[_lcID].balanceI == _balanceA + _balanceI);
-    // require(Channels[_lcID].partyA == ECTools.recoverSigner(_state, _sigA));
-    //     require(Channels[_lcID].partyI == ECTools.recoverSigner(_state, _sigI));
+    // verify sigs
+    const emptyRootHash = Connext.generateVcRootHash({ vc0s: [] })
+    let state = {
+      sig: sigI,
+      isClose: true,
+      channelId: lcId,
+      nonce,
+      openVcs: 0,
+      vcRootHash: emptyRootHash,
+      partyA: sender,
+      partyI: this.ingridAddress,
+      balanceA,
+      balanceI
+    }
+    let signer = Connext.recoverSignerFromLCStateUpdate(state)
+    if (signer !== this.ingridAddress) {
+      throw new LCCloseError(methodName, 'Ingrid did not sign closing update')
+    }
+    state.sig = sigA
+    signer = Connext.recoverSignerFromLCStateUpdate(state)
+    if (signer !== sender) {
+      throw new LCCloseError(methodName, 'PartyA did not sign closing update')
+    }
 
     const result = await this.channelManagerInstance.methods
       .consensusCloseChannel(lcId, nonce, balanceA, balanceI, sigA, sigI)
       .send({
         from: sender,
-        gasPrice: 3000000, // FIX THIS, WHY HAPPEN, TRUFFLE CONFIG???
         gas: 4700000
       })
-    if (!result.transactionHash) {
-      throw new Error(
-        `[${methodName}] consensusCloseChannel transaction failed.`
-      )
-    }
 
     if (!result.transactionHash) {
       throw new ContractError(methodName, 301, 'Transaction failed to broadcast')
