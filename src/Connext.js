@@ -455,17 +455,29 @@ class Connext {
       'channelId'
     )
     const vc = await this.getChannelById(channelId)
+    if (vc === null) {
+      throw new VCOpenError(methodName, 'Channel not found')
+    }
+
     if (sender) {
       Connext.validatorsResponseToError(
         validate.single(sender, isAddress),
         methodName,
         'sender'
       )
+      if (sender.toLowerCase() !== vc.partyB) {
+        throw new VCOpenError(methodName, 'Incorrect channel counterparty')
+      }
     } else {
       sender = vc.partyB
     }
     // get channels
-    const lc = await this.getLcByPartyA(sender)
+    const lcA = await this.getLcByPartyA(vc.partyA)
+    const lcB = await this.getLcByPartyA(sender)
+    if (lcB.state !== 1 || lcA.state !== 1) {
+      throw new VCOpenError(methodName, 'Subchannel(s) in invalid state')
+    }
+
     const vc0 = {
       channelId,
       nonce: 0,
@@ -477,7 +489,7 @@ class Connext {
     }
     const vcSig = await this.createVCStateUpdate(vc0)
     // generate lcSig
-    const lcSig = await this.createLCUpdateOnVCOpen({ vc0, lc, signer: sender })
+    const lcSig = await this.createLCUpdateOnVCOpen({ vc0, lc: lcB, signer: sender })
     // ping ingrid with vc0 (hub decomposes to lc)
     const result = await this.joinVcHandler({
       vcSig,
