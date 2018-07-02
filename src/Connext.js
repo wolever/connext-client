@@ -1614,15 +1614,9 @@ class Connext {
     }
 
     // validate requires on contract before sending transactions
-    const lc = await this.channelManagerInstance.methods.Channels(lcId).call()
-    if (lc.partyA !== '0x0000000000000000000000000000000000000000') {
-      throw new LCOpenError(methodName, 'Channel has already been used')
-    }
-    if (lc.isOpen) {
-      throw new LCOpenError(methodName, 'Channel already open')
-    }
-    if(lc.sequence !== '0') {
-      throw new LCOpenError(methodName, 'Channel has already been used')
+    const lc = await this.getLcById(lcId)
+    if (lc !== null) {
+      throw new LCOpenError('Channel has been used')
     }
     
     const result = await this.channelManagerInstance.methods
@@ -1873,7 +1867,7 @@ class Connext {
   }
 
   // default null means join with 0 deposit
-  async joinLedgerChannelContractHandler ({ lcId, deposit = null, sender }) {
+  async joinLedgerChannelContractHandler ({ lcId, deposit = null, sender = null }) {
     const methodName = 'joinLedgerChannelContractHandler'
     const isAddress = { presence: true, isAddress: true }
     const isHexStrict = { presence: true, isHexStrict: true }
@@ -1899,6 +1893,7 @@ class Connext {
         'sender'
       )
     }
+
     const result = await this.channelManagerInstance.methods
       .joinChannel(lcId)
       .send({
@@ -2413,9 +2408,17 @@ class Connext {
       methodName,
       'lcId'
     )
-    const response = await this.axiosInstance.get(
-      `${this.ingridUrl}/ledgerchannel/${lcId}`)
-    return response.data
+    try {
+      const response = await this.axiosInstance.get(
+        `${this.ingridUrl}/ledgerchannel/${lcId}`)
+      return response.data
+    } catch (e) {
+      if (e.response.status === 400) {
+        return null
+      } else {
+        throw e
+      }
+    }
   }
 
   /**
