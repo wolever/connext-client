@@ -784,6 +784,7 @@ describe('Connext', async () => {
         it('should call deposit on the channel manager instance', async () => {
           subchanBI = '0xa69d5a26f6af375255adee27279434ec275111a504088858c438192c69fd958b'
           response = await client.depositContractHandler({
+            lcId: subchanBI,
             depositInWei: Web3.utils.toBN(Web3.utils.toWei('5', 'ether')),
             recipient: ingridAddress, 
             sender: ingridAddress 

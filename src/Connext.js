@@ -1664,11 +1664,17 @@ class Connext {
     return result
   }
 
-  async depositContractHandler ({ depositInWei, sender = null, recipient = sender }) {
+  async depositContractHandler ({ lcId, depositInWei, sender = null, recipient = sender }) {
     const methodName = 'depositContractHandler'
     // validate
+    const isHexStrict = { presence: true, isHexStrict: true }
     const isBN = { presence: true, isBN: true }
     const isAddress = { presence: true, isAddress: true }
+    Connext.validatorsResponseToError(
+      validate.single(lcId, isHexStrict),
+      methodName,
+      'lcId'
+    )
     Connext.validatorsResponseToError(
       validate.single(depositInWei, isBN),
       methodName,
@@ -1694,10 +1700,16 @@ class Connext {
       // unspecified, defaults to active account
       recipient = sender
     }
-  
 
-    // find ledger channel by mine and ingrids address
-    const lcId = await this.getLcId(recipient)
+    // verify requires
+    const lc = await this.getLcById(lcId)
+    if (lc.state !== 1) {
+      throw new ContractError(methodName, 'Channel is not open')
+    }
+    if (recipient.toLowerCase() !== lc.partyA || recipient.toLowerCase() !== lc.partyI) {
+      throw new ContractError(methodName, 'Recipient is not a member of the ledger channel')
+    }
+
     // call LC method
     const result = await this.channelManagerInstance.methods
       .deposit(
@@ -1708,8 +1720,13 @@ class Connext {
         from: sender,
         value: depositInWei
       })
+    
     if (!result.transactionHash) {
-      throw new Error(`[${methodName}] deposit transaction failed.`)
+      throw new ContractError(methodName, 301, 'Transaction failed to broadcast')
+    }
+  
+    if (!result.blockNumber) {
+      throw new ContractError(methodName, 302, result.transactionHash, 'Transaction failed')
     }
     return result
   }
