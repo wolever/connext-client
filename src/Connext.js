@@ -477,7 +477,7 @@ class Connext {
     if (lcB.state !== 1 || lcA.state !== 1) {
       throw new VCOpenError(methodName, 'Subchannel(s) in invalid state')
     }
-    
+
     const vc0 = {
       channelId,
       nonce: 0,
