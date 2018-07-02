@@ -1497,7 +1497,7 @@ class Connext {
     } else {
       // updating existing lc
       // must be open
-      if (lc.state !== 1) {
+      if (lc.state === 1 || lc.state === 3) {
         throw new LCUpdateError(methodName, 'Channel is in invalid state to accept updates')
       }
       // nonce always increasing
@@ -1633,6 +1633,9 @@ class Connext {
       }
     } else {
       // vc exists
+      if (vc.state === 0 || vc.state === 3) {
+        throw new VCUpdateError(methodName, 'Channel is in invalid state')
+      }
       if (nonce !== vc.nonce + 1) {
         throw new VCUpdateError(methodName, 'Invalid nonce')
       }
