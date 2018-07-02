@@ -69,6 +69,21 @@ validate.validators.isPositiveInt = value => {
   }
 }
 
+validate.validators.isVcState = value => {
+  if (
+    value.channelId == null || !Web3.utils.isHexStrict(value.channelId) ||
+    value.nonce == null || value.nonce <= 0 ||
+    value.partyA == null || !Web3.utils.isAddress(value.partyA) ||
+    value.partyB == null || !Web3.utils.isAddress(value.partyB) ||
+    value.balanceA == null ||
+    value.balanceB == null
+  ) {
+    return null
+  } else {
+    return `${JSON.stringify(value)} is not a valid VC state`
+  }
+}
+
 // const logger = (arrayOfValidatorReturns) => arrayOfValidatorReturns.map((()console.log)
 
 /**
