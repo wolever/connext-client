@@ -1428,13 +1428,68 @@ class Connext {
       methodName,
       'balanceI'
     )
+    if (signer) {
+      Connext.validatorsResponseToError(
+        validate.single(signer, isAddress),
+        methodName,
+        'signer'
+      )
+    } else {
+      const accounts = await this.web3.eth.getAccounts()
+      signer = accounts[0].toLowerCase()
+    }
+    // signer must be in lc
+    if (signer.toLowerCase() !== partyA.toLowerCase() || signer.toLowerCase() !== partyI.toLowerCase()) {
+      throw new LCUpdateError(methodName, 'Invalid signer detected')
+    }
+    // balances must be positive
+    if (balanceA.isNeg() || balanceI.isNeg()) {
+      throw new LCUpdateError(methodName, 'Cannot have negative balances')
+    }
 
-    // TO DO:
-    // additional validation to only allow clients to call correct state updates
+    // validate update
+    const emptyRootHash = Connext.generateVcRootHash({ vc0s: []})
+    const lc = await this.getLcById(channelId)
+    if (lc === null) {
+      // generating opening cert
+      if (nonce !== 0 ) {
+        throw new LCOpenError(methodName, 'Invalid nonce detected')
+      }
+      if (openVcs !== 0) {
+        throw new LCOpenError(methodName, 'Invalid openVcs detected')
+      }
+      if (vcRootHash !== emptyRootHash) {
+        throw new LCOpenError(methodName, 'Invalid vcRootHash detected')
+      }
+      if (partyA === partyI) {
+        throw new LCOpenError(methodName, 'Cannot open channel with yourself')
+      }
+    } else {
+      // updating existing lc
+      // must be open
+      if (lc.state !== 1) {
+        throw new LCUpdateError(methodName, 'Channel is in invalid state to accept updates')
+      }
+      // nonce always increasing
+      if (nonce <= lc.nonce) {
+        throw new LCUpdateError(methodName, 'Invalid nonce')
+      }
+      // only open/close 1 vc per update, or dont open any
+      if (Math.abs(Number(openVcs) - Number(lc.openVcs)) !== 1 && Math.abs(Number(openVcs) - Number(lc.openVcs)) !== 0 ) {
+        throw new LCUpdateError(methodName, 'Invalid number of openVcs proposed')
+      }
+      // parties cant change
+      if (partyA !== lc.partyA || partyI !== lc.partyI) {
+        throw new LCUpdateError(methodName, 'Invalid channel parties')
+      }
+      // no change in total balance
+      const channelBal = Web3.utils.toBN(lc.balanceA).add(Web3.utils.toBN(lc.balanceI))
+      if (balanceA.add(balanceI).eq(channelBal) === false) {
+        throw new LCUpdateError(methodName, 'Invalid balance proposed')
+      }
+    }
 
     // generate sig
-    const accounts = await this.web3.eth.getAccounts()
-    // personal sign?
     const hash = Connext.createLCStateUpdateFingerprint({
       isClose,
       channelId,
@@ -1447,14 +1502,10 @@ class Connext {
       balanceI
     })
     let sig
-    if (signer && unlockedAccountPresent) {
+    if (unlockedAccountPresent) {
       sig = await this.web3.eth.sign(hash, signer)
-    } else if (signer) {
-      sig = await this.web3.eth.personal.sign(hash, signer)
-    } else if (unlockedAccountPresent) {
-      sig = await this.web3.eth.sign(hash, accounts[0])
     } else {
-      sig = await this.web3.eth.personal.sign(hash, accounts[0])
+      sig = await this.web3.eth.personal.sign(hash, signer)
     }
     return sig
   }
