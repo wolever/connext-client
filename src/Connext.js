@@ -4,7 +4,7 @@ const channelManagerAbi = require('../artifacts/LedgerChannel.json')
 const util = require('ethereumjs-util')
 import Web3 from 'web3'
 import validate from 'validate.js'
-import { LCOpenError, ParameterValidationError, ContractError, VCOpenError, LCUpdateError, VCUpdateError } from './helpers/Errors';
+import { LCOpenError, ParameterValidationError, ContractError, VCOpenError, LCUpdateError, VCUpdateError, LCCloseError } from './helpers/Errors';
 const MerkleTree = require('./helpers/MerkleTree')
 const Utils = require('./helpers/utils')
 const crypto = require('crypto')
@@ -698,7 +698,7 @@ class Connext {
       // call consensus close channel
       response = await this.consensusCloseChannelContractHandler({
         lcId,
-        nonce: lcState.nonce,
+        nonce: lcState.nonce + 1,
         balanceA: Web3.utils.toBN(lcState.balanceA),
         balanceI: Web3.utils.toBN(lcState.balanceI),
         sigA: sig,
@@ -1604,24 +1604,19 @@ class Connext {
       const accounts = await this.web3.eth.getAccounts()
       sender = accounts[0].toLowerCase()
     }
+    // verify deposit is positive and nonzero
+    if (initialDeposit.isNeg()) {
+      throw new LCOpenError(methodName, 'Invalid deposit provided')
+    }
+    // verify partyA !== partyI
+    if (sender === ingridAddress) {
+      throw new LCOpenError(methodName, 'Cannot open a channel with yourself')
+    }
 
     // validate requires on contract before sending transactions
-    const lc = await this.channelManagerInstance.methods.Channels(lcId).call()
-    // verify deposit is positive and nonzero
-    if (Web3.utils.isBN(initialDeposit) && initialDeposit.isNeg()) {
-      throw new LCOpenError(methodName, 'Invalid deposit provided')
-    } else if (Web3.utils.isBigNumber(initialDeposit) && initialDeposit.isNegative()) {
-      throw new LCOpenError(methodName, 'Invalid deposit provided')
-    }
-
-    if (lc.partyA !== '0x0000000000000000000000000000000000000000') {
-      throw new LCOpenError(methodName, 'Channel has already been used')
-    }
-    if (lc.isOpen) {
-      throw new LCOpenError(methodName, 'Channel already open')
-    }
-    if(lc.sequence !== '0') {
-      throw new LCOpenError(methodName, 'Channel has already been used')
+    const lc = await this.getLcById(lcId)
+    if (lc !== null) {
+      throw new LCOpenError('Channel has been used')
     }
     
     const result = await this.channelManagerInstance.methods
@@ -1743,6 +1738,10 @@ class Connext {
       recipient = sender
     }
 
+    // verify deposit is nonzero
+    if (depositInWei.isNeg() || depositInWei.isZero()) {
+      throw new LCUpdateError(methodName, 'Invalid deposit provided')
+    }
     // verify requires
     const lc = await this.getLcById(lcId)
     if (lc.state !== 1) {
@@ -1829,29 +1828,39 @@ class Connext {
       const accounts = await this.web3.eth.getAccounts()
       sender = accounts[0].toLowerCase()
     }
-    // // validate the requires
-    // const lc = await this.getLcById(lcId)
-    // if (lc.nonce < nonce) {
-    //   throw new ContractError(methodName, 'Channel ')
-    // }
-    // // assume num open vc is 0 and root hash is 0x0
-    // require(Channels[_lcID].sequence < _sequence);
-    // require(Channels[_lcID].balanceA + Channels[_lcID].balanceI == _balanceA + _balanceI);
-    // require(Channels[_lcID].partyA == ECTools.recoverSigner(_state, _sigA));
-    //     require(Channels[_lcID].partyI == ECTools.recoverSigner(_state, _sigI));
+    // verify sigs
+    const emptyRootHash = Connext.generateVcRootHash({ vc0s: [] })
+    let state = {
+      sig: sigI,
+      isClose: true,
+      channelId: lcId,
+      nonce,
+      openVcs: 0,
+      vcRootHash: emptyRootHash,
+      partyA: sender,
+      partyI: this.ingridAddress,
+      balanceA,
+      balanceI
+    }
+    let signer = Connext.recoverSignerFromLCStateUpdate(state)
+    if (signer !== this.ingridAddress) {
+      throw new LCCloseError(methodName, 'Ingrid did not sign closing update')
+    }
+    state.sig = sigA
+    signer = Connext.recoverSignerFromLCStateUpdate(state)
+    if (signer !== sender) {
+      throw new LCCloseError(methodName, 'PartyA did not sign closing update')
+    }
+
+    // TO DO
+    // add way to validate balAOnChain + balIOnChain == balI + balA
 
     const result = await this.channelManagerInstance.methods
       .consensusCloseChannel(lcId, nonce, balanceA, balanceI, sigA, sigI)
       .send({
         from: sender,
-        gasPrice: 3000000, // FIX THIS, WHY HAPPEN, TRUFFLE CONFIG???
         gas: 4700000
       })
-    if (!result.transactionHash) {
-      throw new Error(
-        `[${methodName}] consensusCloseChannel transaction failed.`
-      )
-    }
 
     if (!result.transactionHash) {
       throw new ContractError(methodName, 301, 'Transaction failed to broadcast')
@@ -1865,7 +1874,7 @@ class Connext {
   }
 
   // default null means join with 0 deposit
-  async joinLedgerChannelContractHandler ({ lcId, deposit = null, sender }) {
+  async joinLedgerChannelContractHandler ({ lcId, deposit = null, sender = null }) {
     const methodName = 'joinLedgerChannelContractHandler'
     const isAddress = { presence: true, isAddress: true }
     const isHexStrict = { presence: true, isHexStrict: true }
@@ -1881,6 +1890,9 @@ class Connext {
         methodName,
         'deposit'
       )
+      if (deposit.isNeg()) {
+        throw new LCOpenError(methodName, 'Invalid deposit provided')
+      }
     } else {
       deposit = Web3.utils.toBN('0')
     }
@@ -1891,6 +1903,23 @@ class Connext {
         'sender'
       )
     }
+    const lc = await this.getLcById(lcId)
+    if (!lc) {
+      // hub does not have lc, may be chainsaw issues
+      throw new LCOpenError(methodName, 'Channel is not registered with hub')
+    }
+    if (sender && sender.toLowerCase() === lc.partyA) {
+      throw new LCOpenError(methodName, 'Cannot create channel with yourself')
+    }
+    
+    if(sender && sender !== lc.partyI) {
+      throw new LCOpenError(methodName, 'Incorrect channel counterparty')
+    }
+
+
+    if (lc.state !== 0) {
+      throw new LCOpenError(methodName, 'Channel is not in correct state')
+    }
     const result = await this.channelManagerInstance.methods
       .joinChannel(lcId)
       .send({
@@ -1898,9 +1927,6 @@ class Connext {
         value: deposit,
         gas: 3000000 // FIX THIS, WHY HAPPEN, TRUFFLE CONFIG???
       })
-    if (!result.transactionHash) {
-      throw new Error(`[${methodName}] joinLedgerChannel transaction failed.`)
-    }
 
     if (!result.transactionHash) {
       throw new ContractError(methodName, 301, 'Transaction failed to broadcast')
@@ -2405,9 +2431,17 @@ class Connext {
       methodName,
       'lcId'
     )
-    const response = await this.axiosInstance.get(
-      `${this.ingridUrl}/ledgerchannel/${lcId}`)
-    return response.data
+    try {
+      const response = await this.axiosInstance.get(
+        `${this.ingridUrl}/ledgerchannel/${lcId}`)
+      return response.data
+    } catch (e) {
+      if (e.response.status === 400) {
+        return null
+      } else {
+        throw e
+      }
+    }
   }
 
   /**

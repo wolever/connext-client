@@ -1915,8 +1915,14 @@ describe('ingridClientRequests: running local hub', () => {
 
       describe('getLcById', () => {
         it('should return subchanAI', async () => {
+          subchanAI = '0x9d6f7f8230a387fa584dd9e4c45c53d22967e306b433c27acff9a11aaea76cc1'
           response = await client.getLcById(subchanAI)
           assert.equal(response.channelId, subchanAI)
+        })
+        it('should return null if lc doesnt exist', async () => {
+          subchanAI = '0x9d6f7f8230a387fa584dd9e4c45c53d22967e306b433c27acff9a11aaea76cc1'
+          response = await client.getLcById(subchanAI)
+          assert.equal(response, null)
         })
       })
 
