@@ -537,8 +537,26 @@ class Connext {
       methodName,
       'balanceB'
     )
+    // balances cant be negative
+    if (balanceA.isNeg() || balanceB.isNeg()) {
+      throw new VCUpdateError(methodName, 'Channel balances cannot be negative')
+    }
     // get the vc
     const vc = await this.getChannelById(channelId)
+    // must exist
+    if (vc === null) {
+      throw new VCUpdateError(methodName, 'Channel not found')
+    }
+    // channel must be open
+    if (vc.state !== 1) {
+      throw new VCUpdateError(methodName, 'Channel is in invalid state')
+    }
+    // total channel balance cant change
+    const channelBalance = Web3.utils.toBN(vc.balanceA).add(Web3.utils.toBN(vc.balanceB))
+    if (balanceA.add(balanceB).eq(channelBalance) === false) {
+      throw new VCUpdateError(methodName, 'Invalid channel balances')
+    }
+
     // generate new state update
     const state = {
       channelId,
