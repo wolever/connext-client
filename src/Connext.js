@@ -1905,6 +1905,7 @@ class Connext {
     }
     const lc = await this.getLcById(lcId)
     if (!lc) {
+      // hub does not have lc, may be chainsaw issues
       throw new LCOpenError(methodName, 'Channel is not registered with hub')
     }
     if (sender && sender.toLowerCase() === lc.partyA) {
