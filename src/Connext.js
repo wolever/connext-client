@@ -16,7 +16,7 @@ validate.validators.isBN = value => {
   if (Web3.utils.isBN(value)) {
     return null
   } else {
-    return `${value} is not BN or BigNumber.`
+    return `${value} is not BN.`
   }
 }
 
