@@ -2951,7 +2951,7 @@ class Connext {
   //  * @param {BigNumber} params.balanceA - balanceA in the virtual channel
   //  * @param {BigNumber} params.balanceB - balanceB in the virtual channel
   //  */
-  async createLCUpdateOnVCOpen ({ vc0, lc, signer }) {
+  async createLCUpdateOnVCOpen ({ vc0, lc, signer = null }) {
     const methodName = 'createLCUpdateOnVCOpen'
     const isAddress = { presence: true, isAddress: true }
     if (signer) {
@@ -2960,6 +2960,9 @@ class Connext {
         methodName,
         'signer'
       )
+    } else {
+      const accounts = await this.web3.eth.getAccounts()
+      signer = accounts[0]
     }
 
     let vcInitialStates = await this.getVcInitialStates(lc.channelId)
