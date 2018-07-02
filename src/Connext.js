@@ -15,8 +15,10 @@ const crypto = require('crypto')
 validate.validators.isBN = value => {
   if (Web3.utils.isBN(value)) {
     return null
+  } else if (Web3.utils.isBigNumber(value)) {
+    return null
   } else {
-    return `${value} is not BN.`
+    return `${value} is not BN or BigNumber.`
   }
 }
 
