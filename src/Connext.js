@@ -4,7 +4,7 @@ const channelManagerAbi = require('../artifacts/LedgerChannel.json')
 const util = require('ethereumjs-util')
 import Web3 from 'web3'
 import validate from 'validate.js'
-import { ChannelOpenError, ParameterValidationError } from './helpers/Errors';
+import { ChannelOpenError, ParameterValidationError, ContractError } from './helpers/Errors';
 const MerkleTree = require('./helpers/MerkleTree')
 const Utils = require('./helpers/utils')
 const crypto = require('crypto')
@@ -1573,13 +1573,13 @@ class Connext {
     // validate requires on contract before sending transactions
     const lc = await this.channelManagerInstance.methods.Channels(lcId).call()
     if (lc.partyA !== '0x0000000000000000000000000000000000000000') {
-      throw new ChannelOpenError(methodName, 'Channel has already been used.')
+      throw new ChannelOpenError(methodName, 'Channel has already been used')
     }
     if (lc.isOpen) {
-      throw new ChannelOpenError(methodName, 'Channel already open.')
+      throw new ChannelOpenError(methodName, 'Channel already open')
     }
     if(lc.sequence !== '0') {
-      throw new ChannelOpenError(methodName, 'Channel has already been used.')
+      throw new ChannelOpenError(methodName, 'Channel has already been used')
     }
     
     const result = await this.channelManagerInstance.methods
@@ -1588,12 +1588,18 @@ class Connext {
       {
         from: sender,
         value: initialDeposit,
-        gas: 3000000 // NOT GREAT
+        gas: 3000000
       }
-      )
+    )
+
     if (!result.transactionHash) {
-      throw new Error(`[${methodName}] createChannel transaction failed.`)
+      throw new ContractError(methodName, 300, 'Transaction failed to broadcast')
     }
+
+    if (!result.receipt) {
+      throw new ContractError(methodName, 301, result.transactionHash, 'Transaction failed')
+    }
+    
     return result
   }
 
