@@ -337,9 +337,10 @@ class Connext {
 
     const lcA = await this.getLcByPartyA(sender)
     const lcIdB = await this.getLcId(to)
+    
     // validate the subchannels exist
     if (lcIdB === null || lcA === null) {
-      throw new VCOpenError(methodName, 451, 'Missing one or more required subchannels')
+      throw new VCOpenError(methodName, 'Missing one or more required subchannels')
     }
     // valid deposit provided
     if (Web3.utils.isBN(deposit) && deposit.isNeg()) {
