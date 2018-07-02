@@ -713,11 +713,39 @@ describe('Connext', async () => {
           })
           assert.ok(Web3.utils.isHexStrict(response.transactionHash))
         }).timeout(5000)
+
         it('should call LCOpenTimeout on the channel manager instance to delete created channel', async () => {
           const lcId = '0xa6585504ea64ee76da1238482f08f6918e7a5e1c77418f6072af19530940cc04'
           const results = await client.LCOpenTimeoutContractHandler(lcId)
           assert.ok(Web3.utils.isHexStrict(results.transactionHash))
         }).timeout(5000)
+
+        it('should throw an error if it is not in correct time', async () => {
+          let lcId = '0x7741dd7b46f5892d0cf61e47854f539003f068b883f273cd680d061da87f7c7f'
+          try {
+            response = await client.LCOpenTimeoutContractHandler(lcId)
+          } catch (e) {
+            assert.equal(e.message, 'Channel challenge period still active')
+          }
+        })
+
+        it('should throw an error channel is in incorrect state', async () => {
+          let lcId = '0x0b92647ba6be3e07b2c07218262ec2a55a093636cac5fdfe98da64da67db370b'
+          try {
+            response = await client.LCOpenTimeoutContractHandler(lcId)
+          } catch (e) {
+            assert.equal(e.message, '[300: LCOpenTimeoutContractHandler] Channel is in incorrect state')
+          }
+        })
+
+        it('should throw an error if sender is not partyA', async () => {
+          let lcId = '0x7741dd7b46f5892d0cf61e47854f539003f068b883f273cd680d061da87f7c7f'
+          try {
+            response = await client.LCOpenTimeoutContractHandler(lcId, accounts[5])
+          } catch (e) {
+            assert.equal(e.message, '[300: LCOpenTimeoutContractHandler] Caller must be partyA in ledger channel')
+          }
+        })
       })
     })
 

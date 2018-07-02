@@ -1593,13 +1593,13 @@ class Connext {
     )
 
     if (!result.transactionHash) {
-      throw new ContractError(methodName, 300, 'Transaction failed to broadcast')
+      throw new ContractError(methodName, 301, 'Transaction failed to broadcast')
     }
 
-    if (!result.receipt) {
-      throw new ContractError(methodName, 301, result.transactionHash, 'Transaction failed')
+    if (!result.blockNumber) {
+      throw new ContractError(methodName, 302, result.transactionHash, 'Transaction failed')
     }
-    
+
     return result
   }
 
@@ -1610,7 +1610,7 @@ class Connext {
    * @param {String} params.lcId - ledger channel id the hub did not join
    * @param {String} params.sender - (optional) who is calling the transaction (defaults to accounts[0])
    */
-  async LCOpenTimeoutContractHandler ({lcId, sender = null}) {
+  async LCOpenTimeoutContractHandler (lcId, sender = null) {
     const methodName = 'LCOpenTimeoutContractHandler'
     // validate
     const isAddress = { presence: true, isAddress: true }
@@ -1630,15 +1630,37 @@ class Connext {
       const accounts = await this.web3.eth.getAccounts()
       sender = accounts[0].toLowerCase()
     }
+    // verify requires
+    const lc = await this.getLcById(lcId)
+    if (lc.state !== 0) {
+      throw new ContractError(methodName, 'Channel is in incorrect state')
+    }
+
+    if (lc.partyA !== sender) {
+      throw new ContractError(methodName, 'Caller must be partyA in ledger channel')
+    }
+
+    // TO DO: THROW ERROR IF NOT CORRECT TIME
+    // NO WAY TO GET CLOSE TIME
+    // if (Date.now() > lc.LCOpenTimeout) {
+    //   throw new ContractError(methodName, 'Channel challenge period still active')
+    // }
+
     const result = await this.channelManagerInstance.methods
       .LCOpenTimeout(lcId)
       .send({
         from: sender,
         gas: 470000
       })
+    
     if (!result.transactionHash) {
-      throw new Error(`[${methodName}] LCOpenTimeout transaction failed.`)
+      throw new ContractError(methodName, 301, 'Transaction failed to broadcast')
     }
+
+    if (!result.blockNumber) {
+      throw new ContractError(methodName, 302, result.transactionHash, 'Transaction failed')
+    }
+
     return result
   }
 
@@ -2468,7 +2490,7 @@ class Connext {
       throw new ChannelOpenError(methodName, 402, 'Ingrid is not the counterparty of this channel.')
     }
     if (Date.now() > lc.LCOpenTimeout) {
-      throw new ChannelOpenError(methodName, 403, 'Ledger Channel open has timed out, call LCOpenTimeoutContractHandler().')
+      throw new ChannelOpenError(methodName, 403, 'Ledger Channel open has timed out, call LCOpenTimeoutContractHandler')
     }
 
     try {
