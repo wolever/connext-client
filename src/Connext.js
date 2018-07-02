@@ -1738,6 +1738,10 @@ class Connext {
       recipient = sender
     }
 
+    // verify deposit is nonzero
+    if (depositInWei.isNeg() || depositInWei.isZero()) {
+      throw new LCUpdateError(methodName, 'Invalid deposit provided')
+    }
     // verify requires
     const lc = await this.getLcById(lcId)
     if (lc.state !== 1) {
