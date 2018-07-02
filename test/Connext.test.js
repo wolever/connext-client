@@ -1251,19 +1251,19 @@ describe('Connext', async () => {
             })
           })
 
-          describe('vcId', () => {
+          describe('channelId', () => {
             it('throws an error when vcId is not a hex String', async () => {
               try {
                 Connext.recoverSignerFromVCStateUpdate({
                   sig: '0xc1912',
-                  vcId: 'bad VC ID',
+                  channelId: 'bad VC ID',
                   balanceA: Web3.utils.toBN('0'),
                   balanceB: Web3.utils.toBN('0'),
                 })
               } catch (e) {
                 assert.equal(
                   e.message,
-                  `[recoverSignerFromVCStateUpdate][vcId] : bad VC ID is not hex string prefixed with 0x.`
+                  `[recoverSignerFromVCStateUpdate][channelId] : bad VC ID is not hex string prefixed with 0x.`
                 )
               }
             })

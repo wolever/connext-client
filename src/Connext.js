@@ -4,7 +4,7 @@ const channelManagerAbi = require('../artifacts/LedgerChannel.json')
 const util = require('ethereumjs-util')
 import Web3 from 'web3'
 import validate from 'validate.js'
-import { ChannelOpenError } from './helpers/Errors';
+import { ChannelOpenError, ParameterValidationError } from './helpers/Errors';
 const MerkleTree = require('./helpers/MerkleTree')
 const Utils = require('./helpers/utils')
 const crypto = require('crypto')
@@ -2149,20 +2149,9 @@ class Connext {
 
   static validatorsResponseToError (validatorResponse, methodName, varName) {
     if (validatorResponse !== undefined) {
-      const errorMessage = `[${methodName}][${varName}] : ${validatorResponse}`
-      throw new Error(errorMessage)
+      throw new ParameterValidationError(methodName, varName, validatorResponse)
     }
   }
-
-  static hubsResponseToError (errorResponse, methodName, parameters = null) {
-    if (errorResponse !== undefined) {
-      const errorMessage = parameters
-        ? `[${methodName}] failed with parameters ${JSON.stringify(parameters)}. Status: ${errorResponse.response.status}. Url: ${errorResponse.config.url}. Response: ${errorResponse.response.data}`
-        : `[${methodName}] failed. Status: ${errorResponse.response.status}. Url: ${errorResponse.config.url}. Response: ${errorResponse.response.data}`
-      throw new Error(errorMessage)
-    }
-  }
-
 
   // ***************************************
   // *********** INGRID GETTERS ************

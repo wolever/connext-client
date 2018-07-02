@@ -17,11 +17,14 @@ export class ChannelOpenError extends Error {
 }
 
 export class ParameterValidationError extends Error {
-  constructor (methodName = '', statusCode = 200, ...args) {
+  constructor (...args) {
+    // [methodName, variableName, validatorResponse]
     super(...args)
     this.name = this.constructor.name
-    this.methodName = methodName
-    this.statusCode = statusCode
+    this.statusCode = 200
+    this.methodName = args[0]
+    this.variableName = args[1]
+    this.message = `[${args[0]}][${args[1]}] : ${args[2]}`
     Error.captureStackTrace(this, ParameterValidationError)
   }
 }
