@@ -1,12 +1,11 @@
-const axios = require('axios')
-
-const channelManagerAbi = require('../artifacts/LedgerChannel.json')
-const util = require('ethereumjs-util')
+const channelManagerAbi = require('../artifacts/LedgerChannel.json');
+const util = require('ethereumjs-util');
 import Web3 from 'web3'
 import validate from 'validate.js'
-const MerkleTree = require('./helpers/MerkleTree')
+const MerkleTree = require('./helpers/MerkleTree');
 const Utils = require('./helpers/utils')
-const crypto = require('crypto')
+const crypto = require('crypto');
+const networking = require('./helpers/networking');
 
 // ***************************************
 // ******* PARAMETER VALIDATION **********
@@ -119,13 +118,7 @@ class Connext {
       },
       withAuth: true
     }
-    this.axiosInstance = axios.create({
-      baseURL: ingridUrl,
-      headers: {
-        Cookie: `hub.sid=${hubAuth};`,
-        Authorization: `Bearer ${hubAuth}`
-      }
-    })
+    this.networking = networking(ingridUrl);
   }
 
 
@@ -830,8 +823,8 @@ class Connext {
 
     latestState.signer = latestState.partyA
     const sigA = await this.createLCStateUpdate(latestState)
-    const response = await this.axiosInstance.post(
-      `${this.ingridUrl}/ledgerchannel/${lcId}/update/${nonce}/cosign`,
+    const response = await this.networking.post(
+      `ledgerchannel/${lcId}/update/${nonce}/cosign`,
       {
         sig: sigA
       }
@@ -2173,8 +2166,8 @@ class Connext {
       methodName,
       'ledgerChannelId'
     )
-    const response = await this.axiosInstance.get(
-      `${this.ingridUrl}/ledgerchannel/${ledgerChannelId}/update/latest/sig[]=sigI`
+    const response = await this.networking.get(
+      `ledgerchannel/${ledgerChannelId}/update/latest/sig[]=sigI`
     )
     return response.data
   }
@@ -2201,8 +2194,8 @@ class Connext {
       partyA = accounts[0].toLowerCase()
     }
     // get my LC with ingrid
-    const response = await this.axiosInstance.get(
-      `${this.ingridUrl}/ledgerchannel/a/${partyA}` 
+    const response = await this.networking.get(
+      `ledgerchannel/a/${partyA}` 
     )
     return response.data.channelId
   }
@@ -2221,8 +2214,8 @@ class Connext {
       methodName,
       'channelId'
     )
-    const response = await this.axiosInstance.get(
-      `${this.ingridUrl}/virtualchannel/${channelId}`
+    const response = await this.networking.get(
+      `virtualchannel/${channelId}`
     )
     return response.data
   }
@@ -2248,8 +2241,8 @@ class Connext {
       methodName,
       'partyB'
     )
-    const response = await this.axiosInstance.get(
-      `${this.ingridUrl}/virtualchannel/a/${partyA}/b/${partyB}`
+    const response = await this.networking.get(
+      `virtualchannel/a/${partyA}/b/${partyB}`
     )
     return response.data
   }
@@ -2281,8 +2274,8 @@ class Connext {
       methodName,
       'lcId'
     )
-    const response = await this.axiosInstance.get(
-      `${this.ingridUrl}/ledgerchannel/${lcId}`)
+    const response = await this.networking.get(
+      `ledgerchannel/${lcId}`)
     return response.data
   }
 
@@ -2305,15 +2298,15 @@ class Connext {
       const accounts = await this.web3.eth.getAccounts()
       partyA = accounts[0]
     }
-    const response = await this.axiosInstance.get(
-      `${this.ingridUrl}/ledgerchannel/a/${partyA.toLowerCase()}`    
+    const response = await this.networking.get(
+      `ledgerchannel/a/${partyA.toLowerCase()}`    
     )
     return response.data
   }
   
   async getLedgerChannelChallengeTimer () {
-    const response = await this.axiosInstance.get(
-      `${this.ingridUrl}/ledgerchannel/challenge`
+    const response = await this.networking.get(
+      `ledgerchannel/challenge`
     )
     return response.data.challenge
   }
@@ -2333,8 +2326,8 @@ class Connext {
       methodName,
       'channelId'
     )
-    const response = await this.axiosInstance.get(
-      `${this.ingridUrl}/virtualchannel/${channelId}/update/latest`,
+    const response = await this.networking.get(
+      `virtualchannel/${channelId}/update/latest`,
     )
     return response.data
   }
@@ -2348,8 +2341,8 @@ class Connext {
       methodName,
       'lcId'
     )
-    const response = await this.axiosInstance.get(
-      `${this.ingridUrl}/ledgerchannel/${lcId}/vcinitialstates`
+    const response = await this.networking.get(
+      `ledgerchannel/${lcId}/vcinitialstates`
     )
     return response.data
   }
@@ -2363,8 +2356,8 @@ class Connext {
       methodName,
       'vcId'
     )
-    const response = await this.axiosInstance.get(
-      `${this.ingridUrl}/virtualchannel/${vcId}/intialstate`
+    const response = await this.networking.get(
+      `virtualchannel/${vcId}/intialstate`
     )
     return response.data
   }
@@ -2378,8 +2371,8 @@ class Connext {
       methodName,
       'vcId'
     )
-    const response = await this.axiosInstance.get(
-      `${this.ingridUrl}/virtualchannel/${vcId}/decompose`
+    const response = await this.networking.get(
+      `virtualchannel/${vcId}/decompose`
     )
     return response.data
   }
@@ -2401,8 +2394,8 @@ class Connext {
       'lcId'
     )
     try {
-      const response = await this.axiosInstance.post(
-        `${this.ingridUrl}/ledgerchannel/${lcId}/request`)
+      const response = await this.networking.post(
+        `ledgerchannel/${lcId}/request`)
       return response.data.txHash
     } catch (e) {
       return null
@@ -2449,8 +2442,8 @@ class Connext {
     )
 
     // ingrid should add vc params to db
-    const response = await this.axiosInstance.post(
-      `${this.ingridUrl}/virtualchannel/`,
+    const response = await this.networking.post(
+      `virtualchannel/`,
       { channelId, partyA, partyB, balanceA: balanceA.toString(), lcSig, vcSig }
     )
     return response.data.channelId
@@ -2478,8 +2471,8 @@ class Connext {
       'channelId'
     )
     // ingrid should verify vcS0A and vcS0b
-    const response = await this.axiosInstance.post(
-      `${this.ingridUrl}/virtualchannel/${channelId}/join`,
+    const response = await this.networking.post(
+      `virtualchannel/${channelId}/join`,
       {
         vcSig,
         lcSig
@@ -2511,8 +2504,8 @@ class Connext {
       'channelId'
     )
 
-    const response = await this.axiosInstance.post(
-      `${this.ingridUrl}/virtualchannel/${channelId}/close`,
+    const response = await this.networking.post(
+      `virtualchannel/${channelId}/close`,
       {
         sig,
         signer,
@@ -2547,8 +2540,8 @@ class Connext {
       methodName,
       'lcId'
     )
-    const response = await this.axiosInstance.post(
-      `${this.ingridUrl}/ledgerchannel/${lcId}/fastclose`,
+    const response = await this.networking.post(
+      `ledgerchannel/${lcId}/fastclose`,
       {
         sig
       }
@@ -2588,8 +2581,8 @@ class Connext {
       methodName,
       'balanceB'
     )
-    const response = await this.axiosInstance.post(
-      `${this.ingridUrl}/virtualchannel/${channelId}/update`,
+    const response = await this.networking.post(
+      `virtualchannel/${channelId}/update`,
       {
         sig,
         balanceA: balanceA.toString(),
