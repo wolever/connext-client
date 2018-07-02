@@ -19,7 +19,7 @@ let watcherUrl = process.env.WATCHER_URL_DEV
 let ingridUrl = process.env.INGRID_URL_DEV
 let contractAddress = '0x31713144d9ae2501e644a418dd9035ed840b1660'
 let hubAuth =
-  's%3AE_xMockGuJVqvIFRbP0RCXOYH5SRGHOe.zgEpYQg2KnkoFsdeD1CzAMLsu%2BmHET3FINdfZgw9xhs'
+  's%3ACiKWh3t14XjMAllKSmNfYC3F1CzvsFXl.LxI4s1J33VukHvx58lqlPwYlDwEMEbMw1dWhxJz1bjM'
 
 // for accounts
 let accounts
@@ -29,6 +29,7 @@ let partyB
 // for initial ledger channel states
 let balanceA
 let balanceI
+let balanceB
 let initialDeposit = Web3.utils.toBN(Web3.utils.toWei('5', 'ether'))
 let subchanAI = '0x1c207f0960266a06fb5ce2e9d7b990b6489ca37c0f61c4afc34699fe42e96395'
 let subchanBI = '0x14b5dadcd4ccf2dbaec2600d3fc0eb440be926ecf6d27c6983ec1c097bf93fba'
@@ -255,23 +256,23 @@ describe('Connext', async () => {
         ).timeout(5000)
     
         it('should request hub joins subchanAI', async () => {
-          // response = await Promise.all([client.requestJoinLc(subchanAI), timeout(17000)])
+          // response = await Promise.all([client.requestJoinLc(subchanAI), timeout(20000)])
           subchanAI =
-            '0x00212aaf39227fe0e51569610be4da4a11b5dd9cd632619855dfb9d532c671d4'
+            '0xc88d1da6589743648647f6b110beb558bae24ab18d00d8033f240fea6f8fc54c'
           response = await client.requestJoinLc(subchanAI)
           console.log(response)
           //   assert.equal(response.txHash, ':)')
-          assert.ok(Web3.utils.isHex(response))
-        }).timeout(22000)
+          assert.ok(Web3.utils.isHex(response[0]))
+        }).timeout(30000)
 
         it('should request hub joins subchanBI', async () => {
           response = await Promise.all([client.requestJoinLc(subchanBI), timeout(17000)])
-          // subchanAI =
-          //   '0x1d0c9414b3258f8cfe92dfa0f1f63b12f1b11aa6dce8d95a3c4ebe5f01bcbe70'
-          // response = await client.requestJoinLc(subchanAI)
+          // subchanBI =
+          //   '0x0b92647ba6be3e07b2c07218262ec2a55a093636cac5fdfe98da64da67db370b'
+          // response = await client.requestJoinLc(subchanBI)
           console.log(response)
           //   assert.equal(response.txHash, ':)')
-          assert.ok(Web3.utils.isHex(response))
+          assert.ok(Web3.utils.isHex(response[0]))
         }).timeout(22000)
 
       })
@@ -345,20 +346,20 @@ describe('Connext', async () => {
     
     describe('creating a virtual channel between partyA and partyB', () => {
 
-      it('should request that ingrid deposits 5 ETH in subchanBI', async () => {
-        subchanBI = '0x21ce9063809c5011218dfbd2ee76f112b1705dff59644876031dfc2b6527744a'
-        response = client.requestIngridDeposit({ lcId: subchanBI, deposit: initialDeposit })
-        // assert.equal(response, ':)')
+      it('should request that ingrid deposits 5 ETH in subchan', async () => {
+        let subchan = '0x0b92647ba6be3e07b2c07218262ec2a55a093636cac5fdfe98da64da67db370b'
+        let deposit = Web3.utils.toBN(Web3.utils.toWei('4', 'ether'))
+        response = await client.requestIngridDeposit({ lcId: subchan, deposit: deposit })
         assert.ok(Web3.utils.isHex(response))
       }).timeout(5000) 
       
       it('partyA should create a virtual channel with 5 eth in it', async () => {
-        vcId = await client.openChannel({ to: partyB })
+        vcId = await client.openChannel({ to: partyB, sender: partyA })
         assert.ok(Web3.utils.isHexStrict(vcId))
       })
     
       it('partyB should join the virtual channel with 0 eth', async () => {
-        // vcId = '0xf2ebd20931e9caa05912796ed318ee4ea25f0e5e48971b4bc8a3d674ab81c199'
+        // vcId = '0x4578eb1925adfb01c8ef392e9cec364949d413b8e200402aaba2dbf61874d1e0'
         response = await client.joinChannel(vcId, partyB)
         assert.equal(response, vcId)
       })
@@ -366,7 +367,7 @@ describe('Connext', async () => {
 
     describe('updating state in and closing a virtual channel between partyA and partyB', () => {
       it('partyA sends a state update in the virtual channel of 1 eth', async () => {
-        vcId = '0xbaea4652e4ed71f653439439b92e86c201707064e84576ffe951f88dfc6bfee5'
+        // vcId = '0x031f1d4652ccfed68e3c2f9ee530f4aef7f79ae69deae4e1259168fcac8564b6'
         balanceA = Web3.utils.toBN(Web3.utils.toWei('4', 'ether'))
         balanceB = Web3.utils.toBN(Web3.utils.toWei('1', 'ether'))
         response = await client.updateBalance({
@@ -374,6 +375,7 @@ describe('Connext', async () => {
           balanceA,
           balanceB
         })
+        console.log(response)
         assert.ok(
           Web3.utils.toBN(response.balanceA).eq(balanceA) &&
             Web3.utils.toBN(response.balanceB).eq(balanceB)
@@ -381,15 +383,16 @@ describe('Connext', async () => {
       })
 
       it('should fast close the virtual channel', async () => {
-        // vcId = '0xf2ebd20931e9caa05912796ed318ee4ea25f0e5e48971b4bc8a3d674ab81c199'
+        vcId = '0x2bed8fb4db761228f6b6dde5724d258acbd82d011a78c9c454cfeec8def6722c'
         response = await client.closeChannel(vcId)
-        assert.equal(response, vcId)
+        console.log(response)
+        assert.ok(Web3.utils.isHex(response))
       })
     })
 
     describe('withdraw from ledger channel', () => {
       it('should withdraw all funds from the ledger channel for partyA', async () => {
-        response = await client.withdraw()
+        response = await client.withdraw(partyB)
         assert.ok(Web3.utils.isHex(response.transactionHash))
       }).timeout(5000)
     })
@@ -1730,7 +1733,7 @@ describe('Connext', async () => {
   })
 })
 
-describe('ingridClientRequests: expecting correct responses', () => {
+describe('ingridClientRequests: running local hub', () => {
 
   it('should init web3 and the connext client', async () => {
     // set party variables
@@ -1808,9 +1811,15 @@ describe('ingridClientRequests: expecting correct responses', () => {
       describe('requestJoinLc', () => {
         it('should return tx hash of ingrid joining channel', async () => {
           subchanAI = '0x00cdd51e75ebd5afed428d9d3c4d0d2d6928f4714ae6b1927bc8fa9f659096d9'
-          response = await await Promise.all([client.requestJoinLc(subchanAI), timeout(15000)])
+          response = await Promise.all([client.requestJoinLc(subchanAI), timeout(15000)])
           assert.ok(Web3.utils.isHex(response))
         }).timeout(20000)
+
+        it.only('should throw an error if the channel is not in contract', async () => {
+          let subchan = '0x9d6f7f8230a387fa584dd9e4c45c53d22967e306b433c27acff9a11aaea76cc1'
+          response = await client.requestJoinLc(subchan)
+          assert.equal(response, ':)')
+        })
       })
 
       describe('creating virtual channel in database', () => {

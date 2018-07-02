@@ -4,6 +4,7 @@ const channelManagerAbi = require('../artifacts/LedgerChannel.json')
 const util = require('ethereumjs-util')
 import Web3 from 'web3'
 import validate from 'validate.js'
+import { ChannelOpenError } from './helpers/Errors';
 const MerkleTree = require('./helpers/MerkleTree')
 const Utils = require('./helpers/utils')
 const crypto = require('crypto')
@@ -140,7 +141,7 @@ class Connext {
    * 
    * Sender defaults to accounts[0] if not supplied by register.
    *
-   * Uses web3 to call createChannel function on the contract, and pings Ingrid with opening signature and initial deposit so she may join the channel.
+   * Uses web3 to call createChannel function on the contract, and returns the transaction hash of the channel creation. Once the transaction is successfully mined. Call requestJoinLC
    *
    * If Ingrid is unresponsive, or does not join the channel within the challenge period, the client function "LCOpenTimeoutContractHandler" can be called by the client to recover the funds.
    *
@@ -499,7 +500,7 @@ class Connext {
     vcN.partyA = vc.partyA
     vcN.partyB = vc.partyB
     // get partyA ledger channel
-    const subchan = await this.getLcByPartyA()
+    const subchan = await this.getLcByPartyA(vc.partyA)
     // who should sign lc state update from vc
     let isPartyAInVC
     if (subchan.partyA === vcN.partyA) {
@@ -509,7 +510,6 @@ class Connext {
     } else {
       throw new Error('Not your virtual channel.')
     }
-
     // generate decomposed lc update
     const sigAtoI = await this.createLCUpdateOnVCClose({ 
       vcN, 
@@ -588,6 +588,7 @@ class Connext {
    */
   async withdraw (sender = null) {
     const methodName = 'withdraw'
+    const isAddress = { presence: true, isAddress: true }
     if (sender) {
       Connext.validatorsResponseToError(
         validate.single(sender, isAddress),
@@ -596,11 +597,14 @@ class Connext {
       )
     } else {
       const accounts = await this.web3.eth.getAccounts()
-      sender = accounts[0].toLowerCase().toLowerCase()
+      sender = accounts[0].toLowerCase()
     }
-    const lcId = await this.getLcId(sender)
+    const lcId = await this.getLcId(sender.toLowerCase())
     const lc = await this.getLcById(lcId)
-    let lcState = await this.getLatestLedgerStateUpdate(lcId)
+    // get latest i-signed lc state update
+    let lcState = await this.getLatestLedgerStateUpdate(lcId, ['sigI'])
+    console.log('lcState:', lcState)
+    console.log('lcId:', lcId)
     if (lcState) {
       // openVcs?
       if (Number(lcState.openVcs) !== 0) {
@@ -617,7 +621,7 @@ class Connext {
       // i-signed?
       const signer = Connext.recoverSignerFromLCStateUpdate({
         sig: lcState.sigI,
-        isClose: false,
+        isClose: lcState.isClose,
         channelId: lcId,
         nonce: lcState.nonce,
         openVcs: lcState.openVcs,
@@ -634,7 +638,7 @@ class Connext {
       // PROBLEM: ingrid doesnt return lcState, just uses empty
       lcState = {
         isClose: false,
-        lcId,
+        channelId: lcId,
         nonce: 0,
         openVcs: 0,
         vcRootHash: Connext.generateVcRootHash({vc0s: []}),
@@ -648,7 +652,7 @@ class Connext {
     // generate same update with fast close flag and post
     const sigParams = {
       isClose: true,
-      lcId,
+      channelId: lcId,
       nonce: lcState.nonce + 1,
       openVcs: lcState.openVcs,
       vcRootHash: lcState.vcRootHash,
@@ -659,9 +663,9 @@ class Connext {
       signer: sender
     }
     const sig = await this.createLCStateUpdate(sigParams)
-    const sigI = await this.fastCloseLcHandler({ sig, lcId })
+    const lcFinal = await this.fastCloseLcHandler({ sig, lcId })
     let response
-    if (sigI) {
+    if (lcFinal.sigI) {
       // call consensus close channel
       response = await this.consensusCloseChannelContractHandler({
         lcId,
@@ -669,7 +673,7 @@ class Connext {
         balanceA: Web3.utils.toBN(lcState.balanceA),
         balanceI: Web3.utils.toBN(lcState.balanceI),
         sigA: sig,
-        sigI: sigI,
+        sigI: lcFinal.sigI,
         sender: sender
       })
       return { response, fastClosed: true }
@@ -1729,10 +1733,10 @@ class Connext {
     }
     const result = await this.channelManagerInstance.methods
       .consensusCloseChannel(lcId, nonce, balanceA, balanceI, sigA, sigI)
-      // .consensusCloseChannel(lcId, nonce, balances, sigA)
       .send({
         from: sender,
-        gas: 3000000 // FIX THIS, WHY HAPPEN, TRUFFLE CONFIG???
+        gasPrice: 3000000, // FIX THIS, WHY HAPPEN, TRUFFLE CONFIG???
+        gas: 4700000
       })
     if (!result.transactionHash) {
       throw new Error(
@@ -2164,7 +2168,7 @@ class Connext {
   // *********** INGRID GETTERS ************
   // ***************************************
 
-  async getLatestLedgerStateUpdate (ledgerChannelId) {
+  async getLatestLedgerStateUpdate (ledgerChannelId, sigs = null) {
     // lcState == latest ingrid signed state
     const methodName = 'getLatestLedgerStateUpdate'
     const isHexStrict = { presence: true, isHexStrict: true }
@@ -2173,9 +2177,14 @@ class Connext {
       methodName,
       'ledgerChannelId'
     )
+    if (sigs == null) {
+      sigs = ['sigI', 'sigA']
+    }
+
     const response = await this.axiosInstance.get(
-      `${this.ingridUrl}/ledgerchannel/${ledgerChannelId}/update/latest/sig[]=sigI`
+      `${this.ingridUrl}/ledgerchannel/${ledgerChannelId}/update/latest?sig[]=${sigs[0]}`
     )
+    console.log(response.data)
     return response.data
   }
 
@@ -2333,6 +2342,7 @@ class Connext {
       methodName,
       'channelId'
     )
+    console.log(`${this.ingridUrl}/virtualchannel/${channelId}/update/latest`)
     const response = await this.axiosInstance.get(
       `${this.ingridUrl}/virtualchannel/${channelId}/update/latest`,
     )
@@ -2419,9 +2429,19 @@ class Connext {
     return response.data.txHash
   } 
 
-  // posts signature of lc0 to ingrid
-  // requests to open a ledger channel with the hub
-  // async requestJoinLc ({ lcId, sig, balanceA }) {
+    /**
+     * Requests Ingrid joins the ledger channel after it has been created on chain. This function should be called after the register() returns the ledger channel ID of the created contract.
+     * 
+     * May have to be called after a timeout period to ensure the transaction performed in register to create the channel on chain is properly mined.
+     * 
+     * @example
+     * // use register to create channel on chain
+     * const deposit = Web3.utils.toBN(1000)
+     * const lcId = await connext.register(deposit)
+     * const response = await connext.requestJoinLc(lcId)
+     * 
+     * @param {String} lcId - ID of the ledger channel you want the Hub to join
+     */
   async requestJoinLc(lcId) {
     // validate params
     const methodName = 'requestJoinLc'
@@ -2431,6 +2451,20 @@ class Connext {
       methodName,
       'lcId'
     )
+
+    // verify the channel exists on chain
+    const lc = await this.channelManagerInstance.methods.Channels(lcId).call()
+    // no partyA, channel not on chain
+    if (lc.partyA === '0x0000000000000000000000000000000000000000') {
+      throw new ChannelOpenError(methodName, 401, 'Channel does not exist on chain.')
+    }
+    if (lc.partyI.toLowerCase() !== this.ingridAddress.toLowerCase()) {
+      throw new ChannelOpenError(methodName, 402, 'Ingrid is not the counterparty of this channel.')
+    }
+    if (Date.now() > lc.LCOpenTimeout) {
+      throw new ChannelOpenError(methodName, 403, 'Ledger Channel open has timed out, call LCOpenTimeoutContractHandler().')
+    }
+
     try {
       const response = await this.axiosInstance.post(
         `${this.ingridUrl}/ledgerchannel/${lcId}/request`)
@@ -2534,7 +2568,7 @@ class Connext {
     Connext.validatorsResponseToError(
       validate.single(signer, isAddress),
       methodName,
-      'isAddress'
+      'signer'
     )
     Connext.validatorsResponseToError(
       validate.single(channelId, isHexStrict),
@@ -2549,8 +2583,8 @@ class Connext {
         signer,
       }
     )
-    if (response.data.sig) {
-      return response.data.sig
+    if (response.data.sigI) {
+      return response.data.sigI
     } else {
       return false
     }
@@ -2735,7 +2769,7 @@ class Connext {
   const newRootHash = Connext.generateVcRootHash({ vc0s: vcInitialStates})
   
   const updateAtoI = {
-    lcId: subchan.channelId,
+    channelId: subchan.channelId,
     nonce: subchan.nonce + 1,
     openVcs: vcInitialStates.length,
     vcRootHash: newRootHash,
