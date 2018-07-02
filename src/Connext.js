@@ -1890,6 +1890,9 @@ class Connext {
         methodName,
         'deposit'
       )
+      if (deposit.isNeg()) {
+        throw new LCOpenError(methodName, 'Invalid deposit provided')
+      }
     } else {
       deposit = Web3.utils.toBN('0')
     }
@@ -1900,6 +1903,21 @@ class Connext {
         'sender'
       )
     }
+    const lc = await this.getLcById(lcId)
+    if (!lc) {
+      throw new LCOpenError(methodName, 'Channel is not registered with hub')
+    }
+    if (sender && sender.toLowerCase() === lc.partyA) {
+      throw new LCOpenError(methodName, 'Cannot create channel with yourself')
+    }
+
+    if (lc.state !== 0) {
+      throw new LCOpenError(methodName, 'Channel is not in correct state')
+    }
+
+    if(sender !== lc.partyI) {
+      throw new LCOpenError(methodName, 'Incorrect channel counterparty')
+    }
 
     const result = await this.channelManagerInstance.methods
       .joinChannel(lcId)
@@ -1908,9 +1926,6 @@ class Connext {
         value: deposit,
         gas: 3000000 // FIX THIS, WHY HAPPEN, TRUFFLE CONFIG???
       })
-    if (!result.transactionHash) {
-      throw new Error(`[${methodName}] joinLedgerChannel transaction failed.`)
-    }
 
     if (!result.transactionHash) {
       throw new ContractError(methodName, 301, 'Transaction failed to broadcast')
