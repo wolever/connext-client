@@ -346,24 +346,34 @@ class Connext {
       const accounts = await this.web3.eth.getAccounts()
       sender = accounts[0].toLowerCase()
     }
-
-    const lcA = await this.getLcByPartyA(sender)
-    const lcIdB = await this.getLcId(to)
-    
-    // validate the subchannels exist
-    if (lcIdB === null || lcA === null) {
-      throw new VCOpenError(methodName, 'Missing one or more required subchannels')
-    }
-    // valid deposit provided
-    if (Web3.utils.isBN(deposit) && deposit.isNeg()) {
-      throw new VCOpenError(methodName, 'Invalid deposit provided')
-    } else if (Web3.utils.isBigNumber(deposit) && deposit.isNegative()) {
-      throw new VCOpenError(methodName, 'Invalid deposit provided')
-    }
     // not opening channel with yourself
     if (sender.toLowerCase() === to.toLowerCase()) {
       throw new VCOpenError(methodName, 'Cannot open a channel with yourself')
     }
+
+    const lcA = await this.getLcByPartyA(sender)
+    const lcB = await this.getLcByPartyA(to)
+    
+    // validate the subchannels exist
+    if (lcB === null || lcA === null) {
+      throw new VCOpenError(methodName, 'Missing one or more required subchannels')
+    }
+    // subchannels in right state
+    if (lcB.state !== 1 || lcA.state !== 1) {
+      throw new VCOpenError(methodName, 'One or more required subchannels are in the incorrect state')
+    }
+    
+    // validate lcA has enough to deposit or set deposit
+    if (deposit && Web3.utils.toBN(lcA.balanceA).lt(deposit)) {
+      throw new VCOpenError(methodName, 'Insufficient value to open channel with provided deposit')
+    } else if (deposit === null) {
+      deposit = Web3.utils.toBN(lcA.balanceA)
+    }
+    // valid deposit provided
+    if (deposit.isNeg() || deposit.isZero()) {
+      throw new VCOpenError(methodName, 'Invalid deposit provided')
+    }
+
     // generate initial vcstate
     const vcId = Connext.getNewChannelId()
     const vc0 = {
@@ -371,7 +381,7 @@ class Connext {
       nonce: 0,
       partyA: sender,
       partyB: to.toLowerCase(),
-      balanceA: deposit || Web3.utils.toBN(lcA.balanceA),
+      balanceA: deposit,
       balanceB: Web3.utils.toBN(0),
       signer: sender
     }
