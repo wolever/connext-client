@@ -362,7 +362,7 @@ class Connext {
     if (lcB.state !== 1 || lcA.state !== 1) {
       throw new VCOpenError(methodName, 'One or more required subchannels are in the incorrect state')
     }
-    
+
     // validate lcA has enough to deposit or set deposit
     if (deposit && Web3.utils.toBN(lcA.balanceA).lt(deposit)) {
       throw new VCOpenError(methodName, 'Insufficient value to open channel with provided deposit')
@@ -2692,10 +2692,25 @@ class Connext {
       methodName,
       'lcSig'
     )
+    if (balanceA.isNeg() || balanceA.isZero()) {
+      throw new VCOpenError(methodName, 'Invalid channel balance provided')
+    }
 
-    // verify lcSig
-
-    // verify vcSig
+    // verify sigs -- signer === partyA
+    // lcSig
+    // vcSig
+    let signer = Connext.recoverSignerFromVCStateUpdate({
+      sig: vcSig,
+      channelId,
+      nonce: 0,
+      partyA,
+      partyB,
+      balanceA,
+      balanceB: Web3.utils.toBN('0')
+    })
+    if (signer !== partyA) {
+      throw new VCOpenError(methodName, 'PartyA did not sign channel opening cert')
+    }
 
     // ingrid should add vc params to db
     const response = await this.axiosInstance.post(
