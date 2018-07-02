@@ -1535,7 +1535,6 @@ class Connext {
   }) {
     const methodName = 'createLedgerChannelContractHandler'
     // validate
-    // validatorOpts'
     const isHexStrict = { presence: true, isHexStrict: true }
     const isBN = { presence: true, isBN: true }
     const isAddress = { presence: true, isAddress: true }
@@ -1569,6 +1568,18 @@ class Connext {
     } else {
       const accounts = await this.web3.eth.getAccounts()
       sender = accounts[0].toLowerCase()
+    }
+
+    // validate requires on contract before sending transactions
+    const lc = await this.channelManagerInstance.methods.Channels(lcId).call()
+    if (lc.partyA !== '0x0000000000000000000000000000000000000000') {
+      throw new ChannelOpenError(methodName, 'Channel has already been used.')
+    }
+    if (lc.isOpen) {
+      throw new ChannelOpenError(methodName, 'Channel already open.')
+    }
+    if(lc.sequence !== '0') {
+      throw new ChannelOpenError(methodName, 'Channel has already been used.')
     }
     
     const result = await this.channelManagerInstance.methods
