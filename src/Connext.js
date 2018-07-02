@@ -2953,7 +2953,19 @@ class Connext {
   //  */
   async createLCUpdateOnVCOpen ({ vc0, lc, signer = null }) {
     const methodName = 'createLCUpdateOnVCOpen'
+    const isVcState = { presence: true, isVcState: true }
+    const isLcObj = { presence: true, isLcObj: true }
     const isAddress = { presence: true, isAddress: true }
+    Connext.validatorsResponseToError(
+      validate.single(vc0, isVcState),
+      methodName,
+      'vc0'
+    )
+    Connext.validatorsResponseToError(
+      validate.single(lc, isLcObj),
+      methodName,
+      'lc'
+    )
     if (signer) {
       Connext.validatorsResponseToError(
         validate.single(signer, isAddress),
@@ -2962,23 +2974,42 @@ class Connext {
       )
     } else {
       const accounts = await this.web3.eth.getAccounts()
-      signer = accounts[0]
+      signer = accounts[0].toLowerCase()
     }
-
+    // signer should always be lc partyA
+    if (signer.toLowerCase() !== lc.partyA) {
+      throw new VCOpenError(methodName, 'Invalid signer detected')
+    }
+    // signer should be vc0 partyA or vc0 partyB
+    if (signer.toLowerCase() !== vc0.partyA || signer.toLowerCase() !== vc0.partyB) {
+      throw new VCOpenError(methodName, 'Invalid signer detected')
+    }
+    // lc must be open
+    if (lc.state !== 1) {
+      throw new VCOpenError(methodName, 'Invalid subchannel state')
+    }
+    // vcId should be unique
+    let vc = await this.getChannelById(vc0.channelId)
+    if (vc) {
+      throw new VCOpenError(methodName, 'Invalid channel id in vc0')
+    }
+    // vc0 validation
+    if (vc0.nonce !== 0) {
+      throw new VCOpenError(methodName, 'Nonce is nonzero')
+    }
+    if (Web3.utils.toBN(vc0.balanceB).isZero() === false) {
+      throw new VCOpenError(methodName, 'Invalid balanceB')
+    }
+    if (
+      Web3.utils.toBN(vc0.balanceA).isNeg() || 
+      Web3.utils.toBN(vc0.balanceA).isZero() || 
+      Web3.utils.toBN(vc0.balanceA).gt(Web3.utils.toBN(lc.balanceA))
+    ) {
+      throw new VCOpenError(methodName, 'Invalid balanceA')
+    }
     let vcInitialStates = await this.getVcInitialStates(lc.channelId)
     vcInitialStates.push(vc0) // add new vc state to hash
     let newRootHash = Connext.generateVcRootHash({vc0s: vcInitialStates})
-    
-    // detect signer and if called on open or join
-    const accounts = await this.web3.eth.getAccounts()
-    if (accounts[0].toLowerCase() === vc0.partyA && signer === null) {
-      signer = vc0.partyA
-    } else if (accounts[0].toLowerCase() === vc0.partyB && signer === null) {
-      // no signer provided, set signer
-      signer = vc0.partyB
-    } else if (signer !== vc0.partyA && accounts[0].toLowerCase() !== vc0.partyA && signer !== vc0.partyB && accounts[0].toLowerCase() !== vc0.partyB ){
-      throw new Error('Not your virtual channel.')
-    }
 
     const updateAtoI = {
       channelId: lc.channelId,
