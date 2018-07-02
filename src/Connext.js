@@ -2821,7 +2821,7 @@ class Connext {
     }
 
     // verify sigs -- signer === partyA
-    // lcSig
+    // lcSig -- add later
     // vcSig
     let signer = Connext.recoverSignerFromVCStateUpdate({
       sig: vcSig,
