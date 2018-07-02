@@ -1488,19 +1488,51 @@ class Connext {
       methodName,
       'balanceB'
     )
-    // verify balances
-    if (Web3.utils.isBN(balanceA) && balanceA.isNeg()) {
-      throw new VCUpdateError(methodName, 'Balances cannot be negative')
-    } else if (Web3.utils.isBigNumber(balanceA) && balanceA.isNegative()) {
-      throw new VCUpdateError(methodName, 'Balances cannot be negative')
+    // verify subchannel
+    const lcA = await this.getLcByPartyA(partyA)
+    const lcB = await this.getLcByPartyA(partyB)
+    if (lcB === null || lcA === null) {
+      throw new VCOpenError(methodName, 'Missing one or more required subchannels')
     }
-
-    if (Web3.utils.isBN(balanceB) && balanceB.isNeg()) {
-      throw new VCUpdateError(methodName, 'Balances cannot be negative')
-    } else if (Web3.utils.isBigNumber(balanceB) && balanceB.isNegative()) {
-      throw new VCUpdateError(methodName, 'Balances cannot be negative')
+    // subchannels in right state
+    if (lcB.state !== 1 || lcA.state !== 1) {
+      throw new VCOpenError(methodName, 'One or more required subchannels are in the incorrect state')
     }
-
+    // verify channel state update
+    const vc = await this.getChannelById(channelId)
+    if (vc === null) {
+      // channel does not exist, generating opening state
+      if (nonce !== 0) {
+        throw new VCOpenError(methodName, 'Invalid nonce detected')
+      }
+      if (!balanceB.isZero()) {
+        throw new VCOpenError(methodName, 'Invalid balance detected')
+      }
+      if (balanceA.isZero() || balanceA.isNeg()) {
+        throw new VCOpenError(methodName, 'Invalid balance detected')
+      }
+      if (partyA.toLowerCase() === partyB.toLowerCase()) {
+        throw new VCOpenError(methodName, 'Cannot open channel with yourself')
+      }
+      if (Web3.utils.toBN(lcA.balanceA).lt(balanceA)) {
+        throw new VCOpenError(methodName, 'Insufficient balance detected')
+      }
+    } else {
+      // vc exists
+      if (nonce !== vc.nonce + 1) {
+        throw new VCUpdateError(methodName, 'Invalid nonce')
+      }
+      if (balanceA.isNeg() || balanceB.isNeg()) {
+        throw new VCUpdateError(methodName, 'Balances cannot be negative')
+      }
+      if (balanceA.add(balanceB) !== Web3.utils.toBN(vc.balanceA).add(Web3.utils.toBN(vc.balanceB))) {
+        throw new VCUpdateError(methodName, 'Invalid update detected')
+      }
+      if (partyA.toLowerCase() !== vc.partyA || partyB.toLowerCase() !== vc.partyB) {
+        throw new VCUpdateError(methodName, 'Invalid parties detected')
+      }
+    }
+    
     // get accounts
     const accounts = await this.web3.eth.getAccounts()
     // generate and sign hash
@@ -2393,10 +2425,18 @@ class Connext {
       methodName,
       'channelId'
     )
-    const response = await this.axiosInstance.get(
-      `${this.ingridUrl}/virtualchannel/${channelId}`
-    )
-    return response.data
+    try {
+      const response = await this.axiosInstance.get(
+        `${this.ingridUrl}/virtualchannel/${channelId}`
+      )
+      return response.data
+    } catch (e) {
+      if (e.response.status === 400) {
+        return null
+      } else {
+        throw e
+      }
+    }
   }
 
   /**
