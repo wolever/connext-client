@@ -86,7 +86,7 @@ validate.validators.isVcState = value => {
 
 validate.validators.isLcObj = value => {
   if (
-    value.isClose == null ||
+    value.state == null ||
     value.channelId == null || !Web3.utils.isHexStrict(value.channelId) ||
     value.nonce == null || value.nonce <= 0 ||
     value.openVcs == null || value.openVcs <= 0 ||
@@ -94,7 +94,7 @@ validate.validators.isLcObj = value => {
     value.partyA == null || !Web3.utils.isAddress(value.partyA) ||
     value.partyI == null || !Web3.utils.isAddress(value.partyI) ||
     value.balanceA == null ||
-    value.balanceB == null
+    value.balanceI == null
   ) {
     return null
   } else {
