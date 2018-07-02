@@ -1911,15 +1911,15 @@ class Connext {
     if (sender && sender.toLowerCase() === lc.partyA) {
       throw new LCOpenError(methodName, 'Cannot create channel with yourself')
     }
+    
+    if(sender && sender !== lc.partyI) {
+      throw new LCOpenError(methodName, 'Incorrect channel counterparty')
+    }
+
 
     if (lc.state !== 0) {
       throw new LCOpenError(methodName, 'Channel is not in correct state')
     }
-
-    if(sender !== lc.partyI) {
-      throw new LCOpenError(methodName, 'Incorrect channel counterparty')
-    }
-
     const result = await this.channelManagerInstance.methods
       .joinChannel(lcId)
       .send({
