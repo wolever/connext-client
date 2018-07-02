@@ -188,20 +188,27 @@ class Connext {
       // get challenge timer from ingrid
       challenge = await this.getLedgerChannelChallengeTimer()
     }
-    // generate additional initial lc params
-    const lcId = Connext.getNewChannelId()
-
-    // verify deposit is positive and nonzero
-    // must work with BN and BigNumber
-    if (Web3.utils.isBN(initialDeposit) && initialDeposit.isNeg()) {
-      throw new LCOpenError(methodName, 'Invalid deposit provided')
-    } else if (Web3.utils.isBigNumber(initialDeposit) && initialDeposit.isNegative()) {
+    // verify channel does not exist between ingrid and sender
+    let lc = this.getLcByPartyA(sender)
+    if (lc !== null && lc.state === 1) {
+      throw new LCOpenError(methodName, `PartyA has open channel with hub, ID: ${lc.channelId}`)
+    }
+    // verify deposit is positive
+    if (initialDeposit.isNeg()) {
       throw new LCOpenError(methodName, 'Invalid deposit provided')
     }
 
     // verify opening state channel with different account
     if (sender.toLowerCase() === this.ingridAddress.toLowerCase()) {
       throw new LCOpenError(methodName, 'Cannot open a channel with yourself')
+    }
+
+    // generate additional initial lc params
+    const lcId = Connext.getNewChannelId()
+    // verify channel ID does not exist
+    lc = this.getLcById(lcId)
+    if (lc !== null) {
+      throw new LCOpenError(methodName, 'Channel by that ID already exists')
     }
 
     // /**
@@ -2463,10 +2470,19 @@ class Connext {
       const accounts = await this.web3.eth.getAccounts()
       partyA = accounts[0]
     }
-    const response = await this.axiosInstance.get(
-      `${this.ingridUrl}/ledgerchannel/a/${partyA.toLowerCase()}`    
-    )
-    return response.data
+    try {
+      const response = await this.axiosInstance.get(
+        `${this.ingridUrl}/ledgerchannel/a/${partyA.toLowerCase()}`    
+      )
+      return response.data
+    } catch (e) {
+      if (e.response.status === 400) {
+        // lc does not exist
+        return null
+      } else {
+        throw e
+      }
+    }
   }
   
   async getLedgerChannelChallengeTimer () {
