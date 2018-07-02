@@ -1604,16 +1604,17 @@ class Connext {
       const accounts = await this.web3.eth.getAccounts()
       sender = accounts[0].toLowerCase()
     }
+    // verify deposit is positive and nonzero
+    if (initialDeposit.isNeg()) {
+      throw new LCOpenError(methodName, 'Invalid deposit provided')
+    }
+    // verify partyA !== partyI
+    if (sender === ingridAddress) {
+      throw new LCOpenError(methodName, 'Cannot open a channel with yourself')
+    }
 
     // validate requires on contract before sending transactions
     const lc = await this.channelManagerInstance.methods.Channels(lcId).call()
-    // verify deposit is positive and nonzero
-    if (Web3.utils.isBN(initialDeposit) && initialDeposit.isNeg()) {
-      throw new LCOpenError(methodName, 'Invalid deposit provided')
-    } else if (Web3.utils.isBigNumber(initialDeposit) && initialDeposit.isNegative()) {
-      throw new LCOpenError(methodName, 'Invalid deposit provided')
-    }
-
     if (lc.partyA !== '0x0000000000000000000000000000000000000000') {
       throw new LCOpenError(methodName, 'Channel has already been used')
     }
