@@ -274,16 +274,23 @@ class Connext {
         'recipient'
       )
     }
-    // verify that deposit is nonzero
     // verify deposit is positive and nonzero
-    if (Web3.utils.isBN(deposit) && deposit.isNeg() || deposit.isZero()) {
-      throw new LCUpdateError(methodName, 'Invalid deposit provided')
-    } else if (Web3.utils.isBigNumber(deposit) && deposit.isNegative() || deposit.isZero()) {
+    if (deposit.isNeg() || deposit.isZero()) {
       throw new LCUpdateError(methodName, 'Invalid deposit provided')
     }
-    const lcId = await this.getLcByPartyA(recipient)
+
+    const lc = await this.getLcByPartyA(recipient)
+    // verify lc is open
+    if (lc.state !== 1) {
+      throw new LCUpdateError(methodName, 'Channel is not in the right state')
+    }
+    // verify recipient is in lc
+    if (lc.partyA !== recipient.toLowerCase() || lc.partyI !== recipient.toLowerCase()) {
+      throw new LCUpdateError(methodName, 'Recipient is not member of channel')
+    }
+    
     // call contract handler
-    const result = await this.depositContractHandler({ lcId, depositInWei, recipient, sender })
+    const result = await this.depositContractHandler({ lcId: lc.channelId, depositInWei, recipient, sender })
     return result
   }
 
