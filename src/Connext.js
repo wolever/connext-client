@@ -1852,6 +1852,9 @@ class Connext {
       throw new LCCloseError(methodName, 'PartyA did not sign closing update')
     }
 
+    // TO DO
+    // add way to validate balAOnChain + balIOnChain == balI + balA
+
     const result = await this.channelManagerInstance.methods
       .consensusCloseChannel(lcId, nonce, balanceA, balanceI, sigA, sigI)
       .send({
