@@ -733,30 +733,32 @@ class Connext {
       const accounts = await this.web3.eth.getAccounts()
       sender = accounts[0].toLowerCase()
     }
-    const lcId = await this.getLcId(sender.toLowerCase())
-    const lc = await this.getLcById(lcId)
+    const lc = await this.getLcByPartyA(sender.toLowerCase())
+    // channel must be open
+    if (lc.state !== 1) {
+      throw new LCCloseError(methodName, 'Channel is in invalid state')
+    }
+    // sender must be channel member
+    if (sender.toLowerCase() !== lc.partyA && sender.toLowerCase() !== lc.partyI) {
+      throw new LCCloseError(methodName, 'Not your channel')
+    }
+
     // get latest i-signed lc state update
-    let lcState = await this.getLatestLedgerStateUpdate(lcId, ['sigI'])
-    console.log('lcState:', lcState)
-    console.log('lcId:', lcId)
+    let lcState = await this.getLatestLedgerStateUpdate(lc.channelId, ['sigI'])
     if (lcState) {
       // openVcs?
       if (Number(lcState.openVcs) !== 0) {
-        throw new Error(
-          `LC id ${lcId} still has open virtual channels. Number: ${lcState.openVcs}`
-        )
+        throw new LCCloseError(methodName, 'Cannot close channel with open VCs')
       }
       // empty root hash?
       if (lcState.vcRootHash !== Web3.utils.padRight('0x0', 64)) {
-        throw new Error(
-          `vcRootHash for lcId ${lcId} does not match empty root hash. Value: ${lcState.vcRootHash}`
-        )
+        throw new LCCloseError(methodName, 'Cannot close channel with open VCs')
       }
       // i-signed?
       const signer = Connext.recoverSignerFromLCStateUpdate({
         sig: lcState.sigI,
         isClose: lcState.isClose,
-        channelId: lcId,
+        channelId: lc.channelId,
         nonce: lcState.nonce,
         openVcs: lcState.openVcs,
         vcRootHash: lcState.vcRootHash,
@@ -765,14 +767,15 @@ class Connext {
         balanceA: Web3.utils.toBN(lcState.balanceA),
         balanceI: Web3.utils.toBN(lcState.balanceI)
       })
-      if (signer !== this.ingridAddress) {
-        throw new Error(`[${methodName}] Ingrid did not sign this state update.`)
+      if (signer.toLowerCase() !== this.ingridAddress.toLowerCase()) {
+        throw new LCCloseError(methodName, 'Hub did not sign update')
       }
     } else {
+       // no state updates made in LC
       // PROBLEM: ingrid doesnt return lcState, just uses empty
       lcState = {
         isClose: false,
-        channelId: lcId,
+        channelId: lc.channelId,
         nonce: 0,
         openVcs: 0,
         vcRootHash: Connext.generateVcRootHash({vc0s: []}),
@@ -786,7 +789,7 @@ class Connext {
     // generate same update with fast close flag and post
     const sigParams = {
       isClose: true,
-      channelId: lcId,
+      channelId: lc.channelId,
       nonce: lcState.nonce + 1,
       openVcs: lcState.openVcs,
       vcRootHash: lcState.vcRootHash,
@@ -802,7 +805,7 @@ class Connext {
     if (lcFinal.sigI) {
       // call consensus close channel
       response = await this.consensusCloseChannelContractHandler({
-        lcId,
+        lcId: lc.channelId,
         nonce: lcState.nonce + 1,
         balanceA: Web3.utils.toBN(lcState.balanceA),
         balanceI: Web3.utils.toBN(lcState.balanceI),
