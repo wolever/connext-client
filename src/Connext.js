@@ -133,7 +133,7 @@ class Connext {
       watcherUrl = '',
       ingridUrl = '',
       contractAddress = '',
-      hubAuth = 's%3AE_xMockGuJVqvIFRbP0RCXOYH5SRGHOe.zgEpYQg2KnkoFsdeD1CzAMLsu%2BmHET3FINdfZgw9xhs'
+      hubAuth = 's%3ACiKWh3t14XjMAllKSmNfYC3F1CzvsFXl.LxI4s1J33VukHvx58lqlPwYlDwEMEbMw1dWhxJz1bjM'
     },
     web3Lib = Web3
   ) {
@@ -1493,7 +1493,8 @@ class Connext {
       signer = accounts[0].toLowerCase()
     }
     // signer must be in lc
-    if (signer.toLowerCase() !== partyA.toLowerCase() || signer.toLowerCase() !== partyI.toLowerCase()) {
+    if (signer.toLowerCase() !== partyA.toLowerCase() && signer.toLowerCase() !== partyI.toLowerCase()) {
+      console.log(signer)
       throw new LCUpdateError(methodName, 'Invalid signer detected')
     }
     // balances must be positive
@@ -2518,7 +2519,7 @@ class Connext {
     }
 
     const response = await this.networking.get(
-      `ledgerchannel/${ledgerChannelId}/update/latest/sig[]=sigI`
+      `ledgerchannel/${ledgerChannelId}/update/latest?sig[]=sigI`
     )
     return response.data
   }
@@ -2571,7 +2572,7 @@ class Connext {
       )
       return response.data
     } catch (e) {
-      if (e.response.status === 400) {
+      if (e.status === 400) {
         return null
       } else {
         throw e
@@ -2639,7 +2640,7 @@ class Connext {
         `ledgerchannel/${lcId}`)
       return response.data
     } catch (e) {
-      if (e.response.status === 400) {
+      if (e.status === 400) {
         return null
       } else {
         throw e
@@ -2672,7 +2673,7 @@ class Connext {
       )
       return response.data
     } catch (e) {
-      if (e.response.status === 400) {
+      if (e.status === 400) {
         // lc does not exist
         return null
       } else {
@@ -3124,7 +3125,7 @@ class Connext {
       throw new VCOpenError(methodName, 'Invalid signer detected')
     }
     // signer should be vc0 partyA or vc0 partyB
-    if (signer.toLowerCase() !== vc0.partyA || signer.toLowerCase() !== vc0.partyB) {
+    if (signer.toLowerCase() !== vc0.partyA && signer.toLowerCase() !== vc0.partyB) {
       throw new VCOpenError(methodName, 'Invalid signer detected')
     }
     // lc must be open
@@ -3217,7 +3218,7 @@ class Connext {
     throw new VCCloseError(methodName, 'Incorrect signer detected')
   }
   // must be party in vc
-  if (signer.toLowerCase() !== vcN.partyA || signer.toLowerCase() !== vcN.partyB) {
+  if (signer.toLowerCase() !== vcN.partyA && signer.toLowerCase() !== vcN.partyB) {
     throw new VCCloseError(methodName, 'Not your channel')
   }
   if (subchan.state !== 1 || subchan.state !== 2) {
