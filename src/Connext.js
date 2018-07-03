@@ -213,7 +213,7 @@ class Connext {
       challenge = await this.getLedgerChannelChallengeTimer()
     }
     // verify channel does not exist between ingrid and sender
-    let lc = this.getLcByPartyA(sender)
+    let lc = await this.getLcByPartyA(sender)
     if (lc !== null && lc.state === 1) {
       throw new LCOpenError(methodName, `PartyA has open channel with hub, ID: ${lc.channelId}`)
     }
@@ -230,7 +230,7 @@ class Connext {
     // generate additional initial lc params
     const lcId = Connext.getNewChannelId()
     // verify channel ID does not exist
-    lc = this.getLcById(lcId)
+    lc = await this.getLcById(lcId)
     if (lc !== null) {
       throw new LCOpenError(methodName, 'Channel by that ID already exists')
     }
