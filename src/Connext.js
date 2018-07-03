@@ -880,58 +880,6 @@ class Connext {
   }
 
   /**
-   * Sync signed state updates with chain.
-   *
-   * Generates client signature on latest Ingrid-signed state update, and uses web3 to call updateLCState on the contract without challenge flag.
-   *
-   * @example
-   * await connext.checkpoint()
-   */
-  async checkpoint () {
-    // get latest ingrid signed state update
-    const lcId = await this.getLcId()
-    const lcState = await this.getLatestLedgerStateUpdate(lcId)
-    const signer = Connext.recoverSignerFromLCStateUpdate({
-      sig: lcState.sigI,
-      isClose: false,
-      lcId,
-      nonce: lcState.nonce,
-      openVcs: lcState.openVcs,
-      vcRootHash: lcState.vcRootHash,
-      partyA: lcState.partyA,
-      partyI: lcState.partyI,
-      balanceA: Web3.utils.toBN(lcState.balanceA),
-      balanceI: Web3.utils.toBN(lcState.balanceI)
-    })
-    if (signer !== this.ingridAddress.toLowerCase()) {
-      throw new Error(`[${methodName}] Hub did not sign this state update.`)
-    }
-    const sig = await this.createLCStateUpdate({
-      lcId,
-      nonce: lcState.nonce,
-      openVcs: lcState.openVcs,
-      vcRootHash: lcState.vcRootHash,
-      partyA: lcState.partyA,
-      balanceA: Web3.utils.toBN(lcState.balanceA),
-      balanceI: Web3.utils.toBN(lcState.balanceI),
-      signer: lcState.partyA
-    })
-    const result = await this.updateLcStateContractHandler({
-      lcId,
-      nonce: lcState.nonce,
-      openVcs: lcState.openVcs,
-      balanceA: Web3.utils.toBN(lcState.balanceA),
-      balanceI: Web3.utils.toBN(lcState.balanceI),
-      vcRootHash: lcState.vcRootHash,
-      sigA: sig,
-      sigI: lcState.sigI,
-      sender: lcState.partyA
-    })
-
-    return result
-  }
-
-  /**
    * Verifies and cosigns the latest ledger state update.
    * 
    * @param {Object} params - the method object
