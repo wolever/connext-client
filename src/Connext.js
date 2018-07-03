@@ -2523,7 +2523,7 @@ class Connext {
     return response.data
   }
 
-  async getVirtualChannelStates (ledgerChannelId) {
+  async getVirtualChannelStatesByLcId (ledgerChannelId) {
     // lcState == latest ingrid signed state
     const methodName = 'getLatestLedgerStateUpdate'
     const isHexStrict = { presence: true, isHexStrict: true }
