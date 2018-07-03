@@ -32,6 +32,12 @@ module.exports = function networking(baseUrl) {
       throw errorResponse(res.status, res.body, `Received non-200 response: ${res.status}`)
     }
 
+    if (res.status === 204) {
+      return {
+        data: null
+      }
+    }
+
     const data = await res.json();
 
     return {

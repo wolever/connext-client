@@ -549,7 +549,7 @@ class Connext {
     const methodName = 'closeChannels'
     const isArray = { presence: true, isArray: true }
     Connext.validatorsResponseToError(
-      validate.single(channels, isArray),
+      validate.single(channelIds, isArray),
       methodName,
       'channels'
     )
@@ -2167,7 +2167,7 @@ class Connext {
       'ledgerChannelId'
     )
     const response = await this.networking.get(
-      `ledgerchannel/${ledgerChannelId}/update/latest/sig[]=sigI`
+      `ledgerchannel/${ledgerChannelId}/update/latest?sig[]=sigI`
     )
     return response.data
   }
