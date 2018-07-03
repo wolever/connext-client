@@ -71,6 +71,7 @@
     "ethereumjs-util": "^5.2.0",
     "gitbook": "^3.2.3",
     "human-standard-token-abi": "^1.0.2",
+    "node-fetch": "^2.1.2",
     "sinon": "^6.0.0",
     "truffle-contract": "^3.0.4",
     "validate.js": "^0.12.0",
