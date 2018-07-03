@@ -3,24 +3,23 @@ const axios = require('axios')
 export const GET = 'GET'
 export const POST = 'POST'
 
-module.exports = function networking (
-  baseUrl,
-  useAxios = process.env.DEV ? !process.env.DEV : false
-) {
+module.exports = function networking (baseUrl) {
   return {
     get,
     post
   }
 
-  function get (url, useAxios) {
-    return request(url, GET, useAxios)
+  function get (url) {
+    return request(url, GET)
   }
 
-  function post (url, body, useAxios) {
-    return request(url, POST, body, useAxios)
+  function post (url, body) {
+    return request(url, POST, body)
   }
 
-  async function request (url, method, body, useAxios) {
+  async function request (url, method, body) {
+    useAxios = process.env.DEV ? process.env.DEV : false
+
     const opts = {
       method
     }
@@ -53,7 +52,6 @@ module.exports = function networking (
         `Received non-200 response: ${res.status}`
       )
     }
-
     const data = useAxios ? res.data : await res.json()
 
     if (res.status === 204) {
@@ -61,8 +59,6 @@ module.exports = function networking (
         data: null
       }
     }
-
-    const data = await res.json()
 
     return {
       data
