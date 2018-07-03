@@ -932,15 +932,49 @@ class Connext {
   }
 
   /**
-   * Verifies and cosigns the ledger state update with the specified nonce.
+   * Verifies and cosigns the latest ledger state update.
    * 
    * @param {Object} params - the method object
    * @param {String} params.lcId - ledger channel id
    * @param {Number} params.nonce - nonce of update you are cosigning
    * @param {String} params.sender - (optional) the person who cosigning the update, defaults to accounts[0]
    */
+  async cosignLatestLcUpdate({ lcId, sender = null }) {
+    const methodName = 'cosignLatestLcUpdate'
+    const isHexStrict = { presence: true, isHexStrict: true }
+    Connext.validatorsResponseToError(
+      validate.single(lcId, isHexStrict),
+      methodName,
+      'lcId'
+    )
+    if (sender) {
+      Connext.validatorsResponseToError(
+        validate.single(sender, isAddress),
+        methodName,
+        'sender'
+      )
+    } else {
+      const accounts = await this.web3.eth.getAccounts()
+      sender = accounts[0].toLowerCase()
+    }
+    const lc = await this.getLcById(lcId)
+    if (lc === null) {
+      throw new LCUpdateError(methodName, 'Channel not found')
+    }
+    if (lc.partyA !== sender.toLowerCase()) {
+      throw new LCUpdateError(methodName, 'Incorrect signer detected')
+    }
+    if (lc.state !== '1') {
+      throw new LCUpdateError(methodName, 'Channel is in invalid state')
+    }
+    // TO DO
+    let latestState = await this.getLatestLedgerStateUpdate(lcId, ['sigI'])
+    const result = await this.cosignLCUpdate({ lcId, nonce: latestState.nonce, sender })
+    return result
+  }
+
   async cosignLCUpdate({ lcId, nonce, sender = null }) {
-    const methodName = 'closeChannels'
+    const methodName = 'cosignLCUpdate'
     const isHexStrict = { presence: true, isHexStrict: true }
     const isPositiveInt = { presence: true, isPositiveInt: true }
     Connext.validatorsResponseToError(
@@ -963,13 +997,45 @@ class Connext {
       const accounts = await this.web3.eth.getAccounts()
       sender = accounts[0].toLowerCase()
     }
+    const lc = await this.getLcById(lcId)
+    if (lc === null) {
+      throw new LCUpdateError(methodName, 'Channel not found')
+    }
+    if (lc.partyA !== sender.toLowerCase()) {
+      throw new LCUpdateError(methodName, 'Incorrect signer detected')
+    }
+    if (lc.state !== '1') {
+      throw new LCUpdateError(methodName, 'Channel is in invalid state')
+    }
+    if (nonce > lc.nonce) {
+      throw new LCUpdateError(methodName, 'Invalid nonce detected')
+    }
 
-    let latestState = await this.getLatestLedgerStateUpdate()
+    // TO DO: factor out into above section
+    let latestState = await this.getLatestLedgerStateUpdate(lcId, ['sigI'])
     if (latestState.nonce !== nonce) {
-      throw new Error('Latest state nonce is not the nonce you wanted to close with.')
+      throw new LCUpdateError(methodName, 'Channel has more recent states to cosign. Signing with nonces that are not the most recent will be supported in the future, but is not currently. Sorry!')
+    }
+
+    // verify sigI
+    const signer = Connext.recoverSignerFromLCStateUpdate({
+      sig: latestState.sigI,
+      isClose: latestState.isClose,
+      channelId: lcId,
+      nonce,
+      openVcs: latestState.openVcs,
+      vcRootHash: latestState.vcRootHash,
+      partyA: sender,
+      partyI: this.ingridAddress,
+      balanceA: Web3.utils.toBN(latestState.balanceA),
+      balanceI: Web3.utils.toBN(latestState.balanceI)
+    })
+    if (signer.toLowerCase() !== this.ingridAddress.toLowerCase()) {
+      throw new LCUpdateError(methodName, 'Invalid signature detected')
     }
 
     latestState.signer = latestState.partyA
+    latestState.channelId = vcId
     const sigA = await this.createLCStateUpdate(latestState)
     const response = await this.axiosInstance.post(
       `${this.ingridUrl}/ledgerchannel/${lcId}/update/${nonce}/cosign`,
@@ -977,6 +1043,7 @@ class Connext {
         sig: sigA
       }
     )
+    return response.data
   }
 
 
