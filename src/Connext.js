@@ -2523,6 +2523,22 @@ class Connext {
     return response.data
   }
 
+  async getVirtualChannelStates (ledgerChannelId) {
+    // lcState == latest ingrid signed state
+    const methodName = 'getLatestLedgerStateUpdate'
+    const isHexStrict = { presence: true, isHexStrict: true }
+    Connext.validatorsResponseToError(
+      validate.single(ledgerChannelId, isHexStrict),
+      methodName,
+      'ledgerChannelId'
+    )
+
+    const response = await this.networking.get(
+      `ledgerchannel/${ledgerChannelId}/vcs`
+    )
+    return response.data
+  }
+
   // /**
   //  * Returns the ledger channel id between the supplied address and ingrid.
   //  *
