@@ -24,16 +24,18 @@ module.exports = function networking (baseUrl) {
       method
     }
 
-    if (method === POST) {
-      opts.body = JSON.stringify(body)
-    }
-
     let res
     if (useAxios === false) {
-      opts['mode'] = 'cors'
-      opts['credentials'] = 'include'
+      if (method === POST) {
+        opts.body = JSON.stringify(body)
+      }
+      opts.mode = 'cors'
+      opts.credentials = 'include'
       res = await fetch(`${baseUrl}/${url}`, opts)
     } else {
+      if (method === POST) {
+        opts.data = body
+      }
       opts.headers = {
         Cookie: `hub.sid=${process.env.HUB_AUTH};`,
         Authorization: `Bearer ${process.env.HUB_AUTH}`
