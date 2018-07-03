@@ -26,8 +26,10 @@ let balanceA
 let balanceI
 let balanceB
 let initialDeposit = Web3.utils.toBN(Web3.utils.toWei('5', 'ether'))
-let subchanAI = '0x1c207f0960266a06fb5ce2e9d7b990b6489ca37c0f61c4afc34699fe42e96395'
-let subchanBI = '0x14b5dadcd4ccf2dbaec2600d3fc0eb440be926ecf6d27c6983ec1c097bf93fba'
+let subchanAI =
+  '0x1c207f0960266a06fb5ce2e9d7b990b6489ca37c0f61c4afc34699fe42e96395'
+let subchanBI =
+  '0x14b5dadcd4ccf2dbaec2600d3fc0eb440be926ecf6d27c6983ec1c097bf93fba'
 let vcId = '0x2000000000000000000000000000000000000000000000000000000000000000'
 
 // state objects
@@ -45,7 +47,6 @@ let response
 const emptyRootHash = Connext.generateVcRootHash({ vc0s: [] })
 
 describe('Connext', async () => {
-
   describe('client init', () => {
     it('should create a connext client with a fake version of web3', async () => {
       client = new Connext({ web3 }, createFakeWeb3())
@@ -53,181 +54,187 @@ describe('Connext', async () => {
     })
 
     describe('real web3 and channel manager', () => {
-      it.only('should init web3 and generate static values for client testing', async () => {
-        // set party variables
-        const port = process.env.ETH_PORT ? process.env.ETH_PORT : '9545'
-        web3 = new Web3(`ws://localhost:${port}`)
-        accounts = await web3.eth.getAccounts()
-        ingridAddress = accounts[0]
-        partyA = accounts[1]
-        partyB = accounts[2]
+      it.only(
+        'should init web3 and generate static values for client testing',
+        async () => {
+          // set party variables
+          const port = process.env.ETH_PORT ? process.env.ETH_PORT : '9545'
+          web3 = new Web3(`ws://localhost:${port}`)
+          accounts = await web3.eth.getAccounts()
+          ingridAddress = accounts[0]
+          partyA = accounts[1]
+          partyB = accounts[2]
 
-        // generate AI_LC0
-        AI_LC0 = {
-          isClose: false,
-          channelId: subchanAI,
-          state: 1,
-          nonce: 0,
-          openVcs: 0,
-          vcRootHash: emptyRootHash,
-          partyA,
-          partyI: ingridAddress,
-          balanceA: initialDeposit,
-          balanceI: Web3.utils.toBN('0')
+          // generate AI_LC0
+          AI_LC0 = {
+            isClose: false,
+            channelId: subchanAI,
+            state: 1,
+            nonce: 0,
+            openVcs: 0,
+            vcRootHash: emptyRootHash,
+            partyA,
+            partyI: ingridAddress,
+            balanceA: initialDeposit,
+            balanceI: Web3.utils.toBN('0')
+          }
+          // generate sigs
+          hash = Connext.createLCStateUpdateFingerprint(AI_LC0)
+          sigA_AI_LC0 = await web3.eth.sign(hash, partyA)
+          sigI_AI_LC0 = await web3.eth.sign(hash, ingridAddress)
+
+          // generate BI_LC0
+          BI_LC0 = {
+            isClose: false,
+            channelId: subchanBI,
+            state: 1,
+            nonce: 0,
+            openVcs: 0,
+            vcRootHash: emptyRootHash,
+            partyA: partyB,
+            partyI: ingridAddress,
+            balanceA: initialDeposit,
+            balanceI: Web3.utils.toBN('0')
+          }
+          // generate sigs of BI_LC0
+          hash = Connext.createLCStateUpdateFingerprint(BI_LC0)
+          sigB_BI_LC0 = web3.eth.sign(hash, partyB)
+          sigI_BI_LC0 = web3.eth.sign(hash, ingridAddress)
+
+          // generate vc0
+          AB_VC0 = {
+            state: 1,
+            balanceA: initialDeposit,
+            balanceB: Web3.utils.toBN('0'),
+            channelId: vcId,
+            partyA: partyA,
+            partyB: partyB,
+            partyI: ingridAddress,
+            subchanAtoI: subchanAI,
+            subchanBtoI: subchanBI,
+            nonce: 0
+          }
+          // generate sigs of AB_VC0
+          hash = Connext.createVCStateUpdateFingerprint(AB_VC0)
+          sigA_AB_VC0 = await web3.eth.sign(hash, partyA)
+          sigB_AB_VC0 = await web3.eth.sign(hash, partyB)
+
+          // generate lc1
+          let elems = []
+          elems.push(AB_VC0)
+          AI_LC1 = {
+            isClose: false,
+            channelId: '0x1c207f0960266a06fb5ce2e9d7b990b6489ca37c0f61c4afc34699fe42e96395',
+            state: 1,
+            nonce: 1,
+            openVcs: 1,
+            vcRootHash: Connext.generateVcRootHash({ vc0s: elems }),
+            partyA,
+            partyI: ingridAddress,
+            balanceA: Web3.utils.toBN('0'),
+            balanceI: initialDeposit
+          }
+          // generate sigs
+          hash = Connext.createLCStateUpdateFingerprint(AI_LC1)
+          sigA_AI_LC1 = web3.eth.sign(hash, partyA)
+          sigI_AI_LC1 = web3.eth.sign(hash, ingridAddress)
+
+          BI_LC1 = {
+            isClose: false,
+            channelId: subchanBI,
+            state: 1,
+            nonce: 1,
+            openVcs: 1,
+            vcRootHash: Connext.generateVcRootHash({ vc0s: elems }),
+            partyA: partyB,
+            partyI: ingridAddress,
+            balanceA: Web3.utils.toBN('0'),
+            balanceI: Web3.utils.toBN('0')
+          }
+          // generate sigs of BI_LC1
+          hash = Connext.createLCStateUpdateFingerprint(BI_LC1)
+          sigB_BI_LC1 = web3.eth.sign(hash, partyB)
+          sigI_BI_LC1 = web3.eth.sign(hash, ingridAddress)
+
+          // generate final vc state
+          AB_VCN = {
+            state: 1,
+            balanceA: Web3.utils.toBN('0'),
+            balanceB: initialDeposit,
+            channelId: vcId,
+            partyA: partyA,
+            partyB: partyB,
+            partyI: ingridAddress,
+            subchanAtoI: subchanAI,
+            subchanBtoI: subchanBI,
+            nonce: 1
+          }
+          // generate sigs of AB_VCN
+          hash = Connext.createVCStateUpdateFingerprint(AB_VCN)
+          sigA_AB_VCN = web3.eth.sign(hash, partyA)
+          sigB_AB_VCN = web3.eth.sign(hash, partyB)
+
+          // generate lc2
+          AI_LC2 = {
+            isClose: false,
+            channelId: subchanAI,
+            state: 1,
+            nonce: 2,
+            openVcs: 0,
+            vcRootHash: emptyRootHash,
+            partyA,
+            partyI: ingridAddress,
+            balanceA: Web3.utils.toBN('0'),
+            balanceI: Web3.utils.toBN('0')
+          }
+          // generate sigs
+          hash = Connext.createLCStateUpdateFingerprint(AI_LC2)
+          sigA_AI_LC2 = web3.eth.sign(hash, partyA)
+          sigI_AI_LC2 = web3.eth.sign(hash, ingridAddress)
+
+          BI_LC2 = {
+            isClose: false,
+            channelId: subchanBI,
+            state: 1,
+            nonce: 2,
+            openVcs: 0,
+            vcRootHash: emptyRootHash,
+            partyA: partyB,
+            partyI: ingridAddress,
+            balanceA: initialDeposit,
+            balanceI: Web3.utils.toBN('0')
+          }
+          // generate sigs of BI_LC1
+          hash = Connext.createLCStateUpdateFingerprint(BI_LC2)
+          sigB_BI_LC2 = web3.eth.sign(hash, partyB)
+          sigI_BI_LC2 = web3.eth.sign(hash, ingridAddress)
+
+          assert.ok(partyA == AB_VC0.partyA)
         }
-        // generate sigs
-        hash = Connext.createLCStateUpdateFingerprint(AI_LC0)
-        sigA_AI_LC0 = await web3.eth.sign(hash, partyA)
-        sigI_AI_LC0 = await web3.eth.sign(hash, ingridAddress)
+      )
 
-        // generate BI_LC0
-        BI_LC0 = {
-          isClose: false,
-          channelId: subchanBI,
-          state: 1,
-          nonce: 0,
-          openVcs: 0,
-          vcRootHash: emptyRootHash,
-          partyA: partyB,
-          partyI: ingridAddress,
-          balanceA: initialDeposit,
-          balanceI: Web3.utils.toBN('0')
+      it.only(
+        'should create a connext client with real web3 and channel manager',
+        async () => {
+          client = new Connext({
+            web3,
+            ingridAddress,
+            watcherUrl,
+            ingridUrl,
+            contractAddress,
+            hubAuth
+          })
+          assert.ok(
+            client.ingridAddress === ingridAddress.toLowerCase() &&
+              client.ingridUrl === ingridUrl &&
+              client.watcherUrl === watcherUrl
+          )
         }
-        // generate sigs of BI_LC0
-        hash = Connext.createLCStateUpdateFingerprint(BI_LC0)
-        sigB_BI_LC0 = web3.eth.sign(hash, partyB)
-        sigI_BI_LC0 = web3.eth.sign(hash, ingridAddress)
-
-        // generate vc0
-        AB_VC0 = {
-          state: 1,
-          balanceA: initialDeposit,
-          balanceB: Web3.utils.toBN('0'),
-          channelId: vcId,
-          partyA: partyA,
-          partyB: partyB,
-          partyI: ingridAddress,
-          subchanAtoI: subchanAI,
-          subchanBtoI: subchanBI,
-          nonce: 0
-        }
-        // generate sigs of AB_VC0
-        hash = Connext.createVCStateUpdateFingerprint(AB_VC0)
-        sigA_AB_VC0 = await web3.eth.sign(hash, partyA)
-        sigB_AB_VC0 = await web3.eth.sign(hash, partyB)
-
-        // generate lc1
-        let elems = []
-        elems.push(AB_VC0)
-        AI_LC1 = {
-          isClose: false,
-          channelId: '0x1c207f0960266a06fb5ce2e9d7b990b6489ca37c0f61c4afc34699fe42e96395',
-          state: 1,
-          nonce: 1,
-          openVcs: 1,
-          vcRootHash: Connext.generateVcRootHash({ vc0s: elems }),
-          partyA,
-          partyI: ingridAddress,
-          balanceA: Web3.utils.toBN('0'),
-          balanceI: initialDeposit
-        }
-        // generate sigs
-        hash = Connext.createLCStateUpdateFingerprint(AI_LC1)
-        sigA_AI_LC1 = web3.eth.sign(hash, partyA)
-        sigI_AI_LC1 = web3.eth.sign(hash, ingridAddress)
-
-        BI_LC1 = {
-          isClose: false,
-          channelId: subchanBI,
-          state: 1,
-          nonce: 1,
-          openVcs: 1,
-          vcRootHash: Connext.generateVcRootHash({ vc0s: elems }),
-          partyA: partyB,
-          partyI: ingridAddress,
-          balanceA: Web3.utils.toBN('0'),
-          balanceI: Web3.utils.toBN('0')
-        }
-        // generate sigs of BI_LC1
-        hash = Connext.createLCStateUpdateFingerprint(BI_LC1)
-        sigB_BI_LC1 = web3.eth.sign(hash, partyB)
-        sigI_BI_LC1 = web3.eth.sign(hash, ingridAddress)
-
-        // generate final vc state
-        AB_VCN = {
-          state: 1,
-          balanceA: Web3.utils.toBN('0'),
-          balanceB: initialDeposit,
-          channelId: vcId,
-          partyA: partyA,
-          partyB: partyB,
-          partyI: ingridAddress,
-          subchanAtoI: subchanAI,
-          subchanBtoI: subchanBI,
-          nonce: 1
-        }
-        // generate sigs of AB_VCN
-        hash = Connext.createVCStateUpdateFingerprint(AB_VCN)
-        sigA_AB_VCN = web3.eth.sign(hash, partyA)
-        sigB_AB_VCN = web3.eth.sign(hash, partyB)
-
-        // generate lc2
-        AI_LC2 = {
-          isClose: false,
-          channelId: subchanAI,
-          state: 1,
-          nonce: 2,
-          openVcs: 0,
-          vcRootHash: emptyRootHash,
-          partyA,
-          partyI: ingridAddress,
-          balanceA: Web3.utils.toBN('0'),
-          balanceI: Web3.utils.toBN('0')
-        }
-        // generate sigs
-        hash = Connext.createLCStateUpdateFingerprint(AI_LC2)
-        sigA_AI_LC2 = web3.eth.sign(hash, partyA)
-        sigI_AI_LC2 = web3.eth.sign(hash, ingridAddress)
-
-        BI_LC2 = {
-          isClose: false,
-          channelId: subchanBI,
-          state: 1,
-          nonce: 2,
-          openVcs: 0,
-          vcRootHash: emptyRootHash,
-          partyA: partyB,
-          partyI: ingridAddress,
-          balanceA: initialDeposit,
-          balanceI: Web3.utils.toBN('0')
-        }
-        // generate sigs of BI_LC1
-        hash = Connext.createLCStateUpdateFingerprint(BI_LC2)
-        sigB_BI_LC2 = web3.eth.sign(hash, partyB)
-        sigI_BI_LC2 = web3.eth.sign(hash, ingridAddress)
-
-        assert.ok(partyA == AB_VC0.partyA)
-      })
-
-      it.only('should create a connext client with real web3 and channel manager', async () => {
-        client = new Connext({
-          web3,
-          ingridAddress,
-          watcherUrl,
-          ingridUrl,
-          contractAddress,
-          hubAuth
-        })
-        assert.ok(
-          client.ingridAddress === ingridAddress.toLowerCase() &&
-            client.ingridUrl === ingridUrl &&
-            client.watcherUrl === watcherUrl
-        )
-      })
+      )
     })
   })
 
-  describe('happy case functionality' , () => {
+  describe('happy case functionality', () => {
     describe('creating subchans', () => {
       // register function hardcodes from accounts[0]
       // to accurately test, must open channels directly with contract
@@ -249,11 +256,11 @@ describe('Connext', async () => {
             assert.ok(Web3.utils.isHexStrict(subchanBI))
           }
         ).timeout(5000)
-    
+
         it('should request hub joins subchanAI', async () => {
-          // response = await Promise.all([client.requestJoinLc(subchanAI), timeout(20000)])
+          // response = await Promise.all([client.requestJoinLc(subchanAI), timeout(22000)])
           subchanAI =
-            '0xc88d1da6589743648647f6b110beb558bae24ab18d00d8033f240fea6f8fc54c'
+            '0x8552b85f535a0444c23d01c6d4f4512a34980bafc82f6459617bdfe42ef188e2'
           response = await client.requestJoinLc(subchanAI)
           console.log(response)
           //   assert.equal(response.txHash, ':)')
@@ -261,17 +268,19 @@ describe('Connext', async () => {
         }).timeout(30000)
 
         it('should request hub joins subchanBI', async () => {
-          response = await Promise.all([client.requestJoinLc(subchanBI), timeout(17000)])
-          // subchanBI =
-          //   '0x0b92647ba6be3e07b2c07218262ec2a55a093636cac5fdfe98da64da67db370b'
-          // response = await client.requestJoinLc(subchanBI)
+          // response = await Promise.all([
+          //   client.requestJoinLc(subchanBI),
+          //   timeout(17000)
+          // ])
+          subchanBI =
+            '0x3bd0fa4e546a746b4c8aed8ce8462a27cdcfdb703b5c372d9a963001de0894e1'
+          response = await client.requestJoinLc(subchanBI)
           console.log(response)
           //   assert.equal(response.txHash, ':)')
           assert.ok(Web3.utils.isHex(response[0]))
         }).timeout(22000)
-
       })
-    
+
       describe('calling functions on contract', () => {
         it('should generate a unique id for subchanAI', () => {
           // accounts[0] is hardcoded into the client
@@ -280,7 +289,7 @@ describe('Connext', async () => {
           console.log('subchanAI:', subchanAI)
           assert.ok(Web3.utils.isHexStrict(subchanAI))
         })
-    
+
         it('should create subchanAI on channel manager instance', async () => {
           // hardcode contract call, accounts[0] is encoded in client
           response = await client.channelManagerInstance.methods
@@ -288,7 +297,7 @@ describe('Connext', async () => {
             .send({ from: partyA, value: initialDeposit, gas: 3000000 })
           assert.ok(Web3.utils.isHex(response.transactionHash))
         }).timeout(7000)
-    
+
         it('should generate a unique id for subchanBI', () => {
           // accounts[0] is hardcoded into the client
           // create subchanBI with contract functions directly
@@ -297,7 +306,7 @@ describe('Connext', async () => {
           assert.ok(Web3.utils.isHexStrict(subchanBI))
           // assert.equal(subchanBI, ';)')
         })
-    
+
         it('should create subchanBI on channel manager instance', async () => {
           // hardcode contract call, accounts[0] is encoded in client
           response = await client.channelManagerInstance.methods
@@ -308,7 +317,10 @@ describe('Connext', async () => {
         }).timeout(7000)
 
         it('should request hub joins subchanBI', async () => {
-          response = await Promise.all([client.requestJoinLc(subchanBI), timeout(15000)])
+          response = await Promise.all([
+            client.requestJoinLc(subchanBI),
+            timeout(15000)
+          ])
           // subchanBI =
           //   '0x44e87f5ecdd91e71b6d469f721757a3f5d9a46b956481f4ac7891ec610083f28'
           response = await client.requestJoinLc(subchanBI)
@@ -324,11 +336,19 @@ describe('Connext', async () => {
             // subchanAI = '0x3645c3e832e564b97d9bcb72fdf72aecc9160087d09dc709046499123a7fc9eb'
             let responseAI = await client.channelManagerInstance.methods
               .joinChannel(subchanAI)
-              .send({ from: ingridAddress, value: initialDeposit, gas: 4700000 })
-    
+              .send({
+                from: ingridAddress,
+                value: initialDeposit,
+                gas: 4700000
+              })
+
             let responseBI = await client.channelManagerInstance.methods
               .joinChannel(subchanBI)
-              .send({ from: ingridAddress, value: initialDeposit, gas: 4700000 })
+              .send({
+                from: ingridAddress,
+                value: initialDeposit,
+                gas: 4700000
+              })
             // assert.equal(responseAI.transactionHash, ';)')
             assert.ok(
               Web3.utils.isHex(responseAI.transactionHash) &&
@@ -338,47 +358,60 @@ describe('Connext', async () => {
         ).timeout(10000)
       })
     })
-    
-    describe('creating a virtual channel between partyA and partyB', () => {
 
+    describe('creating a virtual channel between partyA and partyB', () => {
+      // TO DO: FIX, works in postman ??
       it('should request that ingrid deposits 5 ETH in subchan', async () => {
-        let subchan = '0x0b92647ba6be3e07b2c07218262ec2a55a093636cac5fdfe98da64da67db370b'
+        let subchan =
+          '0x3bd0fa4e546a746b4c8aed8ce8462a27cdcfdb703b5c372d9a963001de0894e1'
         let deposit = Web3.utils.toBN(Web3.utils.toWei('4', 'ether'))
-        response = await client.requestIngridDeposit({ lcId: subchan, deposit: deposit })
+        response = await client.requestIngridDeposit({
+          lcId: subchan,
+          deposit: deposit
+        })
         assert.ok(Web3.utils.isHex(response))
-      }).timeout(5000) 
-      
-      it('partyA should create a virtual channel with 5 eth in it', async () => {
-        vcId = await client.openChannel({ to: partyB, sender: partyA })
-        assert.ok(Web3.utils.isHexStrict(vcId))
-      })
-    
+      }).timeout(5000)
+
+      it(
+        'partyA should create a virtual channel with 5 eth in it',
+        async () => {
+          vcId = await client.openChannel({ to: partyB, sender: partyA })
+          assert.ok(Web3.utils.isHexStrict(vcId))
+        }
+      )
+
       it('partyB should join the virtual channel with 0 eth', async () => {
-        // vcId = '0x4578eb1925adfb01c8ef392e9cec364949d413b8e200402aaba2dbf61874d1e0'
+        // vcId =
+        //   '0xfb6d4d7b6050d2e71102aa9015d65cebd8d2b69d23e99898c92c38db1d803687'
         response = await client.joinChannel(vcId, partyB)
         assert.equal(response, vcId)
       })
     })
 
     describe('updating state in and closing a virtual channel between partyA and partyB', () => {
-      it('partyA sends a state update in the virtual channel of 1 eth', async () => {
-        // vcId = '0x031f1d4652ccfed68e3c2f9ee530f4aef7f79ae69deae4e1259168fcac8564b6'
-        balanceA = Web3.utils.toBN(Web3.utils.toWei('4', 'ether'))
-        balanceB = Web3.utils.toBN(Web3.utils.toWei('1', 'ether'))
-        response = await client.updateBalance({
-          channelId: vcId,
-          balanceA,
-          balanceB
-        })
-        console.log(response)
-        assert.ok(
-          Web3.utils.toBN(response.balanceA).eq(balanceA) &&
-            Web3.utils.toBN(response.balanceB).eq(balanceB)
-        )
-      })
+      it(
+        'partyA sends a state update in the virtual channel of 1 eth',
+        async () => {
+          // vcId =
+          //   '0xfb6d4d7b6050d2e71102aa9015d65cebd8d2b69d23e99898c92c38db1d803687'
+          balanceA = Web3.utils.toBN(Web3.utils.toWei('4', 'ether'))
+          balanceB = Web3.utils.toBN(Web3.utils.toWei('1', 'ether'))
+          response = await client.updateBalance({
+            channelId: vcId,
+            balanceA,
+            balanceB
+          })
+          console.log(response)
+          assert.ok(
+            Web3.utils.toBN(response.balanceA).eq(balanceA) &&
+              Web3.utils.toBN(response.balanceB).eq(balanceB)
+          )
+        }
+      )
 
       it('should fast close the virtual channel', async () => {
-        vcId = '0x2bed8fb4db761228f6b6dde5724d258acbd82d011a78c9c454cfeec8def6722c'
+        // vcId =
+        //   '0xfb6d4d7b6050d2e71102aa9015d65cebd8d2b69d23e99898c92c38db1d803687'
         response = await client.closeChannel(vcId)
         console.log(response)
         assert.ok(Web3.utils.isHex(response))
@@ -386,10 +419,14 @@ describe('Connext', async () => {
     })
 
     describe('withdraw from ledger channel', () => {
-      it('should withdraw all funds from the ledger channel for partyA', async () => {
-        response = await client.withdraw(partyB)
-        assert.ok(Web3.utils.isHex(response.transactionHash))
-      }).timeout(5000)
+      it.only(
+        'should withdraw all funds from the ledger channel for partyA',
+        async () => {
+          response = await client.withdraw(partyB)
+          console.log(response)
+          assert.ok(Web3.utils.isHex(response.transactionHash))
+        }
+      ).timeout(5000)
     })
   })
 
@@ -443,7 +480,6 @@ describe('Connext', async () => {
           // const hash1 = Connext.createVCStateUpdateFingerprint(state)
           // const sigA1 = await client.web3.eth.sign(hash1, accounts[0])
           // const sigB1 = await client.web3.eth.sign(hash1, accounts[1])
-
           // const response = await client.byzantineCloseVc(vcId)
           // assert.ok(Web3.utils.isHexStrict(response.transactionHash))
         })
@@ -456,9 +492,8 @@ describe('Connext', async () => {
       web3 = new Web3(`ws://localhost:${port}`)
       let client = new Connext({ web3, ingridAddress, ingridUrl }, Web3)
       describe('Valid parameters and correct web3', () => {
-      it('should call closeChannel on given channelId, decomposing into state updates', async () => {
+        it('should call closeChannel on given channelId, decomposing into state updates', async () => {
           // TO DO: update for dispute case with networking layer
-
           // // parameters
           // const accounts = await client.web3.eth.getAccounts()
           // partyA = accounts[0]
@@ -467,79 +502,95 @@ describe('Connext', async () => {
           // const vcId = '0xc025e912181796cf8c15c86558ad580b6ab4a6779c0965d70ba25dc6509a0e13'
           // const response = await client.closeChannel(vcId)
           // assert.equal(response, ':)')
+        })
       })
-    })
     })
 
     describe('closeChannels', () => {
-        // init web3
-        const port = process.env.ETH_PORT ? process.env.ETH_PORT : '9545'
-        web3 = new Web3(`ws://localhost:${port}`)
-        let client = new Connext({ web3, ingridAddress, ingridUrl }, Web3)
-        describe('Valid parameters and correct web3', () => {
-          it('should call closeChannels, which calls closeChannel on an array of channelIds', () => {
+      // init web3
+      const port = process.env.ETH_PORT ? process.env.ETH_PORT : '9545'
+      web3 = new Web3(`ws://localhost:${port}`)
+      let client = new Connext({ web3, ingridAddress, ingridUrl }, Web3)
+      describe('Valid parameters and correct web3', () => {
+        it('should call closeChannels, which calls closeChannel on an array of channelIds', () => {
           // TO DO: update for dispute case with networking layer
-          })
         })
+      })
     })
   })
 
   describe('client contract handlers', () => {
     describe('createLedgerChannelContractHandler', () => {
       describe('Web3 and contract properly initialized, valid parameters', () => {
-        it('should call createChannel on the channel manager instance (subchanAI)', async () => {
-          balanceA = Web3.utils.toBN(Web3.utils.toWei('5', 'ether'))
-          subchanAI = '0x4b7c97c3ae6abca2ff2ba4e31ee594ac5e1b1f12d8fd2097211569f80dbb7d08'
-          response = await client.createLedgerChannelContractHandler({
-            ingridAddress,
-            lcId: subchanAI,
-            initialDeposit: balanceA,
-            challenge: 5,
-            sender: partyA
-          })
-          assert.ok(Web3.utils.isHexStrict(response.transactionHash))
-        }).timeout(5000)
+        it(
+          'should call createChannel on the channel manager instance (subchanAI)',
+          async () => {
+            balanceA = Web3.utils.toBN(Web3.utils.toWei('5', 'ether'))
+            subchanAI =
+              '0x4b7c97c3ae6abca2ff2ba4e31ee594ac5e1b1f12d8fd2097211569f80dbb7d08'
+            response = await client.createLedgerChannelContractHandler({
+              ingridAddress,
+              lcId: subchanAI,
+              initialDeposit: balanceA,
+              challenge: 5,
+              sender: partyA
+            })
+            assert.ok(Web3.utils.isHexStrict(response.transactionHash))
+          }
+        ).timeout(5000)
 
-        it('should call createChannel on the channel manager instance (subchanBI)', async () => {
-          balanceB = Web3.utils.toBN(Web3.utils.toWei('5', 'ether'))
-          subchanBI = Connext.getNewChannelId()
-          console.log('subchanBI:', subchanBI)
-          response = await client.createLedgerChannelContractHandler({
-            ingridAddress,
-            lcId: subchanBI,
-            initialDeposit: balanceB,
-            challenge: 5,
-            sender: partyB
-          })
-          assert.ok(Web3.utils.isHexStrict(response.transactionHash))
-        }).timeout(5000)
+        it(
+          'should call createChannel on the channel manager instance (subchanBI)',
+          async () => {
+            balanceB = Web3.utils.toBN(Web3.utils.toWei('5', 'ether'))
+            subchanBI = Connext.getNewChannelId()
+            console.log('subchanBI:', subchanBI)
+            response = await client.createLedgerChannelContractHandler({
+              ingridAddress,
+              lcId: subchanBI,
+              initialDeposit: balanceB,
+              challenge: 5,
+              sender: partyB
+            })
+            assert.ok(Web3.utils.isHexStrict(response.transactionHash))
+          }
+        ).timeout(5000)
       })
     })
 
     describe('LCOpenTimeoutContractHandler', () => {
       // init web3
       describe('Web3 and contract properly initialized, valid parameters', () => {
-        it('should call createChannel on the channel manager instance to create channel to delete', async () => {
-          const accounts = await client.web3.eth.getAccounts()
-          ingridAddress = accounts[2]
-          const balanceA = Web3.utils.toBN(Web3.utils.toWei('5', 'ether'))
-          const lcId = '0xa6585504ea64ee76da1238482f08f6918e7a5e1c77418f6072af19530940cc04' // add lcid to obj
-          const response = await client.createLedgerChannelContractHandler({
-            ingridAddress,
-            lcId: lcId,
-            initialDeposit: balanceA
-          })
-          assert.ok(Web3.utils.isHexStrict(response.transactionHash))
-        }).timeout(5000)
+        it(
+          'should call createChannel on the channel manager instance to create channel to delete',
+          async () => {
+            const accounts = await client.web3.eth.getAccounts()
+            ingridAddress = accounts[2]
+            const balanceA = Web3.utils.toBN(Web3.utils.toWei('5', 'ether'))
+            const lcId =
+              '0xa6585504ea64ee76da1238482f08f6918e7a5e1c77418f6072af19530940cc04' // add lcid to obj
+            const response = await client.createLedgerChannelContractHandler({
+              ingridAddress,
+              lcId: lcId,
+              initialDeposit: balanceA
+            })
+            assert.ok(Web3.utils.isHexStrict(response.transactionHash))
+          }
+        ).timeout(5000)
 
-        it('should call LCOpenTimeout on the channel manager instance to delete created channel', async () => {
-          const lcId = '0xa6585504ea64ee76da1238482f08f6918e7a5e1c77418f6072af19530940cc04'
-          const results = await client.LCOpenTimeoutContractHandler(lcId)
-          assert.ok(Web3.utils.isHexStrict(results.transactionHash))
-        }).timeout(5000)
+        it(
+          'should call LCOpenTimeout on the channel manager instance to delete created channel',
+          async () => {
+            const lcId =
+              '0xa6585504ea64ee76da1238482f08f6918e7a5e1c77418f6072af19530940cc04'
+            const results = await client.LCOpenTimeoutContractHandler(lcId)
+            assert.ok(Web3.utils.isHexStrict(results.transactionHash))
+          }
+        ).timeout(5000)
 
         it('should throw an error if it is not in correct time', async () => {
-          let lcId = '0x7741dd7b46f5892d0cf61e47854f539003f068b883f273cd680d061da87f7c7f'
+          let lcId =
+            '0x7741dd7b46f5892d0cf61e47854f539003f068b883f273cd680d061da87f7c7f'
           try {
             response = await client.LCOpenTimeoutContractHandler(lcId)
           } catch (e) {
@@ -548,20 +599,31 @@ describe('Connext', async () => {
         })
 
         it('should throw an error channel is in incorrect state', async () => {
-          let lcId = '0x0b92647ba6be3e07b2c07218262ec2a55a093636cac5fdfe98da64da67db370b'
+          let lcId =
+            '0x0b92647ba6be3e07b2c07218262ec2a55a093636cac5fdfe98da64da67db370b'
           try {
             response = await client.LCOpenTimeoutContractHandler(lcId)
           } catch (e) {
-            assert.equal(e.message, '[300: LCOpenTimeoutContractHandler] Channel is in incorrect state')
+            assert.equal(
+              e.message,
+              '[300: LCOpenTimeoutContractHandler] Channel is in incorrect state'
+            )
           }
         })
 
         it('should throw an error if sender is not partyA', async () => {
-          let lcId = '0x7741dd7b46f5892d0cf61e47854f539003f068b883f273cd680d061da87f7c7f'
+          let lcId =
+            '0x7741dd7b46f5892d0cf61e47854f539003f068b883f273cd680d061da87f7c7f'
           try {
-            response = await client.LCOpenTimeoutContractHandler(lcId, accounts[5])
+            response = await client.LCOpenTimeoutContractHandler(
+              lcId,
+              accounts[5]
+            )
           } catch (e) {
-            assert.equal(e.message, '[300: LCOpenTimeoutContractHandler] Caller must be partyA in ledger channel')
+            assert.equal(
+              e.message,
+              '[300: LCOpenTimeoutContractHandler] Caller must be partyA in ledger channel'
+            )
           }
         })
       })
@@ -569,43 +631,54 @@ describe('Connext', async () => {
 
     describe('joinLedgerChannelContractHandler', () => {
       describe('Web3 and contract properly initialized, valid parameters', async () => {
-        it('should call joinChannel on the channel manager instance (subchanAI)', async () => {
-          balanceI = Web3.utils.toBN(Web3.utils.toWei('5', 'ether'))
-          const params = {
-            lcId: subchanAI, // subchan AI ID,
-            deposit: balanceI,
-            sender: ingridAddress
+        it(
+          'should call joinChannel on the channel manager instance (subchanAI)',
+          async () => {
+            balanceI = Web3.utils.toBN(Web3.utils.toWei('5', 'ether'))
+            const params = {
+              lcId: subchanAI, // subchan AI ID,
+              deposit: balanceI,
+              sender: ingridAddress
+            }
+            const response = await client.joinLedgerChannelContractHandler(
+              params
+            )
+            assert.ok(
+              response.transactionHash !== null &&
+                response.transactionHash !== undefined
+            )
           }
-          const response = await client.joinLedgerChannelContractHandler(params)
-          assert.ok(
-            response.transactionHash !== null &&
-              response.transactionHash !== undefined
-          )
-        }).timeout(5000)
-        it('should call joinChannel on the channel manager instance (subchanBI)', async () => {
-          const params = {
-            lcId: subchanBI, // subchan AI ID,
-            deposit: balanceI,
-            sender: ingridAddress
+        ).timeout(5000)
+        it(
+          'should call joinChannel on the channel manager instance (subchanBI)',
+          async () => {
+            const params = {
+              lcId: subchanBI, // subchan AI ID,
+              deposit: balanceI,
+              sender: ingridAddress
+            }
+            const response = await client.joinLedgerChannelContractHandler(
+              params
+            )
+            assert.ok(
+              response.transactionHash !== null &&
+                response.transactionHash !== undefined
+            )
           }
-          const response = await client.joinLedgerChannelContractHandler(params)
-          assert.ok(
-            response.transactionHash !== null &&
-              response.transactionHash !== undefined
-          )
-        }).timeout(5000)
+        ).timeout(5000)
       })
     })
 
     describe('depositContractHandler', () => {
       describe('Web3 and contract properly initialized, valid parameters', async () => {
         it('should call deposit on the channel manager instance', async () => {
-          subchanBI = '0xa69d5a26f6af375255adee27279434ec275111a504088858c438192c69fd958b'
+          subchanBI =
+            '0xa69d5a26f6af375255adee27279434ec275111a504088858c438192c69fd958b'
           response = await client.depositContractHandler({
             lcId: subchanBI,
             depositInWei: Web3.utils.toBN(Web3.utils.toWei('5', 'ether')),
-            recipient: ingridAddress, 
-            sender: ingridAddress 
+            recipient: ingridAddress,
+            sender: ingridAddress
           })
           assert.ok(
             response.transactionHash !== null &&
@@ -618,9 +691,9 @@ describe('Connext', async () => {
     describe('updateLcStateContractHandler', () => {
       let sigAtoI
       describe('Web3 and contract properly initialized, valid parameters', async () => {
-
         it('should call updateLcState on the channel manager instance with no open VCs', async () => {
-          subchanAI = '0x4b7c97c3ae6abca2ff2ba4e31ee594ac5e1b1f12d8fd2097211569f80dbb7d08'
+          subchanAI =
+            '0x4b7c97c3ae6abca2ff2ba4e31ee594ac5e1b1f12d8fd2097211569f80dbb7d08'
           const params = {
             isClose: false,
             lcId: subchanAI,
@@ -647,45 +720,49 @@ describe('Connext', async () => {
               response.transactionHash !== undefined
           )
         })
-        it('should call updateLcState on the channel manager instance open VCs', async () => {
-          subchanAI = '0x4b7c97c3ae6abca2ff2ba4e31ee594ac5e1b1f12d8fd2097211569f80dbb7d08'
-          vcId = '0xc12'
-          const vc0 = {
-            isClose: false,
-            vcId: vcId,
-            nonce: 0,
-            partyA: partyA,
-            partyB: partyB,
-            balanceA: Web3.utils.toBN(Web3.utils.toWei('1', 'ether')),
-            balanceB: Web3.utils.toBN(Web3.utils.toWei('0', 'ether'))
+        it(
+          'should call updateLcState on the channel manager instance open VCs',
+          async () => {
+            subchanAI =
+              '0x4b7c97c3ae6abca2ff2ba4e31ee594ac5e1b1f12d8fd2097211569f80dbb7d08'
+            vcId = '0xc12'
+            const vc0 = {
+              isClose: false,
+              vcId: vcId,
+              nonce: 0,
+              partyA: partyA,
+              partyB: partyB,
+              balanceA: Web3.utils.toBN(Web3.utils.toWei('1', 'ether')),
+              balanceB: Web3.utils.toBN(Web3.utils.toWei('0', 'ether'))
+            }
+            let vc0s = []
+            vc0s.push(vc0)
+            const vcRootHash1 = Connext.generateVcRootHash({ vc0s })
+            let lc1 = {
+              isClose: false,
+              lcId: subchanAI,
+              nonce: 1,
+              openVcs: 1,
+              vcRootHash: vcRootHash1,
+              partyA: partyA,
+              partyI: ingridAddress,
+              balanceA: Web3.utils.toBN(Web3.utils.toWei('5', 'ether')),
+              balanceI: Web3.utils.toBN(Web3.utils.toWei('4', 'ether')),
+              signer: partyA
+            }
+            const sigA = await client.createLCStateUpdate(lc1)
+            lc1.signer = ingridAddress
+            const sigI = await client.createLCStateUpdate(lc1)
+            lc1.sigA = sigA
+            lc1.sigI = sigI
+            lc1.sender = partyA
+            const response = await client.updateLcStateContractHandler(lc1)
+            assert.ok(
+              response.transactionHash !== null &&
+                response.transactionHash !== undefined
+            )
           }
-          let vc0s = []
-          vc0s.push(vc0)
-          const vcRootHash1 = Connext.generateVcRootHash({ vc0s })
-          let lc1 = {
-            isClose: false,
-            lcId: subchanAI,
-            nonce: 1,
-            openVcs: 1,
-            vcRootHash: vcRootHash1,
-            partyA: partyA,
-            partyI: ingridAddress,
-            balanceA: Web3.utils.toBN(Web3.utils.toWei('5', 'ether')),
-            balanceI: Web3.utils.toBN(Web3.utils.toWei('4', 'ether')),
-            signer: partyA
-          }
-          const sigA = await client.createLCStateUpdate(lc1)
-          lc1.signer = ingridAddress
-          const sigI = await client.createLCStateUpdate(lc1)
-          lc1.sigA = sigA
-          lc1.sigI = sigI
-          lc1.sender = partyA
-          const response = await client.updateLcStateContractHandler(lc1)
-          assert.ok(
-            response.transactionHash !== null &&
-              response.transactionHash !== undefined
-          )
-        }).timeout(5000)
+        ).timeout(5000)
       })
     })
 
@@ -694,7 +771,8 @@ describe('Connext', async () => {
         it(
           'should call consensusCloseChannel on the channel manager instance',
           async () => {
-            subchanBI = '0x942e8cf213d0bd51c0ba316869d6b3b1eee9060b8d5973e75060c94013fee4bd'
+            subchanBI =
+              '0x942e8cf213d0bd51c0ba316869d6b3b1eee9060b8d5973e75060c94013fee4bd'
             let params = {
               isClose: true,
               lcId: subchanBI,
@@ -753,7 +831,7 @@ describe('Connext', async () => {
           let mproof = merkle.proof(Utils.hexToBuffer(stateHash))
 
           let proof = []
-          for(var i=0; i<mproof.length; i++){
+          for (var i = 0; i < mproof.length; i++) {
             proof.push(Utils.bufferToHex(mproof[i]))
           }
 
@@ -773,7 +851,7 @@ describe('Connext', async () => {
             balanceB: Web3.utils.toBN(Web3.utils.toWei('0', 'ether')),
             signer: partyA
           })
-          
+
           // client call
           const results = await client.initVcStateContractHandler({
             subchanId: subchanAI,
@@ -789,7 +867,7 @@ describe('Connext', async () => {
           })
           assert.ok(
             results.transactionHash !== null &&
-            results.transactionHash !== undefined
+              results.transactionHash !== undefined
           )
         }).timeout(5000)
       })
@@ -808,7 +886,8 @@ describe('Connext', async () => {
           partyA = accounts[0]
           partyB = accounts[1]
           ingridAddress = client.ingridAddress = accounts[2]
-          const vcId = "0x6c08ce0d3bcacaf067e75801c2e8aa5a29dd19a20ba773a2918d73765e255941"
+          const vcId =
+            '0x6c08ce0d3bcacaf067e75801c2e8aa5a29dd19a20ba773a2918d73765e255941'
           console.log(vcId)
           const nonce = 2
           const balanceA = Web3.utils.toBN(Web3.utils.toWei('0', 'ether'))
@@ -836,11 +915,11 @@ describe('Connext', async () => {
             partyB,
             balanceA,
             balanceB,
-            sigA,
+            sigA
           })
           assert.ok(
             results.transactionHash !== null &&
-            results.transactionHash !== undefined
+              results.transactionHash !== undefined
           )
         })
       })
@@ -855,7 +934,8 @@ describe('Connext', async () => {
           // get accounts
           const subchanId =
             '0x4b7c97c3ae6abca2ff2ba4e31ee594ac5e1b1f12d8fd2097211569f80dbb7d08'
-          const vcId = "0x6c08ce0d3bcacaf067e75801c2e8aa5a29dd19a20ba773a2918d73765e255941"
+          const vcId =
+            '0x6c08ce0d3bcacaf067e75801c2e8aa5a29dd19a20ba773a2918d73765e255941'
           // client call
           const results = await client.closeVirtualChannelContractHandler({
             lcId: subchanId,
@@ -864,7 +944,7 @@ describe('Connext', async () => {
           // assert.equal(results, ':)')
           assert.ok(
             results.transactionHash !== null &&
-            results.transactionHash !== undefined
+              results.transactionHash !== undefined
           )
         })
       })
@@ -880,10 +960,12 @@ describe('Connext', async () => {
           const lcId =
             '0x4b7c97c3ae6abca2ff2ba4e31ee594ac5e1b1f12d8fd2097211569f80dbb7d08'
           // client call
-          const results = await client.byzantineCloseChannelContractHandler(lcId)
+          const results = await client.byzantineCloseChannelContractHandler(
+            lcId
+          )
           assert.ok(
             results.transactionHash !== null &&
-            results.transactionHash !== undefined
+              results.transactionHash !== undefined
           )
         })
       })
@@ -919,10 +1001,7 @@ describe('Connext', async () => {
         it('should return a valid signature.', async () => {
           AB_VC0.signer = partyA
           const sig = client.createVCStateUpdate(AB_VC0)
-          assert.equal(
-            sig,
-            sigA_AB_VC0
-          )
+          assert.equal(sig, sigA_AB_VC0)
         })
       })
     })
@@ -1016,7 +1095,7 @@ describe('Connext', async () => {
                   sig: '0xc1912',
                   channelId: 'bad VC ID',
                   balanceA: Web3.utils.toBN('0'),
-                  balanceB: Web3.utils.toBN('0'),
+                  balanceB: Web3.utils.toBN('0')
                 })
               } catch (e) {
                 assert.equal(
@@ -1047,7 +1126,7 @@ describe('Connext', async () => {
                   vcId: '0xc1912',
                   nonce: '100aa',
                   balanceA: Web3.utils.toBN('0'),
-                  balanceB: Web3.utils.toBN('0'),
+                  balanceB: Web3.utils.toBN('0')
                 })
               } catch (e) {
                 assert.equal(
@@ -1066,7 +1145,7 @@ describe('Connext', async () => {
                   nonce: 100,
                   partyA: 'its a party',
                   balanceA: Web3.utils.toBN('0'),
-                  balanceB: Web3.utils.toBN('0'),
+                  balanceB: Web3.utils.toBN('0')
                 })
               } catch (e) {
                 assert.equal(
@@ -1086,7 +1165,7 @@ describe('Connext', async () => {
                   partyA: '0x627306090abaB3A6e1400e9345bC60c78a8BEf57',
                   partyB: 'cardi B party B',
                   balanceA: Web3.utils.toBN('0'),
-                  balanceB: Web3.utils.toBN('0'),
+                  balanceB: Web3.utils.toBN('0')
                 })
               } catch (e) {
                 assert.equal(
@@ -1439,7 +1518,7 @@ describe('Connext', async () => {
           const vcRootHash = Connext.generateVcRootHash({ vc0s })
           assert.equal('0x0', vcRootHash)
         })
-  
+
         it('should create a vcRootHash containing vcs', async () => {
           const accounts = await client.web3.eth.getAccounts()
           partyA = accounts[0]
@@ -1492,7 +1571,6 @@ describe('Connext', async () => {
 })
 
 describe('ingridClientRequests: running local hub', () => {
-
   it('should init web3 and the connext client', async () => {
     // set party variables
     const port = process.env.ETH_PORT ? process.env.ETH_PORT : '9545'
@@ -1516,197 +1594,209 @@ describe('ingridClientRequests: running local hub', () => {
     )
   })
 
-    describe('populate the database with an lc and a vc', () => {
-      describe('generating LCs in database using contract calls', () => {
-        it('should generate a unique id for subchanAI', () => {
-          // accounts[0] is hardcoded into the client
-          // create subchanAI with contract functions directly
-          subchanAI = Connext.getNewChannelId()
-          console.log('subchanAI:', subchanAI)
-          assert.ok(Web3.utils.isHexStrict(subchanAI))
-        })
-    
-        it('should create subchanAI on channel manager instance', async () => {
-          // hardcode contract call, accounts[0] is encoded in client
-          response = await client.channelManagerInstance.methods
-            .createChannel(subchanAI, ingridAddress)
-            .send({ from: partyA, value: initialDeposit, gas: 3000000 })
-          assert.ok(Web3.utils.isHex(response.transactionHash))
-        }).timeout(7000)
-    
-        it('should generate a unique id for subchanBI', () => {
-          // accounts[0] is hardcoded into the client
-          // create subchanBI with contract functions directly
-          subchanBI = Connext.getNewChannelId()
-          console.log('subchanBI:', subchanBI)
-          assert.ok(Web3.utils.isHexStrict(subchanBI))
-          // assert.equal(subchanBI, ';)')
-        })
-    
-        it('should create subchanBI on channel manager instance', async () => {
-          // hardcode contract call, accounts[0] is encoded in client
-          response = await client.channelManagerInstance.methods
-            .createChannel(subchanBI, ingridAddress)
-            .send({ from: partyB, value: initialDeposit, gas: 3000000 })
-          assert.ok(Web3.utils.isHex(response.transactionHash))
-          //   assert.equal(response.transactionHash, ';)')
-        }).timeout(7000)
-    
-        it(
-          'should force ingrid to join subchanBI by calling it on contract',
-          async () => {
-            let responseBI = await client.channelManagerInstance.methods
-              .joinChannel(subchanBI)
-              .send({ from: ingridAddress, value: initialDeposit, gas: 3000000 })
-            // assert.equal(responseAI.transactionHash, ';)')
-            assert.ok(
-                Web3.utils.isHex(responseBI.transactionHash)
-            )
-          }
-        ).timeout(10000)
+  describe('populate the database with an lc and a vc', () => {
+    describe('generating LCs in database using contract calls', () => {
+      it('should generate a unique id for subchanAI', () => {
+        // accounts[0] is hardcoded into the client
+        // create subchanAI with contract functions directly
+        subchanAI = Connext.getNewChannelId()
+        console.log('subchanAI:', subchanAI)
+        assert.ok(Web3.utils.isHexStrict(subchanAI))
       })
 
-      describe('requestJoinLc', () => {
-        it('should return tx hash of ingrid joining channel', async () => {
-          subchanAI = '0x00cdd51e75ebd5afed428d9d3c4d0d2d6928f4714ae6b1927bc8fa9f659096d9'
-          response = await Promise.all([client.requestJoinLc(subchanAI), timeout(15000)])
-          assert.ok(Web3.utils.isHex(response))
-        }).timeout(20000)
+      it('should create subchanAI on channel manager instance', async () => {
+        // hardcode contract call, accounts[0] is encoded in client
+        response = await client.channelManagerInstance.methods
+          .createChannel(subchanAI, ingridAddress)
+          .send({ from: partyA, value: initialDeposit, gas: 3000000 })
+        assert.ok(Web3.utils.isHex(response.transactionHash))
+      }).timeout(7000)
 
-        it('should throw an error if the channel is not in contract', async () => {
-          let subchan = '0x9d6f7f8230a387fa584dd9e4c45c53d22967e306b433c27acff9a11aaea76cc1'
-          try {
-            response = await client.requestJoinLc(subchan)
-          } catch (e) {
-            assert.equal(e.statusCode, 401)
-          }
-        })
-
-        it('should throw an error if partyI is not ingrid', async () => {
-          subchanBI = '0x0b92647ba6be3e07b2c07218262ec2a55a093636cac5fdfe98da64da67db370b'
-          client.ingridAddress = accounts[4]
-          try {
-            response = await client.requestJoinLc(subchanBI)
-          } catch (e) {
-            client.ingridAddress = accounts[0] // reset in case of continuous testing
-            assert.equal(e.statusCode, 402)
-          }
-        })
-
-        it('should throw an error if it is past the joining period', async () => {
-          subchanBI = '0x0b92647ba6be3e07b2c07218262ec2a55a093636cac5fdfe98da64da67db370b'
-          try {
-            response = await client.requestJoinLc(subchanBI)
-          } catch (e) {
-            assert.equal(e.statusCode, 403)
-          }
-        })
+      it('should generate a unique id for subchanBI', () => {
+        // accounts[0] is hardcoded into the client
+        // create subchanBI with contract functions directly
+        subchanBI = Connext.getNewChannelId()
+        console.log('subchanBI:', subchanBI)
+        assert.ok(Web3.utils.isHexStrict(subchanBI))
+        // assert.equal(subchanBI, ';)')
       })
 
-      describe('creating virtual channel in database', () => {
-        it('partyA should create a virtual channel with 5 eth in it', async () => {
-          vcId = await client.openChannel({ to: partyB })
-          assert.ok(Web3.utils.isHexStrict(vcId))
-        })
-      
-        it('partyB should join the virtual channel with 0 eth', async () => {
-          vcId = '0x9d6f7f8230a387fa584dd9e4c45c53d22967e306b433c27acff9a11aaea76cc1'
-          response = await client.joinChannel(vcId)
-          assert.equal(response, vcId)
-        })
+      it('should create subchanBI on channel manager instance', async () => {
+        // hardcode contract call, accounts[0] is encoded in client
+        response = await client.channelManagerInstance.methods
+          .createChannel(subchanBI, ingridAddress)
+          .send({ from: partyB, value: initialDeposit, gas: 3000000 })
+        assert.ok(Web3.utils.isHex(response.transactionHash))
+        //   assert.equal(response.transactionHash, ';)')
+      }).timeout(7000)
 
-        it('partyA sends a state update in the virtual channel of 1 eth', async () => {
-          vcId = '0x9d6f7f8230a387fa584dd9e4c45c53d22967e306b433c27acff9a11aaea76cc1'
-          balanceA = Web3.utils.toBN(Web3.utils.toWei('4', 'ether'))
-          balanceB = Web3.utils.toBN(Web3.utils.toWei('1', 'ether'))
-          response = await client.updateBalance({
-            channelId: vcId,
-            balanceA,
-            balanceB
-          })
-          assert.ok(
-            Web3.utils.toBN(response.balanceA) === balanceA &&
-              Web3.utils.toBN(response.balanceB) === balanceB
-          )
-        })
+      it(
+        'should force ingrid to join subchanBI by calling it on contract',
+        async () => {
+          let responseBI = await client.channelManagerInstance.methods
+            .joinChannel(subchanBI)
+            .send({ from: ingridAddress, value: initialDeposit, gas: 3000000 })
+          // assert.equal(responseAI.transactionHash, ';)')
+          assert.ok(Web3.utils.isHex(responseBI.transactionHash))
+        }
+      ).timeout(10000)
+    })
+
+    describe('requestJoinLc', () => {
+      it('should return tx hash of ingrid joining channel', async () => {
+        subchanAI =
+          '0x00cdd51e75ebd5afed428d9d3c4d0d2d6928f4714ae6b1927bc8fa9f659096d9'
+        response = await Promise.all([
+          client.requestJoinLc(subchanAI),
+          timeout(15000)
+        ])
+        assert.ok(Web3.utils.isHex(response))
+      }).timeout(20000)
+
+      it('should throw an error if the channel is not in contract', async () => {
+        let subchan =
+          '0x9d6f7f8230a387fa584dd9e4c45c53d22967e306b433c27acff9a11aaea76cc1'
+        try {
+          response = await client.requestJoinLc(subchan)
+        } catch (e) {
+          assert.equal(e.statusCode, 401)
+        }
+      })
+
+      it('should throw an error if partyI is not ingrid', async () => {
+        subchanBI =
+          '0x0b92647ba6be3e07b2c07218262ec2a55a093636cac5fdfe98da64da67db370b'
+        client.ingridAddress = accounts[4]
+        try {
+          response = await client.requestJoinLc(subchanBI)
+        } catch (e) {
+          client.ingridAddress = accounts[0] // reset in case of continuous testing
+          assert.equal(e.statusCode, 402)
+        }
+      })
+
+      it('should throw an error if it is past the joining period', async () => {
+        subchanBI =
+          '0x0b92647ba6be3e07b2c07218262ec2a55a093636cac5fdfe98da64da67db370b'
+        try {
+          response = await client.requestJoinLc(subchanBI)
+        } catch (e) {
+          assert.equal(e.statusCode, 403)
+        }
       })
     })
 
-    describe('testing ingrid getter functions', () => {
-      subchanAI = '0x00cdd51e75ebd5afed428d9d3c4d0d2d6928f4714ae6b1927bc8fa9f659096d9'
-      vcId = '0x9d6f7f8230a387fa584dd9e4c45c53d22967e306b433c27acff9a11aaea76cc1'
-      describe('getLedgerChannelChallengeTimer', () => {
-        it('should return the default time of 3600 seconds to local host', async () => {
-          response = await client.getLedgerChannelChallengeTimer()
-          assert.equal(response, 3600)
-        })
+    describe('creating virtual channel in database', () => {
+      it('partyA should create a virtual channel with 5 eth in it', async () => {
+        vcId = await client.openChannel({ to: partyB })
+        assert.ok(Web3.utils.isHexStrict(vcId))
       })
 
-      describe('getLcById', () => {
-        it('should return subchanAI', async () => {
-          subchanAI = '0x9d6f7f8230a387fa584dd9e4c45c53d22967e306b433c27acff9a11aaea76cc1'
-          response = await client.getLcById(subchanAI)
-          assert.equal(response.channelId, subchanAI)
-        })
-        it('should return null if lc doesnt exist', async () => {
-          subchanAI = '0x9d6f7f8230a387fa584dd9e4c45c53d22967e306b433c27acff9a11aaea76cc1'
-          response = await client.getLcById(subchanAI)
-          assert.equal(response, null)
-        })
+      it('partyB should join the virtual channel with 0 eth', async () => {
+        vcId =
+          '0x9d6f7f8230a387fa584dd9e4c45c53d22967e306b433c27acff9a11aaea76cc1'
+        response = await client.joinChannel(vcId)
+        assert.equal(response, vcId)
       })
 
-      describe('getLcByPartyA', () => {
-        it('should return ledger channel between ingrid and accounts[1] when no partyA', async() => {
-          response = await client.getLcByPartyA()
-          assert.equal(response.partyA, accounts[1].toLowerCase())
+      it('partyA sends a state update in the virtual channel of 1 eth', async () => {
+        vcId =
+          '0x9d6f7f8230a387fa584dd9e4c45c53d22967e306b433c27acff9a11aaea76cc1'
+        balanceA = Web3.utils.toBN(Web3.utils.toWei('4', 'ether'))
+        balanceB = Web3.utils.toBN(Web3.utils.toWei('1', 'ether'))
+        response = await client.updateBalance({
+          channelId: vcId,
+          balanceA,
+          balanceB
         })
-        it('should return ledger channel between ingrid and partyA = accounts[2]', async() => {
-          response = await client.getLcByPartyA(partyB)
-          assert.equal(response.partyA, partyB.toLowerCase())
-        })
+        assert.ok(
+          Web3.utils.toBN(response.balanceA) === balanceA &&
+            Web3.utils.toBN(response.balanceB) === balanceB
+        )
       })
-
-      // describe('getLatestLedgerStateUpdate', () => {
-      //   it('should return latest state for subchanAI', async () => {
-      //     response = await client.getLatestLedgerStateUpdate(subchanAI)
-      //     assert.equal(response, ';)')
-      //   })
-      // })
-
-      describe('getVcInitialStates', () => {
-        it('should return the initial state of the vcs for subchanAI', async () => {
-          response = await client.getVcInitialStates(subchanAI)
-          assert.equal(response[0].channelId, vcId)
-        })
-      })
-
-      // describe('getVcInitialState', () => {
-      //   it('should return the initial state of the vcs for subchanAI', async () => {
-      //     response = await client.getVcInitialStates(vcId)
-      //     assert.equal(response.balanceA, balanceA)
-      //   })
-      // })
-
-      describe('getChannelById', () => {
-        it('should return the initial state of the vcs for subchanAI', async () => {
-          response = await client.getChannelById(vcId)
-          assert.equal(response.channelId, vcId)
-        })
-      })
-
-      // describe('getChannelByParties', () => {
-      //   it('should return the initial state of the vcs for subchanAI', async () => {
-      //     response = await client.getChannelByParties({partyA, partyB})
-      //     assert.equal(response.partyA, partyA.toLowerCase())
-      //   })
-      // })
-
-      describe('getLatestVCStateUpdate', () => {
-        it('should return the latest vc state', async () => {
-          response = await client.getLatestVCStateUpdate(vcId)
-          assert.equal(response.balanceA, Web3.utils.toWei('4', 'ether').toString())
-        })
-      })
-
     })
   })
+
+  describe('testing ingrid getter functions', () => {
+    subchanAI =
+      '0x00cdd51e75ebd5afed428d9d3c4d0d2d6928f4714ae6b1927bc8fa9f659096d9'
+    vcId = '0x9d6f7f8230a387fa584dd9e4c45c53d22967e306b433c27acff9a11aaea76cc1'
+    describe('getLedgerChannelChallengeTimer', () => {
+      it('should return the default time of 3600 seconds to local host', async () => {
+        response = await client.getLedgerChannelChallengeTimer()
+        assert.equal(response, 3600)
+      })
+    })
+
+    describe('getLcById', () => {
+      it('should return subchanAI', async () => {
+        subchanAI =
+          '0x9d6f7f8230a387fa584dd9e4c45c53d22967e306b433c27acff9a11aaea76cc1'
+        response = await client.getLcById(subchanAI)
+        assert.equal(response.channelId, subchanAI)
+      })
+      it('should return null if lc doesnt exist', async () => {
+        subchanAI =
+          '0x9d6f7f8230a387fa584dd9e4c45c53d22967e306b433c27acff9a11aaea76cc1'
+        response = await client.getLcById(subchanAI)
+        assert.equal(response, null)
+      })
+    })
+
+    describe('getLcByPartyA', () => {
+      it('should return ledger channel between ingrid and accounts[1] when no partyA', async () => {
+        response = await client.getLcByPartyA()
+        assert.equal(response.partyA, accounts[1].toLowerCase())
+      })
+      it('should return ledger channel between ingrid and partyA = accounts[2]', async () => {
+        response = await client.getLcByPartyA(partyB)
+        assert.equal(response.partyA, partyB.toLowerCase())
+      })
+    })
+
+    // describe('getLatestLedgerStateUpdate', () => {
+    //   it('should return latest state for subchanAI', async () => {
+    //     response = await client.getLatestLedgerStateUpdate(subchanAI)
+    //     assert.equal(response, ';)')
+    //   })
+    // })
+
+    describe('getVcInitialStates', () => {
+      it('should return the initial state of the vcs for subchanAI', async () => {
+        response = await client.getVcInitialStates(subchanAI)
+        assert.equal(response[0].channelId, vcId)
+      })
+    })
+
+    // describe('getVcInitialState', () => {
+    //   it('should return the initial state of the vcs for subchanAI', async () => {
+    //     response = await client.getVcInitialStates(vcId)
+    //     assert.equal(response.balanceA, balanceA)
+    //   })
+    // })
+
+    describe('getChannelById', () => {
+      it('should return the initial state of the vcs for subchanAI', async () => {
+        response = await client.getChannelById(vcId)
+        assert.equal(response.channelId, vcId)
+      })
+    })
+
+    // describe('getChannelByParties', () => {
+    //   it('should return the initial state of the vcs for subchanAI', async () => {
+    //     response = await client.getChannelByParties({partyA, partyB})
+    //     assert.equal(response.partyA, partyA.toLowerCase())
+    //   })
+    // })
+
+    describe('getLatestVCStateUpdate', () => {
+      it('should return the latest vc state', async () => {
+        response = await client.getLatestVCStateUpdate(vcId)
+        assert.equal(
+          response.balanceA,
+          Web3.utils.toWei('4', 'ether').toString()
+        )
+      })
+    })
+  })
+})

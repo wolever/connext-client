@@ -3,38 +3,39 @@ const axios = require('axios')
 export const GET = 'GET'
 export const POST = 'POST'
 
-module.exports = function networking (
-  baseUrl,
-  useAxios = process.env.DEV ? !process.env.DEV : false
-) {
+module.exports = function networking (baseUrl) {
   return {
     get,
     post
   }
 
-  function get (url, useAxios) {
-    return request(url, GET, useAxios)
+  function get (url) {
+    return request(url, GET)
   }
 
-  function post (url, body, useAxios) {
-    return request(url, POST, body, useAxios)
+  function post (url, body) {
+    return request(url, POST, body)
   }
 
-  async function request (url, method, body, useAxios) {
+  async function request (url, method, body) {
+    let useAxios = process.env.DEV ? process.env.DEV : false
+
     const opts = {
       method
     }
 
-    if (method === POST) {
-      opts.body = JSON.stringify(body)
-    }
-
     let res
     if (useAxios === false) {
-      opts['mode'] = 'cors'
-      opts['credentials'] = 'include'
+      if (method === POST) {
+        opts.body = JSON.stringify(body)
+      }
+      opts.mode = 'cors'
+      opts.credentials = 'include'
       res = await fetch(`${baseUrl}/${url}`, opts)
     } else {
+      if (method === POST) {
+        opts.data = body
+      }
       opts.headers = {
         Cookie: `hub.sid=${process.env.HUB_AUTH};`,
         Authorization: `Bearer ${process.env.HUB_AUTH}`
@@ -53,7 +54,6 @@ module.exports = function networking (
         `Received non-200 response: ${res.status}`
       )
     }
-
     const data = useAxios ? res.data : await res.json()
 
     if (res.status === 204) {
