@@ -232,7 +232,7 @@ class Connext {
     }
     // verify channel does not exist between ingrid and sender
     let lc = await this.getLcByPartyA(sender)
-    if (lc !== null && lc.state === 1) {
+    if (lc != null && lc.state === 1) {
       throw new LCOpenError(methodName, `PartyA has open channel with hub, ID: ${lc.channelId}`)
     }
     // verify deposit is positive
@@ -249,7 +249,7 @@ class Connext {
     const lcId = Connext.getNewChannelId()
     // verify channel ID does not exist
     lc = await this.getLcById(lcId)
-    if (lc !== null) {
+    if (lc != null) {
       throw new LCOpenError(methodName, 'Channel by that ID already exists')
     }
 
@@ -385,7 +385,7 @@ class Connext {
     const lcB = await this.getLcByPartyA(to)
     
     // validate the subchannels exist
-    if (lcB === null || lcA === null) {
+    if (lcB == null || lcA == null) {
       throw new VCOpenError(methodName, 'Missing one or more required subchannels')
     }
     // subchannels in right state
@@ -902,7 +902,7 @@ class Connext {
       sender = accounts[0].toLowerCase()
     }
     const lc = await this.getLcById(lcId)
-    if (lc === null) {
+    if (lc == null) {
       throw new LCUpdateError(methodName, 'Channel not found')
     }
     if (lc.partyA !== sender.toLowerCase()) {
@@ -954,7 +954,7 @@ class Connext {
       sender = accounts[0].toLowerCase()
     }
     const lc = await this.getLcById(lcId)
-    if (lc === null) {
+    if (lc == null) {
       throw new LCUpdateError(methodName, 'Channel not found')
     }
     if (lc.partyA !== sender.toLowerCase()) {
@@ -1533,7 +1533,7 @@ class Connext {
     // validate update
     const emptyRootHash = Connext.generateVcRootHash({ vc0s: []})
     const lc = await this.getLcById(channelId)
-    if (lc === null) {
+    if (lc == null) {
       // generating opening cert
       if (nonce !== 0 ) {
         throw new LCOpenError(methodName, 'Invalid nonce detected')
@@ -1843,7 +1843,7 @@ class Connext {
 
     // validate requires on contract before sending transactions
     const lc = await this.getLcById(lcId)
-    if (lc !== null) {
+    if (lc != null) {
       throw new LCOpenError('Channel has been used')
     }
     
@@ -2745,17 +2745,9 @@ class Connext {
       methodName,
       'lcId'
     )
-    try {
-      const response = await this.networking.get(
-        `ledgerchannel/${lcId}`)
-      return response.data
-    } catch (e) {
-      if (e.status === 400) {
-        return null
-      } else {
-        throw e
-      }
-    }
+    const response = await this.networking.get(
+      `ledgerchannel/${lcId}`)
+    return response.data
   }
 
   /**
@@ -2788,23 +2780,15 @@ class Connext {
     } else {
       status = LC_STATES[1]
     }
-    try {
-      const response = await this.networking.get(
-        `ledgerchannel/a/${partyA.toLowerCase()}?status=${status}`    
-      )
-      if (status === LC_STATES[1]) {
-        // has list length of 1, return obj
-        return response.data[0]
-      } else {
-        return response.data
-      }
-    } catch (e) {
-      if (e.status === 400) {
-        // lc does not exist
-        return null
-      } else {
-        throw e
-      }
+
+    const response = await this.networking.get(
+      `ledgerchannel/a/${partyA.toLowerCase()}?status=${status}`    
+    )
+    if (status === LC_STATES[1]) {
+      // has list length of 1, return obj
+      return response.data[0]
+    } else {
+      return response.data
     }
   }
   
