@@ -659,7 +659,6 @@ class Connext {
       channelId: vcN.channelId
     })
 
-    // to do: should verify ingrids signature
     if (fastCloseSig) {
       // ingrid cosigned proposed LC update
       return fastCloseSig
