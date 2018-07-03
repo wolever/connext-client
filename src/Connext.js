@@ -1494,7 +1494,6 @@ class Connext {
     }
     // signer must be in lc
     if (signer.toLowerCase() !== partyA.toLowerCase() && signer.toLowerCase() !== partyI.toLowerCase()) {
-      console.log(signer)
       throw new LCUpdateError(methodName, 'Invalid signer detected')
     }
     // balances must be positive
