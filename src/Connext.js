@@ -4,7 +4,7 @@ const channelManagerAbi = require('../artifacts/LedgerChannel.json')
 const util = require('ethereumjs-util')
 import Web3 from 'web3'
 import validate from 'validate.js'
-import { LCOpenError, ParameterValidationError, ContractError, VCOpenError, LCUpdateError, VCUpdateError, LCCloseError } from './helpers/Errors';
+import { LCOpenError, ParameterValidationError, ContractError, VCOpenError, LCUpdateError, VCUpdateError, LCCloseError, VCCloseError } from './helpers/Errors';
 const MerkleTree = require('./helpers/MerkleTree')
 const Utils = require('./helpers/utils')
 const crypto = require('crypto')
@@ -609,7 +609,28 @@ class Connext {
 
     // get latest state in vc
     const vc = await this.getChannelById(channelId)
+    if (vc === null) {
+      throw new VCCloseError(methodName, 'Channel not found')
+    }
+    // must be open
+    if (vc.state !== 1) {
+      throw new VCCloseError(methodName, 'Channel is in invalid state')
+    }
     const vcN = await this.getLatestVCStateUpdate(channelId)
+    // verify vcN was signed by agentA
+    const signer = Connext.recoverSignerFromVCStateUpdate({
+      sig: vcN.sigA,
+      channelId: channelId,
+      nonce: vcN.nonce,
+      partyA: vcN.partyA,
+      partyB: vcN.partyB,
+      balanceA: Web3.utils.toBN(vcN.balanceA),
+      balanceB: Web3.utils.toBN(vcN.balanceB)
+    })
+    if (signer !== vcN.partyA) {
+      throw new VCCloseError(methodName, 'Incorrect signer detected on latest update')
+    }
+
     vcN.channelId = channelId
     vcN.partyA = vc.partyA
     vcN.partyB = vc.partyB
@@ -622,7 +643,7 @@ class Connext {
     } else if (subchan.partyA === vcN.partyB) {
       isPartyAInVC = false
     } else {
-      throw new Error('Not your virtual channel.')
+      throw new VCCloseError(methodName, 'Not your virtual channel.')
     }
     // generate decomposed lc update
     const sigAtoI = await this.createLCUpdateOnVCClose({ 
