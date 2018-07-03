@@ -62,8 +62,6 @@ module.exports = function networking (
       }
     }
 
-    const data = await res.json()
-
     return {
       data
     }
