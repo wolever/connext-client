@@ -3187,7 +3187,19 @@ class Connext {
   // */
  async createLCUpdateOnVCClose ({ vcN, subchan, signer = null }) {
   const methodName = 'createLCUpdateOnVCClose'
+  const isVcState = { presence: true, isVcState: true }
+  const isLcObj = { presence: true, isLcObj: true }
   const isAddress = { presence: true, isAddress: true }
+  Connext.validatorsResponseToError(
+    validate.single(vcN, isVcState),
+    methodName,
+    'vcN'
+  )
+  Connext.validatorsResponseToError(
+    validate.single(subchan, isLcObj),
+    methodName,
+    'subchan'
+  )
   if (signer) {
     Connext.validatorsResponseToError(
       validate.single(signer, isAddress),
@@ -3214,7 +3226,6 @@ class Connext {
   // array of state objects, which include the channel id and nonce
   // remove initial state of vcN
   vcInitialStates = vcInitialStates.filter((val) => {
-    console.log(vcN.channelId !== val.channelId)
     return val.channelId !== vcN.channelId
   })
   const newRootHash = Connext.generateVcRootHash({ vc0s: vcInitialStates})
