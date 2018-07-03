@@ -3194,18 +3194,22 @@ class Connext {
       methodName,
       'signer'
     )
+  } else {
+    const accounts = await this.web3.eth.getAccounts()
+    signer = accounts[0].toLowerCase()
   }
-  
-  // detect signer and if called on open or join
-  const accounts = await this.web3.eth.getAccounts()
-  if (accounts[0].toLowerCase() === vcN.partyA && signer === null) {
-    signer = vcN.partyA
-  } else if (accounts[0].toLowerCase() === vcN.partyB && signer === null) {
-    // no signer provided, set signer
-    signer = vcN.partyB
-  } else if (signer !== vcN.partyA && accounts[0].toLowerCase() !== vcN.partyA && signer !== vcN.partyB && accounts[0].toLowerCase() !== vcN.partyB ){
-    throw new Error('Not your virtual channel.')
+  // must be partyA in lc
+  if (signer.toLowerCase() !== subchan.partyA) {
+    throw new VCCloseError(methodName, 'Incorrect signer detected')
   }
+  // must be party in vc
+  if (signer.toLowerCase() !== vcN.partyA || signer.toLowerCase() !== vcN.partyB) {
+    throw new VCCloseError(methodName, 'Not your channel')
+  }
+  if (subchan.state !== 1 || subchan.state !== 2) {
+    throw new VCCloseError(methodName, 'Channel is in invalid state')
+  }
+
   let vcInitialStates = await this.getVcInitialStates(subchan.channelId)
   // array of state objects, which include the channel id and nonce
   // remove initial state of vcN
