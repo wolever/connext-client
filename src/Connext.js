@@ -865,13 +865,6 @@ class Connext {
       sender = accounts[0].toLowerCase().toLowerCase()
     }
     const lc = await this.getLcByPartyA(sender)
-    if (lc.openVcs > 0) {
-      throw new Error(`[${methodName}] Close open VCs before withdraw final.`)
-    }
-    // to do: dependent on lc status
-    if (!lc.isSettling) {
-      throw new Error('Ledger channel is not in settlement state.')
-    }
     const results = await this.byzantineCloseChannelContractHandler({
       lcId: lc.channelId,
       sender: sender
