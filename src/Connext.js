@@ -4,7 +4,7 @@ const channelManagerAbi = require('../artifacts/LedgerChannel.json')
 const util = require('ethereumjs-util')
 import Web3 from 'web3'
 import validate from 'validate.js'
-import { LCOpenError, ParameterValidationError, ContractError, VCOpenError, LCUpdateError, VCUpdateError, LCCloseError } from './helpers/Errors';
+import { LCOpenError, ParameterValidationError, ContractError, VCOpenError, LCUpdateError, VCUpdateError, LCCloseError, VCCloseError } from './helpers/Errors';
 const MerkleTree = require('./helpers/MerkleTree')
 const Utils = require('./helpers/utils')
 const crypto = require('crypto')
@@ -15,10 +15,8 @@ const crypto = require('crypto')
 validate.validators.isBN = value => {
   if (Web3.utils.isBN(value)) {
     return null
-  } else if (Web3.utils.isBigNumber(value)) {
-    return null
   } else {
-    return `${value} is not BN or BigNumber.`
+    return `${value} is not BN.`
   }
 }
 
@@ -68,6 +66,39 @@ validate.validators.isPositiveInt = value => {
     return null
   } else {
     return `${value} is not a positive integer.`
+  }
+}
+
+validate.validators.isVcState = value => {
+  if (
+    value.channelId == null || !Web3.utils.isHexStrict(value.channelId) ||
+    value.nonce == null || value.nonce <= 0 ||
+    value.partyA == null || !Web3.utils.isAddress(value.partyA) ||
+    value.partyB == null || !Web3.utils.isAddress(value.partyB) ||
+    value.balanceA == null ||
+    value.balanceB == null
+  ) {
+    return null
+  } else {
+    return `${JSON.stringify(value)} is not a valid VC state`
+  }
+}
+
+validate.validators.isLcObj = value => {
+  if (
+    value.state == null ||
+    value.channelId == null || !Web3.utils.isHexStrict(value.channelId) ||
+    value.nonce == null || value.nonce <= 0 ||
+    value.openVcs == null || value.openVcs <= 0 ||
+    value.vcRootHash == null || !Web3.utils.isHexStrict(value.channelId) ||
+    value.partyA == null || !Web3.utils.isAddress(value.partyA) ||
+    value.partyI == null || !Web3.utils.isAddress(value.partyI) ||
+    value.balanceA == null ||
+    value.balanceI == null
+  ) {
+    return null
+  } else {
+    return `${JSON.stringify(value)} is not a valid LC object`
   }
 }
 
@@ -188,20 +219,27 @@ class Connext {
       // get challenge timer from ingrid
       challenge = await this.getLedgerChannelChallengeTimer()
     }
-    // generate additional initial lc params
-    const lcId = Connext.getNewChannelId()
-
-    // verify deposit is positive and nonzero
-    // must work with BN and BigNumber
-    if (Web3.utils.isBN(initialDeposit) && initialDeposit.isNeg()) {
-      throw new LCOpenError(methodName, 'Invalid deposit provided')
-    } else if (Web3.utils.isBigNumber(initialDeposit) && initialDeposit.isNegative()) {
+    // verify channel does not exist between ingrid and sender
+    let lc = this.getLcByPartyA(sender)
+    if (lc !== null && lc.state === 1) {
+      throw new LCOpenError(methodName, `PartyA has open channel with hub, ID: ${lc.channelId}`)
+    }
+    // verify deposit is positive
+    if (initialDeposit.isNeg()) {
       throw new LCOpenError(methodName, 'Invalid deposit provided')
     }
 
     // verify opening state channel with different account
     if (sender.toLowerCase() === this.ingridAddress.toLowerCase()) {
       throw new LCOpenError(methodName, 'Cannot open a channel with yourself')
+    }
+
+    // generate additional initial lc params
+    const lcId = Connext.getNewChannelId()
+    // verify channel ID does not exist
+    lc = this.getLcById(lcId)
+    if (lc !== null) {
+      throw new LCOpenError(methodName, 'Channel by that ID already exists')
     }
 
     // /**
@@ -267,16 +305,23 @@ class Connext {
         'recipient'
       )
     }
-    // verify that deposit is nonzero
     // verify deposit is positive and nonzero
-    if (Web3.utils.isBN(deposit) && deposit.isNeg() || deposit.isZero()) {
-      throw new LCUpdateError(methodName, 'Invalid deposit provided')
-    } else if (Web3.utils.isBigNumber(deposit) && deposit.isNegative() || deposit.isZero()) {
+    if (deposit.isNeg() || deposit.isZero()) {
       throw new LCUpdateError(methodName, 'Invalid deposit provided')
     }
-    const lcId = await this.getLcByPartyA(recipient)
+
+    const lc = await this.getLcByPartyA(recipient)
+    // verify lc is open
+    if (lc.state !== 1) {
+      throw new LCUpdateError(methodName, 'Channel is not in the right state')
+    }
+    // verify recipient is in lc
+    if (lc.partyA !== recipient.toLowerCase() || lc.partyI !== recipient.toLowerCase()) {
+      throw new LCUpdateError(methodName, 'Recipient is not member of channel')
+    }
+    
     // call contract handler
-    const result = await this.depositContractHandler({ lcId, depositInWei, recipient, sender })
+    const result = await this.depositContractHandler({ lcId: lc.channelId, depositInWei, recipient, sender })
     return result
   }
 
@@ -334,24 +379,34 @@ class Connext {
       const accounts = await this.web3.eth.getAccounts()
       sender = accounts[0].toLowerCase()
     }
-
-    const lcA = await this.getLcByPartyA(sender)
-    const lcIdB = await this.getLcId(to)
-    
-    // validate the subchannels exist
-    if (lcIdB === null || lcA === null) {
-      throw new VCOpenError(methodName, 'Missing one or more required subchannels')
-    }
-    // valid deposit provided
-    if (Web3.utils.isBN(deposit) && deposit.isNeg()) {
-      throw new VCOpenError(methodName, 'Invalid deposit provided')
-    } else if (Web3.utils.isBigNumber(deposit) && deposit.isNegative()) {
-      throw new VCOpenError(methodName, 'Invalid deposit provided')
-    }
     // not opening channel with yourself
     if (sender.toLowerCase() === to.toLowerCase()) {
       throw new VCOpenError(methodName, 'Cannot open a channel with yourself')
     }
+
+    const lcA = await this.getLcByPartyA(sender)
+    const lcB = await this.getLcByPartyA(to)
+    
+    // validate the subchannels exist
+    if (lcB === null || lcA === null) {
+      throw new VCOpenError(methodName, 'Missing one or more required subchannels')
+    }
+    // subchannels in right state
+    if (lcB.state !== 1 || lcA.state !== 1) {
+      throw new VCOpenError(methodName, 'One or more required subchannels are in the incorrect state')
+    }
+
+    // validate lcA has enough to deposit or set deposit
+    if (deposit && Web3.utils.toBN(lcA.balanceA).lt(deposit)) {
+      throw new VCOpenError(methodName, 'Insufficient value to open channel with provided deposit')
+    } else if (deposit === null) {
+      deposit = Web3.utils.toBN(lcA.balanceA)
+    }
+    // valid deposit provided
+    if (deposit.isNeg() || deposit.isZero()) {
+      throw new VCOpenError(methodName, 'Invalid deposit provided')
+    }
+
     // generate initial vcstate
     const vcId = Connext.getNewChannelId()
     const vc0 = {
@@ -359,7 +414,7 @@ class Connext {
       nonce: 0,
       partyA: sender,
       partyB: to.toLowerCase(),
-      balanceA: deposit || Web3.utils.toBN(lcA.balanceA),
+      balanceA: deposit,
       balanceB: Web3.utils.toBN(0),
       signer: sender
     }
@@ -400,17 +455,29 @@ class Connext {
       'channelId'
     )
     const vc = await this.getChannelById(channelId)
+    if (vc === null) {
+      throw new VCOpenError(methodName, 'Channel not found')
+    }
+
     if (sender) {
       Connext.validatorsResponseToError(
         validate.single(sender, isAddress),
         methodName,
         'sender'
       )
+      if (sender.toLowerCase() !== vc.partyB) {
+        throw new VCOpenError(methodName, 'Incorrect channel counterparty')
+      }
     } else {
       sender = vc.partyB
     }
     // get channels
-    const lc = await this.getLcByPartyA(sender)
+    const lcA = await this.getLcByPartyA(vc.partyA)
+    const lcB = await this.getLcByPartyA(sender)
+    if (lcB.state !== 1 || lcA.state !== 1) {
+      throw new VCOpenError(methodName, 'Subchannel(s) in invalid state')
+    }
+
     const vc0 = {
       channelId,
       nonce: 0,
@@ -422,7 +489,7 @@ class Connext {
     }
     const vcSig = await this.createVCStateUpdate(vc0)
     // generate lcSig
-    const lcSig = await this.createLCUpdateOnVCOpen({ vc0, lc, signer: sender })
+    const lcSig = await this.createLCUpdateOnVCOpen({ vc0, lc: lcB, signer: sender })
     // ping ingrid with vc0 (hub decomposes to lc)
     const result = await this.joinVcHandler({
       vcSig,
@@ -470,8 +537,26 @@ class Connext {
       methodName,
       'balanceB'
     )
+    // balances cant be negative
+    if (balanceA.isNeg() || balanceB.isNeg()) {
+      throw new VCUpdateError(methodName, 'Channel balances cannot be negative')
+    }
     // get the vc
     const vc = await this.getChannelById(channelId)
+    // must exist
+    if (vc === null) {
+      throw new VCUpdateError(methodName, 'Channel not found')
+    }
+    // channel must be open
+    if (vc.state !== 1) {
+      throw new VCUpdateError(methodName, 'Channel is in invalid state')
+    }
+    // total channel balance cant change
+    const channelBalance = Web3.utils.toBN(vc.balanceA).add(Web3.utils.toBN(vc.balanceB))
+    if (balanceA.add(balanceB).eq(channelBalance) === false) {
+      throw new VCUpdateError(methodName, 'Invalid channel balances')
+    }
+
     // generate new state update
     const state = {
       channelId,
@@ -524,7 +609,28 @@ class Connext {
 
     // get latest state in vc
     const vc = await this.getChannelById(channelId)
+    if (vc === null) {
+      throw new VCCloseError(methodName, 'Channel not found')
+    }
+    // must be open
+    if (vc.state !== 1) {
+      throw new VCCloseError(methodName, 'Channel is in invalid state')
+    }
     const vcN = await this.getLatestVCStateUpdate(channelId)
+    // verify vcN was signed by agentA
+    const signer = Connext.recoverSignerFromVCStateUpdate({
+      sig: vcN.sigA,
+      channelId: channelId,
+      nonce: vcN.nonce,
+      partyA: vcN.partyA,
+      partyB: vcN.partyB,
+      balanceA: Web3.utils.toBN(vcN.balanceA),
+      balanceB: Web3.utils.toBN(vcN.balanceB)
+    })
+    if (signer !== vcN.partyA) {
+      throw new VCCloseError(methodName, 'Incorrect signer detected on latest update')
+    }
+
     vcN.channelId = channelId
     vcN.partyA = vc.partyA
     vcN.partyB = vc.partyB
@@ -537,7 +643,7 @@ class Connext {
     } else if (subchan.partyA === vcN.partyB) {
       isPartyAInVC = false
     } else {
-      throw new Error('Not your virtual channel.')
+      throw new VCCloseError(methodName, 'Not your virtual channel.')
     }
     // generate decomposed lc update
     const sigAtoI = await this.createLCUpdateOnVCClose({ 
@@ -553,7 +659,6 @@ class Connext {
       channelId: vcN.channelId
     })
 
-    // to do: should verify ingrids signature
     if (fastCloseSig) {
       // ingrid cosigned proposed LC update
       return fastCloseSig
@@ -628,30 +733,32 @@ class Connext {
       const accounts = await this.web3.eth.getAccounts()
       sender = accounts[0].toLowerCase()
     }
-    const lcId = await this.getLcId(sender.toLowerCase())
-    const lc = await this.getLcById(lcId)
+    const lc = await this.getLcByPartyA(sender.toLowerCase())
+    // channel must be open
+    if (lc.state !== 1) {
+      throw new LCCloseError(methodName, 'Channel is in invalid state')
+    }
+    // sender must be channel member
+    if (sender.toLowerCase() !== lc.partyA && sender.toLowerCase() !== lc.partyI) {
+      throw new LCCloseError(methodName, 'Not your channel')
+    }
+
     // get latest i-signed lc state update
-    let lcState = await this.getLatestLedgerStateUpdate(lcId, ['sigI'])
-    console.log('lcState:', lcState)
-    console.log('lcId:', lcId)
+    let lcState = await this.getLatestLedgerStateUpdate(lc.channelId, ['sigI'])
     if (lcState) {
       // openVcs?
       if (Number(lcState.openVcs) !== 0) {
-        throw new Error(
-          `LC id ${lcId} still has open virtual channels. Number: ${lcState.openVcs}`
-        )
+        throw new LCCloseError(methodName, 'Cannot close channel with open VCs')
       }
       // empty root hash?
       if (lcState.vcRootHash !== Web3.utils.padRight('0x0', 64)) {
-        throw new Error(
-          `vcRootHash for lcId ${lcId} does not match empty root hash. Value: ${lcState.vcRootHash}`
-        )
+        throw new LCCloseError(methodName, 'Cannot close channel with open VCs')
       }
       // i-signed?
       const signer = Connext.recoverSignerFromLCStateUpdate({
         sig: lcState.sigI,
         isClose: lcState.isClose,
-        channelId: lcId,
+        channelId: lc.channelId,
         nonce: lcState.nonce,
         openVcs: lcState.openVcs,
         vcRootHash: lcState.vcRootHash,
@@ -660,14 +767,15 @@ class Connext {
         balanceA: Web3.utils.toBN(lcState.balanceA),
         balanceI: Web3.utils.toBN(lcState.balanceI)
       })
-      if (signer !== this.ingridAddress) {
-        throw new Error(`[${methodName}] Ingrid did not sign this state update.`)
+      if (signer.toLowerCase() !== this.ingridAddress.toLowerCase()) {
+        throw new LCCloseError(methodName, 'Hub did not sign update')
       }
     } else {
+       // no state updates made in LC
       // PROBLEM: ingrid doesnt return lcState, just uses empty
       lcState = {
         isClose: false,
-        channelId: lcId,
+        channelId: lc.channelId,
         nonce: 0,
         openVcs: 0,
         vcRootHash: Connext.generateVcRootHash({vc0s: []}),
@@ -681,7 +789,7 @@ class Connext {
     // generate same update with fast close flag and post
     const sigParams = {
       isClose: true,
-      channelId: lcId,
+      channelId: lc.channelId,
       nonce: lcState.nonce + 1,
       openVcs: lcState.openVcs,
       vcRootHash: lcState.vcRootHash,
@@ -697,7 +805,7 @@ class Connext {
     if (lcFinal.sigI) {
       // call consensus close channel
       response = await this.consensusCloseChannelContractHandler({
-        lcId,
+        lcId: lc.channelId,
         nonce: lcState.nonce + 1,
         balanceA: Web3.utils.toBN(lcState.balanceA),
         balanceI: Web3.utils.toBN(lcState.balanceI),
@@ -757,13 +865,6 @@ class Connext {
       sender = accounts[0].toLowerCase().toLowerCase()
     }
     const lc = await this.getLcByPartyA(sender)
-    if (lc.openVcs > 0) {
-      throw new Error(`[${methodName}] Close open VCs before withdraw final.`)
-    }
-    // to do: dependent on lc status
-    if (!lc.isSettling) {
-      throw new Error('Ledger channel is not in settlement state.')
-    }
     const results = await this.byzantineCloseChannelContractHandler({
       lcId: lc.channelId,
       sender: sender
@@ -772,67 +873,49 @@ class Connext {
   }
 
   /**
-   * Sync signed state updates with chain.
-   *
-   * Generates client signature on latest Ingrid-signed state update, and uses web3 to call updateLCState on the contract without challenge flag.
-   *
-   * @example
-   * await connext.checkpoint()
-   */
-  async checkpoint () {
-    // get latest ingrid signed state update
-    const lcId = await this.getLcId()
-    const lcState = await this.getLatestLedgerStateUpdate(lcId)
-    const signer = Connext.recoverSignerFromLCStateUpdate({
-      sig: lcState.sigI,
-      isClose: false,
-      lcId,
-      nonce: lcState.nonce,
-      openVcs: lcState.openVcs,
-      vcRootHash: lcState.vcRootHash,
-      partyA: lcState.partyA,
-      partyI: lcState.partyI,
-      balanceA: Web3.utils.toBN(lcState.balanceA),
-      balanceI: Web3.utils.toBN(lcState.balanceI)
-    })
-    if (signer !== this.ingridAddress.toLowerCase()) {
-      throw new Error(`[${methodName}] Hub did not sign this state update.`)
-    }
-    const sig = await this.createLCStateUpdate({
-      lcId,
-      nonce: lcState.nonce,
-      openVcs: lcState.openVcs,
-      vcRootHash: lcState.vcRootHash,
-      partyA: lcState.partyA,
-      balanceA: Web3.utils.toBN(lcState.balanceA),
-      balanceI: Web3.utils.toBN(lcState.balanceI),
-      signer: lcState.partyA
-    })
-    const result = await this.updateLcStateContractHandler({
-      lcId,
-      nonce: lcState.nonce,
-      openVcs: lcState.openVcs,
-      balanceA: Web3.utils.toBN(lcState.balanceA),
-      balanceI: Web3.utils.toBN(lcState.balanceI),
-      vcRootHash: lcState.vcRootHash,
-      sigA: sig,
-      sigI: lcState.sigI,
-      sender: lcState.partyA
-    })
-
-    return result
-  }
-
-  /**
-   * Verifies and cosigns the ledger state update with the specified nonce.
+   * Verifies and cosigns the latest ledger state update.
    * 
    * @param {Object} params - the method object
    * @param {String} params.lcId - ledger channel id
    * @param {Number} params.nonce - nonce of update you are cosigning
    * @param {String} params.sender - (optional) the person who cosigning the update, defaults to accounts[0]
    */
+  async cosignLatestLcUpdate({ lcId, sender = null }) {
+    const methodName = 'cosignLatestLcUpdate'
+    const isHexStrict = { presence: true, isHexStrict: true }
+    Connext.validatorsResponseToError(
+      validate.single(lcId, isHexStrict),
+      methodName,
+      'lcId'
+    )
+    if (sender) {
+      Connext.validatorsResponseToError(
+        validate.single(sender, isAddress),
+        methodName,
+        'sender'
+      )
+    } else {
+      const accounts = await this.web3.eth.getAccounts()
+      sender = accounts[0].toLowerCase()
+    }
+    const lc = await this.getLcById(lcId)
+    if (lc === null) {
+      throw new LCUpdateError(methodName, 'Channel not found')
+    }
+    if (lc.partyA !== sender.toLowerCase()) {
+      throw new LCUpdateError(methodName, 'Incorrect signer detected')
+    }
+    if (lc.state !== '1') {
+      throw new LCUpdateError(methodName, 'Channel is in invalid state')
+    }
+    // TO DO
+    let latestState = await this.getLatestLedgerStateUpdate(lcId, ['sigI'])
+    const result = await this.cosignLCUpdate({ lcId, nonce: latestState.nonce, sender })
+    return result
+  }
+
   async cosignLCUpdate({ lcId, nonce, sender = null }) {
-    const methodName = 'closeChannels'
+    const methodName = 'cosignLCUpdate'
     const isHexStrict = { presence: true, isHexStrict: true }
     const isPositiveInt = { presence: true, isPositiveInt: true }
     Connext.validatorsResponseToError(
@@ -855,13 +938,45 @@ class Connext {
       const accounts = await this.web3.eth.getAccounts()
       sender = accounts[0].toLowerCase()
     }
+    const lc = await this.getLcById(lcId)
+    if (lc === null) {
+      throw new LCUpdateError(methodName, 'Channel not found')
+    }
+    if (lc.partyA !== sender.toLowerCase()) {
+      throw new LCUpdateError(methodName, 'Incorrect signer detected')
+    }
+    if (lc.state !== '1') {
+      throw new LCUpdateError(methodName, 'Channel is in invalid state')
+    }
+    if (nonce > lc.nonce) {
+      throw new LCUpdateError(methodName, 'Invalid nonce detected')
+    }
 
-    let latestState = await this.getLatestLedgerStateUpdate()
+    // TO DO: factor out into above section
+    let latestState = await this.getLatestLedgerStateUpdate(lcId, ['sigI'])
     if (latestState.nonce !== nonce) {
-      throw new Error('Latest state nonce is not the nonce you wanted to close with.')
+      throw new LCUpdateError(methodName, 'Channel has more recent states to cosign. Signing with nonces that are not the most recent will be supported in the future, but is not currently. Sorry!')
+    }
+
+    // verify sigI
+    const signer = Connext.recoverSignerFromLCStateUpdate({
+      sig: latestState.sigI,
+      isClose: latestState.isClose,
+      channelId: lcId,
+      nonce,
+      openVcs: latestState.openVcs,
+      vcRootHash: latestState.vcRootHash,
+      partyA: sender,
+      partyI: this.ingridAddress,
+      balanceA: Web3.utils.toBN(latestState.balanceA),
+      balanceI: Web3.utils.toBN(latestState.balanceI)
+    })
+    if (signer.toLowerCase() !== this.ingridAddress.toLowerCase()) {
+      throw new LCUpdateError(methodName, 'Invalid signature detected')
     }
 
     latestState.signer = latestState.partyA
+    latestState.channelId = vcId
     const sigA = await this.createLCStateUpdate(latestState)
     const response = await this.axiosInstance.post(
       `${this.ingridUrl}/ledgerchannel/${lcId}/update/${nonce}/cosign`,
@@ -869,6 +984,7 @@ class Connext {
         sig: sigA
       }
     )
+    return response.data
   }
 
 
@@ -1373,13 +1489,68 @@ class Connext {
       methodName,
       'balanceI'
     )
+    if (signer) {
+      Connext.validatorsResponseToError(
+        validate.single(signer, isAddress),
+        methodName,
+        'signer'
+      )
+    } else {
+      const accounts = await this.web3.eth.getAccounts()
+      signer = accounts[0].toLowerCase()
+    }
+    // signer must be in lc
+    if (signer.toLowerCase() !== partyA.toLowerCase() || signer.toLowerCase() !== partyI.toLowerCase()) {
+      throw new LCUpdateError(methodName, 'Invalid signer detected')
+    }
+    // balances must be positive
+    if (balanceA.isNeg() || balanceI.isNeg()) {
+      throw new LCUpdateError(methodName, 'Cannot have negative balances')
+    }
 
-    // TO DO:
-    // additional validation to only allow clients to call correct state updates
+    // validate update
+    const emptyRootHash = Connext.generateVcRootHash({ vc0s: []})
+    const lc = await this.getLcById(channelId)
+    if (lc === null) {
+      // generating opening cert
+      if (nonce !== 0 ) {
+        throw new LCOpenError(methodName, 'Invalid nonce detected')
+      }
+      if (openVcs !== 0) {
+        throw new LCOpenError(methodName, 'Invalid openVcs detected')
+      }
+      if (vcRootHash !== emptyRootHash) {
+        throw new LCOpenError(methodName, 'Invalid vcRootHash detected')
+      }
+      if (partyA === partyI) {
+        throw new LCOpenError(methodName, 'Cannot open channel with yourself')
+      }
+    } else {
+      // updating existing lc
+      // must be open
+      if (lc.state === 1 || lc.state === 3) {
+        throw new LCUpdateError(methodName, 'Channel is in invalid state to accept updates')
+      }
+      // nonce always increasing
+      if (nonce <= lc.nonce) {
+        throw new LCUpdateError(methodName, 'Invalid nonce')
+      }
+      // only open/close 1 vc per update, or dont open any
+      if (Math.abs(Number(openVcs) - Number(lc.openVcs)) !== 1 && Math.abs(Number(openVcs) - Number(lc.openVcs)) !== 0 ) {
+        throw new LCUpdateError(methodName, 'Invalid number of openVcs proposed')
+      }
+      // parties cant change
+      if (partyA !== lc.partyA || partyI !== lc.partyI) {
+        throw new LCUpdateError(methodName, 'Invalid channel parties')
+      }
+      // no change in total balance
+      const channelBal = Web3.utils.toBN(lc.balanceA).add(Web3.utils.toBN(lc.balanceI))
+      if (balanceA.add(balanceI).eq(channelBal) === false) {
+        throw new LCUpdateError(methodName, 'Invalid balance proposed')
+      }
+    }
 
     // generate sig
-    const accounts = await this.web3.eth.getAccounts()
-    // personal sign?
     const hash = Connext.createLCStateUpdateFingerprint({
       isClose,
       channelId,
@@ -1392,14 +1563,10 @@ class Connext {
       balanceI
     })
     let sig
-    if (signer && unlockedAccountPresent) {
+    if (unlockedAccountPresent) {
       sig = await this.web3.eth.sign(hash, signer)
-    } else if (signer) {
-      sig = await this.web3.eth.personal.sign(hash, signer)
-    } else if (unlockedAccountPresent) {
-      sig = await this.web3.eth.sign(hash, accounts[0])
     } else {
-      sig = await this.web3.eth.personal.sign(hash, accounts[0])
+      sig = await this.web3.eth.personal.sign(hash, signer)
     }
     return sig
   }
@@ -1466,19 +1633,54 @@ class Connext {
       methodName,
       'balanceB'
     )
-    // verify balances
-    if (Web3.utils.isBN(balanceA) && balanceA.isNeg()) {
-      throw new VCUpdateError(methodName, 'Balances cannot be negative')
-    } else if (Web3.utils.isBigNumber(balanceA) && balanceA.isNegative()) {
-      throw new VCUpdateError(methodName, 'Balances cannot be negative')
+    // verify subchannel
+    const lcA = await this.getLcByPartyA(partyA)
+    const lcB = await this.getLcByPartyA(partyB)
+    if (lcB === null || lcA === null) {
+      throw new VCOpenError(methodName, 'Missing one or more required subchannels')
     }
-
-    if (Web3.utils.isBN(balanceB) && balanceB.isNeg()) {
-      throw new VCUpdateError(methodName, 'Balances cannot be negative')
-    } else if (Web3.utils.isBigNumber(balanceB) && balanceB.isNegative()) {
-      throw new VCUpdateError(methodName, 'Balances cannot be negative')
+    // subchannels in right state
+    if (lcB.state !== 1 || lcA.state !== 1) {
+      throw new VCOpenError(methodName, 'One or more required subchannels are in the incorrect state')
     }
-
+    // verify channel state update
+    const vc = await this.getChannelById(channelId)
+    if (vc === null) {
+      // channel does not exist, generating opening state
+      if (nonce !== 0) {
+        throw new VCOpenError(methodName, 'Invalid nonce detected')
+      }
+      if (!balanceB.isZero()) {
+        throw new VCOpenError(methodName, 'Invalid balance detected')
+      }
+      if (balanceA.isZero() || balanceA.isNeg()) {
+        throw new VCOpenError(methodName, 'Invalid balance detected')
+      }
+      if (partyA.toLowerCase() === partyB.toLowerCase()) {
+        throw new VCOpenError(methodName, 'Cannot open channel with yourself')
+      }
+      if (Web3.utils.toBN(lcA.balanceA).lt(balanceA)) {
+        throw new VCOpenError(methodName, 'Insufficient balance detected')
+      }
+    } else {
+      // vc exists
+      if (vc.state === 0 || vc.state === 3) {
+        throw new VCUpdateError(methodName, 'Channel is in invalid state')
+      }
+      if (nonce !== vc.nonce + 1) {
+        throw new VCUpdateError(methodName, 'Invalid nonce')
+      }
+      if (balanceA.isNeg() || balanceB.isNeg()) {
+        throw new VCUpdateError(methodName, 'Balances cannot be negative')
+      }
+      if (balanceA.add(balanceB) !== Web3.utils.toBN(vc.balanceA).add(Web3.utils.toBN(vc.balanceB))) {
+        throw new VCUpdateError(methodName, 'Invalid update detected')
+      }
+      if (partyA.toLowerCase() !== vc.partyA || partyB.toLowerCase() !== vc.partyB) {
+        throw new VCUpdateError(methodName, 'Invalid parties detected')
+      }
+    }
+    
     // get accounts
     const accounts = await this.web3.eth.getAccounts()
     // generate and sign hash
@@ -2371,10 +2573,18 @@ class Connext {
       methodName,
       'channelId'
     )
-    const response = await this.axiosInstance.get(
-      `${this.ingridUrl}/virtualchannel/${channelId}`
-    )
-    return response.data
+    try {
+      const response = await this.axiosInstance.get(
+        `${this.ingridUrl}/virtualchannel/${channelId}`
+      )
+      return response.data
+    } catch (e) {
+      if (e.response.status === 400) {
+        return null
+      } else {
+        throw e
+      }
+    }
   }
 
   /**
@@ -2463,10 +2673,19 @@ class Connext {
       const accounts = await this.web3.eth.getAccounts()
       partyA = accounts[0]
     }
-    const response = await this.axiosInstance.get(
-      `${this.ingridUrl}/ledgerchannel/a/${partyA.toLowerCase()}`    
-    )
-    return response.data
+    try {
+      const response = await this.axiosInstance.get(
+        `${this.ingridUrl}/ledgerchannel/a/${partyA.toLowerCase()}`    
+      )
+      return response.data
+    } catch (e) {
+      if (e.response.status === 400) {
+        // lc does not exist
+        return null
+      } else {
+        throw e
+      }
+    }
   }
   
   async getLedgerChannelChallengeTimer () {
@@ -2661,10 +2880,25 @@ class Connext {
       methodName,
       'lcSig'
     )
+    if (balanceA.isNeg() || balanceA.isZero()) {
+      throw new VCOpenError(methodName, 'Invalid channel balance provided')
+    }
 
-    // verify lcSig
-
-    // verify vcSig
+    // verify sigs -- signer === partyA
+    // lcSig -- add later
+    // vcSig
+    let signer = Connext.recoverSignerFromVCStateUpdate({
+      sig: vcSig,
+      channelId,
+      nonce: 0,
+      partyA,
+      partyB,
+      balanceA,
+      balanceB: Web3.utils.toBN('0')
+    })
+    if (signer !== partyA) {
+      throw new VCOpenError(methodName, 'PartyA did not sign channel opening cert')
+    }
 
     // ingrid should add vc params to db
     const response = await this.axiosInstance.post(
@@ -2802,10 +3036,46 @@ class Connext {
       'balanceB'
     )
     Connext.validatorsResponseToError(
-      validate.single(balanceB, isPositiveInt),
+      validate.single(nonce, isPositiveInt),
       methodName,
-      'balanceB'
+      'nonce'
     )
+    // balances cant be negative
+    if (balanceA.isNeg() || balanceB.isNeg()) {
+      throw new VCUpdateError(methodName, 'Channel balances cannot be negative')
+    }
+    // get the vc
+    const vc = await this.getChannelById(channelId)
+    // must exist
+    if (vc === null) {
+      throw new VCUpdateError(methodName, 'Channel not found')
+    }
+    // channel must be open
+    if (vc.state !== 1) {
+      throw new VCUpdateError(methodName, 'Channel is in invalid state')
+    }
+    // total channel balance cant change
+    const channelBalance = Web3.utils.toBN(vc.balanceA).add(Web3.utils.toBN(vc.balanceB))
+    if (balanceA.add(balanceB).eq(channelBalance) === false) {
+      throw new VCUpdateError(methodName, 'Invalid channel balances')
+    }
+    // nonce must be increasing
+    if (nonce !== Number(vc.nonce) + 1) {
+      throw new VCUpdateError(methodName, 'Invalid nonce provided')
+    }
+    // validate sig
+    const signer = Connext.recoverSignerFromVCStateUpdate({
+      sig,
+      channelId,
+      nonce,
+      partyA: vc.partyA,
+      partyB: vc.partyB,
+      balanceA,
+      balanceB
+    })
+    if (signer.toLowerCase() !== vc.partyA.toLowerCase()) {
+      throw new VCUpdateError(methodName, 'Invalid signer detected')
+    }
     const response = await this.axiosInstance.post(
       `${this.ingridUrl}/virtualchannel/${channelId}/update`,
       {
@@ -2832,31 +3102,65 @@ class Connext {
   //  * @param {BigNumber} params.balanceA - balanceA in the virtual channel
   //  * @param {BigNumber} params.balanceB - balanceB in the virtual channel
   //  */
-  async createLCUpdateOnVCOpen ({ vc0, lc, signer }) {
+  async createLCUpdateOnVCOpen ({ vc0, lc, signer = null }) {
     const methodName = 'createLCUpdateOnVCOpen'
+    const isVcState = { presence: true, isVcState: true }
+    const isLcObj = { presence: true, isLcObj: true }
     const isAddress = { presence: true, isAddress: true }
+    Connext.validatorsResponseToError(
+      validate.single(vc0, isVcState),
+      methodName,
+      'vc0'
+    )
+    Connext.validatorsResponseToError(
+      validate.single(lc, isLcObj),
+      methodName,
+      'lc'
+    )
     if (signer) {
       Connext.validatorsResponseToError(
         validate.single(signer, isAddress),
         methodName,
         'signer'
       )
+    } else {
+      const accounts = await this.web3.eth.getAccounts()
+      signer = accounts[0].toLowerCase()
     }
-
+    // signer should always be lc partyA
+    if (signer.toLowerCase() !== lc.partyA) {
+      throw new VCOpenError(methodName, 'Invalid signer detected')
+    }
+    // signer should be vc0 partyA or vc0 partyB
+    if (signer.toLowerCase() !== vc0.partyA || signer.toLowerCase() !== vc0.partyB) {
+      throw new VCOpenError(methodName, 'Invalid signer detected')
+    }
+    // lc must be open
+    if (lc.state !== 1) {
+      throw new VCOpenError(methodName, 'Invalid subchannel state')
+    }
+    // vcId should be unique
+    let vc = await this.getChannelById(vc0.channelId)
+    if (vc) {
+      throw new VCOpenError(methodName, 'Invalid channel id in vc0')
+    }
+    // vc0 validation
+    if (vc0.nonce !== 0) {
+      throw new VCOpenError(methodName, 'Nonce is nonzero')
+    }
+    if (Web3.utils.toBN(vc0.balanceB).isZero() === false) {
+      throw new VCOpenError(methodName, 'Invalid balanceB')
+    }
+    if (
+      Web3.utils.toBN(vc0.balanceA).isNeg() || 
+      Web3.utils.toBN(vc0.balanceA).isZero() || 
+      Web3.utils.toBN(vc0.balanceA).gt(Web3.utils.toBN(lc.balanceA))
+    ) {
+      throw new VCOpenError(methodName, 'Invalid balanceA')
+    }
     let vcInitialStates = await this.getVcInitialStates(lc.channelId)
     vcInitialStates.push(vc0) // add new vc state to hash
     let newRootHash = Connext.generateVcRootHash({vc0s: vcInitialStates})
-    
-    // detect signer and if called on open or join
-    const accounts = await this.web3.eth.getAccounts()
-    if (accounts[0].toLowerCase() === vc0.partyA && signer === null) {
-      signer = vc0.partyA
-    } else if (accounts[0].toLowerCase() === vc0.partyB && signer === null) {
-      // no signer provided, set signer
-      signer = vc0.partyB
-    } else if (signer !== vc0.partyA && accounts[0].toLowerCase() !== vc0.partyA && signer !== vc0.partyB && accounts[0].toLowerCase() !== vc0.partyB ){
-      throw new Error('Not your virtual channel.')
-    }
 
     const updateAtoI = {
       channelId: lc.channelId,
@@ -2893,30 +3197,45 @@ class Connext {
   // */
  async createLCUpdateOnVCClose ({ vcN, subchan, signer = null }) {
   const methodName = 'createLCUpdateOnVCClose'
+  const isVcState = { presence: true, isVcState: true }
+  const isLcObj = { presence: true, isLcObj: true }
   const isAddress = { presence: true, isAddress: true }
+  Connext.validatorsResponseToError(
+    validate.single(vcN, isVcState),
+    methodName,
+    'vcN'
+  )
+  Connext.validatorsResponseToError(
+    validate.single(subchan, isLcObj),
+    methodName,
+    'subchan'
+  )
   if (signer) {
     Connext.validatorsResponseToError(
       validate.single(signer, isAddress),
       methodName,
       'signer'
     )
+  } else {
+    const accounts = await this.web3.eth.getAccounts()
+    signer = accounts[0].toLowerCase()
   }
-  
-  // detect signer and if called on open or join
-  const accounts = await this.web3.eth.getAccounts()
-  if (accounts[0].toLowerCase() === vcN.partyA && signer === null) {
-    signer = vcN.partyA
-  } else if (accounts[0].toLowerCase() === vcN.partyB && signer === null) {
-    // no signer provided, set signer
-    signer = vcN.partyB
-  } else if (signer !== vcN.partyA && accounts[0].toLowerCase() !== vcN.partyA && signer !== vcN.partyB && accounts[0].toLowerCase() !== vcN.partyB ){
-    throw new Error('Not your virtual channel.')
+  // must be partyA in lc
+  if (signer.toLowerCase() !== subchan.partyA) {
+    throw new VCCloseError(methodName, 'Incorrect signer detected')
   }
+  // must be party in vc
+  if (signer.toLowerCase() !== vcN.partyA || signer.toLowerCase() !== vcN.partyB) {
+    throw new VCCloseError(methodName, 'Not your channel')
+  }
+  if (subchan.state !== 1 || subchan.state !== 2) {
+    throw new VCCloseError(methodName, 'Channel is in invalid state')
+  }
+
   let vcInitialStates = await this.getVcInitialStates(subchan.channelId)
   // array of state objects, which include the channel id and nonce
   // remove initial state of vcN
   vcInitialStates = vcInitialStates.filter((val) => {
-    console.log(vcN.channelId !== val.channelId)
     return val.channelId !== vcN.channelId
   })
   const newRootHash = Connext.generateVcRootHash({ vc0s: vcInitialStates})
