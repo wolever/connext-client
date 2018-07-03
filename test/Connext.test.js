@@ -419,7 +419,7 @@ describe('Connext', async () => {
     })
 
     describe('withdraw from ledger channel', () => {
-      it.only(
+      it(
         'should withdraw all funds from the ledger channel for partyA',
         async () => {
           response = await client.withdraw(partyB)
