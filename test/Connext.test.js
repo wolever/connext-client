@@ -1,3 +1,4 @@
+require('dotenv').config()
 const assert = require('assert')
 const Connext = require('../src/Connext')
 const { createFakeWeb3, timeout } = require('./helpers/utils')
@@ -9,8 +10,8 @@ const Web3 = require('web3')
 let web3
 let client
 let ingridAddress
-let watcherUrl = process.env.WATCHER_URL_DEV
-let ingridUrl = process.env.INGRID_URL_DEV
+let watcherUrl = process.env.WATCHER_URL_DEV || ''
+let ingridUrl = process.env.INGRID_URL_DEV || 'http://localhost:8080'
 let contractAddress = '0x31713144d9ae2501e644a418dd9035ed840b1660'
 let hubAuth =
   's%3ACiKWh3t14XjMAllKSmNfYC3F1CzvsFXl.LxI4s1J33VukHvx58lqlPwYlDwEMEbMw1dWhxJz1bjM'
@@ -76,8 +77,8 @@ describe('Connext', async () => {
         }
         // generate sigs
         hash = Connext.createLCStateUpdateFingerprint(AI_LC0)
-        sigA_AI_LC0 = web3.eth.sign(hash, partyA)
-        sigI_AI_LC0 = web3.eth.sign(hash, ingridAddress)
+        sigA_AI_LC0 = await web3.eth.sign(hash, partyA)
+        sigI_AI_LC0 = await web3.eth.sign(hash, ingridAddress)
 
         // generate BI_LC0
         BI_LC0 = {
@@ -112,8 +113,8 @@ describe('Connext', async () => {
         }
         // generate sigs of AB_VC0
         hash = Connext.createVCStateUpdateFingerprint(AB_VC0)
-        sigA_AB_VC0 = web3.eth.sign(hash, partyA)
-        sigB_AB_VC0 = web3.eth.sign(hash, partyB)
+        sigA_AB_VC0 = await web3.eth.sign(hash, partyA)
+        sigB_AB_VC0 = await web3.eth.sign(hash, partyB)
 
         // generate lc1
         let elems = []
@@ -891,67 +892,22 @@ describe('Connext', async () => {
 
   describe('client signature and recover functions', () => {
     describe('createLCStateUpdate', () => {
-      const port = process.env.ETH_PORT ? process.env.ETH_PORT : '9545'
-      web3 = new Web3(`ws://localhost:${port}`)
-      let client = new Connext({ web3 }, Web3)
       describe('createLCStateUpdate with real web3.utils and valid params', () => {
         it('should create a valid signature.', async () => {
-          const accounts = await web3.eth.getAccounts()
-          partyA = accounts[0]
-          partyB = accounts[1]
-          ingridAddress = accounts[2]
-          client.ingridAddress = ingridAddress
-          const sigParams = {
-            isClose: false,
-            channelId: '0xc1912',
-            nonce: 0,
-            openVCs: 0,
-            vcRootHash: '0xc1912',
-            partyA: partyA,
-            partyI: ingridAddress,
-            balanceA: Web3.utils.toBN('0'),
-            balanceI: Web3.utils.toBN('0'),
-            unlockedAccountPresent: true
-          }
-          const sig = await client.createLCStateUpdate(sigParams)
-          const hash = Connext.createLCStateUpdateFingerprint(sigParams)
-          const realSig = await client.web3.eth.sign(hash, accounts[0])
-          // console.log(sig)
-          assert.equal(
-            sig,
-            realSig
-          )
+          AI_LC0.signer = partyA
+          const sig = await client.createLCStateUpdate(AI_LC0)
+          assert.equal(sig, sigA_AI_LC0)
         })
       })
     })
 
     describe('recoverSignerFromLCStateUpdate', () => {
-      const port = process.env.ETH_PORT ? process.env.ETH_PORT : '9545'
-      web3 = new Web3(`ws://localhost:${port}`)
-      let client = new Connext({ web3 }, Web3)
       describe('recoverSignerFromLCStateUpdate with real web3.utils and valid params', async () => {
-        const accounts = await web3.eth.getAccounts()
-        partyA = accounts[1]
-        partyB = accounts[2]
-        ingridAddress = accounts[0]
         describe('should recover the address of person who signed', () => {
           it('should return signer == accounts[1]', async () => {
-            let sigParams = {
-              isClose: false,
-              channelId: '0xc1912',
-              nonce: 0,
-              openVcs: 0,
-              vcRootHash: '0xc1912',
-              partyA: partyA,
-              partyI: ingridAddress,
-              balanceA: Web3.utils.toBN('0'),
-              balanceI: Web3.utils.toBN('0'),
-              unlockedAccountPresent: true,
-              signer: partyA
-            }
-            const sig = await client.createLCStateUpdate(sigParams)
-            sigParams.sig = sig
-            const signer = Connext.recoverSignerFromLCStateUpdate(sigParams)
+            AI_LC0.sig = sigA_AI_LC0
+            AI_LC0.unlockedAccountPresent = true
+            const signer = Connext.recoverSignerFromLCStateUpdate(AI_LC0)
             assert.equal(signer, partyA.toLowerCase())
           })
         })
@@ -959,59 +915,25 @@ describe('Connext', async () => {
     })
 
     describe('createVCStateUpdate', () => {
-      const port = process.env.ETH_PORT ? process.env.ETH_PORT : '9545'
-      web3 = new Web3(`ws://localhost:${port}`)
-      let client = new Connext({ web3 }, Web3)
       describe('createVCStateUpdate with real web3.utils and valid params', () => {
         it('should return a valid signature.', async () => {
-          const accounts = await web3.eth.getAccounts()
-          partyA = accounts[0]
-          partyB = accounts[1]
-          ingridAddress = accounts[2]
-          let channelId = '0xc1912'
-          const sigParams = {
-            channelId,
-            nonce: 0,
-            partyA: partyA,
-            partyB: partyB,
-            balanceA: Web3.utils.toBN('1000'),
-            balanceB: Web3.utils.toBN('0'),
-            unlockedAccountPresent: true
-          }
-          const sig = await client.createVCStateUpdate(sigParams)
-          const hash = Connext.createVCStateUpdateFingerprint(sigParams)
-          const realSig = await client.web3.eth.sign(hash, accounts[0])
+          AB_VC0.signer = partyA
+          const sig = client.createVCStateUpdate(AB_VC0)
           assert.equal(
             sig,
-            realSig
+            sigA_AB_VC0
           )
         })
       })
     })
 
     describe('recoverSignerFromVCStateUpdate', () => {
-      const port = process.env.ETH_PORT ? process.env.ETH_PORT : '9545'
-      web3 = new Web3(`ws://localhost:${port}`)
-      let client = new Connext({ web3 }, Web3)
       describe('recoverSignerFromVCStateUpdate with real web3.utils and valid params', async () => {
-        const accounts = await client.web3.eth.getAccounts()
-        partyA = accounts[1]
-        partyB = accounts[2]
-        ingridAddress = accounts[0]
         describe('should recover the address of person who signed', () => {
           it('should return signer == accounts[1]', async () => {
-            let sigParams = {
-              channelId: '0xc1912',
-              nonce: 0,
-              partyA: partyA,
-              partyB: partyB,
-              balanceA: Web3.utils.toBN('0'),
-              balanceB: Web3.utils.toBN('0'),
-              signer: partyA
-            }
-            const sig = await client.createVCStateUpdate(sigParams)
-            sigParams.sig = sig
-            const signer = Connext.recoverSignerFromVCStateUpdate(sigParams)
+            AB_VC0.sig = sigA_AB_VC0
+            AB_VC0.unlockedAccountPresent = true
+            const signer = Connext.recoverSignerFromVCStateUpdate(AB_VC0)
             assert.equal(signer, partyA.toLowerCase())
           })
         })
