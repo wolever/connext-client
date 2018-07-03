@@ -683,7 +683,7 @@ class Connext {
     const methodName = 'closeChannels'
     const isArray = { presence: true, isArray: true }
     Connext.validatorsResponseToError(
-      validate.single(channels, isArray),
+      validate.single(channelIds, isArray),
       methodName,
       'channels'
     )

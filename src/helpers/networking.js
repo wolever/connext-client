@@ -54,9 +54,15 @@ module.exports = function networking (
       )
     }
 
-    console.log(':)))')
     const data = useAxios ? res.data : await res.json()
-    console.log(data)
+
+    if (res.status === 204) {
+      return {
+        data: null
+      }
+    }
+
+    const data = await res.json()
 
     return {
       data
