@@ -4,7 +4,7 @@ const channelManagerAbi = require('../artifacts/LedgerChannel.json')
 const util = require('ethereumjs-util')
 import Web3 from 'web3'
 import validate from 'validate.js'
-import { LCOpenError, ParameterValidationError, ContractError, VCOpenError, LCUpdateError, VCUpdateError, LCCloseError } from './helpers/Errors';
+import { LCOpenError, ParameterValidationError, ContractError, VCOpenError, LCUpdateError, VCUpdateError, LCCloseError, VCCloseError } from './helpers/Errors';
 const MerkleTree = require('./helpers/MerkleTree')
 const Utils = require('./helpers/utils')
 const crypto = require('crypto')
@@ -609,7 +609,28 @@ class Connext {
 
     // get latest state in vc
     const vc = await this.getChannelById(channelId)
+    if (vc === null) {
+      throw new VCCloseError(methodName, 'Channel not found')
+    }
+    // must be open
+    if (vc.state !== 1) {
+      throw new VCCloseError(methodName, 'Channel is in invalid state')
+    }
     const vcN = await this.getLatestVCStateUpdate(channelId)
+    // verify vcN was signed by agentA
+    const signer = Connext.recoverSignerFromVCStateUpdate({
+      sig: vcN.sigA,
+      channelId: channelId,
+      nonce: vcN.nonce,
+      partyA: vcN.partyA,
+      partyB: vcN.partyB,
+      balanceA: Web3.utils.toBN(vcN.balanceA),
+      balanceB: Web3.utils.toBN(vcN.balanceB)
+    })
+    if (signer !== vcN.partyA) {
+      throw new VCCloseError(methodName, 'Incorrect signer detected on latest update')
+    }
+
     vcN.channelId = channelId
     vcN.partyA = vc.partyA
     vcN.partyB = vc.partyB
@@ -622,7 +643,7 @@ class Connext {
     } else if (subchan.partyA === vcN.partyB) {
       isPartyAInVC = false
     } else {
-      throw new Error('Not your virtual channel.')
+      throw new VCCloseError(methodName, 'Not your virtual channel.')
     }
     // generate decomposed lc update
     const sigAtoI = await this.createLCUpdateOnVCClose({ 
@@ -638,7 +659,6 @@ class Connext {
       channelId: vcN.channelId
     })
 
-    // to do: should verify ingrids signature
     if (fastCloseSig) {
       // ingrid cosigned proposed LC update
       return fastCloseSig
@@ -3166,30 +3186,45 @@ class Connext {
   // */
  async createLCUpdateOnVCClose ({ vcN, subchan, signer = null }) {
   const methodName = 'createLCUpdateOnVCClose'
+  const isVcState = { presence: true, isVcState: true }
+  const isLcObj = { presence: true, isLcObj: true }
   const isAddress = { presence: true, isAddress: true }
+  Connext.validatorsResponseToError(
+    validate.single(vcN, isVcState),
+    methodName,
+    'vcN'
+  )
+  Connext.validatorsResponseToError(
+    validate.single(subchan, isLcObj),
+    methodName,
+    'subchan'
+  )
   if (signer) {
     Connext.validatorsResponseToError(
       validate.single(signer, isAddress),
       methodName,
       'signer'
     )
+  } else {
+    const accounts = await this.web3.eth.getAccounts()
+    signer = accounts[0].toLowerCase()
   }
-  
-  // detect signer and if called on open or join
-  const accounts = await this.web3.eth.getAccounts()
-  if (accounts[0].toLowerCase() === vcN.partyA && signer === null) {
-    signer = vcN.partyA
-  } else if (accounts[0].toLowerCase() === vcN.partyB && signer === null) {
-    // no signer provided, set signer
-    signer = vcN.partyB
-  } else if (signer !== vcN.partyA && accounts[0].toLowerCase() !== vcN.partyA && signer !== vcN.partyB && accounts[0].toLowerCase() !== vcN.partyB ){
-    throw new Error('Not your virtual channel.')
+  // must be partyA in lc
+  if (signer.toLowerCase() !== subchan.partyA) {
+    throw new VCCloseError(methodName, 'Incorrect signer detected')
   }
+  // must be party in vc
+  if (signer.toLowerCase() !== vcN.partyA || signer.toLowerCase() !== vcN.partyB) {
+    throw new VCCloseError(methodName, 'Not your channel')
+  }
+  if (subchan.state !== 1 || subchan.state !== 2) {
+    throw new VCCloseError(methodName, 'Channel is in invalid state')
+  }
+
   let vcInitialStates = await this.getVcInitialStates(subchan.channelId)
   // array of state objects, which include the channel id and nonce
   // remove initial state of vcN
   vcInitialStates = vcInitialStates.filter((val) => {
-    console.log(vcN.channelId !== val.channelId)
     return val.channelId !== vcN.channelId
   })
   const newRootHash = Connext.generateVcRootHash({ vc0s: vcInitialStates})
