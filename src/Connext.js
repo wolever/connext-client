@@ -177,13 +177,15 @@ class Connext {
   // ***************************************
 
   /**
-   * Opens a ledger channel with ingridAddress and bonds initialDeposit. 
+   * Opens a ledger channel with Ingrid (Hub) at the address provided when instantiating the Connext instance with the given initial deposit. 
    * 
-   * Ledger channel challenge timer is determined by Ingrid (Hub) if the parameter is not supplied.
+   * Sender defaults to accounts[0] if not supplied to the register function.
    * 
-   * Sender defaults to accounts[0] if not supplied by register.
+   * Ledger channel challenge timer is determined by Ingrid (Hub) if the parameter is not supplied. Current default value is 3600s (1 hour).
    *
-   * Uses web3 to call createChannel function on the contract, and returns the transaction hash of the channel creation. Once the transaction is successfully mined. Call requestJoinLC
+   * Uses the internal web3 instance to call the createChannel function on the Channel Manager contract, and logs the transaction hash of the channel creation. The function returns the ID of the created channel.
+   * 
+   * Once the channel is created on chain, users should call the requestJoinLc function to request that the hub joins the channel. This function should be called on a timeout sufficient for the hub to detect the channel and add it to its database.
    *
    * If Ingrid is unresponsive, or does not join the channel within the challenge period, the client function "LCOpenTimeoutContractHandler" can be called by the client to recover the funds.
    *
@@ -251,15 +253,6 @@ class Connext {
       throw new LCOpenError(methodName, 'Channel by that ID already exists')
     }
 
-    // /**
-    //  * Descriptive error message back to wallet here
-    //  *
-    //  * Atomicity -- roll back to a previous state if there are inconsistencies here
-    //  *
-    //  * Return to a recoverable state based on block history
-    //  *
-    //  * Fail point so Ingrid can retry if join fails, make sure if ingrid cant join, the funds are recoverable.
-    //  */
     const contractResult = await this.createLedgerChannelContractHandler({
       lcId,
       challenge,
