@@ -938,7 +938,7 @@ class Connext {
     if (lc.partyA !== sender.toLowerCase()) {
       throw new LCUpdateError(methodName, 'Incorrect signer detected')
     }
-    if (lc.state !== '1') {
+    if (lc.state !== 1) {
       throw new LCUpdateError(methodName, 'Channel is in invalid state')
     }
     if (nonce > lc.nonce) {
@@ -946,31 +946,28 @@ class Connext {
     }
 
     // TO DO: factor out into above section
-    let latestState = await this.getLatestLedgerStateUpdate(lcId, ['sigI'])
-    if (latestState.nonce !== nonce) {
-      throw new LCUpdateError(methodName, 'Channel has more recent states to cosign. Signing with nonces that are not the most recent will be supported in the future, but is not currently. Sorry!')
-    }
+    let state = await this.getLcStateByNonce({vcId, nonce})
 
     // verify sigI
     const signer = Connext.recoverSignerFromLCStateUpdate({
-      sig: latestState.sigI,
-      isClose: latestState.isClose,
+      sig: state.sigI,
+      isClose: state.isClose,
       channelId: lcId,
       nonce,
-      openVcs: latestState.openVcs,
-      vcRootHash: latestState.vcRootHash,
+      openVcs: state.openVcs,
+      vcRootHash: state.vcRootHash,
       partyA: sender,
       partyI: this.ingridAddress,
-      balanceA: Web3.utils.toBN(latestState.balanceA),
-      balanceI: Web3.utils.toBN(latestState.balanceI)
+      balanceA: Web3.utils.toBN(state.balanceA),
+      balanceI: Web3.utils.toBN(state.balanceI)
     })
     if (signer.toLowerCase() !== this.ingridAddress.toLowerCase()) {
       throw new LCUpdateError(methodName, 'Invalid signature detected')
     }
 
-    latestState.signer = latestState.partyA
-    latestState.channelId = vcId
-    const sigA = await this.createLCStateUpdate(latestState)
+    state.signer = state.partyA
+    state.channelId = vcId
+    const sigA = await this.createLCStateUpdate(state)
     const response = await this.networking.post(
       `ledgerchannel/${lcId}/update/${nonce}/cosign`,
       {
@@ -2503,6 +2500,46 @@ class Connext {
   // ***************************************
   // *********** INGRID GETTERS ************
   // ***************************************
+  
+  async getVcStateByNonce ({ vcId, nonce }) {
+    const methodName = 'getVcStateByNonce'
+    const isHexStrict = { presence: true, isHexStrict: true }
+    const isPositiveInt = { presence: true, isPositiveInt: true }
+    Connext.validatorsResponseToError(
+      validate.single(vcId, isHexStrict),
+      methodName,
+      'vcId'
+    )
+    Connext.validatorsResponseToError(
+      validate.single(nonce, isPositiveInt),
+      methodName,
+      'nonce'
+    )
+    const response = await this.networking.get(
+      `virtualchannel/${vcId}/update/nonce/${nonce}`
+    )
+    return response.data
+  }
+
+  async getLcStateByNonce ({ lcId, nonce }) {
+    const methodName = 'getLcStateByNonce'
+    const isHexStrict = { presence: true, isHexStrict: true }
+    const isPositiveInt = { presence: true, isPositiveInt: true }
+    Connext.validatorsResponseToError(
+      validate.single(lcId, isHexStrict),
+      methodName,
+      'lcId'
+    )
+    Connext.validatorsResponseToError(
+      validate.single(nonce, isPositiveInt),
+      methodName,
+      'nonce'
+    )
+    const response = await this.networking.get(
+      `ledgerchannel/${lcId}/update/nonce/${nonce}`
+    )
+    return response.data
+  }
 
   async getLatestLedgerStateUpdate (ledgerChannelId, sigs = null) {
     // lcState == latest ingrid signed state
@@ -2525,7 +2562,7 @@ class Connext {
 
   async getVirtualChannelStatesByLcId (ledgerChannelId) {
     // lcState == latest ingrid signed state
-    const methodName = 'getLatestLedgerStateUpdate'
+    const methodName = 'getVirtualChannelStatesByLcId'
     const isHexStrict = { presence: true, isHexStrict: true }
     Connext.validatorsResponseToError(
       validate.single(ledgerChannelId, isHexStrict),
