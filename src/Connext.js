@@ -1521,7 +1521,7 @@ class Connext {
     } else {
       // updating existing lc
       // must be open
-      if (lc.state === 1 || lc.state === 3) {
+      if (lc.state === 0 || lc.state === 3) {
         throw new LCUpdateError(methodName, 'Channel is in invalid state to accept updates')
       }
       // nonce always increasing
@@ -1539,6 +1539,7 @@ class Connext {
       // no change in total balance
       const channelBal = Web3.utils.toBN(lc.balanceA).add(Web3.utils.toBN(lc.balanceI))
       if (balanceA.add(balanceI).eq(channelBal) === false) {
+
         throw new LCUpdateError(methodName, 'Invalid balance proposed')
       }
     }
@@ -2781,7 +2782,7 @@ class Connext {
       'isBN'
     )
     const response = await this.networking.post(
-      `/ledgerchannel/${lcId}/deposit`,
+      `ledgerchannel/${lcId}/deposit`,
       {
         deposit: deposit.toString()
       }
@@ -3124,7 +3125,7 @@ class Connext {
       throw new VCOpenError(methodName, 'Invalid signer detected')
     }
     // signer should be vc0 partyA or vc0 partyB
-    if (signer.toLowerCase() !== vc0.partyA && signer.toLowerCase() !== vc0.partyB) {
+    if (signer.toLowerCase() !== vc0.partyA.toLowerCase() && signer.toLowerCase() !== vc0.partyB.toLowerCase()) {
       throw new VCOpenError(methodName, 'Invalid signer detected')
     }
     // lc must be open
