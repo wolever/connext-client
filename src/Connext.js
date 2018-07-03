@@ -898,7 +898,7 @@ class Connext {
     if (lc.partyA !== sender.toLowerCase()) {
       throw new LCUpdateError(methodName, 'Incorrect signer detected')
     }
-    if (lc.state !== '1') {
+    if (lc.state !== 1) {
       throw new LCUpdateError(methodName, 'Channel is in invalid state')
     }
     // TO DO
@@ -938,7 +938,7 @@ class Connext {
     if (lc.partyA !== sender.toLowerCase()) {
       throw new LCUpdateError(methodName, 'Incorrect signer detected')
     }
-    if (lc.state !== '1') {
+    if (lc.state !== 1) {
       throw new LCUpdateError(methodName, 'Channel is in invalid state')
     }
     if (nonce > lc.nonce) {
@@ -1425,7 +1425,8 @@ class Connext {
     balanceA,
     balanceI,
     unlockedAccountPresent = process.env.DEV ? process.env.DEV : false, // true if hub or ingrid, dev needs unsigned
-    signer = null
+    signer = null,
+    hubBond = null
   }) {
     const methodName = 'createLCStateUpdate'
     // validate
@@ -1482,6 +1483,15 @@ class Connext {
       methodName,
       'balanceI'
     )
+    if (hubBond) {
+      Connext.validatorsResponseToError(
+        validate.single(hubBond, isBN),
+        methodName,
+        'hubBond'
+      )
+    } else {
+      hubBond = Web3.utils.toBN('0')
+    }
     if (signer) {
       Connext.validatorsResponseToError(
         validate.single(signer, isAddress),
@@ -1521,7 +1531,7 @@ class Connext {
     } else {
       // updating existing lc
       // must be open
-      if (lc.state === 0 || lc.state === 3) {
+      if (lc.state === 3) {
         throw new LCUpdateError(methodName, 'Channel is in invalid state to accept updates')
       }
       // nonce always increasing
@@ -1537,9 +1547,11 @@ class Connext {
         throw new LCUpdateError(methodName, 'Invalid channel parties')
       }
       // no change in total balance
-      const channelBal = Web3.utils.toBN(lc.balanceA).add(Web3.utils.toBN(lc.balanceI))
+      // add ledger channel balances of both parties from previously, subctract new balance of vc being opened
+      const channelBal = Web3.utils.toBN(lc.balanceA).add(Web3.utils.toBN(lc.balanceI)).sub(hubBond)
       if (balanceA.add(balanceI).eq(channelBal) === false) {
-
+        console.log(balanceA.toString())
+        console.log(balanceI.toString())
         throw new LCUpdateError(methodName, 'Invalid balance proposed')
       }
     }
@@ -1658,16 +1670,16 @@ class Connext {
       }
     } else {
       // vc exists
-      if (vc.state === 0 || vc.state === 3) {
+      if (vc.state === 3) {
         throw new VCUpdateError(methodName, 'Channel is in invalid state')
       }
-      if (nonce !== vc.nonce + 1) {
+      if (nonce !== vc.nonce + 1 && nonce !== 0) { // could be joining
         throw new VCUpdateError(methodName, 'Invalid nonce')
       }
       if (balanceA.isNeg() || balanceB.isNeg()) {
         throw new VCUpdateError(methodName, 'Balances cannot be negative')
       }
-      if (balanceA.add(balanceB) !== Web3.utils.toBN(vc.balanceA).add(Web3.utils.toBN(vc.balanceB))) {
+      if (!balanceA.add(balanceB).eq(Web3.utils.toBN(vc.balanceA).add(Web3.utils.toBN(vc.balanceB)))) {
         throw new VCUpdateError(methodName, 'Invalid update detected')
       }
       if (partyA.toLowerCase() !== vc.partyA || partyB.toLowerCase() !== vc.partyB) {
@@ -2889,7 +2901,7 @@ class Connext {
       balanceA,
       balanceB: Web3.utils.toBN('0')
     })
-    if (signer !== partyA) {
+    if (signer.toLowerCase() !== partyA.toLowerCase()) {
       throw new VCOpenError(methodName, 'PartyA did not sign channel opening cert')
     }
 
@@ -3134,7 +3146,8 @@ class Connext {
     }
     // vcId should be unique
     let vc = await this.getChannelById(vc0.channelId)
-    if (vc) {
+    console.log()
+    if (vc && vc.state !== 0) {
       throw new VCOpenError(methodName, 'Invalid channel id in vc0')
     }
     // vc0 validation
@@ -3162,9 +3175,10 @@ class Connext {
       vcRootHash: newRootHash,
       partyA: lc.partyA,
       partyI: this.ingridAddress,
-      balanceA: signer === vc0.partyA ? Web3.utils.toBN(lc.balanceA).sub(Web3.utils.toBN(vc0.balanceA)) : Web3.utils.toBN(lc.balanceA).sub(Web3.utils.toBN(vc0.balanceB)),
-      balanceI: signer === vc0.partyA ? Web3.utils.toBN(lc.balanceI).sub(Web3.utils.toBN(vc0.balanceB)) : Web3.utils.toBN(lc.balanceI).sub(Web3.utils.toBN(vc0.balanceA)),
-      signer: signer
+      balanceA: signer.toLowerCase() === vc0.partyA.toLowerCase() ? Web3.utils.toBN(lc.balanceA).sub(Web3.utils.toBN(vc0.balanceA)) : Web3.utils.toBN(lc.balanceA).sub(Web3.utils.toBN(vc0.balanceB)),
+      balanceI: signer.toLowerCase() === vc0.partyA.toLowerCase() ? Web3.utils.toBN(lc.balanceI).sub(Web3.utils.toBN(vc0.balanceB)) : Web3.utils.toBN(lc.balanceI).sub(Web3.utils.toBN(vc0.balanceA)),
+      signer: signer,
+      hubBond: Web3.utils.toBN(vc0.balanceA).add(Web3.utils.toBN(vc0.balanceB))
     }
     const sigAtoI = await this.createLCStateUpdate(updateAtoI)
     console.log('updateAtoI:', updateAtoI)
