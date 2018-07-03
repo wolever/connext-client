@@ -18,7 +18,7 @@ module.exports = function networking (baseUrl) {
   }
 
   async function request (url, method, body) {
-    useAxios = process.env.DEV ? process.env.DEV : false
+    let useAxios = process.env.DEV ? process.env.DEV : false
 
     const opts = {
       method
