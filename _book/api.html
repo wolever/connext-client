@@ -158,7 +158,7 @@
     
         <li class="chapter " data-level="2.2" data-path="api.html">
             
-                <a href="api.html#connextregisterinitialdeposit-sender-challenge-⇒-string">
+                <a href="api.html#connextregisterinitialdeposit-sender-challenge-⇒-promise">
             
                     
                     Instance Methods
@@ -172,7 +172,7 @@
     
         <li class="chapter " data-level="2.2.1" data-path="api.html">
             
-                <a href="api.html#connextregisterinitialdeposit-sender-challenge-⇒-string">
+                <a href="api.html#connextregisterinitialdeposit-sender-challenge-⇒-promise">
             
                     
                     register
@@ -185,7 +185,7 @@
     
         <li class="chapter " data-level="2.2.2" data-path="api.html">
             
-                <a href="api.html#connextdepositdepositinwei-sender-recipient-⇒-string">
+                <a href="api.html#connextdepositdepositinwei-sender-recipient-⇒-promise">
             
                     
                     deposit
@@ -198,7 +198,7 @@
     
         <li class="chapter " data-level="2.2.3" data-path="api.html">
             
-                <a href="api.html#connextopenchannelparams-⇒-string">
+                <a href="api.html#connextopenchannelparams-⇒-promise">
             
                     
                     openChannel
@@ -211,7 +211,7 @@
     
         <li class="chapter " data-level="2.2.4" data-path="api.html">
             
-                <a href="api.html#connextjoinchannelchannelid-sender">
+                <a href="api.html#connextjoinchannelchannelid-sender-⇒-promise">
             
                     
                     joinChannel
@@ -224,7 +224,7 @@
     
         <li class="chapter " data-level="2.2.5" data-path="api.html">
             
-                <a href="api.html#connextupdatebalanceparams-⇒-string">
+                <a href="api.html#connextupdatebalanceparams-⇒-promise">
             
                     
                     updateBalance
@@ -237,7 +237,7 @@
     
         <li class="chapter " data-level="2.2.6" data-path="api.html">
             
-                <a href="api.html#connextclosechannelchannelid">
+                <a href="api.html#connextclosechannelchannelid-⇒-promise">
             
                     
                     closeChannel
@@ -263,7 +263,7 @@
     
         <li class="chapter " data-level="2.2.8" data-path="api.html">
             
-                <a href="api.html#connextwithdrawsender-⇒-object--string--boolean">
+                <a href="api.html#connextwithdrawsender-⇒-promise">
             
                     
                     withdraw
@@ -276,7 +276,7 @@
     
         <li class="chapter " data-level="2.2.9" data-path="api.html">
             
-                <a href="api.html#connextwithdrawfinal">
+                <a href="api.html#connextwithdrawfinalsender-⇒-promise">
             
                     
                     withdrawFinal
@@ -289,10 +289,10 @@
     
         <li class="chapter " data-level="2.2.10" data-path="api.html">
             
-                <a href="api.html#connextcheckpoint">
+                <a href="api.html#connextcosignlcupdateparams-⇒-promise">
             
                     
-                    checkpoint
+                    cosignLCUpdate
             
                 </a>
             
@@ -302,20 +302,7 @@
     
         <li class="chapter " data-level="2.2.11" data-path="api.html">
             
-                <a href="api.html#connextcosignlcupdateparams">
-            
-                    
-                    cosignBalanceUpdate
-            
-                </a>
-            
-
-            
-        </li>
-    
-        <li class="chapter " data-level="2.2.12" data-path="api.html">
-            
-                <a href="api.html#connextlcopentimeoutcontracthandlerparams">
+                <a href="api.html#connextlcopentimeoutcontracthandlerlcid-sender-⇒-promise">
             
                     
                     LCOpenTimeoutContractHandler
@@ -326,9 +313,22 @@
             
         </li>
     
+        <li class="chapter " data-level="2.2.12" data-path="api.html">
+            
+                <a href="api.html#connextgetchannelstatesbylcidledgerchannelid-⇒-promise">
+            
+                    
+                    getChannelStatesByLcId
+            
+                </a>
+            
+
+            
+        </li>
+    
         <li class="chapter " data-level="2.2.13" data-path="api.html">
             
-                <a href="api.html#connextgetchannelbyidchannelid-⇒-object">
+                <a href="api.html#connextgetchannelbyidchannelid-⇒-promise">
             
                     
                     getChannelById
@@ -341,7 +341,7 @@
     
         <li class="chapter " data-level="2.2.14" data-path="api.html">
             
-                <a href="api.html#connextgetchannelbypartiesparams-⇒-object">
+                <a href="api.html#connextgetchannelbypartiesparams-⇒-promise">
             
                     
                     getChannelByParties
@@ -354,7 +354,20 @@
     
         <li class="chapter " data-level="2.2.15" data-path="api.html">
             
-                <a href="api.html#connextgetlcbyidlcid-⇒-object">
+                <a href="api.html#connextgetchannelsbylcidledgerchannelid-⇒-promise">
+            
+                    
+                    getChannelsByLcId
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="2.2.16" data-path="api.html">
+            
+                <a href="api.html#connextgetlcbyidlcid-⇒-promise">
             
                     
                     getLcById
@@ -365,12 +378,38 @@
             
         </li>
     
-        <li class="chapter " data-level="2.2.16" data-path="api.html">
+        <li class="chapter " data-level="2.2.17" data-path="api.html">
             
-                <a href="api.html#connextgetlcbypartyapartya-⇒-object">
+                <a href="api.html#connextgetlcbypartyapartya-status-⇒-promise">
             
                     
                     getLcByPartyA
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="2.2.18" data-path="api.html">
+            
+                <a href="api.html#connextrequestingriddepositparams-⇒-promise">
+            
+                    
+                    requestIngridDeposit
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="2.2.19" data-path="api.html">
+            
+                <a href="api.html#connextrequestjoinlclcid-⇒-promise">
+            
+                    
+                    requestJoinLc
             
                 </a>
             
@@ -525,14 +564,6 @@
 <p><a id="Connext"></a></p>
 <p></p><h2 id="connext">Connext</h2>Class representing an instance of a Connext client.<p></p>
 <p><strong>Kind</strong>: global class  </p>
-
-</li>
-</ul>
-</li>
-</ul>
-<p><br>
-<br>
-<br></p>
 <p><a id="new_Connext_new"></a></p>
 <p></p><h2 id="new-connextparams">new Connext(params)</h2>Create an instance of the Connext client.<p></p>
 <table>
@@ -585,12 +616,13 @@
 <br>
 <br></p>
 <p><a id="Connext+register"></a></p>
-<p></p><h2 id="connextregisterinitialdeposit-sender-challenge-&#x21D2;-string">connext.register(initialDeposit, sender, challenge) &#x21D2; <code>String</code></h2>Opens a ledger channel with ingridAddress and bonds initialDeposit. <p></p>
-<p>Ledger channel challenge timer is determined by Ingrid (Hub) if the parameter is not supplied.</p>
-<p>Sender defaults to accounts[0] if not supplied by register.</p>
-<p>Uses web3 to call createChannel function on the contract, and pings Ingrid with opening signature and initial deposit so she may join the channel.</p>
+<p></p><h2 id="connextregisterinitialdeposit-sender-challenge-&#x21D2;-promise">connext.register(initialDeposit, sender, challenge) &#x21D2; <code>Promise</code></h2>Opens a ledger channel with Ingrid (Hub) at the address provided when instantiating the Connext instance with the given initial deposit. <p></p>
+<p>Sender defaults to accounts[0] if not supplied to the register function.</p>
+<p>Ledger channel challenge timer is determined by Ingrid (Hub) if the parameter is not supplied. Current default value is 3600s (1 hour).</p>
+<p>Uses the internal web3 instance to call the createChannel function on the Channel Manager contract, and logs the transaction hash of the channel creation. The function returns the ID of the created channel.</p>
+<p>Once the channel is created on chain, users should call the requestJoinLc function to request that the hub joins the channel. This function should be called on a timeout sufficient for the hub to detect the channel and add it to its database.</p>
 <p>If Ingrid is unresponsive, or does not join the channel within the challenge period, the client function &quot;LCOpenTimeoutContractHandler&quot; can be called by the client to recover the funds.</p>
-<p><strong>Kind</strong>: instance method of <a href="#Connext"><code>Connext</code></a><br><strong>Returns</strong>: <code>String</code> - the ledger channel id of the created channel  </p>
+<p><strong>Kind</strong>: instance method of <a href="#Connext"><code>Connext</code></a><br><strong>Returns</strong>: <code>Promise</code> - resolves to the ledger channel id of the created channel  </p>
 <table>
 <thead>
 <tr>
@@ -603,7 +635,7 @@
 <tbody>
 <tr>
 <td>initialDeposit</td>
-<td><code>BigNumber</code></td>
+<td><code>BN</code></td>
 <td></td>
 <td>deposit in wei</td>
 </tr>
@@ -622,18 +654,17 @@
 </tbody>
 </table>
 <p><strong>Example</strong>  </p>
-<pre><code class="lang-js">// get a BN of a deposit value in wei
-const deposit = Web3.utils.toBN(Web3.utils.toWei(&apos;1&apos;, &apos;ether))
+<pre><code class="lang-js">const deposit = Web3.utils.toBN(Web3.utils.toWei(&apos;1&apos;, &apos;ether))
 const lcId = await connext.register(deposit)
 </code></pre>
 <p><br>
 <br>
 <br></p>
 <p><a id="Connext+deposit"></a></p>
-<p></p><h2 id="connextdepositdepositinwei-sender-recipient-&#x21D2;-string">connext.deposit(depositInWei, sender, recipient) &#x21D2; <code>String</code></h2>Adds a deposit to an existing ledger channel. Calls contract function &quot;deposit&quot;.<p></p>
-<p>Can be used by any party who wants to deposit funds into a ledger channel.</p>
+<p></p><h2 id="connextdepositdepositinwei-sender-recipient-&#x21D2;-promise">connext.deposit(depositInWei, sender, recipient) &#x21D2; <code>Promise</code></h2>Adds a deposit to an existing ledger channel by calling the contract function &quot;deposit&quot; using the internal web3 instance.<p></p>
+<p>Can be used by any either channel party.</p>
 <p>If sender is not supplied, it defaults to accounts[0]. If the recipient is not supplied, it defaults to the sender.</p>
-<p><strong>Kind</strong>: instance method of <a href="#Connext"><code>Connext</code></a><br><strong>Returns</strong>: <code>String</code> - the transaction hash of the onchain deposit.  </p>
+<p><strong>Kind</strong>: instance method of <a href="#Connext"><code>Connext</code></a><br><strong>Returns</strong>: <code>Promise</code> - resolves to the transaction hash of the onchain deposit.  </p>
 <table>
 <thead>
 <tr>
@@ -646,7 +677,7 @@ const lcId = await connext.register(deposit)
 <tbody>
 <tr>
 <td>depositInWei</td>
-<td><code>BigNumber</code></td>
+<td><code>BN</code></td>
 <td></td>
 <td>value of the deposit</td>
 </tr>
@@ -673,11 +704,11 @@ const lcId = await connext.register(deposit)
 <br>
 <br></p>
 <p><a id="Connext+openChannel"></a></p>
-<p></p><h2 id="connextopenchannelparams-&#x21D2;-string">connext.openChannel(params) &#x21D2; <code>String</code></h2>Opens a virtual channel between &quot;to&quot; and caller with Ingrid as the hub. Both users must have a ledger channel open with ingrid.<p></p>
+<p></p><h2 id="connextopenchannelparams-&#x21D2;-promise">connext.openChannel(params) &#x21D2; <code>Promise</code></h2>Opens a virtual channel between &quot;to&quot; and sender with Ingrid as the hub. Both users must have a ledger channel open with ingrid.<p></p>
 <p>If there is no deposit provided, then 100% of the ledger channel balance is added to virtual channel deposit. This function is to be called by the &quot;A&quot; party in a unidirectional scheme.</p>
-<p>Signs a copy of the initial virtual channel state, and generates a proposed ledger channel update to the hub for countersigning that updates the number of open virtual channels and the vcRootHash of the ledger channel state.</p>
+<p>Signs a copy of the initial virtual channel state, and generates a proposed ledger channel update to the hub for countersigning that updates the number of open virtual channels and the root hash of the ledger channel state.</p>
 <p>This proposed state update serves as the opening certificate for the virtual channel, and is used to verify Ingrid agreed to facilitate the creation of the virtual channel and take on the counterparty risk.</p>
-<p><strong>Kind</strong>: instance method of <a href="#Connext"><code>Connext</code></a><br><strong>Returns</strong>: <code>String</code> - the virtual channel ID recieved by Ingrid  </p>
+<p><strong>Kind</strong>: instance method of <a href="#Connext"><code>Connext</code></a><br><strong>Returns</strong>: <code>Promise</code> - resolves to the virtual channel ID recieved by Ingrid  </p>
 <table>
 <thead>
 <tr>
@@ -699,7 +730,7 @@ const lcId = await connext.register(deposit)
 </tr>
 <tr>
 <td>params.deposit</td>
-<td><code>BigNumber</code></td>
+<td><code>BN</code></td>
 <td>(optional) deposit in wei for the virtual channel, defaults to the entire LC balance</td>
 </tr>
 <tr>
@@ -717,9 +748,9 @@ const lcId = await connext.register(deposit)
 <br>
 <br></p>
 <p><a id="Connext+joinChannel"></a></p>
-<p></p><h2 id="connextjoinchannelchannelid-sender">connext.joinChannel(channelId, sender)</h2>Joins channel by channelId with a deposit of 0 (unidirectional channels).<p></p>
+<p></p><h2 id="connextjoinchannelchannelid-sender-&#x21D2;-promise">connext.joinChannel(channelId, sender) &#x21D2; <code>Promise</code></h2>Joins virtual channel with provided channelId with a deposit of 0 (unidirectional channels).<p></p>
 <p>This function is to be called by the &quot;B&quot; party in a unidirectional scheme.</p>
-<p><strong>Kind</strong>: instance method of <a href="#Connext"><code>Connext</code></a>  </p>
+<p><strong>Kind</strong>: instance method of <a href="#Connext"><code>Connext</code></a><br><strong>Returns</strong>: <code>Promise</code> - resolves to the virtual channel ID  </p>
 <table>
 <thead>
 <tr>
@@ -752,10 +783,10 @@ const lcId = await connext.register(deposit)
 <br>
 <br></p>
 <p><a id="Connext+updateBalance"></a></p>
-<p></p><h2 id="connextupdatebalanceparams-&#x21D2;-string">connext.updateBalance(params) &#x21D2; <code>String</code></h2>Updates channel balance by provided ID.<p></p>
-<p>In the unidirectional scheme, this function is called by the &quot;A&quot; party only.</p>
+<p></p><h2 id="connextupdatebalanceparams-&#x21D2;-promise">connext.updateBalance(params) &#x21D2; <code>Promise</code></h2>Updates channel balance by provided ID and balances.<p></p>
+<p>In the unidirectional scheme, this function is called by the &quot;A&quot; party only, and only updates that increase the balance of the &quot;B&quot; party are accepted.</p>
 <p>Increments the nonce and generates a signed state update, which is then posted to the hub/watcher.</p>
-<p><strong>Kind</strong>: instance method of <a href="#Connext"><code>Connext</code></a><br><strong>Returns</strong>: <code>String</code> - returns signature of balance update.  </p>
+<p><strong>Kind</strong>: instance method of <a href="#Connext"><code>Connext</code></a><br><strong>Returns</strong>: <code>Promise</code> - resolves to the signature of the &quot;A&quot; party on the balance update  </p>
 <table>
 <thead>
 <tr>
@@ -768,17 +799,17 @@ const lcId = await connext.register(deposit)
 <tr>
 <td>params</td>
 <td><code>Object</code></td>
-<td>the method object.</td>
+<td>the method object</td>
 </tr>
 <tr>
 <td>params.channelId</td>
 <td><code>String</code></td>
-<td>ID of channel.</td>
+<td>ID of channel</td>
 </tr>
 <tr>
 <td>params.balanceA</td>
 <td><code>BigNumber</code></td>
-<td>channel balance in Wei (of &quot;A&quot; party).</td>
+<td>channel balance in Wei (of &quot;A&quot; party)</td>
 </tr>
 <tr>
 <td>params.balanceB</td>
@@ -797,12 +828,12 @@ const lcId = await connext.register(deposit)
 <br>
 <br></p>
 <p><a id="Connext+closeChannel"></a></p>
-<p></p><h2 id="connextclosechannelchannelid">connext.closeChannel(channelId)</h2>Closes a virtual channel.<p></p>
-<p>Retrieves the latest signed virtual state update, and decomposes the virtual channel into their respective ledger channel updates.</p>
+<p></p><h2 id="connextclosechannelchannelid-&#x21D2;-promise">connext.closeChannel(channelId) &#x21D2; <code>Promise</code></h2>Closes a virtual channel.<p></p>
+<p>Retrieves the latest virtual state update, and decomposes the virtual channel into their respective ledger channel updates.</p>
 <p>The virtual channel agent who called this function signs the closing ledger-channel update, and forwards the signature to Ingrid.</p>
 <p>Ingrid verifies the signature, returns her signature of the proposed virtual channel decomposition, and proposes the LC update for the other virtual channel participant. </p>
 <p>If Ingrid does not return her signature on the proposed virtual channel decomposition, the caller goes to chain by calling initVC and settleVC.</p>
-<p><strong>Kind</strong>: instance method of <a href="#Connext"><code>Connext</code></a>  </p>
+<p><strong>Kind</strong>: instance method of <a href="#Connext"><code>Connext</code></a><br><strong>Returns</strong>: <code>Promise</code> - resolves to the signature of the hub on the generated update if accepted, or the result of closing the channel on chain if there is a dispute  </p>
 <table>
 <thead>
 <tr>
@@ -829,7 +860,7 @@ const lcId = await connext.register(deposit)
 <br>
 <br></p>
 <p><a id="Connext+closeChannels"></a></p>
-<p></p><h2 id="connextclosechannelschannelids">connext.closeChannels(channelIds)</h2>Close many virtual channels by calling closeChannel on each channel ID in the provided array.<p></p>
+<p></p><h2 id="connextclosechannelschannelids">connext.closeChannels(channelIds)</h2>Closes many virtual channels by calling closeChannel on each channel ID in the provided array.<p></p>
 <p><strong>Kind</strong>: instance method of <a href="#Connext"><code>Connext</code></a>  </p>
 <table>
 <thead>
@@ -849,14 +880,8 @@ const lcId = await connext.register(deposit)
 </table>
 <p><strong>Example</strong>  </p>
 <pre><code class="lang-js"><span class="hljs-keyword">const</span> channels = [
-  {
-    channelId: <span class="hljs-number">0xa</span>sd310..,
-    balance: web3.utils.toBN(web3.utils.toWei(<span class="hljs-number">0.5</span>, <span class="hljs-string">&apos;ether&apos;</span>))
-  },
-  {
-    channelId: <span class="hljs-number">0xad</span>sf11..,
-    balance: web3.utils.toBN(web3.utils.toWei(<span class="hljs-number">0.2</span>, <span class="hljs-string">&apos;ether&apos;</span>))
-  }
+    <span class="hljs-number">0xa</span>sd310..,
+    <span class="hljs-number">0xad</span>sf11..,
 ]
 <span class="hljs-keyword">await</span> connext.closeChannels(channels)
 </code></pre>
@@ -864,12 +889,12 @@ const lcId = await connext.register(deposit)
 <br>
 <br></p>
 <p><a id="Connext+withdraw"></a></p>
-<p></p><h2 id="connextwithdrawsender-&#x21D2;-object--string--boolean">connext.withdraw(sender) &#x21D2; <code>Object</code> | <code>String</code> | <code>Boolean</code></h2>Withdraws bonded funds from ledger channel with ingrid.
-All virtual channels must be closed before a ledger channel can be closed.<p></p>
-<p>Generates the state update from the latest ingrid signed state with fast-close flag.
-Ingrid should countersign if the state update matches what she has signed previously, and the channel will fast close by calling consensusCloseChannel on the Channel Manager contract.</p>
+<p></p><h2 id="connextwithdrawsender-&#x21D2;-promise">connext.withdraw(sender) &#x21D2; <code>Promise</code></h2>Withdraws bonded funds from an existing ledger channel.<p></p>
+<p>All virtual channels must be closed before a ledger channel can be closed.</p>
+<p>Generates the state update from the latest ingrid signed state with fast-close flag.</p>
+<p>Ingrid should countersign the closing update if it matches what she has signed previously, and the channel will fast close by calling consensusCloseChannel on the contract.</p>
 <p>If the state update doesn&apos;t match what Ingrid previously signed, then updateLCState is called with the latest state and a challenge flag.</p>
-<p><strong>Kind</strong>: instance method of <a href="#Connext"><code>Connext</code></a><br><strong>Returns</strong>: <code>Object</code> - contains the transaction hash of the resulting transaction, and a boolean indicating if it was fast closed<code>String</code> - the transaction hash of either consensusCloseChannel or withdrawFinal<code>Boolean</code> - true if successfully withdrawn, false if challenge process commences  </p>
+<p><strong>Kind</strong>: instance method of <a href="#Connext"><code>Connext</code></a><br><strong>Returns</strong>: <code>Promise</code> - resolves to an object with the structure: { response: transactionHash, fastClosed: true}  </p>
 <table>
 <thead>
 <tr>
@@ -895,10 +920,29 @@ Ingrid should countersign if the state update matches what she has signed previo
 <br>
 <br></p>
 <p><a id="Connext+withdrawFinal"></a></p>
-<p></p><h2 id="connextwithdrawfinal">connext.withdrawFinal()</h2>Withdraw bonded funds from ledger channel after a channel is challenge-closed and the challenge period expires by calling withdrawFinal using Web3.<p></p>
+<p></p><h2 id="connextwithdrawfinalsender-&#x21D2;-promise">connext.withdrawFinal(sender) &#x21D2; <code>Promise</code></h2>Withdraw bonded funds from ledger channel after a channel is challenge-closed and the challenge period expires by calling withdrawFinal using the internal web3 instance.<p></p>
 <p>Looks up LC by the account address of the client-side user if sender parameter is not supplied.</p>
 <p>Calls the &quot;byzantineCloseChannel&quot; function on the contract.</p>
-<p><strong>Kind</strong>: instance method of <a href="#Connext"><code>Connext</code></a><br><strong>Example</strong>  </p>
+<p><strong>Kind</strong>: instance method of <a href="#Connext"><code>Connext</code></a><br><strong>Returns</strong>: <code>Promise</code> - resolves to the transaction hash from calling byzantineCloseChannel  </p>
+<table>
+<thead>
+<tr>
+<th>Param</th>
+<th>Type</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>sender</td>
+<td><code>String</code></td>
+<td><code></code></td>
+<td>(optional) the person sending the on chain transaction, defaults to accounts[0]</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Example</strong>  </p>
 <pre><code class="lang-js"><span class="hljs-keyword">const</span> success = <span class="hljs-keyword">await</span> connext.withdraw()
 <span class="hljs-keyword">if</span> (!success) {
   <span class="hljs-comment">// wait out challenge timer</span>
@@ -908,18 +952,43 @@ Ingrid should countersign if the state update matches what she has signed previo
 <p><br>
 <br>
 <br></p>
-<p><a id="Connext+checkpoint"></a></p>
-<p></p><h2 id="connextcheckpoint">connext.checkpoint()</h2>Sync signed state updates with chain.<p></p>
-<p>Generates client signature on latest Ingrid-signed state update, and uses web3 to call updateLCState on the contract without challenge flag.</p>
-<p><strong>Kind</strong>: instance method of <a href="#Connext"><code>Connext</code></a><br><strong>Example</strong>  </p>
-<pre><code class="lang-js"><span class="hljs-keyword">await</span> connext.checkpoint()
+<p><a id="Connext+cosignLatestLcUpdate"></a></p>
+<p></p><h2 id="connextcosignlatestlcupdatelcid-sender-&#x21D2;-promise">connext.cosignLatestLcUpdate(lcId, sender) &#x21D2; <code>Promise</code></h2>Verifies and cosigns the latest ledger state update.<p></p>
+<p><strong>Kind</strong>: instance method of <a href="#Connext"><code>Connext</code></a><br><strong>Returns</strong>: <code>Promise</code> - resolves to the cosigned ledger channel state update  </p>
+<table>
+<thead>
+<tr>
+<th>Param</th>
+<th>Type</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>lcId</td>
+<td><code>String</code></td>
+<td></td>
+<td>ledger channel id</td>
+</tr>
+<tr>
+<td>sender</td>
+<td><code>String</code></td>
+<td><code></code></td>
+<td>(optional) the person who cosigning the update, defaults to accounts[0]</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Example</strong>  </p>
+<pre><code class="lang-js"><span class="hljs-keyword">const</span> lcId = <span class="hljs-keyword">await</span> connext.getLcId() <span class="hljs-comment">// get ID by accounts[0] and open status by default</span>
+<span class="hljs-keyword">await</span> connext.cosignLatestLcUpdate(lcId)
 </code></pre>
 <p><br>
 <br>
 <br></p>
 <p><a id="Connext+cosignLCUpdate"></a></p>
-<p></p><h2 id="connextcosignlcupdateparams">connext.cosignLCUpdate(params)</h2>Verifies and cosigns the ledger state update with the specified nonce.<p></p>
-<p><strong>Kind</strong>: instance method of <a href="#Connext"><code>Connext</code></a>  </p>
+<p></p><h2 id="connextcosignlcupdateparams-&#x21D2;-promise">connext.cosignLCUpdate(params) &#x21D2; <code>Promise</code></h2>Verifies and cosigns the ledger state update indicated by the provided nonce.<p></p>
+<p><strong>Kind</strong>: instance method of <a href="#Connext"><code>Connext</code></a><br><strong>Returns</strong>: <code>Promise</code> - resolves to the cosigned ledger channel state update  </p>
 <table>
 <thead>
 <tr>
@@ -940,184 +1009,42 @@ Ingrid should countersign if the state update matches what she has signed previo
 <td>ledger channel id</td>
 </tr>
 <tr>
-<td>params.nonce</td>
-<td><code>Number</code></td>
-<td>nonce of update you are cosigning</td>
-</tr>
-<tr>
 <td>params.sender</td>
 <td><code>String</code></td>
 <td>(optional) the person who cosigning the update, defaults to accounts[0]</td>
 </tr>
 </tbody>
 </table>
-<p><br>
-<br>
-<br></p>
-<p><a id="Connext+createLCStateUpdate"></a></p>
-<p></p><h2 id="connextcreatelcstateupdateparams-&#x21D2;-string">connext.createLCStateUpdate(params) &#x21D2; <code>String</code></h2>Generates a signed ledger channel state update.<p></p>
-<p><strong>Kind</strong>: instance method of <a href="#Connext"><code>Connext</code></a><br><strong>Returns</strong>: <code>String</code> - signature of signer on data provided  </p>
-<table>
-<thead>
-<tr>
-<th>Param</th>
-<th>Type</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>params</td>
-<td><code>Object</code></td>
-<td>the method object</td>
-</tr>
-<tr>
-<td>params.isClose</td>
-<td><code>Boolean</code></td>
-<td>(optional) flag indicating whether or not this is closing state, defaults to false</td>
-</tr>
-<tr>
-<td>params.channelId</td>
-<td><code>String</code></td>
-<td>ID of the ledger channel you are creating a state update for</td>
-</tr>
-<tr>
-<td>params.nonce</td>
-<td><code>Number</code></td>
-<td>the sequence of the ledger channel update</td>
-</tr>
-<tr>
-<td>params.openVcs</td>
-<td><code>Number</code></td>
-<td>the number of open virtual channels associated with this ledger channel</td>
-</tr>
-<tr>
-<td>params.vcRootHash</td>
-<td><code>String</code></td>
-<td>the root hash of the Merkle tree containing all initial states of the open virtual channels</td>
-</tr>
-<tr>
-<td>params.partyA</td>
-<td><code>String</code></td>
-<td>ETH address of partyA in the ledgerchannel</td>
-</tr>
-<tr>
-<td>params.partyI</td>
-<td><code>String</code></td>
-<td>(optional) ETH address of the hub, defaults to this.ingridAddress</td>
-</tr>
-<tr>
-<td>params.balanceA</td>
-<td><code>Number</code></td>
-<td>updated balance of partyA</td>
-</tr>
-<tr>
-<td>params.balanceI</td>
-<td><code>Number</code></td>
-<td>updated balance of partyI</td>
-</tr>
-<tr>
-<td>params.unlockedAccountPresent</td>
-<td><code>Boolean</code></td>
-<td>(optional) whether to use sign or personal sign, defaults to false if in prod and true if in dev</td>
-</tr>
-<tr>
-<td>params.signer</td>
-<td><code>String</code></td>
-<td>(optional) ETH address of person signing data, defaults to account[0]</td>
-</tr>
-</tbody>
-</table>
-<p><br>
-<br>
-<br></p>
-<p><a id="Connext+createVCStateUpdate"></a></p>
-<p></p><h2 id="connextcreatevcstateupdateparams-&#x21D2;-string">connext.createVCStateUpdate(params) &#x21D2; <code>String</code></h2>Creates a signed virtual channel state update<p></p>
-<p><strong>Kind</strong>: instance method of <a href="#Connext"><code>Connext</code></a><br><strong>Returns</strong>: <code>String</code> - signature of signer on data provided  </p>
-<table>
-<thead>
-<tr>
-<th>Param</th>
-<th>Type</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>params</td>
-<td><code>Object</code></td>
-<td>the method object</td>
-</tr>
-<tr>
-<td>params.channelId</td>
-<td><code>String</code></td>
-<td>ID of the virtual channel you are creating a state update for</td>
-</tr>
-<tr>
-<td>params.nonce</td>
-<td><code>Number</code></td>
-<td>the sequence of the state update</td>
-</tr>
-<tr>
-<td>params.partyA</td>
-<td><code>String</code></td>
-<td>ETH address of partyA</td>
-</tr>
-<tr>
-<td>params.partyB</td>
-<td><code>String</code></td>
-<td>ETH address of partyB</td>
-</tr>
-<tr>
-<td>params.balanceA</td>
-<td><code>Number</code></td>
-<td>updated balance of partyA</td>
-</tr>
-<tr>
-<td>params.balanceB</td>
-<td><code>Number</code></td>
-<td>updated balance of partyB</td>
-</tr>
-<tr>
-<td>params.unlockedAccountPresent</td>
-<td><code>Boolean</code></td>
-<td>(optional) whether to use sign or personal sign, defaults to false if in prod and true if in dev</td>
-</tr>
-<tr>
-<td>params.signer</td>
-<td><code>String</code></td>
-<td>(optional) ETH address of person signing data, defaults to account[0]</td>
-</tr>
-</tbody>
-</table>
+<p><strong>Example</strong>  </p>
+<pre><code class="lang-js"><span class="hljs-keyword">const</span> lcId = <span class="hljs-keyword">await</span> connext.getLcId() <span class="hljs-comment">// get ID by accounts[0] and open status by default</span>
+<span class="hljs-keyword">await</span> connext.cosignLatestLcUpdate(lcId)
+</code></pre>
 <p><br>
 <br>
 <br></p>
 <p><a id="Connext+LCOpenTimeoutContractHandler"></a></p>
-<p></p><h2 id="connextlcopentimeoutcontracthandlerparams">connext.LCOpenTimeoutContractHandler(params)</h2>Function to be called if Ingrid fails to join the ledger channel in the challenge window.<p></p>
-<p><strong>Kind</strong>: instance method of <a href="#Connext"><code>Connext</code></a>  </p>
+<p></p><h2 id="connextlcopentimeoutcontracthandlerlcid-sender-&#x21D2;-promise">connext.LCOpenTimeoutContractHandler(lcId, sender) &#x21D2; <code>Promise</code></h2>Watchers or users should call this to recover bonded funds if Ingrid fails to join the ledger channel within the challenge window.<p></p>
+<p><strong>Kind</strong>: instance method of <a href="#Connext"><code>Connext</code></a><br><strong>Returns</strong>: <code>Promise</code> - resolves to the result of sending the transaction  </p>
 <table>
 <thead>
 <tr>
 <th>Param</th>
 <th>Type</th>
+<th>Default</th>
 <th>Description</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td>params</td>
-<td><code>Object</code></td>
-<td></td>
-</tr>
-<tr>
-<td>params.lcId</td>
+<td>lcId</td>
 <td><code>String</code></td>
+<td></td>
 <td>ledger channel id the hub did not join</td>
 </tr>
 <tr>
-<td>params.sender</td>
+<td>sender</td>
 <td><code>String</code></td>
+<td><code></code></td>
 <td>(optional) who is calling the transaction (defaults to accounts[0])</td>
 </tr>
 </tbody>
@@ -1125,10 +1052,32 @@ Ingrid should countersign if the state update matches what she has signed previo
 <p><br>
 <br>
 <br></p>
+<p><a id="Connext+getChannelsByLcId"></a></p>
+<p></p><h2 id="connextgetchannelsbylcidledgerchannelid-&#x21D2;-promise">connext.getChannelsByLcId(ledgerChannelId) &#x21D2; <code>Promise</code></h2>Returns an array of the virtual channel states associated with the given ledger channel.<p></p>
+<p><strong>Kind</strong>: instance method of <a href="#Connext"><code>Connext</code></a><br><strong>Returns</strong>: <code>Promise</code> - resolves to an Array of virtual channel objects  </p>
+<table>
+<thead>
+<tr>
+<th>Param</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>ledgerChannelId</td>
+<td><code>String</code></td>
+<td>ID of the ledger channel</td>
+</tr>
+</tbody>
+</table>
+<p><br>
+<br>
+<br></p>
 <p><a id="Connext+getLcId"></a></p>
-<p></p><h2 id="connextgetlcidpartya-&#x21D2;-object">connext.getLcId(partyA) &#x21D2; <code>Object</code></h2>Returns the ledger channel id between the supplied address and ingrid.<p></p>
+<p></p><h2 id="connextgetlcidpartya-status-&#x21D2;-promise">connext.getLcId(partyA, status) &#x21D2; <code>Promise</code></h2>Returns the ledger channel id between the supplied address and ingrid.<p></p>
 <p>If no address is supplied, accounts[0] is used as partyA.</p>
-<p><strong>Kind</strong>: instance method of <a href="#Connext"><code>Connext</code></a><br><strong>Returns</strong>: <code>Object</code> - ledger channel between hub and supplied partyA  </p>
+<p><strong>Kind</strong>: instance method of <a href="#Connext"><code>Connext</code></a><br><strong>Returns</strong>: <code>Promise</code> - resolves to either the ledger channel id between hub and supplied partyA, or an Array of the channel IDs between hub and partyA.  </p>
 <table>
 <thead>
 <tr>
@@ -1145,14 +1094,20 @@ Ingrid should countersign if the state update matches what she has signed previo
 <td><code></code></td>
 <td>(optional) address of the partyA in the channel with Ingrid.</td>
 </tr>
+<tr>
+<td>status</td>
+<td><code>Number</code></td>
+<td><code></code></td>
+<td>(optional) state of virtual channel, can be 0 (opening), 1 (opened), 2 (settling), or 3 (settled). Defaults to open channel.</td>
+</tr>
 </tbody>
 </table>
 <p><br>
 <br>
 <br></p>
 <p><a id="Connext+getChannelById"></a></p>
-<p></p><h2 id="connextgetchannelbyidchannelid-&#x21D2;-object">connext.getChannelById(channelId) &#x21D2; <code>Object</code></h2>Returns an object representing the virtual channel in the database.<p></p>
-<p><strong>Kind</strong>: instance method of <a href="#Connext"><code>Connext</code></a><br><strong>Returns</strong>: <code>Object</code> - the virtual channel  </p>
+<p></p><h2 id="connextgetchannelbyidchannelid-&#x21D2;-promise">connext.getChannelById(channelId) &#x21D2; <code>Promise</code></h2>Returns an object representing the virtual channel in the database.<p></p>
+<p><strong>Kind</strong>: instance method of <a href="#Connext"><code>Connext</code></a><br><strong>Returns</strong>: <code>Promise</code> - resolves to an object representing the virtual channel  </p>
 <table>
 <thead>
 <tr>
@@ -1173,8 +1128,8 @@ Ingrid should countersign if the state update matches what she has signed previo
 <br>
 <br></p>
 <p><a id="Connext+getChannelByParties"></a></p>
-<p></p><h2 id="connextgetchannelbypartiesparams-&#x21D2;-object">connext.getChannelByParties(params) &#x21D2; <code>Object</code></h2>Returns an object representing the virtual channel between the two parties in the database.<p></p>
-<p><strong>Kind</strong>: instance method of <a href="#Connext"><code>Connext</code></a><br><strong>Returns</strong>: <code>Object</code> - the virtual channel  </p>
+<p></p><h2 id="connextgetchannelbypartiesparams-&#x21D2;-promise">connext.getChannelByParties(params) &#x21D2; <code>Promise</code></h2>Returns an object representing the open virtual channel between the two parties in the database.<p></p>
+<p><strong>Kind</strong>: instance method of <a href="#Connext"><code>Connext</code></a><br><strong>Returns</strong>: <code>Promise</code> - resolves to the virtual channel  </p>
 <table>
 <thead>
 <tr>
@@ -1205,8 +1160,8 @@ Ingrid should countersign if the state update matches what she has signed previo
 <br>
 <br></p>
 <p><a id="Connext+getLcById"></a></p>
-<p></p><h2 id="connextgetlcbyidlcid-&#x21D2;-object">connext.getLcById(lcId) &#x21D2; <code>Object</code></h2>Returns an object representing a ledger channel.<p></p>
-<p><strong>Kind</strong>: instance method of <a href="#Connext"><code>Connext</code></a><br><strong>Returns</strong>: <code>Object</code> - the ledger channel object  </p>
+<p></p><h2 id="connextgetlcbyidlcid-&#x21D2;-promise">connext.getLcById(lcId) &#x21D2; <code>Promise</code></h2>Returns an object representing a ledger channel.<p></p>
+<p><strong>Kind</strong>: instance method of <a href="#Connext"><code>Connext</code></a><br><strong>Returns</strong>: <code>Promise</code> - resolves to the ledger channel object  </p>
 <table>
 <thead>
 <tr>
@@ -1227,8 +1182,8 @@ Ingrid should countersign if the state update matches what she has signed previo
 <br>
 <br></p>
 <p><a id="Connext+getLcByPartyA"></a></p>
-<p></p><h2 id="connextgetlcbypartyapartya-&#x21D2;-object">connext.getLcByPartyA(partyA) &#x21D2; <code>Object</code></h2>Returns object representing the ledger channel between partyA and Ingrid<p></p>
-<p><strong>Kind</strong>: instance method of <a href="#Connext"><code>Connext</code></a><br><strong>Returns</strong>: <code>Object</code> - ledger channel object  </p>
+<p></p><h2 id="connextgetlcbypartyapartya-status-&#x21D2;-promise">connext.getLcByPartyA(partyA, status) &#x21D2; <code>Promise</code></h2>Returns object representing the ledger channel between partyA and Ingrid<p></p>
+<p><strong>Kind</strong>: instance method of <a href="#Connext"><code>Connext</code></a><br><strong>Returns</strong>: <code>Promise</code> - resolves to ledger channel object  </p>
 <table>
 <thead>
 <tr>
@@ -1245,14 +1200,21 @@ Ingrid should countersign if the state update matches what she has signed previo
 <td><code></code></td>
 <td>(optional) partyA in ledger channel. Default is accounts[0]</td>
 </tr>
+<tr>
+<td>status</td>
+<td><code>Number</code></td>
+<td><code></code></td>
+<td>(optional) state of virtual channel, can be 0 (opening), 1 (opened), 2 (settling), or 3 (settled). Defaults to open channel.</td>
+</tr>
 </tbody>
 </table>
 <p><br>
 <br>
 <br></p>
-<p><a id="Connext+getLatestVCStateUpdate"></a></p>
-<p></p><h2 id="connextgetlatestvcstateupdatechannelid-&#x21D2;-object">connext.getLatestVCStateUpdate(channelId) &#x21D2; <code>Object</code></h2>Returns the latest signed virtual channel state as an object.<p></p>
-<p><strong>Kind</strong>: instance method of <a href="#Connext"><code>Connext</code></a><br><strong>Returns</strong>: <code>Object</code> - representing the latest signed virtual channel state  </p>
+<p><a id="Connext+requestIngridDeposit"></a></p>
+<p></p><h2 id="connextrequestingriddepositparams-&#x21D2;-promise">connext.requestIngridDeposit(params) &#x21D2; <code>Promise</code></h2>Requests ingrid deposits into a given subchannel. Ingrid must have sufficient balance in the &quot;B&quot; subchannel to cover the virtual channel balance of &quot;A&quot; since Ingrid is assuming the financial counterparty risk. <p></p>
+<p>This function is to be used if the hub has insufficient balance in the ledger channel to create proposed virtual channels.</p>
+<p><strong>Kind</strong>: instance method of <a href="#Connext"><code>Connext</code></a><br><strong>Returns</strong>: <code>Promise</code> - resolves to the transaction hash of Ingrid calling the deposit function  </p>
 <table>
 <thead>
 <tr>
@@ -1263,12 +1225,51 @@ Ingrid should countersign if the state update matches what she has signed previo
 </thead>
 <tbody>
 <tr>
-<td>channelId</td>
+<td>params</td>
+<td><code>Object</code></td>
+<td>the method object</td>
+</tr>
+<tr>
+<td>params.lcId</td>
 <td><code>String</code></td>
-<td>ID of the virtual channel</td>
+<td>id of the ledger channel</td>
+</tr>
+<tr>
+<td>params.deposit</td>
+<td><code>BN</code></td>
+<td>the deposit in Wei</td>
 </tr>
 </tbody>
 </table>
+<p><br>
+<br>
+<br></p>
+<p><a id="Connext+requestJoinLc"></a></p>
+<p></p><h2 id="connextrequestjoinlclcid-&#x21D2;-promise">connext.requestJoinLc(lcId) &#x21D2; <code>Promise</code></h2>Requests Ingrid joins the ledger channel after it has been created on chain. This function should be called after the register() returns the ledger channel ID of the created contract.<p></p>
+<p>May have to be called after a timeout period to ensure the transaction performed in register to create the channel on chain is properly mined.</p>
+<p><strong>Kind</strong>: instance method of <a href="#Connext"><code>Connext</code></a><br><strong>Returns</strong>: <code>Promise</code> - resolves to the transaction hash of Ingrid joining the channel  </p>
+<table>
+<thead>
+<tr>
+<th>Param</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>lcId</td>
+<td><code>String</code></td>
+<td>ID of the ledger channel you want the Hub to join</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Example</strong>  </p>
+<pre><code class="lang-js"><span class="hljs-comment">// use register to create channel on chain</span>
+<span class="hljs-keyword">const</span> deposit = Web3.utils.toBN(<span class="hljs-number">1000</span>)
+<span class="hljs-keyword">const</span> lcId = <span class="hljs-keyword">await</span> connext.register(deposit)
+<span class="hljs-keyword">const</span> response = <span class="hljs-keyword">await</span> connext.requestJoinLc(lcId)
+</code></pre>
 <p><br>
 <br>
 <br></p>
@@ -1345,7 +1346,7 @@ Ingrid should countersign if the state update matches what she has signed previo
 <br>
 <br></p>
 <p><a id="Connext.recoverSignerFromLCStateUpdate"></a></p>
-<p></p><h2 id="connextrecoversignerfromlcstateupdateparams-&#x21D2;-string">Connext.recoverSignerFromLCStateUpdate(params) &#x21D2; <code>String</code></h2>Recovers the signer from the hashed data generated by the Connext.createLCStateUpdate function.<p></p>
+<p></p><h2 id="connextrecoversignerfromlcstateupdateparams-&#x21D2;-string">Connext.recoverSignerFromLCStateUpdate(params) &#x21D2; <code>String</code></h2>Recovers the signer from the hashed data generated by the Connext.createLCStateUpdateFingerprint function.<p></p>
 <p><strong>Kind</strong>: static method of <a href="#Connext"><code>Connext</code></a><br><strong>Returns</strong>: <code>String</code> - the ETH address of the person who signed the data  </p>
 <table>
 <thead>
@@ -1417,8 +1418,8 @@ Ingrid should countersign if the state update matches what she has signed previo
 <br>
 <br></p>
 <p><a id="Connext.createVCStateUpdateFingerprint"></a></p>
-<p></p><h2 id="connextcreatevcstateupdatefingerprintparams-&#x21D2;-string">Connext.createVCStateUpdateFingerprint(params) &#x21D2; <code>String</code></h2>Hashes data from a virtual channel state update using soliditySha3<p></p>
-<p><strong>Kind</strong>: static method of <a href="#Connext"><code>Connext</code></a><br><strong>Returns</strong>: <code>String</code> - hash of the virtual channel state data.  </p>
+<p></p><h2 id="connextcreatevcstateupdatefingerprintparams-&#x21D2;-string">Connext.createVCStateUpdateFingerprint(params) &#x21D2; <code>String</code></h2>Hashes data from a virtual channel state update using soliditySha3.<p></p>
+<p><strong>Kind</strong>: static method of <a href="#Connext"><code>Connext</code></a><br><strong>Returns</strong>: <code>String</code> - hash of the virtual channel state data  </p>
 <table>
 <thead>
 <tr>
@@ -1469,7 +1470,7 @@ Ingrid should countersign if the state update matches what she has signed previo
 <br>
 <br></p>
 <p><a id="Connext.recoverSignerFromVCStateUpdate"></a></p>
-<p></p><h2 id="connextrecoversignerfromvcstateupdateparams-&#x21D2;-string">Connext.recoverSignerFromVCStateUpdate(params) &#x21D2; <code>String</code></h2>Hashes data from a virtual channel state update using soliditySha3<p></p>
+<p></p><h2 id="connextrecoversignerfromvcstateupdateparams-&#x21D2;-string">Connext.recoverSignerFromVCStateUpdate(params) &#x21D2; <code>String</code></h2>Recovers the signer from the hashed data generated by the Connext.createVCStateUpdateFingerprint function.<p></p>
 <p><strong>Kind</strong>: static method of <a href="#Connext"><code>Connext</code></a><br><strong>Returns</strong>: <code>String</code> - ETH address of the person who signed the data  </p>
 <table>
 <thead>
@@ -1565,7 +1566,7 @@ Ingrid should countersign if the state update matches what she has signed previo
     <script>
         var gitbook = gitbook || [];
         gitbook.push(function() {
-            gitbook.page.hasChanged({"page":{"title":"Connext","level":"2.1","depth":1,"next":{"title":"constructor","level":"2.1.1","depth":2,"anchor":"#new_Connext_new","path":"api.md","ref":"api.md#new_Connext_new","articles":[]},"previous":{"title":"Getting Started","level":"1.2","depth":1,"path":"start.md","ref":"start.md","articles":[]},"dir":"ltr"},"config":{"plugins":["livereload"],"root":"./docs","styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"},"pluginsConfig":{"livereload":{},"highlight":{},"search":{},"lunr":{"maxIndexSize":1000000,"ignoreSpecialCharacters":false},"sharing":{"facebook":true,"twitter":true,"google":false,"weibo":false,"instapaper":false,"vk":false,"all":["facebook","google","twitter","weibo","instapaper"]},"fontsettings":{"theme":"white","family":"sans","size":2},"theme-default":{"styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"},"showLevel":false}},"theme":"default","pdf":{"pageNumbers":true,"fontSize":12,"fontFamily":"Arial","paperSize":"a4","chapterMark":"pagebreak","pageBreaksBefore":"/","margin":{"right":62,"left":62,"top":56,"bottom":56}},"structure":{"langs":"LANGS.md","readme":"intro.md","glossary":"GLOSSARY.md","summary":"toc.md"},"variables":{},"gitbook":"3.2.2"},"file":{"path":"api.md","mtime":"2018-06-29T00:07:29.000Z","type":"markdown"},"gitbook":{"version":"3.2.2","time":"2018-06-29T00:03:13.324Z"},"basePath":".","book":{"language":""}});
+            gitbook.page.hasChanged({"page":{"title":"Connext","level":"2.1","depth":1,"next":{"title":"constructor","level":"2.1.1","depth":2,"anchor":"#new_Connext_new","path":"api.md","ref":"api.md#new_Connext_new","articles":[]},"previous":{"title":"Getting Started","level":"1.2","depth":1,"path":"start.md","ref":"start.md","articles":[]},"dir":"ltr"},"config":{"plugins":["livereload"],"root":"./docs","styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"},"pluginsConfig":{"livereload":{},"highlight":{},"search":{},"lunr":{"maxIndexSize":1000000,"ignoreSpecialCharacters":false},"sharing":{"facebook":true,"twitter":true,"google":false,"weibo":false,"instapaper":false,"vk":false,"all":["facebook","google","twitter","weibo","instapaper"]},"fontsettings":{"theme":"white","family":"sans","size":2},"theme-default":{"styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"},"showLevel":false}},"theme":"default","pdf":{"pageNumbers":true,"fontSize":12,"fontFamily":"Arial","paperSize":"a4","chapterMark":"pagebreak","pageBreaksBefore":"/","margin":{"right":62,"left":62,"top":56,"bottom":56}},"structure":{"langs":"LANGS.md","readme":"intro.md","glossary":"GLOSSARY.md","summary":"toc.md"},"variables":{},"gitbook":"3.2.2"},"file":{"path":"api.md","mtime":"2018-07-04T01:28:19.000Z","type":"markdown"},"gitbook":{"version":"3.2.2","time":"2018-07-03T23:17:46.308Z"},"basePath":".","book":{"language":""}});
         });
     </script>
 </div>

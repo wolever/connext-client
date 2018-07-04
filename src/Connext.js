@@ -122,8 +122,6 @@ validate.validators.isLcObj = value => {
 /**
  *
  * Class representing an instance of a Connext client.
- * @class
- * 
  */
 class Connext {
   /**
@@ -190,7 +188,6 @@ class Connext {
    * If Ingrid is unresponsive, or does not join the channel within the challenge period, the client function "LCOpenTimeoutContractHandler" can be called by the client to recover the funds.
    *
    * @example
-   * // get a BN of a deposit value in wei
    * const deposit = Web3.utils.toBN(Web3.utils.toWei('1', 'ether))
    * const lcId = await connext.register(deposit)
    *
@@ -715,8 +712,6 @@ class Connext {
    * @example
    * const success = await connext.withdraw()
    * @param {String} - (optional) who the transactions should be sent from, defaults to account[0]
-   * @returns {Object} contains the transaction hash of the resulting transaction, and a boolean indicating if it was fast closed
-   * @returns {String} the transaction hash of either consensusCloseChannel or withdrawFinal
    * @returns {Promise} resolves to an object with the structure: { response: transactionHash, fastClosed: true}
    */
   async withdraw (sender = null) {
@@ -2600,10 +2595,11 @@ class Connext {
    * Returns an array of the virtual channel states associated with the given ledger channel.
    * 
    * @param {String} ledgerChannelId - ID of the ledger channel
+   * @returns {Promise} resolves to an Array of virtual channel objects
    */
-  async getVirtualChannelStatesByLcId (ledgerChannelId) {
+  async getChannelsByLcId (ledgerChannelId) {
     // lcState == latest ingrid signed state
-    const methodName = 'getVirtualChannelStatesByLcId'
+    const methodName = 'getChannelsByLcId'
     const isHexStrict = { presence: true, isHexStrict: true }
     Connext.validatorsResponseToError(
       validate.single(ledgerChannelId, isHexStrict),
