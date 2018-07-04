@@ -2741,9 +2741,16 @@ class Connext {
       methodName,
       'lcId'
     )
-    const response = await this.networking.get(
-      `ledgerchannel/${lcId}`)
-    return response.data
+    try {
+      const response = await this.networking.get(
+        `ledgerchannel/${lcId}`)
+      return response.data
+    } catch (e) {
+      if (e.status === 404) {
+        return null
+      }
+      throw e
+    }
   }
 
   /**

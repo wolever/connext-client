@@ -10,12 +10,10 @@ const Web3 = require('web3')
 let web3
 let client
 let ingridAddress
-let watcherUrl = process.env.WATCHER_URL_DEV || ''
-let ingridUrl = process.env.INGRID_URL_DEV || 'http://localhost:8080'
+let watcherUrl = process.env.WATCHER_URL || ''
+let ingridUrl = process.env.INGRID_URL || 'http://localhost:8080'
 let contractAddress = '0x31713144d9ae2501e644a418dd9035ed840b1660'
-let hubAuth =
-  's%3ACiKWh3t14XjMAllKSmNfYC3F1CzvsFXl.LxI4s1J33VukHvx58lqlPwYlDwEMEbMw1dWhxJz1bjM'
-
+let hubAuth = process.env.HUB_AUTH || ''
 // for accounts
 let accounts
 let partyA
@@ -260,9 +258,9 @@ describe('Connext', async () => {
         it('should request hub joins subchanAI', async () => {
           // response = await Promise.all([client.requestJoinLc(subchanAI), timeout(22000)])
           subchanAI =
-            '0x7d3ec225a9c0513321e2595efd5c32aa1da90586c6137fad0fea2352a5168303'
+            '0x4688de5242c49d211c55c792b85c004ec5ea5bc656cd443e551513ee8398abc7'
           response = await client.requestJoinLc(subchanAI)
-          console.log('res:',response)
+          console.log('res:', response)
           //   assert.equal(response.txHash, ':)')
           assert.ok(Web3.utils.isHex(response[0]))
         }).timeout(30000)
@@ -363,8 +361,8 @@ describe('Connext', async () => {
       // TO DO: FIX, works in postman ??
       it('should request that ingrid deposits 5 ETH in subchan', async () => {
         let subchan =
-          '0x05fb1a0a39d2fb7912a3914756f5523c480f8b148fe9b3a923e15267e294318b'
-        let deposit = Web3.utils.toBN(Web3.utils.toWei('1', 'ether'))
+          '0x32dcdd38ed0374222d27b425593164cb883e4f0383b2ff682518d200e22b3cce'
+        let deposit = Web3.utils.toBN(Web3.utils.toWei('5', 'ether'))
         response = await client.requestIngridDeposit({
           lcId: subchan,
           deposit: deposit
@@ -372,13 +370,10 @@ describe('Connext', async () => {
         assert.ok(Web3.utils.isHex(response))
       }).timeout(5000)
 
-      it(
-        'partyA should create a virtual channel with 5 eth in it',
-        async () => {
-          vcId = await client.openChannel({ to: partyB, sender: partyA })
-          assert.ok(Web3.utils.isHexStrict(vcId))
-        }
-      )
+      it('partyA should create a virtual channel with 5 eth in it', async () => {
+        vcId = await client.openChannel({ to: partyB, sender: partyA })
+        assert.ok(Web3.utils.isHexStrict(vcId))
+      })
 
       it('partyB should join the virtual channel with 0 eth', async () => {
         // vcId =
@@ -389,25 +384,22 @@ describe('Connext', async () => {
     })
 
     describe('updating state in and closing a virtual channel between partyA and partyB', () => {
-      it(
-        'partyA sends a state update in the virtual channel of 1 eth',
-        async () => {
-          // vcId =
-          //   '0xfb6d4d7b6050d2e71102aa9015d65cebd8d2b69d23e99898c92c38db1d803687'
-          balanceA = Web3.utils.toBN(Web3.utils.toWei('4', 'ether'))
-          balanceB = Web3.utils.toBN(Web3.utils.toWei('1', 'ether'))
-          response = await client.updateBalance({
-            channelId: vcId,
-            balanceA,
-            balanceB
-          })
-          console.log(response)
-          assert.ok(
-            Web3.utils.toBN(response.balanceA).eq(balanceA) &&
-              Web3.utils.toBN(response.balanceB).eq(balanceB)
-          )
-        }
-      )
+      it('partyA sends a state update in the virtual channel of 1 eth', async () => {
+        // vcId =
+        //   '0xfb6d4d7b6050d2e71102aa9015d65cebd8d2b69d23e99898c92c38db1d803687'
+        balanceA = Web3.utils.toBN(Web3.utils.toWei('4', 'ether'))
+        balanceB = Web3.utils.toBN(Web3.utils.toWei('1', 'ether'))
+        response = await client.updateBalance({
+          channelId: vcId,
+          balanceA,
+          balanceB
+        })
+        console.log(response)
+        assert.ok(
+          Web3.utils.toBN(response.balanceA).eq(balanceA) &&
+            Web3.utils.toBN(response.balanceB).eq(balanceB)
+        )
+      })
 
       it('should fast close the virtual channel', async () => {
         // vcId =
