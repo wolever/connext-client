@@ -260,21 +260,21 @@ describe('Connext', async () => {
         it('should request hub joins subchanAI', async () => {
           // response = await Promise.all([client.requestJoinLc(subchanAI), timeout(22000)])
           subchanAI =
-            '0x8552b85f535a0444c23d01c6d4f4512a34980bafc82f6459617bdfe42ef188e2'
+            '0x7d3ec225a9c0513321e2595efd5c32aa1da90586c6137fad0fea2352a5168303'
           response = await client.requestJoinLc(subchanAI)
-          console.log(response)
+          console.log('res:',response)
           //   assert.equal(response.txHash, ':)')
           assert.ok(Web3.utils.isHex(response[0]))
         }).timeout(30000)
 
         it('should request hub joins subchanBI', async () => {
-          // response = await Promise.all([
-          //   client.requestJoinLc(subchanBI),
-          //   timeout(17000)
-          // ])
-          subchanBI =
-            '0x3bd0fa4e546a746b4c8aed8ce8462a27cdcfdb703b5c372d9a963001de0894e1'
-          response = await client.requestJoinLc(subchanBI)
+          response = await Promise.all([
+            client.requestJoinLc(subchanBI),
+            timeout(17000)
+          ])
+          // subchanBI =
+          //   '0x3bd0fa4e546a746b4c8aed8ce8462a27cdcfdb703b5c372d9a963001de0894e1'
+          // response = await client.requestJoinLc(subchanBI)
           console.log(response)
           //   assert.equal(response.txHash, ':)')
           assert.ok(Web3.utils.isHex(response[0]))
@@ -363,8 +363,8 @@ describe('Connext', async () => {
       // TO DO: FIX, works in postman ??
       it('should request that ingrid deposits 5 ETH in subchan', async () => {
         let subchan =
-          '0x3bd0fa4e546a746b4c8aed8ce8462a27cdcfdb703b5c372d9a963001de0894e1'
-        let deposit = Web3.utils.toBN(Web3.utils.toWei('4', 'ether'))
+          '0x05fb1a0a39d2fb7912a3914756f5523c480f8b148fe9b3a923e15267e294318b'
+        let deposit = Web3.utils.toBN(Web3.utils.toWei('1', 'ether'))
         response = await client.requestIngridDeposit({
           lcId: subchan,
           deposit: deposit
@@ -420,11 +420,11 @@ describe('Connext', async () => {
 
     describe('withdraw from ledger channel', () => {
       it(
-        'should withdraw all funds from the ledger channel for partyA',
+        'should withdraw all funds from the ledger channel for partyA with fastClose flag',
         async () => {
-          response = await client.withdraw(partyB)
+          response = await client.withdraw(partyA)
           console.log(response)
-          assert.ok(Web3.utils.isHex(response.transactionHash))
+          assert.equal(response.fastClosed, true)
         }
       ).timeout(5000)
     })
