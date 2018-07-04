@@ -2,4 +2,3 @@ node_modules/
 dist/
 notes.txt
 test/apiRoutes.js
-.env
