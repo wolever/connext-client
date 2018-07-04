@@ -28,6 +28,9 @@ module.exports = function networking (baseUrl) {
     if (useAxios === false) {
       if (method === POST) {
         opts.body = JSON.stringify(body)
+        opts.headers = {
+          'Content-Type': 'application/json'
+        }
       }
       opts.mode = 'cors'
       opts.credentials = 'include'
@@ -54,13 +57,14 @@ module.exports = function networking (baseUrl) {
         `Received non-200 response: ${res.status}`
       )
     }
-    const data = useAxios ? res.data : await res.json()
 
     if (res.status === 204) {
       return {
         data: null
       }
     }
+
+    const data = useAxios ? res.data : await res.json()
 
     return {
       data

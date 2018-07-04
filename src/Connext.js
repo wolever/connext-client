@@ -2082,7 +2082,7 @@ class Connext {
       .consensusCloseChannel(lcId, nonce, balanceA, balanceI, sigA, sigI)
       .send({
         from: sender,
-        gas: 4700000
+        gas: 1000000
       })
 
     if (!result.transactionHash) {
@@ -2742,9 +2742,11 @@ class Connext {
       'lcId'
     )
     try {
-      const response = await this.networking.get(
-        `ledgerchannel/${lcId}`)
-      return response.data
+      const res = await this.networking.get(
+        `ledgerchannel/${lcId}`
+      )
+
+      return res.data
     } catch (e) {
       if (e.status === 404) {
         return null
