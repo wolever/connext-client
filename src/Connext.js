@@ -542,8 +542,8 @@ class Connext {
     if (vc === null) {
       throw new VCUpdateError(methodName, 'Channel not found')
     }
-    // channel must be open
-    if (vc.state !== 1) {
+    // channel must be opening or opened
+    if (vc.state !== 1 && vc.state !== 0) {
       throw new VCUpdateError(methodName, 'Channel is in invalid state')
     }
     // total channel balance cant change
@@ -612,8 +612,8 @@ class Connext {
     if (vc === null) {
       throw new VCCloseError(methodName, 'Channel not found')
     }
-    // must be open
-    if (vc.state !== 1) {
+    // must be opened or opening
+    if (vc.state !== 1 && vc.state !== 0) {
       throw new VCCloseError(methodName, 'Channel is in invalid state')
     }
     const vcN = await this.getLatestVCStateUpdate(channelId)
@@ -3188,8 +3188,8 @@ class Connext {
     if (vc === null) {
       throw new VCUpdateError(methodName, 'Channel not found')
     }
-    // channel must be open
-    if (vc.state !== 1) {
+    // channel must be opened or opening
+    if (vc.state !== 1 && vc.state !== 0) {
       throw new VCUpdateError(methodName, 'Channel is in invalid state')
     }
     // total channel balance cant change

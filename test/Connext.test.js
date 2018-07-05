@@ -384,26 +384,29 @@ describe('Connext', async () => {
     })
 
     describe('updating state in and closing a virtual channel between partyA and partyB', () => {
-      it('partyA sends a state update in the virtual channel of 1 eth', async () => {
-        // vcId =
-        //   '0xfb6d4d7b6050d2e71102aa9015d65cebd8d2b69d23e99898c92c38db1d803687'
-        balanceA = Web3.utils.toBN(Web3.utils.toWei('4', 'ether'))
-        balanceB = Web3.utils.toBN(Web3.utils.toWei('1', 'ether'))
-        response = await client.updateBalance({
-          channelId: vcId,
-          balanceA,
-          balanceB
-        })
-        console.log(response)
-        assert.ok(
-          Web3.utils.toBN(response.balanceA).eq(balanceA) &&
-            Web3.utils.toBN(response.balanceB).eq(balanceB)
-        )
-      })
+      it(
+        'partyA sends a state update in the virtual channel of 1 eth',
+        async () => {
+          vcId =
+            '0x9de4eb5355c8a0880defa623e6cd6278bf637ad4723ee42b58d88e5aa1ee33f1'
+          balanceA = Web3.utils.toBN(Web3.utils.toWei('4', 'ether'))
+          balanceB = Web3.utils.toBN(Web3.utils.toWei('1', 'ether'))
+          response = await client.updateBalance({
+            channelId: vcId,
+            balanceA,
+            balanceB
+          })
+          console.log(response)
+          assert.ok(
+            Web3.utils.toBN(response.balanceA).eq(balanceA) &&
+              Web3.utils.toBN(response.balanceB).eq(balanceB)
+          )
+        }
+      )
 
-      it('should fast close the virtual channel', async () => {
-        // vcId =
-        //   '0xfb6d4d7b6050d2e71102aa9015d65cebd8d2b69d23e99898c92c38db1d803687'
+      it.only('should fast close the virtual channel', async () => {
+        vcId =
+          '0x9de4eb5355c8a0880defa623e6cd6278bf637ad4723ee42b58d88e5aa1ee33f1'
         response = await client.closeChannel(vcId)
         console.log(response)
         assert.ok(Web3.utils.isHex(response))
