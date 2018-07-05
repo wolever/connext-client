@@ -258,7 +258,7 @@ describe('Connext', async () => {
         it('should request hub joins subchanAI', async () => {
           // response = await Promise.all([client.requestJoinLc(subchanAI), timeout(22000)])
           subchanAI =
-            '0x4688de5242c49d211c55c792b85c004ec5ea5bc656cd443e551513ee8398abc7'
+            '0x0ceefcae18dc21fe6f501b453b3cf77599ecd931e40650a5fc6316989ced070c'
           response = await client.requestJoinLc(subchanAI)
           console.log('res:', response)
           //   assert.equal(response.txHash, ':)')
@@ -361,7 +361,7 @@ describe('Connext', async () => {
       // TO DO: FIX, works in postman ??
       it('should request that ingrid deposits 5 ETH in subchan', async () => {
         let subchan =
-          '0x32dcdd38ed0374222d27b425593164cb883e4f0383b2ff682518d200e22b3cce'
+          '0xa52aa477db4b7b93054aa4c446dcd972cad3dd7a6614a0e2c65c61650d398111'
         let deposit = Web3.utils.toBN(Web3.utils.toWei('5', 'ether'))
         response = await client.requestIngridDeposit({
           lcId: subchan,
@@ -384,26 +384,29 @@ describe('Connext', async () => {
     })
 
     describe('updating state in and closing a virtual channel between partyA and partyB', () => {
-      it('partyA sends a state update in the virtual channel of 1 eth', async () => {
-        // vcId =
-        //   '0xfb6d4d7b6050d2e71102aa9015d65cebd8d2b69d23e99898c92c38db1d803687'
-        balanceA = Web3.utils.toBN(Web3.utils.toWei('4', 'ether'))
-        balanceB = Web3.utils.toBN(Web3.utils.toWei('1', 'ether'))
-        response = await client.updateBalance({
-          channelId: vcId,
-          balanceA,
-          balanceB
-        })
-        console.log(response)
-        assert.ok(
-          Web3.utils.toBN(response.balanceA).eq(balanceA) &&
-            Web3.utils.toBN(response.balanceB).eq(balanceB)
-        )
-      })
+      it(
+        'partyA sends a state update in the virtual channel of 1 eth',
+        async () => {
+          vcId =
+            '0x9de4eb5355c8a0880defa623e6cd6278bf637ad4723ee42b58d88e5aa1ee33f1'
+          balanceA = Web3.utils.toBN(Web3.utils.toWei('4', 'ether'))
+          balanceB = Web3.utils.toBN(Web3.utils.toWei('1', 'ether'))
+          response = await client.updateBalance({
+            channelId: vcId,
+            balanceA,
+            balanceB
+          })
+          console.log(response)
+          assert.ok(
+            Web3.utils.toBN(response.balanceA).eq(balanceA) &&
+              Web3.utils.toBN(response.balanceB).eq(balanceB)
+          )
+        }
+      )
 
-      it('should fast close the virtual channel', async () => {
-        // vcId =
-        //   '0xfb6d4d7b6050d2e71102aa9015d65cebd8d2b69d23e99898c92c38db1d803687'
+      it.only('should fast close the virtual channel', async () => {
+        vcId =
+          '0x9de4eb5355c8a0880defa623e6cd6278bf637ad4723ee42b58d88e5aa1ee33f1'
         response = await client.closeChannel(vcId)
         console.log(response)
         assert.ok(Web3.utils.isHex(response))
@@ -1562,7 +1565,7 @@ describe('Connext', async () => {
   })
 })
 
-describe('ingridClientRequests: running local hub', () => {
+describe('ingrid client requests: running local hub', () => {
   it('should init web3 and the connext client', async () => {
     // set party variables
     const port = process.env.ETH_PORT ? process.env.ETH_PORT : '9545'
@@ -1717,6 +1720,19 @@ describe('ingridClientRequests: running local hub', () => {
       it('should return the default time of 3600 seconds to local host', async () => {
         response = await client.getLedgerChannelChallengeTimer()
         assert.equal(response, 3600)
+      })
+    })
+
+    describe('getUnjoinedChannels', () => {
+      it('should return empty array when no unjoined parties', async () => {
+        const sender = accounts[6]
+        response = await client.getUnjoinedChannels(sender)
+        assert.deepEqual(response, [])
+      })
+
+      it('should return array of unjoined channel objects', async () => {
+        response = await client.getUnjoinedChannels(partyB)
+        assert.equal(response[0].partyB, partyB.toLowerCase())
       })
     })
 

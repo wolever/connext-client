@@ -542,8 +542,8 @@ class Connext {
     if (vc === null) {
       throw new VCUpdateError(methodName, 'Channel not found')
     }
-    // channel must be open
-    if (vc.state !== 1) {
+    // channel must be opening or opened
+    if (vc.state !== 1 && vc.state !== 0) {
       throw new VCUpdateError(methodName, 'Channel is in invalid state')
     }
     // total channel balance cant change
@@ -612,8 +612,8 @@ class Connext {
     if (vc === null) {
       throw new VCCloseError(methodName, 'Channel not found')
     }
-    // must be open
-    if (vc.state !== 1) {
+    // must be opened or opening
+    if (vc.state !== 1 && vc.state !== 0) {
       throw new VCCloseError(methodName, 'Channel is in invalid state')
     }
     const vcN = await this.getLatestVCStateUpdate(channelId)
@@ -2531,7 +2531,33 @@ class Connext {
   // ***************************************
   // *********** INGRID GETTERS ************
   // ***************************************
-  
+
+  /**
+   * Requests the unjoined virtual channels that have been initiated with you. All threads are unidirectional, and only the reciever of payments may have unjoined threads.
+   * 
+   * @param {String} partyB - (optional) ETH address of party who has yet to join virtual channel threads.
+   * @returns {Promise} resolves to an array of unjoined virtual channel objects
+   */
+  async getUnjoinedChannels(partyB = null) {
+    const methodName = 'getUnjoinedChannels'
+    const isAddress = { presence: true, isAddress: true }
+    if (partyB) {
+      Connext.validatorsResponseToError(
+        validate.single(partyB, isAddress),
+        methodName,
+        'partyB'
+      )
+    } else {
+      const accounts = await this.web3.eth.getAccounts()
+      partyB = accounts[0].toLowerCase()
+    }
+    const response = await this.networking.get(
+      `virtualchannel/address/${partyB.toLowerCase()}/opening`
+    )
+    return response.data
+  }
+
+
   async getVcStateByNonce ({ vcId, nonce }) {
     const methodName = 'getVcStateByNonce'
     const isHexStrict = { presence: true, isHexStrict: true }
@@ -3162,8 +3188,8 @@ class Connext {
     if (vc === null) {
       throw new VCUpdateError(methodName, 'Channel not found')
     }
-    // channel must be open
-    if (vc.state !== 1) {
+    // channel must be opened or opening
+    if (vc.state !== 1 && vc.state !== 0) {
       throw new VCUpdateError(methodName, 'Channel is in invalid state')
     }
     // total channel balance cant change
