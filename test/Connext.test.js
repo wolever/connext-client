@@ -256,23 +256,26 @@ describe('Connext', async () => {
         ).timeout(5000)
 
         it('should request hub joins subchanAI', async () => {
-          // response = await Promise.all([client.requestJoinLc(subchanAI), timeout(22000)])
+          // response = await Promise.all([
+          //   client.requestJoinLc(subchanAI),
+          //   timeout(30000)
+          // ])
           subchanAI =
-            '0x0ceefcae18dc21fe6f501b453b3cf77599ecd931e40650a5fc6316989ced070c'
+            '0xeae240ce118f18abe2e8f237c1c8ee47323852c85850b903b5740f312545cb34'
           response = await client.requestJoinLc(subchanAI)
           console.log('res:', response)
           //   assert.equal(response.txHash, ':)')
           assert.ok(Web3.utils.isHex(response[0]))
-        }).timeout(30000)
+        }).timeout(35000)
 
         it('should request hub joins subchanBI', async () => {
-          response = await Promise.all([
-            client.requestJoinLc(subchanBI),
-            timeout(17000)
-          ])
-          // subchanBI =
-          //   '0x3bd0fa4e546a746b4c8aed8ce8462a27cdcfdb703b5c372d9a963001de0894e1'
-          // response = await client.requestJoinLc(subchanBI)
+          // response = await Promise.all([
+          //   client.requestJoinLc(subchanBI),
+          //   timeout(17000)
+          // ])
+          subchanBI =
+            '0x040c778da87cada0599b208438da15985e9a3373780599b615142b64a6fa7a9d'
+          response = await client.requestJoinLc(subchanBI)
           console.log(response)
           //   assert.equal(response.txHash, ':)')
           assert.ok(Web3.utils.isHex(response[0]))
@@ -361,7 +364,7 @@ describe('Connext', async () => {
       // TO DO: FIX, works in postman ??
       it('should request that ingrid deposits 5 ETH in subchan', async () => {
         let subchan =
-          '0xa52aa477db4b7b93054aa4c446dcd972cad3dd7a6614a0e2c65c61650d398111'
+          '0x91fc70f53cd7edd8833d146d5ffa3fef3570bffce2333a519e71399e8523edc9'
         let deposit = Web3.utils.toBN(Web3.utils.toWei('5', 'ether'))
         response = await client.requestIngridDeposit({
           lcId: subchan,
@@ -388,7 +391,7 @@ describe('Connext', async () => {
         'partyA sends a state update in the virtual channel of 1 eth',
         async () => {
           vcId =
-            '0x9de4eb5355c8a0880defa623e6cd6278bf637ad4723ee42b58d88e5aa1ee33f1'
+            '0x5bfd11640425bd42af043cc5ad250d2517f2c58a9c8ab1654071be66ee109e39'
           balanceA = Web3.utils.toBN(Web3.utils.toWei('4', 'ether'))
           balanceB = Web3.utils.toBN(Web3.utils.toWei('1', 'ether'))
           response = await client.updateBalance({
@@ -406,7 +409,7 @@ describe('Connext', async () => {
 
       it.only('should fast close the virtual channel', async () => {
         vcId =
-          '0x9de4eb5355c8a0880defa623e6cd6278bf637ad4723ee42b58d88e5aa1ee33f1'
+          '0x5bfd11640425bd42af043cc5ad250d2517f2c58a9c8ab1654071be66ee109e39'
         response = await client.closeChannel(vcId)
         console.log(response)
         assert.ok(Web3.utils.isHex(response))
