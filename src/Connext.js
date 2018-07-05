@@ -1848,7 +1848,7 @@ class Connext {
       {
         from: sender,
         value: initialDeposit,
-        gas: 3000000
+        gas: 750000
       }
     )
 
