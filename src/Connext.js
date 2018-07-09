@@ -117,8 +117,6 @@ validate.validators.isLcObj = value => {
   }
 }
 
-// const logger = (arrayOfValidatorReturns) => arrayOfValidatorReturns.map((()console.log)
-
 /**
  *
  * Class representing an instance of a Connext client.
@@ -398,7 +396,7 @@ class Connext {
     }
     // valid deposit provided
     if (deposit.isNeg() || deposit.isZero()) {
-      throw new VCOpenError(methodName, 'Invalid deposit provided')
+      throw new VCOpenError(methodName, `Invalid deposit provided: ${deposit}`)
     }
 
     // generate initial vcstate
@@ -3299,8 +3297,6 @@ class Connext {
       hubBond: Web3.utils.toBN(vc0.balanceA).add(Web3.utils.toBN(vc0.balanceB))
     }
     const sigAtoI = await this.createLCStateUpdate(updateAtoI)
-    console.log('updateAtoI:', updateAtoI)
-    console.log('sigAtoI:', sigAtoI)
     return sigAtoI
   }
 
