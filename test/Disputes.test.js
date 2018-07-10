@@ -71,7 +71,7 @@ describe('Connext dispute cases', () => {
       }
     })
 
-    it('should call initVCContractHandler', async () => {})
+    it('should call initVcStateContractHandler', async () => {})
 
     it('should call settleVCContractHandler', async () => {})
 
@@ -134,5 +134,11 @@ describe('Connext dispute cases', () => {
 
       it('should wait out challenge period and call byzantineCloseChannel on chain', async () => {})
     })
+  })
+
+  describe('Ingrid failed to autojoin an LC', () => {
+    it(
+      'watchers should call VCOpenTimeout on chain, and increase acct balance of partyA'
+    )
   })
 })
