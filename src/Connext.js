@@ -738,7 +738,6 @@ class Connext {
     // get latest i-signed lc state update
     let lcState = await this.getLatestLedgerStateUpdate(lc.channelId, ['sigI'])
     if (lcState) {
-      console.log('lcState:', lcState)
       // openVcs?
       if (Number(lcState.openVcs) !== 0) {
         throw new LCCloseError(methodName, 'Cannot close channel with open VCs')
@@ -808,7 +807,6 @@ class Connext {
       })
       return { response, fastClosed: true }
     } else {
-      console.log('entering updateLC state')
       // call updateLCState
       response = await this.updateLcStateContractHandler({
         // challenge flag..?
