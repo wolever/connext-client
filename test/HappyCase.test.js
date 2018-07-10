@@ -221,8 +221,7 @@ describe('Connext happy case testing flow', () => {
         console.log(deposit.toString())
         try {
           await client.requestIngridDeposit({
-            lcId: subchanBI ||
-              '0x8408b4a5163a663cd54de656abccae42f640ed8b68853dc4393dc29485294782',
+            lcId: subchanBI,
             deposit
           })
         } catch (e) {
