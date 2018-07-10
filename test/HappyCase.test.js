@@ -182,7 +182,7 @@ describe('Connext happy case testing flow', () => {
       describe('registration error cases', () => {
         it('should throw an error if you have open and active LC', async () => {
           try {
-            let subchan = await client.register(initialDeposit, partyA)
+            await client.register(initialDeposit, partyA)
           } catch (e) {
             assert.equal(e.statusCode, 400)
           }
