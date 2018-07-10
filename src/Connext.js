@@ -2945,6 +2945,10 @@ class Connext {
       methodName,
       'isBN'
     )
+    const accountBalance = await this.web3.eth.getBalance(this.ingridAddress)
+    if (deposit.gt(accountBalance)) {
+      throw new LCUpdateError(methodName, 'Hub does not have sufficient balance for requested deposit')
+    }
     const response = await this.networking.post(
       `ledgerchannel/${lcId}/deposit`,
       {
