@@ -145,7 +145,8 @@ class Connext {
       watcherUrl = '',
       ingridUrl = '',
       contractAddress = '',
-      hubAuth = 's%3ACiKWh3t14XjMAllKSmNfYC3F1CzvsFXl.LxI4s1J33VukHvx58lqlPwYlDwEMEbMw1dWhxJz1bjM'
+      hubAuth = '',
+      useAxios = false
     },
     web3Lib = Web3
   ) {
@@ -164,7 +165,7 @@ class Connext {
       },
       withAuth: true
     }
-    this.networking = networking(ingridUrl);
+    this.networking = networking(ingridUrl, useAxios);
   }
 
 
