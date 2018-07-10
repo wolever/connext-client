@@ -38,7 +38,6 @@ module.exports = function networking(baseUrl, useAxios) {
         opts.data = body;
       }
       opts.headers = {
-        Cookie: `hub.sid=${process.env.HUB_AUTH};`,
         Authorization: `Bearer ${process.env.HUB_AUTH}`
       };
       try {
