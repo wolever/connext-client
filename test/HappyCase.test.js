@@ -77,14 +77,6 @@ describe('Connext happy case testing flow', () => {
           balanceB = Web3.utils.toBN(lcA.balanceI)
           assert.ok(balanceB.eq(Web3.utils.toBN('0')))
         })
-
-        it('should throw an error if you have open and active LC', async () => {
-          try {
-            let subchan = await client.register(initialDeposit, partyA)
-          } catch (e) {
-            assert.equal(e.statusCode, 400)
-          }
-        })
       })
 
       describe('registering partyB with hub', () => {
@@ -109,14 +101,6 @@ describe('Connext happy case testing flow', () => {
           lcB = await client.getLcById(subchanBI)
           balanceB = Web3.utils.toBN(lcB.balanceI)
           assert.ok(balanceB.eq(Web3.utils.toBN('0')))
-        })
-
-        it('should throw an error if you have open and active LC', async () => {
-          try {
-            let subchan = await client.register(initialDeposit, partyB)
-          } catch (e) {
-            assert.equal(e.statusCode, 400)
-          }
         })
       })
 
@@ -143,14 +127,6 @@ describe('Connext happy case testing flow', () => {
           balanceC = Web3.utils.toBN(lcC.balanceI)
           assert.ok(balanceC.eq(Web3.utils.toBN('0')))
         })
-
-        it('should throw an error if you have open and active LC', async () => {
-          try {
-            let subchan = await client.register(initialDeposit, partyC)
-          } catch (e) {
-            assert.equal(e.statusCode, 400)
-          }
-        })
       })
 
       describe('registering partyD with hub', () => {
@@ -175,14 +151,6 @@ describe('Connext happy case testing flow', () => {
           lcD = await client.getLcById(subchanDI)
           balanceD = Web3.utils.toBN(lcD.balanceI)
           assert.ok(balanceD.eq(Web3.utils.toBN('0')))
-        })
-
-        it('should throw an error if you have open and active LC', async () => {
-          try {
-            let subchan = await client.register(initialDeposit, partyD)
-          } catch (e) {
-            assert.equal(e.statusCode, 400)
-          }
         })
       })
 
@@ -209,7 +177,9 @@ describe('Connext happy case testing flow', () => {
           balanceB = Web3.utils.toBN(lcE.balanceI)
           assert.ok(balanceB.eq(Web3.utils.toBN('0')))
         })
+      })
 
+      describe('registration error cases', () => {
         it('should throw an error if you have open and active LC', async () => {
           try {
             let subchan = await client.register(initialDeposit, partyA)
@@ -241,6 +211,25 @@ describe('Connext happy case testing flow', () => {
         lcB = await client.getLcById(subchanBI)
         assert.ok(deposit.eq(Web3.utils.toBN(lcB.balanceI)))
       }).timeout(45000)
+
+      // request hub deposit error cases
+      it('should throw an error if hub has insufficient funds', async () => {
+        const balance = await client.web3.eth.getBalance(ingridAddress)
+        const deposit = Web3.utils
+          .toBN(balance)
+          .add(Web3.utils.toBN(Web3.utils.toWei('10', 'ether')))
+        console.log(deposit.toString())
+        try {
+          await client.requestIngridDeposit({
+            lcId: subchanBI ||
+              '0x8408b4a5163a663cd54de656abccae42f640ed8b68853dc4393dc29485294782',
+            deposit
+          })
+        } catch (e) {
+          console.log(e)
+          assert.equal(e.statusCode, 500)
+        }
+      })
     })
 
     describe('Creating a virtual channel', () => {
@@ -626,15 +615,13 @@ describe('Connext happy case testing flow', () => {
         assert.equal(Math.round(expected), Math.round(finalBal))
       })
 
-      it
-        .only(`should close partyB's LC with the fast close flag`, async () => {
-          prevBal = await client.web3.eth.getBalance(partyB) // 95 ETH
-          const response = await client.withdraw(partyB) // + 7 ETH
-          assert.equal(response.fastClosed, true)
-        })
-        .timeout(5000)
+      it(`should close partyB's LC with the fast close flag`, async () => {
+        prevBal = await client.web3.eth.getBalance(partyB) // 95 ETH
+        const response = await client.withdraw(partyB) // + 7 ETH
+        assert.equal(response.fastClosed, true)
+      }).timeout(5000)
 
-      it.only(`should transfer balanceA partyB's into wallet`, async () => {
+      it(`should transfer balanceA partyB's into wallet`, async () => {
         lcB = await client.getLcByPartyA(partyB)
         const expected = Web3.utils.fromWei(
           Web3.utils.toBN(lcB.balanceA).add(Web3.utils.toBN(prevBal)),
