@@ -661,9 +661,10 @@ class Connext {
       // ingrid cosigned proposed LC update
       return fastCloseSig
     } else {
+      throw new VCCloseError(methodName, 651, 'Hub did not cosign proposed LC update, call initVC and settleVC')
       // take to chain
-      const result = await this.byzantineCloseVc(channelId)
-      return result
+      // const result = await this.byzantineCloseVc(channelId)
+      // return result
     }
   }
 
@@ -2239,10 +2240,14 @@ class Connext {
         from: sender,
         gas: 4700000 // FIX THIS, WHY HAPPEN, TRUFFLE CONFIG???
       })
-    if (!result.transactionHash) {
-      throw new Error(`[${methodName}] updateLCstate transaction failed.`)
-    }
-    return result
+      if (!result.transactionHash) {
+        throw new ContractError(methodName, 301, 'Transaction failed to broadcast')
+      }
+    
+      if (!result.blockNumber) {
+        throw new ContractError(methodName, 302, result.transactionHash, 'Transaction failed')
+      }
+      return result
   }
 
   async initVcStateContractHandler ({
@@ -2360,7 +2365,14 @@ class Connext {
     // if (!results.transactionHash) {
     //   throw new Error(`[${methodName}] initVCState transaction failed.`)
     // }
-    return results
+    if (!result.transactionHash) {
+      throw new ContractError(methodName, 301, 'Transaction failed to broadcast')
+    }
+  
+    if (!result.blockNumber) {
+      throw new ContractError(methodName, 302, result.transactionHash, 'Transaction failed')
+    }
+    return result
   }
 
   async settleVcContractHandler ({
@@ -2445,10 +2457,14 @@ class Connext {
         from: sender,
         gas: 4700000
       })
-    if (!results.transactionHash) {
-      throw new Error(`[${methodName}] settleVC transaction failed.`)
-    }
-    return results
+      if (!result.transactionHash) {
+        throw new ContractError(methodName, 301, 'Transaction failed to broadcast')
+      }
+    
+      if (!result.blockNumber) {
+        throw new ContractError(methodName, 302, result.transactionHash, 'Transaction failed')
+      }
+      return result
   }
 
   async closeVirtualChannelContractHandler ({ lcId, vcId, sender = null }) {
@@ -2480,10 +2496,14 @@ class Connext {
       .send({
         from: sender
       })
-    if (!results.transactionHash) {
-      throw new Error(`[${methodName}] transaction failed.`)
-    }
-    return results
+      if (!result.transactionHash) {
+        throw new ContractError(methodName, 301, 'Transaction failed to broadcast')
+      }
+    
+      if (!result.blockNumber) {
+        throw new ContractError(methodName, 302, result.transactionHash, 'Transaction failed')
+      }
+      return result
   }
 
   async byzantineCloseChannelContractHandler ({lcId, sender = null }) {
@@ -2510,10 +2530,14 @@ class Connext {
       .send({
         from: sender
       })
-    if (!results.transactionHash) {
-      throw new Error(`[${methodName}] transaction failed.`)
-    }
-    return results
+      if (!result.transactionHash) {
+        throw new ContractError(methodName, 301, 'Transaction failed to broadcast')
+      }
+    
+      if (!result.blockNumber) {
+        throw new ContractError(methodName, 302, result.transactionHash, 'Transaction failed')
+      }
+      return result
   }
 
   // ***************************************
