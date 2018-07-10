@@ -738,6 +738,7 @@ class Connext {
     // get latest i-signed lc state update
     let lcState = await this.getLatestLedgerStateUpdate(lc.channelId, ['sigI'])
     if (lcState) {
+      console.log('lcState:', lcState)
       // openVcs?
       if (Number(lcState.openVcs) !== 0) {
         throw new LCCloseError(methodName, 'Cannot close channel with open VCs')
@@ -807,6 +808,7 @@ class Connext {
       })
       return { response, fastClosed: true }
     } else {
+      console.log('entering updateLC state')
       // call updateLCState
       response = await this.updateLcStateContractHandler({
         // challenge flag..?
@@ -2732,10 +2734,32 @@ class Connext {
       methodName,
       'partyB'
     )
-    const response = await this.networking.get(
-      `virtualchannel/a/${partyA}/b/${partyB}/open`
-    )
-    return response.data
+    let openResponse
+    try {
+      openResponse = await this.networking.get(
+        `virtualchannel/a/${partyA.toLowerCase()}/b/${partyB.toLowerCase()}/open`
+      )
+    } catch (e) {
+      if (e.status === 400) {
+        // no open channel
+        openResponse = null
+      }
+    }
+    
+    if (openResponse === null) {
+      // channel between parties is opening
+      try {
+        openResponse = await this.networking.get(
+          `virtualchannel/address/${partyA.toLowerCase()}/opening`
+        )
+      } catch (e) {
+        if (e.status === 400) {
+          // no open channel
+          openResponse = null
+        }
+      }
+    }
+    return openResponse.data
   }
 
   async getOtherLcId (vcId) {
