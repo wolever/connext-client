@@ -317,7 +317,7 @@ class Connext {
       throw new LCUpdateError(methodName, 'Channel is not in the right state')
     }
     // verify recipient is in lc
-    if (lc.partyA !== Case() && lc.partyI !== recipient.toLowerCase()) {
+    if (lc.partyA !== recipient.toLowerCase() && lc.partyI !== recipient.toLowerCase()) {
       throw new LCUpdateError(methodName, 'Recipient is not member of channel')
     }
     
