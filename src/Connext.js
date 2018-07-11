@@ -2352,6 +2352,11 @@ class Connext {
 
     const hubBond = balanceA.add(balanceB)
 
+    console.log('TRUFFLE DEVELOP COMMAND:')
+    console.log(
+      `LedgerChannel.deployed().then( i => { return i.initVCstate(${subchanId}, ${vcId}, ${proof}, ${nonce}, '${partyA}', '${partyB}', ${hubBond}, ${balanceA}, ${balanceB}, '${sigA}');}).then(result => { alert('transaction successful') })`
+    )
+
     const results = await this.channelManagerInstance.methods
       .initVCstate(
         subchanId,
@@ -2367,19 +2372,20 @@ class Connext {
       )
       .send({
         from: sender,
-        gas: 6500000
+        gas: 10721975,
+        gasPrice: 10721975
       })
-    // if (!results.transactionHash) {
-    //   throw new Error(`[${methodName}] initVCState transaction failed.`)
-    // }
-    if (!result.transactionHash) {
+    if (!results.transactionHash) {
+      throw new Error(`[${methodName}] initVCState transaction failed.`)
+    }
+    if (!results.transactionHash) {
       throw new ContractError(methodName, 301, 'Transaction failed to broadcast')
     }
   
-    if (!result.blockNumber) {
-      throw new ContractError(methodName, 302, result.transactionHash, 'Transaction failed')
+    if (!results.blockNumber) {
+      throw new ContractError(methodName, 302, results.transactionHash, 'Transaction failed')
     }
-    return result
+    return results
   }
 
   async settleVcContractHandler ({
@@ -2937,7 +2943,7 @@ class Connext {
       'vcId'
     )
     const response = await this.networking.get(
-      `virtualchannel/${vcId}/intialstate`
+      `virtualchannel/${vcId}/update/nonce/0`
     )
     return response.data
   }
