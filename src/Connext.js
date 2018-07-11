@@ -305,7 +305,7 @@ class Connext {
       )
     }
     // verify deposit is positive and nonzero
-    if (deposit.isNeg() || deposit.isZero()) {
+    if (depositInWei.isNeg() || depositInWei.isZero()) {
       throw new LCUpdateError(methodName, 'Invalid deposit provided')
     }
 
