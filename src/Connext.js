@@ -287,6 +287,7 @@ class Connext {
       methodName,
       'depositInWei'
     )
+    const accounts = await this.web3.eth.getAccounts()
     if (sender) {
       Connext.validatorsResponseToError(
         validate.single(sender, isAddress),
@@ -294,7 +295,6 @@ class Connext {
         'sender'
       )
     } else {
-      const accounts = await this.web3.eth.getAccounts()
       sender = accounts[0].toLowerCase()
     }
     if (recipient) {
