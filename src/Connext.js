@@ -303,6 +303,8 @@ class Connext {
         methodName,
         'recipient'
       )
+    } else {
+      recipient = accounts[0].toLowerCase()
     }
     // verify deposit is positive and nonzero
     if (depositInWei.isNeg() || depositInWei.isZero()) {
