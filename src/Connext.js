@@ -317,7 +317,7 @@ class Connext {
       throw new LCUpdateError(methodName, 'Channel is not in the right state')
     }
     // verify recipient is in lc
-    if (lc.partyA !== recipient.toLowerCase() || lc.partyI !== recipient.toLowerCase()) {
+    if (lc.partyA !== Case() && lc.partyI !== recipient.toLowerCase()) {
       throw new LCUpdateError(methodName, 'Recipient is not member of channel')
     }
     
@@ -1971,7 +1971,7 @@ class Connext {
     if (lc.state !== 1) {
       throw new ContractError(methodName, 'Channel is not open')
     }
-    if (recipient.toLowerCase() !== lc.partyA || recipient.toLowerCase() !== lc.partyI) {
+    if (recipient.toLowerCase() !== lc.partyA && recipient.toLowerCase() !== lc.partyI) {
       throw new ContractError(methodName, 'Recipient is not a member of the ledger channel')
     }
 
