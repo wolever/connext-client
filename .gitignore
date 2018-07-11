@@ -1,5 +1,6 @@
 node_modules/
 dist/
 notes.txt
+test/tests.txt
 test/apiRoutes.txt
 .env
