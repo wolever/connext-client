@@ -281,6 +281,7 @@ class Connext {
     // validate params
     const methodName = 'deposit'
     const isBN = { presence: true, isBN: true }
+    const isAddress = { presence: true, isAddress: true }
     Connext.validatorsResponseToError(
       validate.single(depositInWei, isBN),
       methodName,
@@ -304,7 +305,7 @@ class Connext {
       )
     }
     // verify deposit is positive and nonzero
-    if (deposit.isNeg() || deposit.isZero()) {
+    if (depositInWei.isNeg() || depositInWei.isZero()) {
       throw new LCUpdateError(methodName, 'Invalid deposit provided')
     }
 
@@ -314,7 +315,7 @@ class Connext {
       throw new LCUpdateError(methodName, 'Channel is not in the right state')
     }
     // verify recipient is in lc
-    if (lc.partyA !== recipient.toLowerCase() || lc.partyI !== recipient.toLowerCase()) {
+    if (lc.partyA !== recipient.toLowerCase() && lc.partyI !== recipient.toLowerCase()) {
       throw new LCUpdateError(methodName, 'Recipient is not member of channel')
     }
     
@@ -401,7 +402,7 @@ class Connext {
 
     // vc does not already exist
     let vc = await this.getChannelByParties({ partyA: sender, partyB: to })
-    if (vc == null) {
+    if (vc != null) {
       throw new VCOpenError(methodName, 451, `Parties already have open virtual channel: ${vc.channelId}`)
     }
 
@@ -1975,7 +1976,7 @@ class Connext {
     if (lc.state !== 1) {
       throw new ContractError(methodName, 'Channel is not open')
     }
-    if (recipient.toLowerCase() !== lc.partyA || recipient.toLowerCase() !== lc.partyI) {
+    if (recipient.toLowerCase() !== lc.partyA && recipient.toLowerCase() !== lc.partyI) {
       throw new ContractError(methodName, 'Recipient is not a member of the ledger channel')
     }
 
@@ -2767,7 +2768,11 @@ class Connext {
       openResponse = await this.networking.get(
         `virtualchannel/a/${partyA.toLowerCase()}/b/${partyB.toLowerCase()}/open`
       )
-      return openResponse.data
+      if (openResponse.data.length === 0) {
+        openResponse = null
+      } else {
+        return openResponse.data
+      }
     } catch (e) {
       if (e.status === 400) {
         // no open channel
@@ -2781,7 +2786,11 @@ class Connext {
         openResponse = await this.networking.get(
           `virtualchannel/address/${partyA.toLowerCase()}/opening`
         )
-        return openResponse.data
+        if (openResponse.data.length === 0) {
+          openResponse = null
+        } else {
+          return openResponse.data
+        }
       } catch (e) {
         if (e.status === 400) {
           // no open channel
@@ -2978,7 +2987,7 @@ class Connext {
       'isBN'
     )
     const accountBalance = await this.web3.eth.getBalance(this.ingridAddress)
-    if (deposit.gt(accountBalance)) {
+    if (deposit.gt(Web3.utils.toBN(accountBalance))) {
       throw new LCUpdateError(methodName, 'Hub does not have sufficient balance for requested deposit')
     }
     const response = await this.networking.post(
