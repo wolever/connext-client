@@ -228,7 +228,7 @@ class Connext {
     // verify channel does not exist between ingrid and sender
     let lc = await this.getLcByPartyA(sender)
     if (lc != null && lc.state === 1) {
-      throw new LCOpenError(methodName, `PartyA has open channel with hub, ID: ${lc.channelId}`)
+      throw new LCOpenError(methodName, 401, `PartyA has open channel with hub, ID: ${lc.channelId}`)
     }
     // verify deposit is positive
     if (initialDeposit.isNeg()) {
@@ -397,6 +397,12 @@ class Connext {
     // valid deposit provided
     if (deposit.isNeg() || deposit.isZero()) {
       throw new VCOpenError(methodName, `Invalid deposit provided: ${deposit}`)
+    }
+
+    // vc does not already exist
+    let vc = await this.getChannelByParties({ partyA: sender, partyB: to })
+    if (vc == null) {
+      throw new VCOpenError(methodName, 451, `Parties already have open virtual channel: ${vc.channelId}`)
     }
 
     // generate initial vcstate
@@ -2761,6 +2767,7 @@ class Connext {
       openResponse = await this.networking.get(
         `virtualchannel/a/${partyA.toLowerCase()}/b/${partyB.toLowerCase()}/open`
       )
+      return openResponse.data
     } catch (e) {
       if (e.status === 400) {
         // no open channel
@@ -2774,6 +2781,7 @@ class Connext {
         openResponse = await this.networking.get(
           `virtualchannel/address/${partyA.toLowerCase()}/opening`
         )
+        return openResponse.data
       } catch (e) {
         if (e.status === 400) {
           // no open channel
@@ -2781,7 +2789,7 @@ class Connext {
         }
       }
     }
-    return openResponse.data
+    return openResponse
   }
 
   async getOtherLcId (vcId) {
