@@ -52,11 +52,61 @@ describe('Connext dispute cases', () => {
   beforeEach(
     'Should register partyA and partyB with the hub, and create/update a VC between them',
     async () => {
-      // register partyA
-      // register partyB
-      // request ingrid deposit into subchanBI
-      // create VC between partyA and partyB
-      // update VC
+      // register partyA if lcA doesnt exist
+      lcA = await client.getLcByPartyA(partyA)
+      if (lcA === null) {
+        subchanAI = await client.register(initialDeposit, partyA, 15)
+        await timeout(20000) // wait for chainsaw and autojoin
+        lcA = await client.getLcByPartyA(partyA)
+      } else {
+        subchanAI = lcA.channelId
+      }
+      // register partyB if lcB doesnt exist
+      lcB = await client.getLcByPartyA(partyB)
+      if (lcB === null) {
+        subchanBI = await client.register(initialDeposit, partyB, 15)
+        await timeout(20000) // wait for chainsaw and autojoin
+        lcB = await client.getLcByPartyA(partyA)
+      } else {
+        subchanBI = lcB.channelId
+      }
+      // if insufficient funds, request ingrid deposit into subchanBI
+      if (Web3.utils.toBN(lcB.balanceI).lt(initialDeposit)) {
+        await client.requestIngridDeposit({
+          lcId: subchanBI,
+          deposit: initialDeposit
+        })
+        await timeout(20000) // wait for chainsaw
+      }
+
+      // create VC between partyA and partyB if doesnt exist
+      vc = await client.getChannelByParties({ partyA, partyB })
+      if (vc === null) {
+        vcId = await client.openChannel({
+          to: partyB,
+          deposit: initialDeposit,
+          sender: partyA
+        })
+        vc = await client.getChannelById(vcId)
+      } else {
+        vcId = vc.channelId
+      }
+      // update VC 3x
+      balanceA = Web3.utils.toBN(vc.balanceA)
+      balanceB = Web3.utils.toBN(vc.balanceB)
+      for (let i = 0; i < 3; i++) {
+        balanceA = balanceA.sub(
+          Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
+        )
+        balanceB = balanceB.add(
+          Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
+        )
+        await client.updateBalance({
+          channelId: vcId,
+          balanceA,
+          balanceB
+        })
+      }
     }
   )
 
