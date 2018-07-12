@@ -29,102 +29,105 @@ let vcId
 let vc
 
 describe('Connext dispute cases', () => {
-  describe.only('hub does not countersign closing vc update', function () {
-    this.timeout(120000)
+  this.timeout(120000)
 
-    before(
-      'Should init client and register partyA and partyB with the hub, and create/update a VC between them',
-      async () => {
-        // init web3
-        const port = process.env.ETH_PORT ? process.env.ETH_PORT : '8545'
-        web3 = new Web3(`ws://localhost:${port}`)
-        // set account vars
-        accounts = await web3.eth.getAccounts()
-        ingridAddress = accounts[0]
-        partyA = accounts[1]
-        partyB = accounts[2]
-        // init client instance
-        client = new Connext({
-          web3,
-          ingridAddress,
-          watcherUrl,
-          ingridUrl,
-          contractAddress,
-          hubAuth
-        })
+  // before, should init client with LCs and VC
+  before(
+    'Should init client and register partyA and partyB with the hub, and create/update a VC between them',
+    async () => {
+      // init web3
+      const port = process.env.ETH_PORT ? process.env.ETH_PORT : '8545'
+      web3 = new Web3(`ws://localhost:${port}`)
+      // set account vars
+      accounts = await web3.eth.getAccounts()
+      ingridAddress = accounts[0]
+      partyA = accounts[1]
+      partyB = accounts[2]
+      // init client instance
+      client = new Connext({
+        web3,
+        ingridAddress,
+        watcherUrl,
+        ingridUrl,
+        contractAddress,
+        hubAuth
+      })
 
-        // register partyA if lcA doesnt exist
+      // register partyA if lcA doesnt exist
+      lcA = await client.getLcByPartyA(partyA)
+      if (lcA == null) {
+        subchanAI = await client.register(initialDeposit, partyA, 15)
+        await timeout(30000) // wait for chainsaw and autojoin
         lcA = await client.getLcByPartyA(partyA)
-        if (lcA == null) {
-          subchanAI = await client.register(initialDeposit, partyA, 15)
-          await timeout(30000) // wait for chainsaw and autojoin
-          lcA = await client.getLcByPartyA(partyA)
-        } else {
-          subchanAI = lcA.channelId
-        }
-        // register partyB if lcB doesnt exist
-        lcB = await client.getLcByPartyA(partyB)
-        if (lcB == null) {
-          subchanBI = await client.register(initialDeposit, partyB, 15)
-          await timeout(30000) // wait for chainsaw and autojoin
-          lcB = await client.getLcByPartyA(partyA)
-        } else {
-          subchanBI = lcB.channelId
-        }
-        // if insufficient funds, request ingrid deposit into subchanBI
-        if (
-          Web3.utils
-            .toBN(lcB.balanceI)
-            .lt(Web3.utils.toBN(Web3.utils.toWei('1', 'ether')))
-        ) {
-          await client.requestIngridDeposit({
-            lcId: subchanBI,
-            deposit: initialDeposit
-          })
-          await timeout(30000) // wait for chainsaw
-        }
-        // if insufficient funds in lcA.balanceA to open channel deposit
-        if (
-          Web3.utils
-            .toBN(lcA.balanceA)
-            .lt(Web3.utils.toBN(Web3.utils.toWei('1', 'ether')))
-        ) {
-          await client.deposit(initialDeposit, partyA)
-          await timeout(30000) // wait for chainsaw
-        }
-
-        // create/update VC between partyA and partyB if doesnt exist
-        vc = await client.getChannelByParties({ partyA, partyB })
-        if (vc == null) {
-          vcId = await client.openChannel({
-            to: partyB,
-            deposit: Web3.utils.toBN(Web3.utils.toWei('1', 'ether')),
-            sender: partyA
-          })
-          vc = await client.getChannelById(vcId)
-          // update VC 3x
-          balanceA = Web3.utils.toBN(vc.balanceA)
-          balanceB = Web3.utils.toBN(vc.balanceB)
-          for (let i = 0; i < 3; i++) {
-            balanceA = balanceA.sub(
-              Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
-            )
-            balanceB = balanceB.add(
-              Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
-            )
-            await client.updateBalance({
-              channelId: vcId,
-              balanceA,
-              balanceB
-            })
-          }
-        } else {
-          vcId = vc.channelId
-          balanceA = Web3.utils.toBN(vc.balanceA)
-          balanceB = Web3.utils.toBN(vc.balanceB)
-        }
+      } else {
+        subchanAI = lcA.channelId
       }
-    )
+      // register partyB if lcB doesnt exist
+      lcB = await client.getLcByPartyA(partyB)
+      if (lcB == null) {
+        subchanBI = await client.register(initialDeposit, partyB, 15)
+        await timeout(30000) // wait for chainsaw and autojoin
+        lcB = await client.getLcByPartyA(partyA)
+      } else {
+        subchanBI = lcB.channelId
+      }
+      // if insufficient funds, request ingrid deposit into subchanBI
+      if (
+        Web3.utils
+          .toBN(lcB.balanceI)
+          .lt(Web3.utils.toBN(Web3.utils.toWei('1', 'ether')))
+      ) {
+        await client.requestIngridDeposit({
+          lcId: subchanBI,
+          deposit: initialDeposit
+        })
+        await timeout(30000) // wait for chainsaw
+      }
+      // if insufficient funds in lcA.balanceA to open channel deposit
+      if (
+        Web3.utils
+          .toBN(lcA.balanceA)
+          .lt(Web3.utils.toBN(Web3.utils.toWei('1', 'ether')))
+      ) {
+        await client.deposit(initialDeposit, partyA)
+        await timeout(30000) // wait for chainsaw
+      }
+
+      // create/update VC between partyA and partyB if doesnt exist
+      vc = await client.getChannelByParties({ partyA, partyB })
+      if (vc == null) {
+        vcId = await client.openChannel({
+          to: partyB,
+          deposit: Web3.utils.toBN(Web3.utils.toWei('1', 'ether')),
+          sender: partyA
+        })
+        vc = await client.getChannelById(vcId)
+        // update VC 3x
+        balanceA = Web3.utils.toBN(vc.balanceA)
+        balanceB = Web3.utils.toBN(vc.balanceB)
+        for (let i = 0; i < 3; i++) {
+          balanceA = balanceA.sub(
+            Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
+          )
+          balanceB = balanceB.add(
+            Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
+          )
+          await client.updateBalance({
+            channelId: vcId,
+            balanceA,
+            balanceB
+          })
+        }
+      } else {
+        vcId = vc.channelId
+        balanceA = Web3.utils.toBN(vc.balanceA)
+        balanceB = Web3.utils.toBN(vc.balanceB)
+      }
+    }
+  )
+
+  describe('hub does not countersign closing vc update', function () {
+    this.timeout(120000)
 
     it('should closeChannel without returning fastSig', async () => {
       // mock response from hub for client.fastCloseVCHandler
@@ -220,18 +223,24 @@ describe('Connext dispute cases', () => {
     it('should not prohibit VCs from opening', async () => {})
   })
 
-  describe('hub did not countersign closing lc update', () => {
+  describe.only('hub did not countersign closing lc update', () => {
+    this.timeout(120000)
+
     let response
-    it('should call withdraw without i-countersiging closing update', async () => {
-      // mock response from hub for client.fastCloseLCHandler
-      let stub = sinon.stub(client, 'fastCloseLcHandler').returns({
-        sigI: ''
-      }) // hub doesnt cosign
-      // to not return lcFinal.sigI
-      response = await client.withdraw(partyA)
-      expect(stub.calledOnce).to.be.true
-      expect(response.fastClosed).to.equal(false)
-    })
+
+    it.only(
+      'should call withdraw without i-countersiging closing update',
+      async () => {
+        // mock response from hub for client.fastCloseLCHandler
+        let stub = sinon.stub(client, 'fastCloseLcHandler').returns({
+          sigI: ''
+        }) // hub doesnt cosign
+        // to not return lcFinal.sigI
+        response = await client.withdraw(partyA)
+        expect(stub.calledOnce).to.be.true
+        expect(response.fastClosed).to.equal(false)
+      }
+    )
     it('should have called updateLCState on chain and sent lc into challenge state', async () => {
       // response.response should be tx hash
       const tx = await client.web3.eth.getTransaction(response.response)
