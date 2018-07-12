@@ -663,6 +663,7 @@ class Connext {
       signer: isPartyAInVC ? vcN.partyA : vcN.partyB,
       channelId: vcN.channelId
     })
+    console.log(fastCloseSig)
 
     if (fastCloseSig) {
       // ingrid cosigned proposed LC update
@@ -858,6 +859,7 @@ class Connext {
    */
   async withdrawFinal (sender = null) {
     const methodName = 'withdrawFinal'
+    const isAddress = { presence: true, isAddress: true }
     if (sender) {
       Connext.validatorsResponseToError(
         validate.single(sender, isAddress),
@@ -2559,19 +2561,20 @@ class Connext {
       const accounts = await this.web3.eth.getAccounts()
       sender = accounts[0].toLowerCase()
     }
-        const results = await this.channelManagerInstance.methods
+    const results = await this.channelManagerInstance.methods
       .byzantineCloseChannel(lcId)
       .send({
-        from: sender
+        from: sender,
+        gas: '470000'
       })
-      if (!result.transactionHash) {
-        throw new ContractError(methodName, 301, 'Transaction failed to broadcast')
-      }
-    
-      if (!result.blockNumber) {
-        throw new ContractError(methodName, 302, result.transactionHash, 'Transaction failed')
-      }
-      return result
+    if (!results.transactionHash) {
+      throw new ContractError(methodName, 301, 'Transaction failed to broadcast')
+    }
+  
+    if (!results.blockNumber) {
+      throw new ContractError(methodName, 302, results.transactionHash, 'Transaction failed')
+    }
+    return results
   }
 
   // ***************************************
