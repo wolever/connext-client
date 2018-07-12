@@ -3,9 +3,13 @@ const chai = require('chai')
 const expect = chai.expect
 const assert = require('assert')
 const Connext = require('../src/Connext')
-const { timeout } = require('./helpers/utils')
+const { timeout, genAuthHash } = require('./helpers/utils')
 const Web3 = require('web3')
 const sinon = require('sinon')
+
+const fetch = require('fetch-cookie')(require('node-fetch'))
+
+global.fetch = fetch
 
 // named variables
 // on init
@@ -15,7 +19,7 @@ let ingridAddress
 let watcherUrl = process.env.WATCHER_URL || ''
 let ingridUrl = process.env.INGRID_URL || 'http://localhost:8080'
 let contractAddress = '0x31713144d9ae2501e644a418dd9035ed840b1660'
-let hubAuth = process.env.HUB_AUTH || ''
+
 // for accounts
 let accounts
 let partyA, partyB
@@ -44,14 +48,44 @@ describe.only('Connext dispute cases', function () {
       ingridAddress = accounts[0]
       partyA = accounts[1]
       partyB = accounts[2]
+      // generate hub auth
+      const origin = 'localhost'
+
+      const challengeRes = await fetch(`${ingridUrl}/auth/challenge`, {
+        method: 'POST',
+        credentials: 'include'
+      })
+      const challengeJson = await challengeRes.json()
+      const nonce = challengeJson.nonce
+
+      const hash = genAuthHash(nonce, origin)
+      const signature = await web3.eth.sign(hash, ingridAddress)
+
+      const authRes = await fetch(`${ingridUrl}/auth/response`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Origin: origin
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          signature,
+          nonce,
+          origin,
+          address: ingridAddress.toLowerCase()
+        })
+      })
+
+      const authJson = await authRes.json()
+
+      expect(authJson).to.not.equal({})
       // init client instance
       client = new Connext({
         web3,
         ingridAddress,
         watcherUrl,
         ingridUrl,
-        contractAddress,
-        hubAuth
+        contractAddress
       })
       console.log('Client properly initialized')
 
