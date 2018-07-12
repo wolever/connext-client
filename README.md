@@ -9,4 +9,4 @@ This repository is designed to be used in conjunction with the Connext Hub and [
 `npm i connext`
 
 # Documentation
-See full docs [here]().
+See full docs [here](https://docs.connext.network).
