@@ -2326,9 +2326,10 @@ class Connext {
       const accounts = await this.web3.eth.getAccounts()
       sender = accounts[0].toLowerCase()
     }
+    let merkle, stateHash
     if (proof === null) {
       // generate proof from lc
-      const stateHash = Connext.createVCStateUpdateFingerprint({
+      stateHash = Connext.createVCStateUpdateFingerprint({
         channelId: vcId,
         nonce,
         partyA,
@@ -2337,8 +2338,9 @@ class Connext {
         balanceB
       })
       const vc0s = await this.getVcInitialStates(subchanId)
-      let merkle = Connext.generateMerkleTree(vc0s)
+      merkle = Connext.generateMerkleTree(vc0s)
       let mproof = merkle.proof(Utils.hexToBuffer(stateHash))
+      // console.log('verify returns:', merkle.verify( mproof, Utils.hexToBuffer(stateHash) ))
 
       proof = []
       for(var i=0; i<mproof.length; i++){
@@ -2349,13 +2351,17 @@ class Connext {
 
       proof = Utils.marshallState(proof)
     }
+    // console.log('verify returns:', merkle.verify( proof, Utils.hexToBuffer(stateHash) ))
 
     const hubBond = balanceA.add(balanceB)
 
     console.log('TRUFFLE DEVELOP COMMAND:')
     console.log(
-      `LedgerChannel.deployed().then( i => { return i.initVCstate(${subchanId}, ${vcId}, ${proof}, ${nonce}, '${partyA}', '${partyB}', ${hubBond}, ${balanceA}, ${balanceB}, '${sigA}');}).then(result => { alert('transaction successful') })`
+      `LedgerChannel.deployed().then( i => i.initVCstate(${subchanId}, ${vcId}, ${proof}, ${nonce}, '${partyA}', '${partyB}', ${hubBond}, ${balanceA}, ${balanceB}, '${sigA}', {from: '${sender}', gas: '6721975' }) )`
     )
+
+    console.log('\n\nTRUFFLE DEVELOP COMMAND TO INSPECT:')
+    console.log(`LedgerChannel.deployed().then( i => i.VirtualChannels('${vcId}')`)
 
     const results = await this.channelManagerInstance.methods
       .initVCstate(
@@ -2370,10 +2376,12 @@ class Connext {
         balanceB,
         sigA
       )
+      // .estimateGas({
+      //   from: sender,
+      // })
       .send({
         from: sender,
-        gas: 10721975,
-        gasPrice: 10721975
+        gas: '6721975',
       })
     if (!results.transactionHash) {
       throw new Error(`[${methodName}] initVCState transaction failed.`)
@@ -2456,6 +2464,14 @@ class Connext {
       const accounts = await this.web3.eth.getAccounts()
       sender = accounts[0].toLowerCase()
     }
+
+    console.log('TRUFFLE DEVELOP COMMAND TO RECREATE:')
+    console.log(
+      `LedgerChannel.deployed().then( i => i.settleVC(${subchanId}, ${vcId}, ${nonce}, '${partyA}', '${partyB}', [${balanceA}, ${balanceB}], '${sigA}', {from: '${sender}', gas: '6721975' }) )`
+    )
+    console.log('\n\nTRUFFLE DEVELOP COMMAND TO INSPECT:')
+    console.log(`LedgerChannel.deployed().then( i => i.VirtualChannels('${vcId}')`)
+
     const results = await this.channelManagerInstance.methods
       .settleVC(
         subchanId,
@@ -2468,16 +2484,16 @@ class Connext {
       )
       .send({
         from: sender,
-        gas: 4700000
+        gas: 6721975
       })
-      if (!result.transactionHash) {
+      if (!results.transactionHash) {
         throw new ContractError(methodName, 301, 'Transaction failed to broadcast')
       }
     
-      if (!result.blockNumber) {
-        throw new ContractError(methodName, 302, result.transactionHash, 'Transaction failed')
+      if (!results.blockNumber) {
+        throw new ContractError(methodName, 302, results.transactionHash, 'Transaction failed')
       }
-      return result
+      return results
   }
 
   async closeVirtualChannelContractHandler ({ lcId, vcId, sender = null }) {
@@ -2509,14 +2525,14 @@ class Connext {
       .send({
         from: sender
       })
-      if (!result.transactionHash) {
+      if (!results.transactionHash) {
         throw new ContractError(methodName, 301, 'Transaction failed to broadcast')
       }
     
-      if (!result.blockNumber) {
-        throw new ContractError(methodName, 302, result.transactionHash, 'Transaction failed')
+      if (!results.blockNumber) {
+        throw new ContractError(methodName, 302, results.transactionHash, 'Transaction failed')
       }
-      return result
+      return results
   }
 
   async byzantineCloseChannelContractHandler ({lcId, sender = null }) {
