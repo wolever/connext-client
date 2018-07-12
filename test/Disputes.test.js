@@ -169,6 +169,16 @@ describe('Connext dispute cases', function () {
     }
   )
 
+  describe('hub does not join ledger channel', function () {
+    this.timeout(120000)
+    // ***** TEMPLATE ******
+    // it('should call LCOpenTimeout if channel never joined', async () => {
+    //   if (lcA.timeout < Date.now()) {
+    //     await client.LCOpenTimeoutContractHandler(subchanAI, partyA)
+    //   }
+    // })
+  })
+
   describe('hub does not countersign closing vc update', function () {
     this.timeout(120000)
 
