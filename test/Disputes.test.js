@@ -32,7 +32,7 @@ let initialDeposit = Web3.utils.toBN(Web3.utils.toWei('5', 'ether'))
 let vcId
 let vc
 
-describe.only('Connext dispute cases', function () {
+describe('Connext dispute cases', function () {
   this.timeout(120000)
 
   // before, should init client with LCs and VC
@@ -110,6 +110,9 @@ describe.only('Connext dispute cases', function () {
       }
       // if insufficient funds, request ingrid deposit into subchanBI
       console.log('Ensuring sufficient balances in hub channels..')
+      // refetch channels
+      lcA = await client.getLcByPartyA(partyA)
+      lcB = await client.getLcByPartyA(partyB)
       if (
         Web3.utils
           .toBN(lcB.balanceI)
@@ -166,7 +169,7 @@ describe.only('Connext dispute cases', function () {
     }
   )
 
-  describe.only('hub does not countersign closing vc update', function () {
+  describe('hub does not countersign closing vc update', function () {
     this.timeout(120000)
 
     it('should closeChannel without returning fastSig', async () => {
@@ -263,7 +266,7 @@ describe.only('Connext dispute cases', function () {
     it('should not prohibit VCs from opening', async () => {})
   })
 
-  describe('hub did not countersign closing lc update', function () {
+  describe.only('hub did not countersign closing lc update', function () {
     this.timeout(120000)
 
     let response
@@ -284,16 +287,26 @@ describe.only('Connext dispute cases', function () {
         sigI: ''
       }) // hub doesnt cosign
       response = await client.withdraw(partyA)
+      console.log(response)
       expect(fastCloseLcStub.calledOnce).to.be.true
       expect(response.fastClosed).to.equal(false)
     })
+
     it('should have called updateLCState on chain and sent lc into challenge state', async () => {
-      // response.response should be tx hash
-      const tx = await client.web3.eth.getTransaction(response.response)
+      // response.response should be tx obj
+      const tx = await client.web3.eth.getTransaction(
+        response.response.transactionHash
+      )
+      // subchanAI =
+      //   '0x6fb0fc92d0ce9a838eae4b902a9e3dca2e2133a6f7ae04a4058cbd22e446cc25'
+
+      // const tx = await client.web3.eth.getTransaction(
+      //   '0xfd727784d6bfabd98d61d573582deb4e2a0da24dc9c56e6b831209df5da63ed0'
+      // )
 
       // assert tx was successfully submitted
       expect(tx.from).to.equal(partyA)
-      expect(tx.to).to.equal(client.contractAddress)
+      expect(tx.to.toLowerCase()).to.equal(contractAddress)
 
       await timeout(20000) // wait for chainsaw to pick up settled state change
       lcA = await client.getLcById(subchanAI)
@@ -301,22 +314,24 @@ describe.only('Connext dispute cases', function () {
     })
 
     it('should wait out challenge period and call withdrawFinal', async () => {
+      // subchanAI =
+      //   '0x6fb0fc92d0ce9a838eae4b902a9e3dca2e2133a6f7ae04a4058cbd22e446cc25'
       // already awaited, should not have to again
-      while (lcA.challengeTimeout < Date.now()) {
-        await timeout(3000)
-        lcA = await client.getLcById(subchanAI)
-      }
+      // while (lcA.challengeTimeout < Date.now()) {
+      //   await timeout(3000)
+      //   lcA = await client.getLcById(subchanAI)
+      // }
       // get previous balances
       const prevBalA = await client.web3.eth.getBalance(partyA)
       const prevBalI = await client.web3.eth.getBalance(ingridAddress)
 
       const response = await client.withdrawFinal(partyA)
-      const tx = await client.web3.eth.getTransaction(response.response)
+      console.log(response)
+      const tx = await client.web3.eth.getTransaction(response.transactionHash)
 
       // assert tx was successfully submitted
       expect(tx.from).to.equal(partyA)
       expect(tx.to).to.equal(client.contractAddress)
-      expect(response).to.equal()
       // assert account balances increased
       const expectedA = Web3.utils.fromWei(
         Web3.utils.toBN(lcA.balanceA).add(Web3.utils.toBN(prevBalA)),
