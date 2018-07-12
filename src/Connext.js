@@ -663,7 +663,6 @@ class Connext {
       signer: isPartyAInVC ? vcN.partyA : vcN.partyB,
       channelId: vcN.channelId
     })
-    console.log(fastCloseSig)
 
     if (fastCloseSig) {
       // ingrid cosigned proposed LC update
