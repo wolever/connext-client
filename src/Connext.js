@@ -787,7 +787,7 @@ class Connext {
     }
 
     // generate same update with fast close flag and post
-    const sigParams = {
+    let sigParams = {
       isClose: true,
       channelId: lc.channelId,
       nonce: lcState.nonce + 1,
@@ -816,15 +816,17 @@ class Connext {
       return { response, fastClosed: true }
     } else {
       // call updateLCState
+      sigParams.isClose = false
+      const sigA = await this.createLCStateUpdate(sigParams)
       response = await this.updateLcStateContractHandler({
         // challenge flag..?
-        lcId,
+        lcId: lc.channelId,
         nonce: lcState.nonce,
         openVcs: lcState.openVcs,
         balanceA: Web3.utils.toBN(lcState.balanceA),
         balanceI: Web3.utils.toBN(lcState.balanceI),
         vcRootHash: lcState.vcRootHash,
-        sigA: sig,
+        sigA,
         sigI: lcState.sigI,
         sender: sender
       })
@@ -2011,6 +2013,7 @@ class Connext {
     sender = null
   }) {
     const methodName = 'consensusCloseChannelContractHandler'
+    console.log(methodName)
     // validate
     const isHexStrict = { presence: true, isHexStrict: true }
     const isPositiveInt = { presence: true, isPositiveInt: true }
@@ -2235,6 +2238,15 @@ class Connext {
       const accounts = await this.web3.eth.getAccounts()
       sender = accounts[0].toLowerCase()
     }
+    console.log('TRUFFLE DEVELOP COMMAND:')
+    console.log(
+      `LedgerChannel.deployed().then( i => i.updateLCstate(${lcId}, [ ${nonce}, '${openVcs}', ${balanceA}, ${balanceI} ], '${sigA}', '${sigI}', {from: '${sender}', gas: 6721975 }) )`
+    )
+
+
+    console.log('\n\nTRUFFLE DEVELOP COMMAND TO INSPECT:')
+    console.log(`LedgerChannel.deployed().then( i => i.Channels('${lcId}'))`)
+
     const result = await this.channelManagerInstance.methods
       .updateLCstate(
         lcId,
@@ -2243,9 +2255,13 @@ class Connext {
         sigA,
         sigI
       )
+      // .estimateGas({
+      //   from: sender
+      // })
+      // console.log('gas:', result)
       .send({
         from: sender,
-        gas: 4700000 // FIX THIS, WHY HAPPEN, TRUFFLE CONFIG???
+        gas: '6721975' // FIX THIS, WHY HAPPEN, TRUFFLE CONFIG???
       })
       if (!result.transactionHash) {
         throw new ContractError(methodName, 301, 'Transaction failed to broadcast')
@@ -2381,7 +2397,7 @@ class Connext {
       // })
       .send({
         from: sender,
-        gas: '6721975',
+        gas: 6721975,
       })
     if (!results.transactionHash) {
       throw new Error(`[${methodName}] initVCState transaction failed.`)
