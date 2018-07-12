@@ -3,6 +3,7 @@ const assert = require('assert')
 const Connext = require('../src/Connext')
 const { timeout, genAuthHash } = require('./helpers/utils')
 const Web3 = require('web3')
+const interval = require('interval-promise')
 
 const fetch = require('fetch-cookie')(require('node-fetch'))
 
@@ -29,7 +30,7 @@ let initialDeposit = Web3.utils.toBN(Web3.utils.toWei('5', 'ether'))
 let vcIdA, vcIdC, vcIdD, vcIdE
 let vcA, vcC, vcD, vcE
 
-describe('Connext happy case testing flow', () => {
+describe.only('Connext happy case testing flow', () => {
   beforeEach(
     'Should init fresh client with web3 and ChannelManager',
     async () => {
@@ -93,18 +94,29 @@ describe('Connext happy case testing flow', () => {
           'should create a ledger channel with the hub and partyA',
           async () => {
             subchanAI = await client.register(initialDeposit, partyA)
-            // ensure lc is in the database
-            await timeout(40000)
+            // ensure in database
+            await interval(async (iterationNumber, stop) => {
+              lcA = await client.getLcById(subchanAI)
+              if (lcA != null) {
+                stop()
+              }
+            }, 2000)
+
             // get the ledger channel
-            lcA = await client.getLcById(subchanAI)
             assert.equal(lcA.channelId, subchanAI)
           }
         ).timeout(45000)
 
         it('ingrid should have autojoined channel', async () => {
-          lcA = await client.getLcById(subchanAI)
-          assert.equal(lcA.state, 1)
-        })
+          // ensure autojoining channel
+          await interval(async (iterationNumber, stop) => {
+            lcA = await client.getLcById(subchanAI)
+            if (lcA != null && lcA.state != 0) {
+              assert.equal(lcA.state, 1)
+              stop()
+            }
+          }, 2000)
+        }).timeout(45000)
 
         it('ingrid should have 0 balance', async () => {
           lcA = await client.getLcById(subchanAI)
@@ -118,18 +130,29 @@ describe('Connext happy case testing flow', () => {
           'should create a ledger channel with the hub and partyB',
           async () => {
             subchanBI = await client.register(initialDeposit, partyB)
-            // ensure lc is in the database
-            await timeout(40000)
+            // ensure in database
+            await interval(async (iterationNumber, stop) => {
+              lcB = await client.getLcById(subchanBI)
+              if (lcB != null) {
+                stop()
+              }
+            }, 2000)
+
             // get the ledger channel
-            lcB = await client.getLcById(subchanBI)
             assert.equal(lcB.channelId, subchanBI)
           }
         ).timeout(45000)
 
         it('ingrid should have autojoined channel', async () => {
-          lcB = await client.getLcById(subchanBI)
-          assert.equal(lcB.state, 1)
-        })
+          // ensure autojoining channel
+          await interval(async (iterationNumber, stop) => {
+            lcB = await client.getLcById(subchanBI)
+            if (lcB != null && lcB.state != 0) {
+              assert.equal(lcB.state, 1)
+              stop()
+            }
+          }, 2000)
+        }).timeout(45000)
 
         it('ingrid should have 0 balance', async () => {
           lcB = await client.getLcById(subchanBI)
@@ -143,18 +166,29 @@ describe('Connext happy case testing flow', () => {
           'should create a ledger channel with the hub and partyC',
           async () => {
             subchanCI = await client.register(initialDeposit, partyC)
-            // ensure lc is in the database
-            await timeout(40000)
+            // ensure in database
+            await interval(async (iterationNumber, stop) => {
+              lcC = await client.getLcById(subchanCI)
+              if (lcC != null) {
+                stop()
+              }
+            }, 2000)
+
             // get the ledger channel
-            lcC = await client.getLcById(subchanCI)
             assert.equal(lcC.channelId, subchanCI)
           }
         ).timeout(45000)
 
         it('ingrid should have autojoined channel', async () => {
-          lcC = await client.getLcById(subchanCI)
-          assert.equal(lcC.state, 1)
-        })
+          // ensure autojoining channel
+          await interval(async (iterationNumber, stop) => {
+            lcC = await client.getLcById(subchanCI)
+            if (lcC != null && lcC.state != 0) {
+              assert.equal(lcC.state, 1)
+              stop()
+            }
+          }, 2000)
+        }).timeout(45000)
 
         it('ingrid should have 0 balance', async () => {
           lcC = await client.getLcById(subchanCI)
@@ -165,21 +199,32 @@ describe('Connext happy case testing flow', () => {
 
       describe('registering partyD with hub', () => {
         it(
-          'should create a ledger channel with the hub and partyC',
+          'should create a ledger channel with the hub and partyD',
           async () => {
             subchanDI = await client.register(initialDeposit, partyD)
-            // ensure lc is in the database
-            await timeout(40000)
+            // ensure in database
+            await interval(async (iterationNumber, stop) => {
+              lcD = await client.getLcById(subchanDI)
+              if (lcD != null) {
+                stop()
+              }
+            }, 2000)
+
             // get the ledger channel
-            lcD = await client.getLcById(subchanDI)
             assert.equal(lcD.channelId, subchanDI)
           }
         ).timeout(45000)
 
         it('ingrid should have autojoined channel', async () => {
-          lcD = await client.getLcById(subchanDI)
-          assert.equal(lcD.state, 1)
-        })
+          // ensure autojoining channel
+          await interval(async (iterationNumber, stop) => {
+            lcD = await client.getLcById(subchanDI)
+            if (lcD != null && lcD.state != 0) {
+              assert.equal(lcD.state, 1)
+              stop()
+            }
+          }, 2000)
+        }).timeout(45000)
 
         it('ingrid should have 0 balance', async () => {
           lcD = await client.getLcById(subchanDI)
@@ -190,21 +235,32 @@ describe('Connext happy case testing flow', () => {
 
       describe('registering partyE with hub', () => {
         it(
-          'should create a ledger channel with the hub and partyA',
+          'should create a ledger channel with the hub and partyE',
           async () => {
             subchanEI = await client.register(initialDeposit, partyE)
-            // ensure lc is in the database
-            await timeout(40000)
+            // ensure in database
+            await interval(async (iterationNumber, stop) => {
+              lcE = await client.getLcById(subchanEI)
+              if (lcE != null) {
+                stop()
+              }
+            }, 2000)
+
             // get the ledger channel
-            lcE = await client.getLcById(subchanEI)
             assert.equal(lcE.channelId, subchanEI)
           }
         ).timeout(45000)
 
         it('ingrid should have autojoined channel', async () => {
-          lcE = await client.getLcById(subchanEI)
-          assert.equal(lcE.state, 1)
-        })
+          // ensure autojoining channel
+          await interval(async (iterationNumber, stop) => {
+            lcE = await client.getLcById(subchanEI)
+            if (lcE != null && lcE.state != 0) {
+              assert.equal(lcE.state, 1)
+              stop()
+            }
+          }, 2000)
+        }).timeout(45000)
 
         it('ingrid should have 0 balance', async () => {
           lcE = await client.getLcById(subchanAI)

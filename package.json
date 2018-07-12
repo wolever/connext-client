@@ -60,6 +60,7 @@
     "fetch-cookie": "^0.7.0",
     "gitbook-cli": "^2.3.2",
     "install": "^0.11.0",
+    "interval-promise": "^1.2.0",
     "jsdoc-babel": "^0.4.0",
     "jsdoc-to-markdown": "^4.0.1",
     "node-fetch": "^2.1.2",
