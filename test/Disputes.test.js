@@ -28,13 +28,14 @@ let initialDeposit = Web3.utils.toBN(Web3.utils.toWei('5', 'ether'))
 let vcId
 let vc
 
-describe('Connext dispute cases', function () {
+describe.only('Connext dispute cases', function () {
   this.timeout(120000)
 
   // before, should init client with LCs and VC
   before(
     'Should init client and register partyA and partyB with the hub, and create/update a VC between them',
     async () => {
+      console.log('Initing client..')
       // init web3
       const port = process.env.ETH_PORT ? process.env.ETH_PORT : '8545'
       web3 = new Web3(`ws://localhost:${port}`)
@@ -52,7 +53,9 @@ describe('Connext dispute cases', function () {
         contractAddress,
         hubAuth
       })
+      console.log('Client properly initialized')
 
+      console.log('Creating/Fetching channels with hub..')
       // register partyA if lcA doesnt exist
       lcA = await client.getLcByPartyA(partyA)
       if (lcA == null) {
@@ -72,6 +75,7 @@ describe('Connext dispute cases', function () {
         subchanBI = lcB.channelId
       }
       // if insufficient funds, request ingrid deposit into subchanBI
+      console.log('Ensuring sufficient balances in hub channels..')
       if (
         Web3.utils
           .toBN(lcB.balanceI)
@@ -94,6 +98,7 @@ describe('Connext dispute cases', function () {
       }
 
       // create/update VC between partyA and partyB if doesnt exist
+      console.log('Creating/Updating or Fetching thread between A and B..')
       vc = await client.getChannelByParties({ partyA, partyB })
       if (vc == null) {
         vcId = await client.openChannel({
@@ -123,10 +128,11 @@ describe('Connext dispute cases', function () {
         balanceA = Web3.utils.toBN(vc.balanceA)
         balanceB = Web3.utils.toBN(vc.balanceB)
       }
+      console.log('Channels and threads created, begining tests..')
     }
   )
 
-  describe('hub does not countersign closing vc update', function () {
+  describe.only('hub does not countersign closing vc update', function () {
     this.timeout(120000)
 
     it('should closeChannel without returning fastSig', async () => {
@@ -223,24 +229,30 @@ describe('Connext dispute cases', function () {
     it('should not prohibit VCs from opening', async () => {})
   })
 
-  describe.only('hub did not countersign closing lc update', function () {
+  describe('hub did not countersign closing lc update', function () {
     this.timeout(120000)
 
     let response
 
-    it.only(
-      'should call withdraw without i-countersiging closing update',
-      async () => {
-        // mock response from hub for client.fastCloseLCHandler
-        let stub = sinon.stub(client, 'fastCloseLcHandler').returns({
-          sigI: ''
-        }) // hub doesnt cosign
-        // to not return lcFinal.sigI
-        response = await client.withdraw(partyA)
-        expect(stub.calledOnce).to.be.true
-        expect(response.fastClosed).to.equal(false)
-      }
-    )
+    it('should close virtual channels', async () => {
+      await client.closeChannel(vcId)
+      // get vcA
+      vc = await client.getChannelById(vcId)
+      assert.equal(vc.state, 3)
+    })
+
+    it('should call withdraw without i-countersiging closing update', async () => {
+      const latestState = await client.getLatestLedgerStateUpdate(subchanAI, [
+        'sigI'
+      ])
+      // mock response from hub for client.fastCloseLCHandler
+      let fastCloseLcStub = sinon.stub(client, 'fastCloseLcHandler').returns({
+        sigI: ''
+      }) // hub doesnt cosign
+      response = await client.withdraw(partyA)
+      expect(fastCloseLcStub.calledOnce).to.be.true
+      expect(response.fastClosed).to.equal(false)
+    })
     it('should have called updateLCState on chain and sent lc into challenge state', async () => {
       // response.response should be tx hash
       const tx = await client.web3.eth.getTransaction(response.response)
