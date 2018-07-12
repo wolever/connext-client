@@ -801,38 +801,53 @@ class Connext {
     }
     const sig = await this.createLCStateUpdate(sigParams)
     const lcFinal = await this.fastCloseLcHandler({ sig, lcId: lc.channelId })
-    let response
-    if (lcFinal.sigI) {
-      // call consensus close channel
-      response = await this.consensusCloseChannelContractHandler({
-        lcId: lc.channelId,
-        nonce: lcState.nonce + 1,
-        balanceA: Web3.utils.toBN(lcState.balanceA),
-        balanceI: Web3.utils.toBN(lcState.balanceI),
-        sigA: sig,
-        sigI: lcFinal.sigI,
-        sender: sender.toLowerCase()
-      })
-      return { response, fastClosed: true }
-    } else {
-      // call updateLCState
-      sigParams.isClose = false
-      sigParams.nonce = lcState.nonce
-      const sigA = await this.createLCStateUpdate(sigParams)
-      response = await this.updateLcStateContractHandler({
-        // challenge flag..?
-        lcId: lc.channelId,
-        nonce: lcState.nonce,
-        openVcs: lcState.openVcs,
-        balanceA: Web3.utils.toBN(lcState.balanceA),
-        balanceI: Web3.utils.toBN(lcState.balanceI),
-        vcRootHash: lcState.vcRootHash,
-        sigA,
-        sigI: lcState.sigI,
-        sender: sender
-      })
-      return { response, fastClosed: false }
+    if (!lcFinal.sigI) {
+      throw new LCCloseError(methodName, 601, 'Hub did not countersign proposed update, channel could not be fast closed.')
     }
+
+    const response = await this.consensusCloseChannelContractHandler({
+      lcId: lc.channelId,
+      nonce: lcState.nonce + 1,
+      balanceA: Web3.utils.toBN(lcState.balanceA),
+      balanceI: Web3.utils.toBN(lcState.balanceI),
+      sigA: sig,
+      sigI: lcFinal.sigI,
+      sender: sender.toLowerCase()
+    })
+
+    return response.transactionHash
+    // let response
+    // if (lcFinal.sigI) {
+    //   // call consensus close channel
+    //   response = await this.consensusCloseChannelContractHandler({
+      //   lcId: lc.channelId,
+      //   nonce: lcState.nonce + 1,
+      //   balanceA: Web3.utils.toBN(lcState.balanceA),
+      //   balanceI: Web3.utils.toBN(lcState.balanceI),
+      //   sigA: sig,
+      //   sigI: lcFinal.sigI,
+      //   sender: sender.toLowerCase()
+      // })
+    //   return { response, fastClosed: true }
+    // } else {
+    //   // call updateLCState
+    //   sigParams.isClose = false
+    //   sigParams.nonce = lcState.nonce
+    //   const sigA = await this.createLCStateUpdate(sigParams)
+    //   response = await this.updateLcStateContractHandler({
+    //     // challenge flag..?
+    //     lcId: lc.channelId,
+    //     nonce: lcState.nonce,
+    //     openVcs: lcState.openVcs,
+    //     balanceA: Web3.utils.toBN(lcState.balanceA),
+    //     balanceI: Web3.utils.toBN(lcState.balanceI),
+    //     vcRootHash: lcState.vcRootHash,
+    //     sigA,
+    //     sigI: lcState.sigI,
+    //     sender: sender
+    //   })
+    //   return { response, fastClosed: false }
+    // }
   }
 
 
