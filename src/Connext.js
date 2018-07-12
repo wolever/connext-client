@@ -817,6 +817,7 @@ class Connext {
     } else {
       // call updateLCState
       sigParams.isClose = false
+      sigParams.nonce = lcState.nonce
       const sigA = await this.createLCStateUpdate(sigParams)
       response = await this.updateLcStateContractHandler({
         // challenge flag..?
@@ -2238,14 +2239,6 @@ class Connext {
       const accounts = await this.web3.eth.getAccounts()
       sender = accounts[0].toLowerCase()
     }
-    console.log('TRUFFLE DEVELOP COMMAND:')
-    console.log(
-      `LedgerChannel.deployed().then( i => i.updateLCstate(${lcId}, [ ${nonce}, '${openVcs}', ${balanceA}, ${balanceI} ], '${sigA}', '${sigI}', {from: '${sender}', gas: 6721975 }) )`
-    )
-
-
-    console.log('\n\nTRUFFLE DEVELOP COMMAND TO INSPECT:')
-    console.log(`LedgerChannel.deployed().then( i => i.Channels('${lcId}'))`)
 
     const result = await this.channelManagerInstance.methods
       .updateLCstate(
@@ -2255,13 +2248,9 @@ class Connext {
         sigA,
         sigI
       )
-      // .estimateGas({
-      //   from: sender
-      // })
-      // console.log('gas:', result)
       .send({
         from: sender,
-        gas: '6721975' // FIX THIS, WHY HAPPEN, TRUFFLE CONFIG???
+        gas: '6721975'
       })
       if (!result.transactionHash) {
         throw new ContractError(methodName, 301, 'Transaction failed to broadcast')
