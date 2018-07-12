@@ -28,7 +28,7 @@ let initialDeposit = Web3.utils.toBN(Web3.utils.toWei('5', 'ether'))
 let vcId
 let vc
 
-describe('Connext dispute cases', () => {
+describe('Connext dispute cases', function () {
   this.timeout(120000)
 
   // before, should init client with LCs and VC
@@ -223,7 +223,7 @@ describe('Connext dispute cases', () => {
     it('should not prohibit VCs from opening', async () => {})
   })
 
-  describe.only('hub did not countersign closing lc update', () => {
+  describe.only('hub did not countersign closing lc update', function () {
     this.timeout(120000)
 
     let response
