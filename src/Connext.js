@@ -230,6 +230,7 @@ class Connext {
     if (lc != null && lc.state === 1) {
       throw new LCOpenError(methodName, 401, `PartyA has open channel with hub, ID: ${lc.channelId}`)
     }
+
     // verify deposit is positive
     if (initialDeposit.isNeg()) {
       throw new LCOpenError(methodName, 'Invalid deposit provided')
@@ -238,6 +239,12 @@ class Connext {
     // verify opening state channel with different account
     if (sender.toLowerCase() === this.ingridAddress.toLowerCase()) {
       throw new LCOpenError(methodName, 'Cannot open a channel with yourself')
+    }
+
+    // verify ingrid has balance in account
+    const hubBalance = await this.web3.eth.getBalance(this.ingridAddress)
+    if (Web3.utils.toBN(hubBalance).isZero()) {
+      throw new LCOpenError(methodName, 'Hub has insufficient funds to join channel')
     }
 
     // generate additional initial lc params
