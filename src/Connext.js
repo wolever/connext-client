@@ -612,7 +612,7 @@ class Connext {
    * @param {Number} channelId - ID of the virtual channel to close
    * @returns {Promise} resolves to the signature of the hub on the generated update if accepted, or the result of closing the channel on chain if there is a dispute
    */
-  async closeChannel (channelId) {
+  async closeChannel (channelId, sender = null) {
     // validate params
     const methodName = 'closeChannel'
     const isHexStrict = { presence: true, isHexStrict: true }
@@ -621,6 +621,17 @@ class Connext {
       methodName,
       'channelId'
     )
+    const isAddress = { presence: true, isAddress: true }
+    if (sender) {
+      Connext.validatorsResponseToError(
+        validate.single(sender, isAddress),
+        methodName,
+        'sender'
+      )
+    } else {
+      const accounts = await this.web3.eth.getAccounts()
+      sender = accounts[0].toLowerCase()
+    }
 
     // get latest state in vc
     const vc = await this.getChannelById(channelId)
@@ -650,12 +661,12 @@ class Connext {
     vcN.partyA = vc.partyA
     vcN.partyB = vc.partyB
     // get partyA ledger channel
-    const subchan = await this.getLcByPartyA(vc.partyA)
+    const subchan = await this.getLcByPartyA(sender)
     // who should sign lc state update from vc
     let isPartyAInVC
-    if (subchan.partyA === vcN.partyA) {
+    if (sender.toLowerCase() === vcN.partyA) {
       isPartyAInVC = true
-    } else if (subchan.partyA === vcN.partyB) {
+    } else if (sender.toLowerCase() === vcN.partyB) {
       isPartyAInVC = false
     } else {
       throw new VCCloseError(methodName, 'Not your virtual channel.')
@@ -667,6 +678,7 @@ class Connext {
       signer: isPartyAInVC ? vcN.partyA : vcN.partyB 
     })
 
+    console.log("fastCloseSig:", fastCloseSig)
     // request ingrid closes vc with this update
     const fastCloseSig = await this.fastCloseVCHandler({
       sig: sigAtoI,
@@ -675,6 +687,7 @@ class Connext {
     })
 
     if (fastCloseSig) {
+      console.log("fastCloseSig:", fastCloseSig)
       // ingrid cosigned proposed LC update
       return fastCloseSig
     } else {

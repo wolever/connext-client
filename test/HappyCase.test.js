@@ -587,7 +587,7 @@ describe.only('Connext happy case testing flow', () => {
         assert.ok(balanceA.eq(Web3.utils.toBN(vcC.balanceA)))
       })
 
-      it('partyB should be able to multiple close VCs they havent joined', async () => {
+      it.only('partyB should be able to multiple close VCs they havent joined', async () => {
         vcC = await client.getChannelByParties({ partyA: partyC, partyB })
         vcD = await client.getChannelByParties({ partyA: partyD, partyB })
         const response = await client.closeChannels([
@@ -601,7 +601,7 @@ describe.only('Connext happy case testing flow', () => {
       })
     })
 
-    describe('Closing a ledger channel', () => {
+    describe.skip('Closing a ledger channel', () => {
       let prevBal, finalBal
       //   subchanAI =
       //     '0x90435bc5511017d078b6f6303e406b31acc86c20d1281827ec57a36980f62c69'
@@ -616,10 +616,11 @@ describe.only('Connext happy case testing flow', () => {
       it(`should close partyA's LC with the fast close flag`, async () => {
         prevBal = await client.web3.eth.getBalance(partyA)
         const response = await client.withdraw(partyA)
+        console.log(response)
         const tx = await client.web3.eth.getTransaction(response)
         assert.equal(tx.to.toLowerCase(), contractAddress)
         assert.equal(tx.from.toLowerCase(), partyA.toLowerCase())
-      }).timeout(5000)
+      }).timeout(8000)
 
       it(`should transfer balanceA of partyA's lc into wallet`, async () => {
         lcA = await client.getLcById(subchanAI)
@@ -640,7 +641,7 @@ describe.only('Connext happy case testing flow', () => {
         } catch (e) {
           assert.equal(e.statusCode, 600)
         }
-      }).timeout(5000)
+      }).timeout(9000)
 
       it('should not interrupt flow in other VCs', async () => {
         vcE = await client.getChannelByParties({ partyA: partyE, partyB })
