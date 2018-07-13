@@ -663,26 +663,26 @@ class Connext {
     // get partyA ledger channel
     const subchan = await this.getLcByPartyA(sender)
     // who should sign lc state update from vc
-    let isPartyAInVC
-    if (sender.toLowerCase() === vcN.partyA) {
-      isPartyAInVC = true
-    } else if (sender.toLowerCase() === vcN.partyB) {
-      isPartyAInVC = false
-    } else {
-      throw new VCCloseError(methodName, 'Not your virtual channel.')
-    }
+    // let isPartyAInVC
+    // if (sender.toLowerCase() === vcN.partyA) {
+    //   isPartyAInVC = true
+    // } else if (sender.toLowerCase() === vcN.partyB) {
+    //   isPartyAInVC = false
+    // } else {
+    //   throw new VCCloseError(methodName, 'Not your virtual channel.')
+    // }
     // generate decomposed lc update
     const sigAtoI = await this.createLCUpdateOnVCClose({ 
       vcN, 
       subchan, 
-      signer: isPartyAInVC ? vcN.partyA : vcN.partyB 
+      signer: sender.toLowerCase() 
     })
 
     console.log("fastCloseSig:", fastCloseSig)
     // request ingrid closes vc with this update
     const fastCloseSig = await this.fastCloseVCHandler({
       sig: sigAtoI,
-      signer: isPartyAInVC ? vcN.partyA : vcN.partyB,
+      signer: sender.toLowerCase(),
       channelId: vcN.channelId
     })
 
