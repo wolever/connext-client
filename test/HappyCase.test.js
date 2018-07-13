@@ -286,23 +286,30 @@ describe.only('Connext happy case testing flow', () => {
         lcC = await client.getLcById(subchanCI)
         lcD = await client.getLcById(subchanDI)
         lcE = await client.getLcById(subchanEI)
+        // const deposit = Web3.utils.toBN(Web3.utils.toWei('15', 'ether'))
         const deposit = Web3.utils
           .toBN(lcA.balanceA)
           .add(Web3.utils.toBN(lcC.balanceA))
           .add(Web3.utils.toBN(lcD.balanceA))
           .add(Web3.utils.toBN(lcE.balanceA))
+        console.log('deposit:', deposit.toString())
         await client.requestIngridDeposit({
           lcId: subchanBI,
           deposit
         })
         await interval(async (iterationNumber, stop) => {
           lcB = await client.getLcById(subchanBI)
-          if (lcB != null && lcB.state === 1) {
+          if (
+            lcB != null &&
+            lcB.state === 1 &&
+            !Web3.utils.toBN(lcB.balanceI).isZero()
+          ) {
             // open and exists
-            assert.ok(deposit.eq(Web3.utils.toBN(lcB.balanceI)))
+            console.log('balI:', lcB.balanceI)
             stop()
           }
         }, 2000)
+        assert.ok(deposit.eq(Web3.utils.toBN(lcB.balanceI)))
       }).timeout(45000)
 
       // request hub deposit error cases
@@ -603,6 +610,8 @@ describe.only('Connext happy case testing flow', () => {
       //   subchanCI =
       //     '0x4678b2cf2973826ca79b297e1a8d9808a92aa5413b59c5bb6423e7dc84bec2eb'
       //   subchanDI =
+      //     '0x1a7611163ed1a1360a7accac37f1c691202a06cbbe376edd81d68c24e756e0c0'
+      //   subchanEI =
       //     '0x1a7611163ed1a1360a7accac37f1c691202a06cbbe376edd81d68c24e756e0c0'
       it(`should close partyA's LC with the fast close flag`, async () => {
         prevBal = await client.web3.eth.getBalance(partyA)
