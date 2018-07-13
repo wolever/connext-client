@@ -3060,7 +3060,7 @@ class Connext {
       throw new LCUpdateError(methodName, 'Hub does not have sufficient balance for requested deposit')
     }
     const response = await this.networking.post(
-      `ledgerchannel/${lcId}/deposit`,
+      `ledgerchannel/${lcId}/requestdeposit`,
       {
         deposit: deposit.toString()
       }
