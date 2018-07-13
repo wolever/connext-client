@@ -3,4 +3,5 @@ dist/
 notes.txt
 test/tests.txt
 test/apiRoutes.txt
+test/tests.txt
 .env

@@ -1,8 +1,13 @@
 require('dotenv').config()
 const assert = require('assert')
 const Connext = require('../src/Connext')
-const { timeout } = require('./helpers/utils')
+const { timeout, genAuthHash } = require('./helpers/utils')
 const Web3 = require('web3')
+const interval = require('interval-promise')
+
+const fetch = require('fetch-cookie')(require('node-fetch'))
+
+global.fetch = fetch
 
 // named variables
 // on init
@@ -12,7 +17,7 @@ let ingridAddress
 let watcherUrl = process.env.WATCHER_URL || ''
 let ingridUrl = process.env.INGRID_URL || 'http://localhost:8080'
 let contractAddress = '0x31713144d9ae2501e644a418dd9035ed840b1660'
-let hubAuth = process.env.HUB_AUTH || ''
+
 // for accounts
 let accounts
 let partyA, partyB, partyC, partyD, partyE
@@ -25,7 +30,7 @@ let initialDeposit = Web3.utils.toBN(Web3.utils.toWei('5', 'ether'))
 let vcIdA, vcIdC, vcIdD, vcIdE
 let vcA, vcC, vcD, vcE
 
-describe('Connext happy case testing flow', () => {
+describe.only('Connext happy case testing flow', () => {
   beforeEach(
     'Should init fresh client with web3 and ChannelManager',
     async () => {
@@ -40,14 +45,44 @@ describe('Connext happy case testing flow', () => {
       partyC = accounts[3]
       partyD = accounts[4]
       partyE = accounts[5]
+      // generate hub auth
+      const origin = 'localhost'
+
+      const challengeRes = await fetch(`${ingridUrl}/auth/challenge`, {
+        method: 'POST',
+        credentials: 'include'
+      })
+      const challengeJson = await challengeRes.json()
+      const nonce = challengeJson.nonce
+
+      const hash = genAuthHash(nonce, origin)
+      const signature = await web3.eth.sign(hash, ingridAddress)
+
+      const authRes = await fetch(`${ingridUrl}/auth/response`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Origin: origin
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          signature,
+          nonce,
+          origin,
+          address: ingridAddress.toLowerCase()
+        })
+      })
+
+      const authJson = await authRes.json()
+
+      assert.notDeepStrictEqual(authJson, {})
       // init client instance
       client = new Connext({
         web3,
         ingridAddress,
         watcherUrl,
         ingridUrl,
-        contractAddress,
-        hubAuth
+        contractAddress
       })
     }
   )
@@ -59,31 +94,34 @@ describe('Connext happy case testing flow', () => {
           'should create a ledger channel with the hub and partyA',
           async () => {
             subchanAI = await client.register(initialDeposit, partyA)
-            // ensure lc is in the database
-            await timeout(40000)
+            // ensure in database
+            await interval(async (iterationNumber, stop) => {
+              lcA = await client.getLcById(subchanAI)
+              if (lcA != null) {
+                stop()
+              }
+            }, 2000)
+
             // get the ledger channel
-            lcA = await client.getLcById(subchanAI)
             assert.equal(lcA.channelId, subchanAI)
           }
         ).timeout(45000)
 
         it('ingrid should have autojoined channel', async () => {
-          lcA = await client.getLcById(subchanAI)
-          assert.equal(lcA.state, 1)
-        })
+          // ensure autojoining channel
+          await interval(async (iterationNumber, stop) => {
+            lcA = await client.getLcById(subchanAI)
+            if (lcA != null && lcA.state != 0) {
+              assert.equal(lcA.state, 1)
+              stop()
+            }
+          }, 2000)
+        }).timeout(45000)
 
         it('ingrid should have 0 balance', async () => {
           lcA = await client.getLcById(subchanAI)
           balanceB = Web3.utils.toBN(lcA.balanceI)
           assert.ok(balanceB.eq(Web3.utils.toBN('0')))
-        })
-
-        it('should throw an error if you have open and active LC', async () => {
-          try {
-            let subchan = await client.register(initialDeposit, partyA)
-          } catch (e) {
-            assert.equal(e.statusCode, 400)
-          }
         })
       })
 
@@ -92,31 +130,34 @@ describe('Connext happy case testing flow', () => {
           'should create a ledger channel with the hub and partyB',
           async () => {
             subchanBI = await client.register(initialDeposit, partyB)
-            // ensure lc is in the database
-            await timeout(40000)
+            // ensure in database
+            await interval(async (iterationNumber, stop) => {
+              lcB = await client.getLcById(subchanBI)
+              if (lcB != null) {
+                stop()
+              }
+            }, 2000)
+
             // get the ledger channel
-            lcB = await client.getLcById(subchanBI)
             assert.equal(lcB.channelId, subchanBI)
           }
         ).timeout(45000)
 
         it('ingrid should have autojoined channel', async () => {
-          lcB = await client.getLcById(subchanBI)
-          assert.equal(lcB.state, 1)
-        })
+          // ensure autojoining channel
+          await interval(async (iterationNumber, stop) => {
+            lcB = await client.getLcById(subchanBI)
+            if (lcB != null && lcB.state != 0) {
+              assert.equal(lcB.state, 1)
+              stop()
+            }
+          }, 2000)
+        }).timeout(45000)
 
         it('ingrid should have 0 balance', async () => {
           lcB = await client.getLcById(subchanBI)
           balanceB = Web3.utils.toBN(lcB.balanceI)
           assert.ok(balanceB.eq(Web3.utils.toBN('0')))
-        })
-
-        it('should throw an error if you have open and active LC', async () => {
-          try {
-            let subchan = await client.register(initialDeposit, partyB)
-          } catch (e) {
-            assert.equal(e.statusCode, 400)
-          }
         })
       })
 
@@ -125,96 +166,115 @@ describe('Connext happy case testing flow', () => {
           'should create a ledger channel with the hub and partyC',
           async () => {
             subchanCI = await client.register(initialDeposit, partyC)
-            // ensure lc is in the database
-            await timeout(40000)
+            // ensure in database
+            await interval(async (iterationNumber, stop) => {
+              lcC = await client.getLcById(subchanCI)
+              if (lcC != null) {
+                stop()
+              }
+            }, 2000)
+
             // get the ledger channel
-            lcC = await client.getLcById(subchanCI)
             assert.equal(lcC.channelId, subchanCI)
           }
         ).timeout(45000)
 
         it('ingrid should have autojoined channel', async () => {
-          lcC = await client.getLcById(subchanCI)
-          assert.equal(lcC.state, 1)
-        })
+          // ensure autojoining channel
+          await interval(async (iterationNumber, stop) => {
+            lcC = await client.getLcById(subchanCI)
+            if (lcC != null && lcC.state != 0) {
+              assert.equal(lcC.state, 1)
+              stop()
+            }
+          }, 2000)
+        }).timeout(45000)
 
         it('ingrid should have 0 balance', async () => {
           lcC = await client.getLcById(subchanCI)
           balanceC = Web3.utils.toBN(lcC.balanceI)
           assert.ok(balanceC.eq(Web3.utils.toBN('0')))
         })
-
-        it('should throw an error if you have open and active LC', async () => {
-          try {
-            let subchan = await client.register(initialDeposit, partyC)
-          } catch (e) {
-            assert.equal(e.statusCode, 400)
-          }
-        })
       })
 
       describe('registering partyD with hub', () => {
         it(
-          'should create a ledger channel with the hub and partyC',
+          'should create a ledger channel with the hub and partyD',
           async () => {
             subchanDI = await client.register(initialDeposit, partyD)
-            // ensure lc is in the database
-            await timeout(40000)
+            // ensure in database
+            await interval(async (iterationNumber, stop) => {
+              lcD = await client.getLcById(subchanDI)
+              if (lcD != null) {
+                stop()
+              }
+            }, 2000)
+
             // get the ledger channel
-            lcD = await client.getLcById(subchanDI)
             assert.equal(lcD.channelId, subchanDI)
           }
         ).timeout(45000)
 
         it('ingrid should have autojoined channel', async () => {
-          lcD = await client.getLcById(subchanDI)
-          assert.equal(lcD.state, 1)
-        })
+          // ensure autojoining channel
+          await interval(async (iterationNumber, stop) => {
+            lcD = await client.getLcById(subchanDI)
+            if (lcD != null && lcD.state != 0) {
+              assert.equal(lcD.state, 1)
+              stop()
+            }
+          }, 2000)
+        }).timeout(45000)
 
         it('ingrid should have 0 balance', async () => {
           lcD = await client.getLcById(subchanDI)
           balanceD = Web3.utils.toBN(lcD.balanceI)
           assert.ok(balanceD.eq(Web3.utils.toBN('0')))
         })
-
-        it('should throw an error if you have open and active LC', async () => {
-          try {
-            let subchan = await client.register(initialDeposit, partyD)
-          } catch (e) {
-            assert.equal(e.statusCode, 400)
-          }
-        })
       })
 
       describe('registering partyE with hub', () => {
         it(
-          'should create a ledger channel with the hub and partyA',
+          'should create a ledger channel with the hub and partyE',
           async () => {
             subchanEI = await client.register(initialDeposit, partyE)
-            // ensure lc is in the database
-            await timeout(40000)
+            // ensure in database
+            await interval(async (iterationNumber, stop) => {
+              lcE = await client.getLcById(subchanEI)
+              if (lcE != null) {
+                stop()
+              }
+            }, 2000)
+
             // get the ledger channel
-            lcE = await client.getLcById(subchanEI)
             assert.equal(lcE.channelId, subchanEI)
           }
         ).timeout(45000)
 
         it('ingrid should have autojoined channel', async () => {
-          lcE = await client.getLcById(subchanEI)
-          assert.equal(lcE.state, 1)
-        })
+          // ensure autojoining channel
+          await interval(async (iterationNumber, stop) => {
+            lcE = await client.getLcById(subchanEI)
+            if (lcE != null && lcE.state != 0) {
+              assert.equal(lcE.state, 1)
+              stop()
+            }
+          }, 2000)
+        }).timeout(45000)
 
         it('ingrid should have 0 balance', async () => {
           lcE = await client.getLcById(subchanAI)
           balanceB = Web3.utils.toBN(lcE.balanceI)
           assert.ok(balanceB.eq(Web3.utils.toBN('0')))
         })
+      })
 
+      describe('registration error cases', () => {
         it('should throw an error if you have open and active LC', async () => {
           try {
-            let subchan = await client.register(initialDeposit, partyA)
+            await client.register(initialDeposit, partyA)
           } catch (e) {
-            assert.equal(e.statusCode, 400)
+            assert.equal(e.statusCode, 401)
           }
         })
       })
@@ -226,21 +286,47 @@ describe('Connext happy case testing flow', () => {
         lcC = await client.getLcById(subchanCI)
         lcD = await client.getLcById(subchanDI)
         lcE = await client.getLcById(subchanEI)
+        // const deposit = Web3.utils.toBN(Web3.utils.toWei('15', 'ether'))
         const deposit = Web3.utils
           .toBN(lcA.balanceA)
           .add(Web3.utils.toBN(lcC.balanceA))
           .add(Web3.utils.toBN(lcD.balanceA))
           .add(Web3.utils.toBN(lcE.balanceA))
+        console.log('deposit:', deposit.toString())
         await client.requestIngridDeposit({
           lcId: subchanBI,
           deposit
         })
-        // wait for chainsaw
-        await timeout(40000)
-        // check balance increased
-        lcB = await client.getLcById(subchanBI)
+        await interval(async (iterationNumber, stop) => {
+          lcB = await client.getLcById(subchanBI)
+          if (
+            lcB != null &&
+            lcB.state === 1 &&
+            !Web3.utils.toBN(lcB.balanceI).isZero()
+          ) {
+            // open and exists
+            console.log('balI:', lcB.balanceI)
+            stop()
+          }
+        }, 2000)
         assert.ok(deposit.eq(Web3.utils.toBN(lcB.balanceI)))
       }).timeout(45000)
+
+      // request hub deposit error cases
+      it('should throw an error if hub has insufficient funds', async () => {
+        const balance = await client.web3.eth.getBalance(ingridAddress)
+        const deposit = Web3.utils
+          .toBN(balance)
+          .add(Web3.utils.toBN(Web3.utils.toWei('10', 'ether')))
+        try {
+          await client.requestIngridDeposit({
+            lcId: subchanBI,
+            deposit
+          })
+        } catch (e) {
+          assert.equal(e.statusCode, 500)
+        }
+      })
     })
 
     describe('Creating a virtual channel', () => {
@@ -525,10 +611,14 @@ describe('Connext happy case testing flow', () => {
       //     '0x4678b2cf2973826ca79b297e1a8d9808a92aa5413b59c5bb6423e7dc84bec2eb'
       //   subchanDI =
       //     '0x1a7611163ed1a1360a7accac37f1c691202a06cbbe376edd81d68c24e756e0c0'
+      //   subchanEI =
+      //     '0x1a7611163ed1a1360a7accac37f1c691202a06cbbe376edd81d68c24e756e0c0'
       it(`should close partyA's LC with the fast close flag`, async () => {
         prevBal = await client.web3.eth.getBalance(partyA)
         const response = await client.withdraw(partyA)
-        assert.equal(response.fastClosed, true)
+        const tx = await client.web3.eth.getTransaction(response)
+        assert.equal(tx.to.toLowerCase(), contractAddress)
+        assert.equal(tx.from.toLowerCase(), partyA.toLowerCase())
       }).timeout(5000)
 
       it(`should transfer balanceA of partyA's lc into wallet`, async () => {
@@ -571,7 +661,10 @@ describe('Connext happy case testing flow', () => {
       it(`should close partyC's LC with the fast close flag`, async () => {
         prevBal = await client.web3.eth.getBalance(partyC)
         const response = await client.withdraw(partyC)
-        assert.equal(response.fastClosed, true)
+
+        const tx = await client.web3.eth.getTransaction(response)
+        assert.equal(tx.to.toLowerCase(), contractAddress)
+        assert.equal(tx.from.toLowerCase(), partyC.toLowerCase())
       }).timeout(5000)
 
       it(`should transfer balanceA partyC's into wallet`, async () => {
@@ -590,7 +683,9 @@ describe('Connext happy case testing flow', () => {
       it(`should close partyD's LC with the fast close flag`, async () => {
         prevBal = await client.web3.eth.getBalance(partyD)
         const response = await client.withdraw(partyD)
-        assert.equal(response.fastClosed, true)
+        const tx = await client.web3.eth.getTransaction(response)
+        assert.equal(tx.to.toLowerCase(), contractAddress)
+        assert.equal(tx.from.toLowerCase(), partyD.toLowerCase())
       }).timeout(5000)
 
       it(`should transfer balanceA partyD's into wallet`, async () => {
@@ -610,7 +705,9 @@ describe('Connext happy case testing flow', () => {
         await client.closeChannel(vcIdE) // close VCs
         prevBal = await client.web3.eth.getBalance(partyE)
         const response = await client.withdraw(partyE)
-        assert.equal(response.fastClosed, true)
+        const tx = await client.web3.eth.getTransaction(response)
+        assert.equal(tx.to.toLowerCase(), contractAddress)
+        assert.equal(tx.from.toLowerCase(), partyE.toLowerCase())
       }).timeout(5000)
 
       it(`should transfer balanceA partyE's into wallet`, async () => {
@@ -626,15 +723,21 @@ describe('Connext happy case testing flow', () => {
         assert.equal(Math.round(expected), Math.round(finalBal))
       })
 
-      it
-        .only(`should close partyB's LC with the fast close flag`, async () => {
-          prevBal = await client.web3.eth.getBalance(partyB) // 95 ETH
-          const response = await client.withdraw(partyB) // + 7 ETH
-          assert.equal(response.fastClosed, true)
-        })
-        .timeout(5000)
+      // it.only('find the fucking issue', async () => {
+      //   lcB = await client.getLcByPartyA(partyB)
+      //   const _balanceI =
+      //   const _balanceA =
+      // })
 
-      it.only(`should transfer balanceA partyB's into wallet`, async () => {
+      it(`should close partyB's LC with the fast close flag`, async () => {
+        prevBal = await client.web3.eth.getBalance(partyB) // 95 ETH
+        const response = await client.withdraw(partyB) // + 7 ETH
+        const tx = await client.web3.eth.getTransaction(response)
+        assert.equal(tx.to.toLowerCase(), contractAddress)
+        assert.equal(tx.from.toLowerCase(), partyB.toLowerCase())
+      }).timeout(5000)
+
+      it(`should transfer balanceA partyB's into wallet`, async () => {
         lcB = await client.getLcByPartyA(partyB)
         const expected = Web3.utils.fromWei(
           Web3.utils.toBN(lcB.balanceA).add(Web3.utils.toBN(prevBal)),

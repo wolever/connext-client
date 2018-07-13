@@ -229,8 +229,9 @@ class Connext {
     // verify channel does not exist between ingrid and sender
     let lc = await this.getLcByPartyA(sender)
     if (lc != null && lc.state === 1) {
-      throw new LCOpenError(methodName, `PartyA has open channel with hub, ID: ${lc.channelId}`)
+      throw new LCOpenError(methodName, 401, `PartyA has open channel with hub, ID: ${lc.channelId}`)
     }
+
     // verify deposit is positive
     if (initialDeposit.isNeg()) {
       throw new LCOpenError(methodName, 'Invalid deposit provided')
@@ -239,6 +240,12 @@ class Connext {
     // verify opening state channel with different account
     if (sender.toLowerCase() === this.ingridAddress.toLowerCase()) {
       throw new LCOpenError(methodName, 'Cannot open a channel with yourself')
+    }
+
+    // verify ingrid has balance in account
+    const hubBalance = await this.web3.eth.getBalance(this.ingridAddress)
+    if (Web3.utils.toBN(hubBalance).isZero()) {
+      throw new LCOpenError(methodName, 'Hub has insufficient funds to join channel')
     }
 
     // generate additional initial lc params
@@ -282,6 +289,7 @@ class Connext {
     // validate params
     const methodName = 'deposit'
     const isBN = { presence: true, isBN: true }
+    const isAddress = { presence: true, isAddress: true }
     Connext.validatorsResponseToError(
       validate.single(depositInWei, isBN),
       methodName,
@@ -400,6 +408,12 @@ class Connext {
     // valid deposit provided
     if (deposit.isNeg() || deposit.isZero()) {
       throw new VCOpenError(methodName, `Invalid deposit provided: ${deposit}`)
+    }
+
+    // vc does not already exist
+    let vc = await this.getChannelByParties({ partyA: sender, partyB: to })
+    if (vc != null) {
+      throw new VCOpenError(methodName, 451, `Parties already have open virtual channel: ${vc.channelId}`)
     }
 
     // generate initial vcstate
@@ -664,9 +678,10 @@ class Connext {
       // ingrid cosigned proposed LC update
       return fastCloseSig
     } else {
+      throw new VCCloseError(methodName, 651, 'Hub did not cosign proposed LC update, call initVC and settleVC')
       // take to chain
-      const result = await this.byzantineCloseVc(channelId)
-      return result
+      // const result = await this.byzantineCloseVc(channelId)
+      // return result
     }
   }
 
@@ -740,6 +755,7 @@ class Connext {
 
     // get latest i-signed lc state update
     let lcState = await this.getLatestLedgerStateUpdate(lc.channelId, ['sigI'])
+    console.log(lcState)
     if (lcState) {
       // openVcs?
       if (Number(lcState.openVcs) !== 0) {
@@ -782,7 +798,7 @@ class Connext {
     }
 
     // generate same update with fast close flag and post
-    const sigParams = {
+    let sigParams = {
       isClose: true,
       channelId: lc.channelId,
       nonce: lcState.nonce + 1,
@@ -795,36 +811,24 @@ class Connext {
       signer: sender
     }
     const sig = await this.createLCStateUpdate(sigParams)
+    console.log('sig:', sig)
+    console.log('params:', sigParams)
     const lcFinal = await this.fastCloseLcHandler({ sig, lcId: lc.channelId })
-    let response
-    if (lcFinal.sigI) {
-      // call consensus close channel
-      response = await this.consensusCloseChannelContractHandler({
-        lcId: lc.channelId,
-        nonce: lcState.nonce + 1,
-        balanceA: Web3.utils.toBN(lcState.balanceA),
-        balanceI: Web3.utils.toBN(lcState.balanceI),
-        sigA: sig,
-        sigI: lcFinal.sigI,
-        sender: sender.toLowerCase()
-      })
-      return { response, fastClosed: true }
-    } else {
-      // call updateLCState
-      response = await this.updateLcStateContractHandler({
-        // challenge flag..?
-        lcId,
-        nonce: lcState.nonce,
-        openVcs: lcState.openVcs,
-        balanceA: Web3.utils.toBN(lcState.balanceA),
-        balanceI: Web3.utils.toBN(lcState.balanceI),
-        vcRootHash: lcState.vcRootHash,
-        sigA: sig,
-        sigI: lcState.sigI,
-        sender: sender
-      })
-      return { response, fastClosed: false }
+    if (!lcFinal.sigI) {
+      throw new LCCloseError(methodName, 601, 'Hub did not countersign proposed update, channel could not be fast closed.')
     }
+
+    const response = await this.consensusCloseChannelContractHandler({
+      lcId: lc.channelId,
+      nonce: lcState.nonce + 1,
+      balanceA: Web3.utils.toBN(lcState.balanceA),
+      balanceI: Web3.utils.toBN(lcState.balanceI),
+      sigA: sig,
+      sigI: lcFinal.sigI,
+      sender: sender.toLowerCase()
+    })
+
+    return response.transactionHash
   }
 
 
@@ -850,6 +854,7 @@ class Connext {
    */
   async withdrawFinal (sender = null) {
     const methodName = 'withdrawFinal'
+    const isAddress = { presence: true, isAddress: true }
     if (sender) {
       Connext.validatorsResponseToError(
         validate.single(sender, isAddress),
@@ -2006,6 +2011,7 @@ class Connext {
     sender = null
   }) {
     const methodName = 'consensusCloseChannelContractHandler'
+    console.log(methodName)
     // validate
     const isHexStrict = { presence: true, isHexStrict: true }
     const isPositiveInt = { presence: true, isPositiveInt: true }
@@ -2078,9 +2084,21 @@ class Connext {
 
     // TO DO
     // add way to validate balAOnChain + balIOnChain == balI + balA
+    console.log('TRUFFLE DEVELOP COMMAND:')
+    console.log(
+      `LedgerChannel.deployed().then( i => i.consensusCloseChannel(${lcId}, ${nonce}, ${balanceA}, ${balanceI}, '${sigA}', '${sigI}', {from: '${sender}', gas: '6721975' }) )`
+    )
+
+    console.log('\n\nTRUFFLE DEVELOP COMMAND TO INSPECT:')
+    console.log(`LedgerChannel.deployed().then( i => i.Channels('${lcId}')`)
 
     const result = await this.channelManagerInstance.methods
       .consensusCloseChannel(lcId, nonce, balanceA, balanceI, sigA, sigI)
+    //   .estimateGas({
+    //     from: sender
+    //   })
+    // console.log(lcId, nonce, balanceA, balanceI, sigA)
+    // console.log('gas:',result)
       .send({
         from: sender,
         gas: 1000000
@@ -2230,6 +2248,7 @@ class Connext {
       const accounts = await this.web3.eth.getAccounts()
       sender = accounts[0].toLowerCase()
     }
+
     const result = await this.channelManagerInstance.methods
       .updateLCstate(
         lcId,
@@ -2240,12 +2259,16 @@ class Connext {
       )
       .send({
         from: sender,
-        gas: 4700000 // FIX THIS, WHY HAPPEN, TRUFFLE CONFIG???
+        gas: '6721975'
       })
-    if (!result.transactionHash) {
-      throw new Error(`[${methodName}] updateLCstate transaction failed.`)
-    }
-    return result
+      if (!result.transactionHash) {
+        throw new ContractError(methodName, 301, 'Transaction failed to broadcast')
+      }
+    
+      if (!result.blockNumber) {
+        throw new ContractError(methodName, 302, result.transactionHash, 'Transaction failed')
+      }
+      return result
   }
 
   async initVcStateContractHandler ({
@@ -2317,9 +2340,10 @@ class Connext {
       const accounts = await this.web3.eth.getAccounts()
       sender = accounts[0].toLowerCase()
     }
+    let merkle, stateHash
     if (proof === null) {
       // generate proof from lc
-      const stateHash = Connext.createVCStateUpdateFingerprint({
+      stateHash = Connext.createVCStateUpdateFingerprint({
         channelId: vcId,
         nonce,
         partyA,
@@ -2328,8 +2352,9 @@ class Connext {
         balanceB
       })
       const vc0s = await this.getVcInitialStates(subchanId)
-      let merkle = Connext.generateMerkleTree(vc0s)
+      merkle = Connext.generateMerkleTree(vc0s)
       let mproof = merkle.proof(Utils.hexToBuffer(stateHash))
+      // console.log('verify returns:', merkle.verify( mproof, Utils.hexToBuffer(stateHash) ))
 
       proof = []
       for(var i=0; i<mproof.length; i++){
@@ -2340,8 +2365,17 @@ class Connext {
 
       proof = Utils.marshallState(proof)
     }
+    // console.log('verify returns:', merkle.verify( proof, Utils.hexToBuffer(stateHash) ))
 
     const hubBond = balanceA.add(balanceB)
+
+    console.log('TRUFFLE DEVELOP COMMAND:')
+    console.log(
+      `LedgerChannel.deployed().then( i => i.initVCstate(${subchanId}, ${vcId}, ${proof}, ${nonce}, '${partyA}', '${partyB}', ${hubBond}, ${balanceA}, ${balanceB}, '${sigA}', {from: '${sender}', gas: '6721975' }) )`
+    )
+
+    console.log('\n\nTRUFFLE DEVELOP COMMAND TO INSPECT:')
+    console.log(`LedgerChannel.deployed().then( i => i.VirtualChannels('${vcId}')`)
 
     const results = await this.channelManagerInstance.methods
       .initVCstate(
@@ -2356,13 +2390,23 @@ class Connext {
         balanceB,
         sigA
       )
+      // .estimateGas({
+      //   from: sender,
+      // })
       .send({
         from: sender,
-        gas: 6500000
+        gas: 6721975,
       })
-    // if (!results.transactionHash) {
-    //   throw new Error(`[${methodName}] initVCState transaction failed.`)
-    // }
+    if (!results.transactionHash) {
+      throw new Error(`[${methodName}] initVCState transaction failed.`)
+    }
+    if (!results.transactionHash) {
+      throw new ContractError(methodName, 301, 'Transaction failed to broadcast')
+    }
+  
+    if (!results.blockNumber) {
+      throw new ContractError(methodName, 302, results.transactionHash, 'Transaction failed')
+    }
     return results
   }
 
@@ -2434,6 +2478,14 @@ class Connext {
       const accounts = await this.web3.eth.getAccounts()
       sender = accounts[0].toLowerCase()
     }
+
+    console.log('TRUFFLE DEVELOP COMMAND TO RECREATE:')
+    console.log(
+      `LedgerChannel.deployed().then( i => i.settleVC(${subchanId}, ${vcId}, ${nonce}, '${partyA}', '${partyB}', [${balanceA}, ${balanceB}], '${sigA}', {from: '${sender}', gas: '6721975' }) )`
+    )
+    console.log('\n\nTRUFFLE DEVELOP COMMAND TO INSPECT:')
+    console.log(`LedgerChannel.deployed().then( i => i.VirtualChannels('${vcId}')`)
+
     const results = await this.channelManagerInstance.methods
       .settleVC(
         subchanId,
@@ -2446,12 +2498,16 @@ class Connext {
       )
       .send({
         from: sender,
-        gas: 4700000
+        gas: 6721975
       })
-    if (!results.transactionHash) {
-      throw new Error(`[${methodName}] settleVC transaction failed.`)
-    }
-    return results
+      if (!results.transactionHash) {
+        throw new ContractError(methodName, 301, 'Transaction failed to broadcast')
+      }
+    
+      if (!results.blockNumber) {
+        throw new ContractError(methodName, 302, results.transactionHash, 'Transaction failed')
+      }
+      return results
   }
 
   async closeVirtualChannelContractHandler ({ lcId, vcId, sender = null }) {
@@ -2483,10 +2539,14 @@ class Connext {
       .send({
         from: sender
       })
-    if (!results.transactionHash) {
-      throw new Error(`[${methodName}] transaction failed.`)
-    }
-    return results
+      if (!results.transactionHash) {
+        throw new ContractError(methodName, 301, 'Transaction failed to broadcast')
+      }
+    
+      if (!results.blockNumber) {
+        throw new ContractError(methodName, 302, results.transactionHash, 'Transaction failed')
+      }
+      return results
   }
 
   async byzantineCloseChannelContractHandler ({lcId, sender = null }) {
@@ -2508,13 +2568,18 @@ class Connext {
       const accounts = await this.web3.eth.getAccounts()
       sender = accounts[0].toLowerCase()
     }
-        const results = await this.channelManagerInstance.methods
+    const results = await this.channelManagerInstance.methods
       .byzantineCloseChannel(lcId)
       .send({
-        from: sender
+        from: sender,
+        gas: '470000'
       })
     if (!results.transactionHash) {
-      throw new Error(`[${methodName}] transaction failed.`)
+      throw new ContractError(methodName, 301, 'Transaction failed to broadcast')
+    }
+  
+    if (!results.blockNumber) {
+      throw new ContractError(methodName, 302, results.transactionHash, 'Transaction failed')
     }
     return results
   }
@@ -2740,6 +2805,11 @@ class Connext {
       openResponse = await this.networking.get(
         `virtualchannel/a/${partyA.toLowerCase()}/b/${partyB.toLowerCase()}/open`
       )
+      if (openResponse.data.length === 0) {
+        openResponse = null
+      } else {
+        return openResponse.data
+      }
     } catch (e) {
       if (e.status === 400) {
         // no open channel
@@ -2753,6 +2823,11 @@ class Connext {
         openResponse = await this.networking.get(
           `virtualchannel/address/${partyA.toLowerCase()}/opening`
         )
+        if (openResponse.data.length === 0) {
+          openResponse = null
+        } else {
+          return openResponse.data
+        }
       } catch (e) {
         if (e.status === 400) {
           // no open channel
@@ -2760,7 +2835,7 @@ class Connext {
         }
       }
     }
-    return openResponse.data
+    return openResponse
   }
 
   async getOtherLcId (vcId) {
@@ -2899,7 +2974,7 @@ class Connext {
       'vcId'
     )
     const response = await this.networking.get(
-      `virtualchannel/${vcId}/intialstate`
+      `virtualchannel/${vcId}/update/nonce/0`
     )
     return response.data
   }
@@ -2948,8 +3023,12 @@ class Connext {
       methodName,
       'isBN'
     )
+    const accountBalance = await this.web3.eth.getBalance(this.ingridAddress)
+    if (deposit.gt(Web3.utils.toBN(accountBalance))) {
+      throw new LCUpdateError(methodName, 'Hub does not have sufficient balance for requested deposit')
+    }
     const response = await this.networking.post(
-      `ledgerchannel/${lcId}/deposit`,
+      `ledgerchannel/${lcId}/requestdeposit`,
       {
         deposit: deposit.toString()
       }
