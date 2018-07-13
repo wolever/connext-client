@@ -3468,7 +3468,7 @@ class Connext {
     nonce: subchan.nonce + 1,
     openVcs: vcInitialStates.length,
     vcRootHash: newRootHash,
-    partyA: vcN.partyA,
+    partyA: signer,
     partyI: this.ingridAddress,
     balanceA: signer === vcN.partyA ? Web3.utils.toBN(subchan.balanceA).add(Web3.utils.toBN(vcN.balanceA)) : Web3.utils.toBN(subchan.balanceA).add(Web3.utils.toBN(vcN.balanceB)),
     balanceI: signer === vcN.partyA ? Web3.utils.toBN(subchan.balanceI).add(Web3.utils.toBN(vcN.balanceB)) : Web3.utils.toBN(subchan.balanceI).add(Web3.utils.toBN(vcN.balanceA)),
