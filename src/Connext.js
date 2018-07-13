@@ -662,15 +662,6 @@ class Connext {
     vcN.partyB = vc.partyB
     // get partyA ledger channel
     const subchan = await this.getLcByPartyA(sender)
-    // who should sign lc state update from vc
-    // let isPartyAInVC
-    // if (sender.toLowerCase() === vcN.partyA) {
-    //   isPartyAInVC = true
-    // } else if (sender.toLowerCase() === vcN.partyB) {
-    //   isPartyAInVC = false
-    // } else {
-    //   throw new VCCloseError(methodName, 'Not your virtual channel.')
-    // }
     // generate decomposed lc update
     const sigAtoI = await this.createLCUpdateOnVCClose({ 
       vcN, 
@@ -678,7 +669,6 @@ class Connext {
       signer: sender.toLowerCase() 
     })
 
-    console.log("fastCloseSig:", fastCloseSig)
     // request ingrid closes vc with this update
     const fastCloseSig = await this.fastCloseVCHandler({
       sig: sigAtoI,
@@ -686,16 +676,11 @@ class Connext {
       channelId: vcN.channelId
     })
 
-    if (fastCloseSig) {
-      console.log("fastCloseSig:", fastCloseSig)
-      // ingrid cosigned proposed LC update
-      return fastCloseSig
-    } else {
+    if (!fastCloseSig) {
       throw new VCCloseError(methodName, 651, 'Hub did not cosign proposed LC update, call initVC and settleVC')
-      // take to chain
-      // const result = await this.byzantineCloseVc(channelId)
-      // return result
     }
+    // ingrid cosigned update
+    return fastCloseSig
   }
 
   /**
@@ -2110,8 +2095,6 @@ class Connext {
     //   .estimateGas({
     //     from: sender
     //   })
-    // console.log(lcId, nonce, balanceA, balanceI, sigA)
-    // console.log('gas:',result)
       .send({
         from: sender,
         gas: 1000000
@@ -2941,12 +2924,7 @@ class Connext {
     return response.data.challenge
   }
 
-  // /**
-  //  * Returns the latest signed virtual channel state as an object.
-  //  *
-  //  * @param {String} channelId - ID of the virtual channel
-  //  * @returns {Object} representing the latest signed virtual channel state
-  //  */
+
   async getLatestVCStateUpdate (channelId) {
     // validate params
     const methodName = 'getLatestVCStateUpdate'
@@ -3230,13 +3208,6 @@ class Connext {
     }
   }
 
-  // posts to ingrid endpoint to decompose ledger channel
-  // based on latest double signed update
-  // should return ingrids signature on the closing lc update used in
-  // consensusCloseChannel
-
-  // as called in withdraw: requests ingrid cosigns final ledger update
-  // if she cosigns, call consensus
   async fastCloseLcHandler ({ sig, lcId }) {
     // validate params
     const methodName = 'fastCloseLcHandler'
@@ -3479,13 +3450,6 @@ class Connext {
   return sigAtoI
  }
 
-  // settles all vcs on chain in the case of a dispute (used in close channel)
-  // first calls init vc
-  // then calls settleVc
-
-  /// SHOULD WE JUST POST THIS DIRECTLY TO THE WATCHER URL FROM OUR PACKAGE
-
-  // then posts to watcher (?) -- maybe just post all of this to the watcher url (?)
   async byzantineCloseVc (vcId) {
     // validate params
     const methodName = 'byzantineCloseVc'
