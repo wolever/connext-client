@@ -274,7 +274,7 @@ describe.only('Connext happy case testing flow', () => {
           try {
             await client.register(initialDeposit, partyA)
           } catch (e) {
-            assert.equal(e.statusCode, 400)
+            assert.equal(e.statusCode, 401)
           }
         })
       })
@@ -295,11 +295,14 @@ describe.only('Connext happy case testing flow', () => {
           lcId: subchanBI,
           deposit
         })
-        // wait for chainsaw
-        await timeout(40000)
-        // check balance increased
-        lcB = await client.getLcById(subchanBI)
-        assert.ok(deposit.eq(Web3.utils.toBN(lcB.balanceI)))
+        await interval(async (iterationNumber, stop) => {
+          lcB = await client.getLcById(subchanBI)
+          if (lcB != null && lcB.state === 1) {
+            // open and exists
+            assert.ok(deposit.eq(Web3.utils.toBN(lcB.balanceI)))
+            stop()
+          }
+        }, 2000)
       }).timeout(45000)
 
       // request hub deposit error cases
@@ -604,7 +607,9 @@ describe.only('Connext happy case testing flow', () => {
       it(`should close partyA's LC with the fast close flag`, async () => {
         prevBal = await client.web3.eth.getBalance(partyA)
         const response = await client.withdraw(partyA)
-        assert.equal(response.fastClosed, true)
+        const tx = await client.web3.eth.getTransaction(response)
+        assert.equal(tx.to.toLowerCase(), contractAddress)
+        assert.equal(tx.from.toLowerCase(), partyA.toLowerCase())
       }).timeout(5000)
 
       it(`should transfer balanceA of partyA's lc into wallet`, async () => {
@@ -647,7 +652,10 @@ describe.only('Connext happy case testing flow', () => {
       it(`should close partyC's LC with the fast close flag`, async () => {
         prevBal = await client.web3.eth.getBalance(partyC)
         const response = await client.withdraw(partyC)
-        assert.equal(response.fastClosed, true)
+
+        const tx = await client.web3.eth.getTransaction(response)
+        assert.equal(tx.to.toLowerCase(), contractAddress)
+        assert.equal(tx.from.toLowerCase(), partyC.toLowerCase())
       }).timeout(5000)
 
       it(`should transfer balanceA partyC's into wallet`, async () => {
@@ -666,7 +674,9 @@ describe.only('Connext happy case testing flow', () => {
       it(`should close partyD's LC with the fast close flag`, async () => {
         prevBal = await client.web3.eth.getBalance(partyD)
         const response = await client.withdraw(partyD)
-        assert.equal(response.fastClosed, true)
+        const tx = await client.web3.eth.getTransaction(response)
+        assert.equal(tx.to.toLowerCase(), contractAddress)
+        assert.equal(tx.from.toLowerCase(), partyD.toLowerCase())
       }).timeout(5000)
 
       it(`should transfer balanceA partyD's into wallet`, async () => {
@@ -686,7 +696,9 @@ describe.only('Connext happy case testing flow', () => {
         await client.closeChannel(vcIdE) // close VCs
         prevBal = await client.web3.eth.getBalance(partyE)
         const response = await client.withdraw(partyE)
-        assert.equal(response.fastClosed, true)
+        const tx = await client.web3.eth.getTransaction(response)
+        assert.equal(tx.to.toLowerCase(), contractAddress)
+        assert.equal(tx.from.toLowerCase(), partyE.toLowerCase())
       }).timeout(5000)
 
       it(`should transfer balanceA partyE's into wallet`, async () => {
@@ -702,10 +714,18 @@ describe.only('Connext happy case testing flow', () => {
         assert.equal(Math.round(expected), Math.round(finalBal))
       })
 
+      // it.only('find the fucking issue', async () => {
+      //   lcB = await client.getLcByPartyA(partyB)
+      //   const _balanceI =
+      //   const _balanceA =
+      // })
+
       it(`should close partyB's LC with the fast close flag`, async () => {
         prevBal = await client.web3.eth.getBalance(partyB) // 95 ETH
         const response = await client.withdraw(partyB) // + 7 ETH
-        assert.equal(response.fastClosed, true)
+        const tx = await client.web3.eth.getTransaction(response)
+        assert.equal(tx.to.toLowerCase(), contractAddress)
+        assert.equal(tx.from.toLowerCase(), partyB.toLowerCase())
       }).timeout(5000)
 
       it(`should transfer balanceA partyB's into wallet`, async () => {
