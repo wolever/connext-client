@@ -752,6 +752,7 @@ class Connext {
 
     // get latest i-signed lc state update
     let lcState = await this.getLatestLedgerStateUpdate(lc.channelId, ['sigI'])
+    console.log(lcState)
     if (lcState) {
       // openVcs?
       if (Number(lcState.openVcs) !== 0) {
@@ -807,6 +808,8 @@ class Connext {
       signer: sender
     }
     const sig = await this.createLCStateUpdate(sigParams)
+    console.log('sig:', sig)
+    console.log('params:', sigParams)
     const lcFinal = await this.fastCloseLcHandler({ sig, lcId: lc.channelId })
     if (!lcFinal.sigI) {
       throw new LCCloseError(methodName, 601, 'Hub did not countersign proposed update, channel could not be fast closed.')
@@ -821,6 +824,9 @@ class Connext {
       sigI: lcFinal.sigI,
       sender: sender.toLowerCase()
     })
+
+    sigParams.sig = sig
+    console.log('should be partyA:', Connext.recoverSignerFromLCStateUpdate(partyA))
 
     return response.transactionHash
     // let response
@@ -2110,9 +2116,21 @@ class Connext {
 
     // TO DO
     // add way to validate balAOnChain + balIOnChain == balI + balA
+    console.log('TRUFFLE DEVELOP COMMAND:')
+    console.log(
+      `LedgerChannel.deployed().then( i => i.consensusCloseChannel(${lcId}, ${nonce}, ${balanceA}, ${balanceI}, '${sigA}', '${sigI}', {from: '${sender}', gas: '6721975' }) )`
+    )
+
+    console.log('\n\nTRUFFLE DEVELOP COMMAND TO INSPECT:')
+    console.log(`LedgerChannel.deployed().then( i => i.Channels('${lcId}')`)
 
     const result = await this.channelManagerInstance.methods
       .consensusCloseChannel(lcId, nonce, balanceA, balanceI, sigA, sigI)
+    //   .estimateGas({
+    //     from: sender
+    //   })
+    // console.log(lcId, nonce, balanceA, balanceI, sigA)
+    // console.log('gas:',result)
       .send({
         from: sender,
         gas: 1000000
