@@ -1,7 +1,3 @@
----
-description: '[UNDER CONSTRUCTION]'
----
-
 # Connext Client
 
 ConnextClass representing an instance of a Connext client.

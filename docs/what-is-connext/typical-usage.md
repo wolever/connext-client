@@ -1,7 +1,3 @@
----
-description: The user experience of interacting with a Connext Hub
----
-
 # Typical Usage
 
 ## Joining your Connext Hub
