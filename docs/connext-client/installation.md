@@ -1,8 +1,8 @@
 # Installation
 
-## Prerequesites
+## Prerequisites
 
-This package is designed for use within a dapp. The package relies on an injected Web3 object from the browser \(i.e. MetaMask, which is how the package was developed and tested\).
+This package is designed for use within a DApp. The package relies on an injected Web3 object from the browser \(i.e. MetaMask, which is how the package was developed and tested\).
 
 ### async/await
 
