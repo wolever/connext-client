@@ -1,4 +1,4 @@
-# Background on State Channels
+# What are State Channels?
 
 ChannelManager.sol can be largely broken down into two classes of functions. The first operates as something that resembles an Ethereum multisignature wallet. The contract accepts funds from counterparties and then locks them there, requiring a signature from both parties, a "state update" \(settlement instructions\) and a "nonce" \(incrementing integer to figure out which state is the newest one\) in order to release funds. 
 
