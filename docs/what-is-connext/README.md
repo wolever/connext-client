@@ -10,11 +10,22 @@ Connext is a layer two solution that lets anyone, _today_,  build a million-user
 
 ## Easy-to-use State Channel Hubs
 
-Connext lets companies easily set up state channel hubs. State channels are a type of layer two solution that focuses specifically on interactions between any two parties. Users lock their operating funds into a [multisignature](https://en.bitcoin.it/wiki/Multisignature) Ethereum smart contract and transact by sending signed state updates amongst themselves. When finished, they use the latest signed update to unlock the funds they are owed, using the same smart contract. In the event of a dispute, the contract acts as the arbitrator, validating transaction history and ensuring fair behavior. This ensures that state channels retain the security of the underlying blockchain.
+Connext lets companies easily set up state channel hubs. State channels are a type of layer two solution that focuses specifically on interactions between any two parties. The framework allows individual transactions to take place instantaneously and trustlessly off-chain and then be settled with the blockchain at a later time.
 
-State channel _hubs_ extend this idea to facilitate two-party interactions among individuals who have not opened channels with each other. Users open channels with their application's Connext Hub \(instead of with each other\) and lock their operating funds. Then, they send signed updates directly to their counterparty, just like with a normal state channel, which we call opening a communication "thread". When they are done transacting to their counterparty, they close the thread, which initiates an automated process to turn the results of the thread into two signed state updates: one from the payer to the hub and the second from the hub to the payee. 
+Here's how it works under the hood:
 
-Users can open new threads with subsequent counterparties, limited only by the amount of funds they have available. Because this entire process occurs on layer two rather than on the underlying blockchain, users do not pay any transaction fees or wait for blockchain confirmations until they close their state channel with the hub. At that point, their state history \(i.e., all of the user's transactions\) is compiled down into one final transaction on the blockchain. Like with simple state channels, state channel hub smart contracts act as arbitrators, so that neither users nor the hub have to trust each other _at all._ For more information on state channels and their construction, check out our [Background on State Channels](../background-on-state-channels.md) page.
+1. Users lock their operating funds into a multisignature Ethereum smart contract and transact by sending signed state updates \(bits of data representing balance changes\) amongst themselves.
+2. When finished, they use the latest signed update to unlock the funds they are owed, using the same smart contract. 
+
+In the event of a dispute, the contract acts as an arbitrator, validating transaction history and ensuring fair behavior. This also ensures that state channels retain the security of the underlying blockchain.
+
+State channel hubs extend this idea to facilitate two-party interactions among individuals who have not opened channels with each other. Users open channels with their application's Connext Hub \(instead of with each other\) and lock their operating funds. Then, they send signed updates directly to the payee, just like with a normal state channel, by opening a communication "thread". When they are done transacting with the payee, they close the thread, which automatically turns the thread's transfers into two signed state updates: one from the payer to the hub and the second from the hub to the payee. As a result, users' balances are updated appropriately even though they've never opened a channel with each other.
+
+Users can open new threads with subsequent counterparties, limited only by the amount of funds they have available. Because this entire process occurs through Connext Hubs rather than on the underlying blockchain, users do not pay any transaction fees or wait for blockchain confirmations until they close their state channel with the hub. At that point, their state history \(i.e., all of the user's transactions\) is compiled down into one final transaction on the blockchain. Like with simple state channels, state channel hub smart contracts act as arbitrators, so that neither users nor the hub have to trust each other at all.
+
+These interactions, while seemingly complex, can be abstracted away through UX; for example, opening a channel could be represented as a "Deposit Funds" button and opening a thread could be wrapped in a "Pay User" button.
+
+For more information on state channels and their construction, check out our [Background on State Channels](../background-on-state-channels.md) page.
 
 ## A Cutting-Edge Scaling Method
 
