@@ -12,7 +12,7 @@ Once the channel is created on chain, users should call the requestJoinChannel f
 
 If the Hub is unresponsive, or does not join the channel within the challenge period, the client function "ChannelOpenTimeoutContractHandler" can be called by the client to recover the funds.
 
-**Kind**: instance method of [`Connext`](../connext-client/#Connext)  
+**Kind**: instance method of [`Connext`](./#Connext)  
 **Returns**: `Promise` - resolves to the channel id of the created channel
 
 | Param | Type | Default | Description |

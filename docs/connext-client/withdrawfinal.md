@@ -6,7 +6,7 @@ Looks up channel by the account address of the client-side user if sender parame
 
 Calls the "byzantineCloseChannel" function on the contract.
 
-**Kind**: instance method of [`Connext`](../connext-client/#Connext)  
+**Kind**: instance method of [`Connext`](./#Connext)  
 **Returns**: `Promise` - resolves to the transaction hash from calling byzantineCloseChannel
 
 | Param | Type | Default | Description |

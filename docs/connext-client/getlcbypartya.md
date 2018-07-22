@@ -4,7 +4,7 @@
 
 If no address is supplied, accounts\[0\] is used as partyA.
 
-**Kind**: instance method of [`Connext`](../connext-client/#Connext)  
+**Kind**: instance method of [`Connext`](./#Connext)  
 **Returns**: `Promise` - resolves to either the channel id between hub and supplied partyA, or an Array of the channel IDs between hub and partyA.
 
 | Param | Type | Default | Description |
@@ -16,7 +16,7 @@ If no address is supplied, accounts\[0\] is used as partyA.
 
 connext.getChannelByPartyA\(partyA, status\) ⇒ `Promise`Returns object representing the channel between partyA and the Hub
 
-**Kind**: instance method of [`Connext`](../connext-client/#Connext)  
+**Kind**: instance method of [`Connext`](./#Connext)  
 **Returns**: `Promise` - resolves to channel object
 
 | Param | Type | Default | Description |

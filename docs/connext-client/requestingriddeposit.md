@@ -4,7 +4,7 @@
 
 This function is to be used if the hub has insufficient balance in the channel to create proposed threads.
 
-**Kind**: instance method of [`Connext`](../connext-client/#Connext)  
+**Kind**: instance method of [`Connext`](./#Connext)  
 **Returns**: `Promise` - resolves to the transaction hash of Ingrid calling the deposit function
 
 | Param | Type | Description |

@@ -2,7 +2,7 @@
 
 **connext.closeThreads\(**channelIds**\)**⇒ `Promise`  Closes many threads by calling closeThread on each channel ID in the provided array.
 
-**Kind**: instance method of [`Connext`](../connext-client/#Connext)
+**Kind**: instance method of [`Connext`](./#Connext)
 
 | Param | Type | Description |
 | --- | --- | --- |

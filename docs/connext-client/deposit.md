@@ -6,7 +6,7 @@ Can be used by any either channel party.
 
 If sender is not supplied, it defaults to accounts\[0\]. If the recipient is not supplied, it defaults to the sender.
 
-**Kind**: instance method of [`Connext`](../connext-client/#Connext)  
+**Kind**: instance method of [`Connext`](./#Connext)  
 **Returns**: `Promise` - resolves to the transaction hash of the onchain deposit.
 
 | Param | Type | Default | Description |

@@ -4,7 +4,7 @@
 
 This function is to be called by the "B" party in a unidirectional scheme.
 
-**Kind**: instance method of [`Connext`](../connext-client/#Connext)  
+**Kind**: instance method of [`Connext`](./#Connext)  
 **Returns**: `Promise` - resolves to the thread ID
 
 | Param | Type | Default | Description |

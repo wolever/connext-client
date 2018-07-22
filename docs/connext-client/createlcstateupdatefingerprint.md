@@ -2,7 +2,7 @@
 
 **connext.createChannelStateUpdateFingerprint\(**params**\)** ⇒ `String`Hashes the channel state update information using soliditySha3.
 
-**Kind**: static method of [`Connext`](../connext-client/#Connext)  
+**Kind**: static method of [`Connext`](./#Connext)  
 **Returns**: `String` - the hash of the state data
 
 | Param | Type | Description |

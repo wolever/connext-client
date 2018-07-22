@@ -14,7 +14,7 @@ Connext's state channel contracts currently manage only some types of state, mos
 
 ## Clients
 
-The Connext Client package is a JavaScript interface which is used to communicate with deployed Connext contracts and with other clients. The client package is available through [NPM ](https://www.npmjs.com/package/connext)and or can be cloned from it's [open source repository](https://github.com/ConnextProject/connext-client). You can learn more about installing and using the Connext Client [here](../connext-client/).
+The Connext Client package is a JavaScript interface which is used to communicate with deployed Connext contracts and with other clients. The client package is available through [NPM ](https://www.npmjs.com/package/connext)and or can be cloned from its [open source repository](https://github.com/ConnextProject/connext-client). You can learn more about installing and using the Connext Client [here](../connext-client/).
 
 Clients are typically integrated into client-side code - either the frontend of your application or directly into the wallet layer. We built and tested the Client package around [Metamask](https://metamask.io), so we would recommend using that if at all possible. If you are hosting a wallet for your users, the simplest UX is to automatically request to open a channel with your Hub when your users deposit funds into the wallet. In other words, if you are hosting a wallet for your users, you can just use a combination of the Connext Contracts and Client as the wallet itself. This way, you can abstract away the technicalities of channels vs. threads for your users.
 

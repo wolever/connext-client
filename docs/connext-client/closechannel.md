@@ -10,7 +10,7 @@ The hub verifies the signature, returns her signature of the proposed thread dec
 
 If the Hub does not return its signature on the proposed thread decomposition, the caller goes to chain by calling initThread and settleThread.
 
-**Kind**: instance method of [`Connext`](../connext-client/#Connext)  
+**Kind**: instance method of [`Connext`](./#Connext)  
 **Returns**: `Promise` - resolves to the signature of the hub on the generated update if accepted, or the result of closing the channel on chain if there is a dispute
 
 | Param | Type | Description |

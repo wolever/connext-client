@@ -4,7 +4,7 @@
 
 May have to be called after a timeout period to ensure the transaction performed in register to create the channel on chain is properly mined.
 
-**Kind**: instance method of [`Connext`](../connext-client/#Connext)  
+**Kind**: instance method of [`Connext`](./#Connext)  
 **Returns**: `Promise` - resolves to the transaction hash of Ingrid joining the channel
 
 | Param | Type | Description |

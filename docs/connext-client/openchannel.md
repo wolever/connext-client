@@ -8,7 +8,7 @@ Signs a copy of the initial thread state, and generates a proposed channel updat
 
 This proposed state update serves as the opening certificate for the thread, and is used to verify the Hub agreed to facilitate the creation of the thread and take on the counterparty risk.
 
-**Kind**: instance method of [`Connext`](../connext-client/#Connext)  
+**Kind**: instance method of [`Connext`](./#Connext)  
 **Returns**: `Promise` - resolves to the thread ID recieved by Ingrid
 
 | Param | Type | Description |
