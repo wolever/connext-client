@@ -25,6 +25,8 @@ This project is licensed under the MIT License - see the [LICENSE.md](https://gi
 * Spankchain's General State Channels Repo: [https://github.com/nginnever/general-state-channels](https://github.com/nginnever/general-state-channels)
 * Jehan Tremback's Universal State Channels Repo: [https://github.com/jtremback/universal-state-channels](https://github.com/jtremback/universal-state-channels)
 * Perun's Virtual State Channels: [https://perun.network](https://perun.network)
-* Finality Labs: [https://finality.io](https://finality.io)
+* Finality Labs: [https://finalitylabs.io](https://finality.io)
 * Magmo: [https://magmo.com](https://magmo.com)
+
+
 
