@@ -140,3 +140,27 @@ export class ParameterValidationError extends Error {
     Error.captureStackTrace(this, ParameterValidationError)
   }
 }
+
+export function validateTipPurchaseMeta (meta) {
+  if (!meta.fields) {
+    return false
+  }
+  const { streamId, performerId, performerName } = meta.fields
+  if (!streamId || !performerId || !performerName) {
+    return false
+  } else {
+    return true
+  }
+}
+
+export function validatePurchasePurchaseMeta (meta) {
+  if (!meta.fields) {
+    return false
+  }
+  const { productSku, productName } = meta.fields
+  if (!productSku || !productName) {
+    return false
+  } else {
+    return true
+  }
+}
