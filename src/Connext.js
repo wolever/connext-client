@@ -1,17 +1,8 @@
 const channelManagerAbi = require('../artifacts/LedgerChannel.json')
 const util = require('ethereumjs-util')
-import Web3 from 'web3'
-import validate from 'validate.js'
-import {
-  LCOpenError,
-  ParameterValidationError,
-  ContractError,
-  VCOpenError,
-  LCUpdateError,
-  VCUpdateError,
-  LCCloseError,
-  VCCloseError
-} from './helpers/Errors'
+const Web3 = require('web3')
+const validate = require('validate.js')
+const {validateTipPurchaseMeta, validatePurchasePurchaseMeta, LCOpenError, ParameterValidationError, ContractError, VCOpenError, LCUpdateError, VCUpdateError, LCCloseError, VCCloseError} = require('./helpers/Errors')
 const MerkleTree = require('./helpers/MerkleTree')
 const Utils = require('./helpers/utils')
 const crypto = require('crypto')
@@ -25,9 +16,45 @@ const LC_STATES = {
   3: 'LCS_SETTLED'
 }
 
+// Purchase metadata enum
+const META_TYPES = {
+  'TIP': 0,
+  'PURCHASE': 1,
+  'UNCATEGORIZED': 2
+}
+
 // ***************************************
 // ******* PARAMETER VALIDATION **********
 // ***************************************
+validate.validators.isPurchaseMeta = value => {
+  if (!value) {
+    return `Value cannot be undefined.`
+  } else if (!value.receiver) {
+    return `${value} does not contain a receiver field`
+  } else if (!Web3.utils.isAddress(value.receiver)) {
+    return `${value.receiver} is not a valid ETH address`
+  } else if (!value.type) {
+    return `${value} does not contain a type field`
+  }
+
+  let isValid, ans
+
+  switch (META_TYPES[value.type]) {
+    case 0: // TIP
+      isValid = validateTipPurchaseMeta(value)
+      ans = isValid ? null : `${JSON.stringify(value)} is not a valid TIP purchase meta, missing one or more fields: streamId, performerId, performerName`
+      return ans
+    case 1: // PURCHASE
+      isValid = validatePurchasePurchaseMeta(value)
+      ans = isValid ? null : `${JSON.stringify(value)} is not a valid PURCHASE purchase meta, missing one or more fields: productSku, productName`
+      return ans
+    case 2: // UNCATEGORIZED -- no validation 
+      return null
+    default:
+      return `${value.type} is not a valid purchase meta type`
+  }
+}
+
 validate.validators.isLcStatus = value => {
   if (
     Object.values(LC_STATES).indexOf(value) > -1 ||
@@ -589,6 +616,7 @@ class Connext {
     const methodName = 'updateBalance'
     const isHexStrict = { presence: true, isHexStrict: true }
     const isBN = { presence: true, isBN: true }
+    const isPurchaseMeta = { presence: true, isPurchaseMeta: true }
 
     const { balanceA, balanceB } = payment
     Connext.validatorsResponseToError(
@@ -606,6 +634,13 @@ class Connext {
       methodName,
       'balanceB'
     )
+    // validate purchase meta
+    Connext.validatorsResponseToError(
+      validate.single(purchaseMeta, isPurchaseMeta),
+      methodName,
+      'purchaseMeta'
+    )
+
     // balances cant be negative
     if (balanceA.isNeg() || balanceB.isNeg()) {
       throw new VCUpdateError(methodName, 'Channel balances cannot be negative')
@@ -647,14 +682,15 @@ class Connext {
     }
     const sig = await this.createVCStateUpdate(state)
     // post signed update to watcher
+    payment = {
+      sig,
+      balanceA,
+      balanceB,
+      nonce: vc.nonce + 1
+    }
     const response = await this.vcStateUpdateHandler({
       channelId,
-      payment: {
-        sig,
-        balanceA,
-        balanceB,
-        nonce: vc.nonce + 1
-      },
+      payment,
       purchaseMeta
     })
     return response
@@ -830,7 +866,6 @@ class Connext {
 
     // get latest i-signed lc state update
     let lcState = await this.getLatestLedgerStateUpdate(lc.channelId, ['sigI'])
-    console.log(lcState)
     if (lcState) {
       // openVcs?
       if (Number(lcState.openVcs) !== 0) {
@@ -2162,7 +2197,6 @@ class Connext {
     sender = null
   }) {
     const methodName = 'consensusCloseChannelContractHandler'
-    console.log(methodName)
     // validate
     const isHexStrict = { presence: true, isHexStrict: true }
     const isPositiveInt = { presence: true, isPositiveInt: true }
@@ -2233,21 +2267,8 @@ class Connext {
       throw new LCCloseError(methodName, 'PartyA did not sign closing update')
     }
 
-    // TO DO
-    // add way to validate balAOnChain + balIOnChain == balI + balA
-    console.log('TRUFFLE DEVELOP COMMAND:')
-    console.log(
-      `LedgerChannel.deployed().then( i => i.consensusCloseChannel(${lcId}, ${nonce}, ${balanceA}, ${balanceI}, '${sigA}', '${sigI}', {from: '${sender}', gas: '6721975' }) )`
-    )
-
-    console.log('\n\nTRUFFLE DEVELOP COMMAND TO INSPECT:')
-    console.log(`LedgerChannel.deployed().then( i => i.Channels('${lcId}')`)
-
     const result = await this.channelManagerInstance.methods
       .consensusCloseChannel(lcId, nonce, balanceA, balanceI, sigA, sigI)
-      //   .estimateGas({
-      //     from: sender
-      //   })
       .send({
         from: sender,
         gas: 1000000
@@ -2533,7 +2554,6 @@ class Connext {
       const vc0s = await this.getVcInitialStates(subchanId)
       merkle = Connext.generateMerkleTree(vc0s)
       let mproof = merkle.proof(Utils.hexToBuffer(stateHash))
-      // console.log('verify returns:', merkle.verify( mproof, Utils.hexToBuffer(stateHash) ))
 
       proof = []
       for (var i = 0; i < mproof.length; i++) {
@@ -2544,19 +2564,7 @@ class Connext {
 
       proof = Utils.marshallState(proof)
     }
-    // console.log('verify returns:', merkle.verify( proof, Utils.hexToBuffer(stateHash) ))
-
     const hubBond = balanceA.add(balanceB)
-
-    console.log('TRUFFLE DEVELOP COMMAND:')
-    console.log(
-      `LedgerChannel.deployed().then( i => i.initVCstate(${subchanId}, ${vcId}, ${proof}, ${nonce}, '${partyA}', '${partyB}', ${hubBond}, ${balanceA}, ${balanceB}, '${sigA}', {from: '${sender}', gas: '6721975' }) )`
-    )
-
-    console.log('\n\nTRUFFLE DEVELOP COMMAND TO INSPECT:')
-    console.log(
-      `LedgerChannel.deployed().then( i => i.VirtualChannels('${vcId}')`
-    )
 
     const results = await this.channelManagerInstance.methods
       .initVCstate(
@@ -2668,15 +2676,6 @@ class Connext {
       const accounts = await this.web3.eth.getAccounts()
       sender = accounts[0].toLowerCase()
     }
-
-    console.log('TRUFFLE DEVELOP COMMAND TO RECREATE:')
-    console.log(
-      `LedgerChannel.deployed().then( i => i.settleVC(${subchanId}, ${vcId}, ${nonce}, '${partyA}', '${partyB}', [${balanceA}, ${balanceB}], '${sigA}', {from: '${sender}', gas: '6721975' }) )`
-    )
-    console.log('\n\nTRUFFLE DEVELOP COMMAND TO INSPECT:')
-    console.log(
-      `LedgerChannel.deployed().then( i => i.VirtualChannels('${vcId}')`
-    )
 
     const results = await this.channelManagerInstance.methods
       .settleVC(
@@ -3534,15 +3533,12 @@ class Connext {
     if (signer.toLowerCase() !== vc.partyA.toLowerCase()) {
       throw new VCUpdateError(methodName, 'Invalid signer detected')
     }
+    payment.balanceA = payment.balanceA.toString()
+    payment.balanceB = payment.balanceB.toString()
     const response = await this.networking.post(
       `virtualchannel/${channelId}/update`,
       {
-        payment: {
-          sig,
-          balanceA: balanceA.toString(),
-          balanceB: balanceB.toString(),
-          nonce
-        },
+        payment,
         purchaseMeta
       }
     )
