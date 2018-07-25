@@ -564,8 +564,19 @@ class Connext {
     // get channels
     const lcA = await this.getLcByPartyA(vc.partyA)
     const lcB = await this.getLcByPartyA(sender)
+    if (lcB === null || lcA === null) {
+      throw new VCOpenError(
+        methodName,
+        'Missing one or more required subchannels'
+      )
+    }
+
+    // subchannels in right state
     if (lcB.state !== 1 || lcA.state !== 1) {
-      throw new VCOpenError(methodName, 'Subchannel(s) in invalid state')
+      throw new VCOpenError(
+        methodName,
+        'One or more required subchannels are in the incorrect state'
+      )
     }
 
     const vc0 = {
@@ -1796,20 +1807,7 @@ class Connext {
     )
     // verify subchannel
     const lcA = await this.getLcByPartyA(partyA)
-    const lcB = await this.getLcByPartyA(partyB)
-    if (lcB === null || lcA === null) {
-      throw new VCOpenError(
-        methodName,
-        'Missing one or more required subchannels'
-      )
-    }
-    // subchannels in right state
-    if (lcB.state !== 1 || lcA.state !== 1) {
-      throw new VCOpenError(
-        methodName,
-        'One or more required subchannels are in the incorrect state'
-      )
-    }
+
     // verify channel state update
     const vc = await this.getChannelById(channelId)
     if (vc === null) {
