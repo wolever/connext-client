@@ -660,7 +660,7 @@ class Connext {
       .toBN(vc.balanceA)
       .add(Web3.utils.toBN(vc.balanceB))
     if (balanceA.add(balanceB).eq(channelBalance) === false) {
-      throw new VCUpdateError(methodName, 'Invalid channel balances')
+      throw new VCUpdateError(methodName, 551, 'Invalid channel balances')
     }
 
     if (balanceB.lt(Web3.utils.toBN(vc.balanceB))) {
@@ -3514,7 +3514,7 @@ class Connext {
       .toBN(vc.balanceA)
       .add(Web3.utils.toBN(vc.balanceB))
     if (balanceA.add(balanceB).eq(channelBalance) === false) {
-      throw new VCUpdateError(methodName, 'Invalid channel balances')
+      throw new VCUpdateError(methodName, 551, 'Invalid channel balances')
     }
     // nonce must be increasing
     if (nonce !== Number(vc.nonce) + 1) {
