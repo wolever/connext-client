@@ -1042,7 +1042,7 @@ class Connext {
    *
    * @example
    * const lcId = await connext.getLcId() // get ID by accounts[0] and open status by default
-   * await connext.cosignLCUpdate(lcId)
+   * await connext.cosignLatestLcUpdate(lcId)
    *
    * @param {Object} params - the method object
    * @param {String} params.lcId - ledger channel id
@@ -1990,7 +1990,6 @@ class Connext {
     if (sender === ingridAddress) {
       throw new LCOpenError(methodName, 'Cannot open a channel with yourself')
     }
-
     const result = await this.channelManagerInstance.methods
       .createChannel(lcId, ingridAddress, challenge)
       .send({
