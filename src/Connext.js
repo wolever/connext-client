@@ -684,16 +684,18 @@ class Connext {
     // post signed update to watcher
     payment = {
       sig,
-      balanceA,
-      balanceB,
+      balanceA: balanceA.toString(),
+      balanceB: balanceB.toString(),
       nonce: vc.nonce + 1
     }
-    const response = await this.vcStateUpdateHandler({
-      channelId,
-      payment,
-      purchaseMeta
-    })
-    return response
+    const response = await this.networking.post(
+      `virtualchannel/${channelId}/update`,
+      {
+        payment,
+        purchaseMeta
+      }
+    )
+    return response.data
   }
 
   /**
@@ -3456,90 +3458,6 @@ class Connext {
       `ledgerchannel/${lcId}/fastclose`,
       {
         sig
-      }
-    )
-    return response.data
-  }
-
-  async vcStateUpdateHandler ({ channelId, payment, purchaseMeta }) {
-    // validate params
-    const methodName = 'vcStateUpdateHandler'
-    const isHexStrict = { presence: true, isHexStrict: true }
-    const isHex = { presence: true, isHex: true }
-    const isBN = { presence: true, isBN: true }
-    const isPositiveInt = { presence: true, isPositiveInt: true }
-    const { balanceA, balanceB, sig, nonce } = payment
-
-    Connext.validatorsResponseToError(
-      validate.single(sig, isHex),
-      methodName,
-      'sig'
-    )
-    Connext.validatorsResponseToError(
-      validate.single(channelId, isHexStrict),
-      methodName,
-      'channelId'
-    )
-    Connext.validatorsResponseToError(
-      validate.single(balanceA, isBN),
-      methodName,
-      'balanceA'
-    )
-    Connext.validatorsResponseToError(
-      validate.single(balanceB, isBN),
-      methodName,
-      'balanceB'
-    )
-    Connext.validatorsResponseToError(
-      validate.single(nonce, isPositiveInt),
-      methodName,
-      'nonce'
-    )
-    // balances cant be negative
-    if (balanceA.isNeg() || balanceB.isNeg()) {
-      throw new VCUpdateError(methodName, 'Channel balances cannot be negative')
-    }
-    // get the vc
-    const vc = await this.getChannelById(channelId)
-    // must exist
-    if (vc === null) {
-      throw new VCUpdateError(methodName, 'Channel not found')
-    }
-    // channel must be opened or opening
-    if (vc.state !== 1 && vc.state !== 0) {
-      throw new VCUpdateError(methodName, 'Channel is in invalid state')
-    }
-    // total channel balance cant change
-    const channelBalance = Web3.utils
-      .toBN(vc.balanceA)
-      .add(Web3.utils.toBN(vc.balanceB))
-    if (balanceA.add(balanceB).eq(channelBalance) === false) {
-      throw new VCUpdateError(methodName, 551, 'Invalid channel balances')
-    }
-    // nonce must be increasing
-    if (nonce !== Number(vc.nonce) + 1) {
-      throw new VCUpdateError(methodName, 'Invalid nonce provided')
-    }
-    // validate sig
-    const signer = Connext.recoverSignerFromVCStateUpdate({
-      sig,
-      channelId,
-      nonce,
-      partyA: vc.partyA,
-      partyB: vc.partyB,
-      balanceA,
-      balanceB
-    })
-    if (signer.toLowerCase() !== vc.partyA.toLowerCase()) {
-      throw new VCUpdateError(methodName, 'Invalid signer detected')
-    }
-    payment.balanceA = payment.balanceA.toString()
-    payment.balanceB = payment.balanceB.toString()
-    const response = await this.networking.post(
-      `virtualchannel/${channelId}/update`,
-      {
-        payment,
-        purchaseMeta
       }
     )
     return response.data
