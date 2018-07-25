@@ -1042,7 +1042,7 @@ class Connext {
    *
    * @example
    * const lcId = await connext.getLcId() // get ID by accounts[0] and open status by default
-   * await connext.cosignLatestLcUpdate(lcId)
+   * await connext.cosignLCUpdate(lcId)
    *
    * @param {Object} params - the method object
    * @param {String} params.lcId - ledger channel id
@@ -1989,12 +1989,6 @@ class Connext {
     // verify partyA !== partyI
     if (sender === ingridAddress) {
       throw new LCOpenError(methodName, 'Cannot open a channel with yourself')
-    }
-
-    // validate requires on contract before sending transactions
-    const lc = await this.getLcById(lcId)
-    if (lc != null) {
-      throw new LCOpenError('Channel has been used')
     }
 
     const result = await this.channelManagerInstance.methods
@@ -3620,53 +3614,6 @@ class Connext {
     }
     const sigAtoI = await this.createLCStateUpdate(updateAtoI)
     return sigAtoI
-  }
-
-  async byzantineCloseVc (vcId) {
-    // validate params
-    const methodName = 'byzantineCloseVc'
-    const isHexStrict = { presence: true, isHexStrict: true }
-    Connext.validatorsResponseToError(
-      validate.single(vcId, isHexStrict),
-      methodName,
-      'vcId'
-    )
-    const accounts = await this.web3.eth.getAccounts()
-    const vc0 = await this.getVcInitialState(vcId)
-    let subchan
-    if (accounts[0] === vc0.partyA) {
-      subchan = vc0.subchanAI
-    } else if (accounts[0] == vc0.partyB) {
-      subchan = vc0.subchanBI
-    }
-    const initResult = await this.initVcStateContractHandler({
-      subchanId: subchan,
-      vcId,
-      partyA: vc0.partyA,
-      partyB: vc0.partyB,
-      balanceA: Web3.utils.toBN(vc0.balanceA),
-      balanceB: Web3.utils.toBN(vc0.balanceB),
-      sigA: vc0.sigA,
-      nonce: vc0.nonce,
-      sender: vc0.partyA
-    })
-    if (initResult) {
-      const vcState = await this.getLatestVCStateUpdate(vcId)
-      const settleResult = await this.settleVcContractHandler({
-        subchanId: subchan,
-        vcId,
-        nonce: vcState.nonce,
-        partyA: vcState.partyA,
-        partyB: vcState.partyB,
-        balanceA: Web3.utils.toBN(vcState.balanceA),
-        balanceB: Web3.utils.toBN(vcState.balanceB),
-        sigA: vcState.sigA,
-        sender: vcState.partyA
-      })
-      return settleResult
-    } else {
-      return initResult
-    }
   }
 }
 
