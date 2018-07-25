@@ -1,22 +1,22 @@
 require('dotenv').config()
-const assert = require('assert')
-const Connext = require('../src/Connext')
-const { timeout, genAuthHash } = require('./helpers/utils')
+const chai = require('chai')
+const expect = chai.expect
 const Web3 = require('web3')
-const interval = require('interval-promise')
-
 const fetch = require('fetch-cookie')(require('node-fetch'))
+const interval = require('interval-promise')
 
 global.fetch = fetch
 
+const Connext = require('../src/Connext')
+
 // named variables
 // on init
-let web3
+const web3 = new Web3('http://localhost:8545')
 let client
 let ingridAddress
-let watcherUrl = process.env.WATCHER_URL || ''
-let ingridUrl = process.env.INGRID_URL || 'http://localhost:8080'
-let contractAddress = '0x31713144d9ae2501e644a418dd9035ed840b1660'
+let ingridUrl = 'http://localhost:8080'
+let contractAddress = '0xdec16622bfe1f0cdaf6f7f20437d2a040cccb0a1'
+let watcherUrl = ''
 
 // for accounts
 let accounts
@@ -30,269 +30,230 @@ let initialDeposit = Web3.utils.toBN(Web3.utils.toWei('5', 'ether'))
 let vcIdA, vcIdC, vcIdD, vcIdE
 let vcA, vcC, vcD, vcE
 
-describe.only('Connext happy case testing flow', () => {
-  beforeEach(
-    'Should init fresh client with web3 and ChannelManager',
-    async () => {
-      // init web3
-      const port = process.env.ETH_PORT ? process.env.ETH_PORT : '8545'
-      web3 = new Web3(`ws://localhost:${port}`)
-      // set account vars
-      accounts = await web3.eth.getAccounts()
-      ingridAddress = accounts[0]
-      partyA = accounts[1]
-      partyB = accounts[2]
-      partyC = accounts[3]
-      partyD = accounts[4]
-      partyE = accounts[5]
-      // generate hub auth
-      const origin = 'localhost'
+function genAuthHash (nonce, origin) {
+  let msg = `SpankWallet authentication message: ${web3.utils.sha3(nonce)} ${web3.utils.sha3(origin)}`
 
-      const challengeRes = await fetch(`${ingridUrl}/auth/challenge`, {
-        method: 'POST',
-        credentials: 'include'
-      })
-      const challengeJson = await challengeRes.json()
-      const nonce = challengeJson.nonce
+  return web3.utils.sha3(msg)
+}
 
-      const hash = genAuthHash(nonce, origin)
-      const signature = await web3.eth.sign(hash, ingridAddress)
+describe('Connext happy case testing flow', () => {
+  before('authenticate', async () => {
+    accounts = await web3.eth.getAccounts()
+    ingridAddress = accounts[0]
+    partyA = accounts[1]
+    partyB = accounts[2]
+    partyC = accounts[3]
+    partyD = accounts[4]
+    partyE = accounts[5]
 
-      const authRes = await fetch(`${ingridUrl}/auth/response`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Origin: origin
-        },
-        credentials: 'include',
-        body: JSON.stringify({
-          signature,
-          nonce,
-          origin,
-          address: ingridAddress.toLowerCase()
-        })
-      })
+    const origin = 'localhost'
 
-      const authJson = await authRes.json()
+    const challengeRes = await fetch(`${ingridUrl}/auth/challenge`, {
+      method: 'POST',
+      credentials: 'include'
+    })
+    const challengeJson = await challengeRes.json()
+    const nonce = challengeJson.nonce
 
-      assert.notDeepStrictEqual(authJson, {})
-      // init client instance
-      client = new Connext({
-        web3,
-        ingridAddress,
-        watcherUrl,
-        ingridUrl,
-        contractAddress
-      })
-    }
-  )
+    const hash = genAuthHash(nonce, origin)
+    const signature = await web3.eth.sign(hash, ingridAddress)
 
-  describe('performer has one vcA she never joins but is updated and settled by partyA', () => {
-    describe('Registering with the hub', () => {
-      describe('registering partyA with hub', () => {
-        it(
-          'should create a ledger channel with the hub and partyA',
-          async () => {
-            subchanAI = await client.register(initialDeposit, partyA)
-            // ensure in database
-            await interval(async (iterationNumber, stop) => {
-              lcA = await client.getLcById(subchanAI)
-              if (lcA != null) {
-                stop()
-              }
-            }, 2000)
-
-            // get the ledger channel
-            assert.equal(lcA.channelId, subchanAI)
-          }
-        ).timeout(45000)
-
-        it('ingrid should have autojoined channel', async () => {
-          // ensure autojoining channel
-          await interval(async (iterationNumber, stop) => {
-            lcA = await client.getLcById(subchanAI)
-            if (lcA != null && lcA.state != 0) {
-              assert.equal(lcA.state, 1)
-              stop()
-            }
-          }, 2000)
-        }).timeout(45000)
-
-        it('ingrid should have 0 balance', async () => {
-          lcA = await client.getLcById(subchanAI)
-          balanceB = Web3.utils.toBN(lcA.balanceI)
-          assert.ok(balanceB.eq(Web3.utils.toBN('0')))
-        })
-      })
-
-      describe('registering partyB with hub', () => {
-        it(
-          'should create a ledger channel with the hub and partyB',
-          async () => {
-            subchanBI = await client.register(initialDeposit, partyB)
-            // ensure in database
-            await interval(async (iterationNumber, stop) => {
-              lcB = await client.getLcById(subchanBI)
-              if (lcB != null) {
-                stop()
-              }
-            }, 2000)
-
-            // get the ledger channel
-            assert.equal(lcB.channelId, subchanBI)
-          }
-        ).timeout(45000)
-
-        it('ingrid should have autojoined channel', async () => {
-          // ensure autojoining channel
-          await interval(async (iterationNumber, stop) => {
-            lcB = await client.getLcById(subchanBI)
-            if (lcB != null && lcB.state != 0) {
-              assert.equal(lcB.state, 1)
-              stop()
-            }
-          }, 2000)
-        }).timeout(45000)
-
-        it('ingrid should have 0 balance', async () => {
-          lcB = await client.getLcById(subchanBI)
-          balanceB = Web3.utils.toBN(lcB.balanceI)
-          assert.ok(balanceB.eq(Web3.utils.toBN('0')))
-        })
-      })
-
-      describe('registering partyC with hub', () => {
-        it(
-          'should create a ledger channel with the hub and partyC',
-          async () => {
-            subchanCI = await client.register(initialDeposit, partyC)
-            // ensure in database
-            await interval(async (iterationNumber, stop) => {
-              lcC = await client.getLcById(subchanCI)
-              if (lcC != null) {
-                stop()
-              }
-            }, 2000)
-
-            // get the ledger channel
-            assert.equal(lcC.channelId, subchanCI)
-          }
-        ).timeout(45000)
-
-        it('ingrid should have autojoined channel', async () => {
-          // ensure autojoining channel
-          await interval(async (iterationNumber, stop) => {
-            lcC = await client.getLcById(subchanCI)
-            if (lcC != null && lcC.state != 0) {
-              assert.equal(lcC.state, 1)
-              stop()
-            }
-          }, 2000)
-        }).timeout(45000)
-
-        it('ingrid should have 0 balance', async () => {
-          lcC = await client.getLcById(subchanCI)
-          balanceC = Web3.utils.toBN(lcC.balanceI)
-          assert.ok(balanceC.eq(Web3.utils.toBN('0')))
-        })
-      })
-
-      describe('registering partyD with hub', () => {
-        it(
-          'should create a ledger channel with the hub and partyD',
-          async () => {
-            subchanDI = await client.register(initialDeposit, partyD)
-            // ensure in database
-            await interval(async (iterationNumber, stop) => {
-              lcD = await client.getLcById(subchanDI)
-              if (lcD != null) {
-                stop()
-              }
-            }, 2000)
-
-            // get the ledger channel
-            assert.equal(lcD.channelId, subchanDI)
-          }
-        ).timeout(45000)
-
-        it('ingrid should have autojoined channel', async () => {
-          // ensure autojoining channel
-          await interval(async (iterationNumber, stop) => {
-            lcD = await client.getLcById(subchanDI)
-            if (lcD != null && lcD.state != 0) {
-              assert.equal(lcD.state, 1)
-              stop()
-            }
-          }, 2000)
-        }).timeout(45000)
-
-        it('ingrid should have 0 balance', async () => {
-          lcD = await client.getLcById(subchanDI)
-          balanceD = Web3.utils.toBN(lcD.balanceI)
-          assert.ok(balanceD.eq(Web3.utils.toBN('0')))
-        })
-      })
-
-      describe('registering partyE with hub', () => {
-        it(
-          'should create a ledger channel with the hub and partyE',
-          async () => {
-            subchanEI = await client.register(initialDeposit, partyE)
-            // ensure in database
-            await interval(async (iterationNumber, stop) => {
-              lcE = await client.getLcById(subchanEI)
-              if (lcE != null) {
-                stop()
-              }
-            }, 2000)
-
-            // get the ledger channel
-            assert.equal(lcE.channelId, subchanEI)
-          }
-        ).timeout(45000)
-
-        it('ingrid should have autojoined channel', async () => {
-          // ensure autojoining channel
-          await interval(async (iterationNumber, stop) => {
-            lcE = await client.getLcById(subchanEI)
-            if (lcE != null && lcE.state != 0) {
-              assert.equal(lcE.state, 1)
-              stop()
-            }
-          }, 2000)
-        }).timeout(45000)
-
-        it('ingrid should have 0 balance', async () => {
-          lcE = await client.getLcById(subchanAI)
-          balanceB = Web3.utils.toBN(lcE.balanceI)
-          assert.ok(balanceB.eq(Web3.utils.toBN('0')))
-        })
-      })
-
-      describe('registration error cases', () => {
-        it('should throw an error if you have open and active LC', async () => {
-          try {
-            await client.register(initialDeposit, partyA)
-          } catch (e) {
-            assert.equal(e.statusCode, 401)
-          }
-        })
+    const authRes = await fetch(`${ingridUrl}/auth/response`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Origin: origin
+      },
+      credentials: 'include',
+      body: JSON.stringify({
+        signature,
+        nonce,
+        origin,
+        address: ingridAddress.toLowerCase()
       })
     })
 
-    describe('Request that hub deposit in earners lc', () => {
-      it('should increase the balanceI of lcB by 15 ETH', async () => {
-        lcA = await client.getLcById(subchanAI)
-        lcC = await client.getLcById(subchanCI)
-        lcD = await client.getLcById(subchanDI)
-        lcE = await client.getLcById(subchanEI)
-        // const deposit = Web3.utils.toBN(Web3.utils.toWei('15', 'ether'))
+    const authJson = await authRes.json()
+
+    expect(authJson).to.not.deep.equal({})
+
+    // init client instance
+    client = new Connext({
+      web3,
+      ingridAddress,
+      watcherUrl,
+      ingridUrl,
+      contractAddress
+    })
+  })
+
+  describe('Registering with the hub', () => {
+    describe('registering partyA with hub', () => {
+      it(
+        'should create a ledger channel with the hub and partyA and wait for chainsaw',
+        async () => {
+          subchanAI = await client.register(initialDeposit, partyA)
+          // ensure lc is in the database
+          await interval(async (iterationNumber, stop) => {
+            lcA = await client.getLcById(subchanAI)
+            if (lcA != null) {
+              stop()
+            }
+          }, 2000)
+          expect(lcA.channelId).to.be.equal(subchanAI)
+        }
+      ).timeout(45000)
+
+      it('ingrid should have autojoined lcA', async () => {
+        // ensure lc is in the database
+        await interval(async (iterationNumber, stop) => {
+          lcA = await client.getLcById(subchanAI)
+          if (lcA.state != 0) {
+            stop()
+          }
+        }, 2000)
+        expect(lcA.state).to.be.equal(1)
+      }).timeout(45000)
+
+      it('ingrid should have 0 balance in lcA', async () => {
+        balanceB = Web3.utils.toBN(lcA.balanceI)
+        expect(balanceB.eq(Web3.utils.toBN('0'))).to.equal(true)
+      })
+    })
+
+    describe('registering partyB with hub', () => {
+      it('should create a ledger channel with the hub and partyB', async () => {
+        subchanBI = await client.register(initialDeposit, partyB)
+        // ensure lc is in the database
+        await interval(async (iterationNumber, stop) => {
+          lcB = await client.getLcById(subchanBI)
+          if (lcB != null) {
+            stop()
+          }
+        }, 2000)
+        expect(lcB.channelId).to.be.equal(subchanBI)
+      }).timeout(45000)
+
+      it('ingrid should have autojoined channel', async () => {
+        await interval(async (iterationNumber, stop) => {
+          lcB = await client.getLcById(subchanBI)
+          if (lcB.state != 0) {
+            stop()
+          }
+        }, 2000)
+        expect(lcB.state).to.be.equal(1)
+      }).timeout(45000)
+
+      it('ingrid should have 0 balance in lcB', async () => {
+        balanceB = Web3.utils.toBN(lcB.balanceI)
+        expect(balanceB.eq(Web3.utils.toBN('0'))).to.equal(true)
+      })
+    })
+
+    describe('registering partyC with hub', () => {
+      it('should create a ledger channel with the hub and partyC', async () => {
+        subchanCI = await client.register(initialDeposit, partyC)
+        // ensure lc is in the database
+        await interval(async (iterationNumber, stop) => {
+          lcC = await client.getLcById(subchanCI)
+          if (lcC != null) {
+            stop()
+          }
+        }, 2000)
+        expect(lcC.channelId).to.be.equal(subchanCI)
+      }).timeout(45000)
+
+      it('ingrid should have autojoined channel', async () => {
+        await interval(async (iterationNumber, stop) => {
+          lcC = await client.getLcById(subchanCI)
+          if (lcC.state != 0) {
+            stop()
+          }
+        }, 2000)
+        expect(lcC.state).to.be.equal(1)
+      }).timeout(45000)
+
+      it('ingrid should have 0 balance in lcB', async () => {
+        balanceB = Web3.utils.toBN(lcC.balanceI)
+        expect(balanceB.eq(Web3.utils.toBN('0'))).to.equal(true)
+      })
+    })
+
+    describe('registering partyD with hub', () => {
+      it('should create a ledger channel with the hub and partyD', async () => {
+        subchanDI = await client.register(initialDeposit, partyD)
+        // ensure lc is in the database
+        await interval(async (iterationNumber, stop) => {
+          lcD = await client.getLcById(subchanDI)
+          if (lcD != null) {
+            stop()
+          }
+        }, 2000)
+        expect(lcD.channelId).to.be.equal(subchanDI)
+      }).timeout(45000)
+
+      it('ingrid should have autojoined channel', async () => {
+        await interval(async (iterationNumber, stop) => {
+          lcD = await client.getLcById(subchanDI)
+          if (lcD.state != 0) {
+            stop()
+          }
+        }, 2000)
+        expect(lcD.state).to.be.equal(1)
+      }).timeout(45000)
+    })
+
+    describe('registering partyE with hub', () => {
+      it('should create a ledger channel with the hub and partyE', async () => {
+        subchanEI = await client.register(initialDeposit, partyE)
+        // ensure lc is in the database
+        await interval(async (iterationNumber, stop) => {
+          lcE = await client.getLcById(subchanEI)
+          if (lcE != null) {
+            stop()
+          }
+        }, 2000)
+        expect(lcE.channelId).to.be.equal(subchanEI)
+      }).timeout(45000)
+
+      it('ingrid should have autojoined channel', async () => {
+        await interval(async (iterationNumber, stop) => {
+          lcE = await client.getLcById(subchanEI)
+          if (lcE.state != 0) {
+            stop()
+          }
+        }, 2000)
+        expect(lcE.state).to.be.equal(1)
+      }).timeout(45000)
+    })
+
+    describe('registration error cases', async () => {
+      it('should throw an error if you have open and active LC', async () => {
+        try {
+          await client.register(initialDeposit, partyA)
+        } catch (e) {
+          expect(e.statusCode).to.equal(401)
+          expect(e.name).to.equal('ChannelOpenError')
+          expect(e.methodName).to.equal('register')
+        }
+      })
+    })
+  })
+
+  describe('Requesting hub deposit', () => {
+    it(
+      'request ingrid deposits into lcB for all viewer lc.balanceA',
+      async () => {
+        lcA = await client.getLcByPartyA(partyA)
+        lcC = await client.getLcByPartyA(partyC)
+        lcD = await client.getLcByPartyA(partyD)
+        lcE = await client.getLcByPartyA(partyE)
+
         const deposit = Web3.utils
           .toBN(lcA.balanceA)
           .add(Web3.utils.toBN(lcC.balanceA))
           .add(Web3.utils.toBN(lcD.balanceA))
           .add(Web3.utils.toBN(lcE.balanceA))
-        console.log('deposit:', deposit.toString())
         await client.requestIngridDeposit({
           lcId: subchanBI,
           deposit
@@ -300,456 +261,819 @@ describe.only('Connext happy case testing flow', () => {
         await interval(async (iterationNumber, stop) => {
           lcB = await client.getLcById(subchanBI)
           if (
-            lcB != null &&
-            lcB.state === 1 &&
+            lcB != null && // exists
+            lcB.state === 1 && // joined
             !Web3.utils.toBN(lcB.balanceI).isZero()
           ) {
-            // open and exists
-            console.log('balI:', lcB.balanceI)
             stop()
           }
         }, 2000)
-        assert.ok(deposit.eq(Web3.utils.toBN(lcB.balanceI)))
-      }).timeout(45000)
+        expect(deposit.eq(Web3.utils.toBN(lcB.balanceI))).to.equal(true)
+      }
+    ).timeout(45000)
 
-      // request hub deposit error cases
-      it('should throw an error if hub has insufficient funds', async () => {
-        const balance = await client.web3.eth.getBalance(ingridAddress)
-        const deposit = Web3.utils
-          .toBN(balance)
-          .add(Web3.utils.toBN(Web3.utils.toWei('10', 'ether')))
-        try {
-          await client.requestIngridDeposit({
-            lcId: subchanBI,
-            deposit
-          })
-        } catch (e) {
-          assert.equal(e.statusCode, 500)
-        }
-      })
+    it('should throw an error if hub has insufficient funds', async () => {
+      const balance = await client.web3.eth.getBalance(ingridAddress)
+      const deposit = Web3.utils
+        .toBN(balance)
+        .add(Web3.utils.toBN(Web3.utils.toWei('1000', 'ether')))
+      try {
+        await client.requestIngridDeposit({
+          lcId: subchanBI,
+          deposit
+        })
+      } catch (e) {
+        expect(e.statusCode).to.equal(500)
+      }
     })
+  })
 
-    describe('Creating a virtual channel', () => {
-      describe('openChannel between partyA and partyB', () => {
-        it('should create a new virtual channel between partyA and partyB', async () => {
-          vcIdA = await client.openChannel({ to: partyB, sender: partyA })
-          vcA = await client.getChannelById(vcIdA)
-          assert.equal(vcA.channelId, vcIdA)
-        })
-
-        it('balanceA in lcA should be 0', async () => {
-          lcA = await client.getLcById(subchanAI)
-          assert.ok(Web3.utils.toBN('0').eq(Web3.utils.toBN(lcA.balanceA)))
-        })
-
-        it('hub should countersign proposed LC update', async () => {
-          let state = await client.getLatestLedgerStateUpdate(subchanAI)
-          // recover signer from sigI
-          const signer = Connext.recoverSignerFromLCStateUpdate({
-            sig: state.sigI,
-            isClose: false,
-            channelId: subchanAI,
-            nonce: state.nonce,
-            openVcs: state.openVcs,
-            vcRootHash: state.vcRootHash,
-            partyA: partyA,
-            partyI: ingridAddress,
-            balanceA: Web3.utils.toBN(state.balanceA),
-            balanceI: Web3.utils.toBN(state.balanceI)
-          })
-          assert.equal(signer.toLowerCase(), ingridAddress.toLowerCase())
-        })
-
-        it('hub should create update for lcB', async () => {
-          vcA = await client.getChannelById(vcIdA)
-          let state = await client.getLatestLedgerStateUpdate(subchanBI, [
-            'sigI'
-          ])
-          const signer = Connext.recoverSignerFromLCStateUpdate({
-            sig: state.sigI,
-            isClose: false,
-            channelId: subchanBI,
-            nonce: state.nonce,
-            openVcs: state.openVcs,
-            vcRootHash: state.vcRootHash,
-            partyA: partyB,
-            partyI: ingridAddress,
-            balanceA: Web3.utils.toBN(state.balanceA),
-            balanceI: Web3.utils.toBN(state.balanceI)
-          })
-          assert.equal(signer.toLowerCase(), ingridAddress.toLowerCase())
-        })
-
-        // error cases
-      })
-
-      describe('partyB should be able to recieve multiple openChannel updates', () => {
-        it('should create a new virtual channel between partyC and partyB', async () => {
-          vcIdC = await client.openChannel({ to: partyB, sender: partyC })
-          vcC = await client.getChannelById(vcIdC)
-          assert.equal(vcC.channelId, vcIdC)
-        })
-
-        it('should create a new virtual channel between partyD and partyB', async () => {
-          vcIdD = await client.openChannel({ to: partyB, sender: partyD })
-          vcD = await client.getChannelById(vcIdD)
-          assert.equal(vcD.channelId, vcIdD)
-        })
-
-        it('should create a new virtual channel between partyA and partyB', async () => {
-          vcIdE = await client.openChannel({ to: partyB, sender: partyE })
-          vcE = await client.getChannelById(vcIdE)
-          assert.equal(vcE.channelId, vcIdE)
-        })
-      })
-    })
-
-    describe('Updating state in a virtual channel', () => {
-      it('should call updateBalance in vcA', async () => {
-        balanceA = Web3.utils.toBN(Web3.utils.toWei('4', 'ether'))
-        balanceB = Web3.utils.toBN(Web3.utils.toWei('1', 'ether'))
-        const response = await client.updateBalance({
-          channelId: vcIdA,
-          balanceA,
-          balanceB
-        })
+  describe('Creating a virtual channel', () => {
+    describe('openChannel between partyA and partyB', () => {
+      it('should create a new virtual channel between partyA and partyB', async () => {
+        vcIdA = await client.openChannel({ to: partyB, sender: partyA })
         vcA = await client.getChannelById(vcIdA)
-        assert.ok(
-          Web3.utils.toBN(vcA.balanceA).eq(balanceA) &&
-            Web3.utils.toBN(vcA.balanceB).eq(balanceB)
+        expect(vcA.channelId).to.equal(vcIdA)
+      })
+
+      it('balanceA in lcA should be 0', async () => {
+        lcA = await client.getLcById(subchanAI)
+        expect(Web3.utils.toBN('0').eq(Web3.utils.toBN(lcA.balanceA))).to.equal(
+          true
         )
       })
 
-      it('partyA should properly sign the proposed update', async () => {
-        const state = await client.getLatestVCStateUpdate(vcIdA)
-        const signer = Connext.recoverSignerFromVCStateUpdate({
-          sig: state.sigA,
-          channelId: vcIdA,
+      it('hub should countersign proposed LC update', async () => {
+        let state = await client.getLatestLedgerStateUpdate(subchanAI)
+        // recover signer from sigI
+        const signer = Connext.recoverSignerFromLCStateUpdate({
+          sig: state.sigI,
+          isClose: false,
+          channelId: subchanAI,
           nonce: state.nonce,
+          openVcs: state.openVcs,
+          vcRootHash: state.vcRootHash,
           partyA: partyA,
-          partyB: partyB,
+          partyI: ingridAddress,
           balanceA: Web3.utils.toBN(state.balanceA),
-          balanceB: Web3.utils.toBN(state.balanceB)
+          balanceI: Web3.utils.toBN(state.balanceI)
         })
-        assert.equal(signer.toLowerCase(), partyA.toLowerCase())
+        expect(signer.toLowerCase()).to.equal(ingridAddress.toLowerCase())
       })
 
-      it('partyA should be able to send multiple state updates in a row', async () => {
+      it('hub should create update for lcB', async () => {
         vcA = await client.getChannelById(vcIdA)
-        balanceA = Web3.utils.toBN(vcA.balanceA)
-        balanceB = Web3.utils.toBN(vcA.balanceB)
-        for (let i = 0; i < 10; i++) {
-          balanceA = balanceA.sub(
-            Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
-          )
-          balanceB = balanceB.add(
-            Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
-          )
-          await client.updateBalance({
-            channelId: vcIdA,
-            balanceA,
-            balanceB
-          })
-        }
-        vcA = await client.getChannelById(vcIdA)
-        assert.ok(
-          balanceA.eq(Web3.utils.toBN(vcA.balanceA)) &&
-            balanceB.eq(Web3.utils.toBN(vcA.balanceB))
-        )
+        let state = await client.getLatestLedgerStateUpdate(subchanBI, ['sigI'])
+        const signer = Connext.recoverSignerFromLCStateUpdate({
+          sig: state.sigI,
+          isClose: false,
+          channelId: subchanBI,
+          nonce: state.nonce,
+          openVcs: state.openVcs,
+          vcRootHash: state.vcRootHash,
+          partyA: partyB,
+          partyI: ingridAddress,
+          balanceA: Web3.utils.toBN(state.balanceA),
+          balanceI: Web3.utils.toBN(state.balanceI)
+        })
+        expect(signer.toLowerCase()).to.equal(ingridAddress.toLowerCase())
       })
 
-      it('partyB should be able to recieve state updates across multiple vcs', async () => {
-        vcC = await client.getChannelByParties({ partyA: partyC, partyB })
-        vcD = await client.getChannelByParties({ partyA: partyD, partyB })
-        balanceA = Web3.utils.toBN(Web3.utils.toWei('4', 'ether'))
-        balanceB = Web3.utils.toBN(Web3.utils.toWei('1', 'ether'))
-        await client.updateBalance({
-          channelId: vcC.channelId,
-          balanceA,
-          balanceB
-        })
-        await client.updateBalance({
-          channelId: vcD.channelId,
-          balanceA,
-          balanceB
-        })
-        // multiple balance updates
-        for (let i = 0; i < 10; i++) {
-          balanceA = balanceA.sub(
-            Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
-          )
-          balanceB = balanceB.add(
-            Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
-          )
-          await client.updateBalance({
-            channelId: i % 2 === 0 ? vcC.channelId : vcD.channelId,
-            balanceA,
-            balanceB
-          })
-        }
-        vcD = await client.getChannelById(vcD.channelId)
-        assert.ok(
-          Web3.utils.toBN(vcD.balanceA).eq(balanceA) &&
-            Web3.utils.toBN(vcD.balanceB).eq(balanceB)
-        )
-      })
-
-      it('should throw an error if the balanceB decreases', async () => {
-        balanceA = Web3.utils.toBN('4', 'ether')
-        balanceB = Web3.utils.toBN('1', 'ether')
-        try {
-          await client.updateBalance({
-            channelId: vcIdA,
-            balanceA,
-            balanceB
-          })
-        } catch (e) {
-          assert.equal(e.statusCode, 550)
-        }
-      })
+      // error cases
     })
 
-    describe('Closing a virtual channel', () => {
-      it('should change vcA status to settled', async () => {
-        const response = await client.closeChannel(vcIdA)
-        // get vcA
-        vcA = await client.getChannelById(vcIdA)
-        assert.equal(vcA.state, 3)
+    describe('partyB should be able to recieve multiple openChannel updates', () => {
+      it('should create a new virtual channel between partyC and partyB', async () => {
+        vcIdC = await client.openChannel({ to: partyB, sender: partyC })
+        vcC = await client.getChannelById(vcIdC)
+        expect(vcC.channelId).to.equal(vcIdC)
       })
 
-      it('should increase lcA balanceA by vcA.balanceA remainder', async () => {
-        // get objs
-        lcA = await client.getLcById(subchanAI)
-        vcA = await client.getChannelById(vcIdA)
-        // calculate expected balance
-        let prevState = await client.getLcStateByNonce({
-          lcId: subchanAI,
-          nonce: lcA.nonce - 1
-        })
-        const expectedBalA = Web3.utils
-          .toBN(prevState.balanceA)
-          .add(Web3.utils.toBN(vcA.balanceA))
-        assert.ok(expectedBalA.eq(Web3.utils.toBN(lcA.balanceA)))
-      })
-
-      it('should increase lcA balanceI by vcA.balanceB', async () => {
-        // calculate expected balance
-        let prevState = await client.getLcStateByNonce({
-          lcId: subchanAI,
-          nonce: lcA.nonce - 1
-        })
-        const expectedBalI = Web3.utils
-          .toBN(prevState.balanceI)
-          .add(Web3.utils.toBN(vcA.balanceB))
-        assert.ok(expectedBalI.eq(Web3.utils.toBN(lcA.balanceI)))
-      })
-
-      it('should increase lcB balanceA by vcA.balanceB', async () => {
-        // get objs
-        lcB = await client.getLcById(subchanBI)
-        // calculate expected balance
-        let prevState = await client.getLcStateByNonce({
-          lcId: subchanBI,
-          nonce: lcB.nonce - 1
-        })
-        const expectedBalA = Web3.utils
-          .toBN(prevState.balanceA)
-          .add(Web3.utils.toBN(vcA.balanceB))
-        assert.ok(expectedBalA.eq(Web3.utils.toBN(lcB.balanceA)))
-      })
-
-      it('should decrease lcB balanceI by vcA.balanceA', async () => {
-        // calculate expected balance
-        let prevState = await client.getLcStateByNonce({
-          lcId: subchanBI,
-          nonce: lcB.nonce - 1
-        })
-        const expectedBalI = Web3.utils
-          .toBN(prevState.balanceI)
-          .add(Web3.utils.toBN(vcA.balanceA))
-        assert.ok(expectedBalI.eq(Web3.utils.toBN(lcB.balanceI)))
-      })
-
-      it('should not interrupt the flow of other vcs', async () => {
-        vcC = await client.getChannelByParties({ partyA: partyC, partyB })
-        balanceA = Web3.utils
-          .toBN(vcC.balanceA)
-          .sub(Web3.utils.toBN(Web3.utils.toWei('1', 'ether')))
-        balanceB = Web3.utils
-          .toBN(vcC.balanceB)
-          .add(Web3.utils.toBN(Web3.utils.toWei('1', 'ether')))
-        await client.updateBalance({
-          channelId: vcC.channelId,
-          balanceA,
-          balanceB
-        })
-        vcC = await client.getChannelById(vcC.channelId)
-        assert.ok(balanceA.eq(Web3.utils.toBN(vcC.balanceA)))
-      })
-
-      it.only('partyB should be able to multiple close VCs they havent joined', async () => {
-        vcC = await client.getChannelByParties({ partyA: partyC, partyB })
-        vcD = await client.getChannelByParties({ partyA: partyD, partyB })
-        const response = await client.closeChannels([
-          vcC.channelId,
-          vcD.channelId
-        ])
-        // get vcs
-        vcC = await client.getChannelById(vcC.channelId)
-        vcD = await client.getChannelById(vcD.channelId)
-        assert.equal(vcC.state, vcD.state, 3)
+      it('should create a new virtual channel between partyD and partyB', async () => {
+        vcIdD = await client.openChannel({ to: partyB, sender: partyD })
+        vcD = await client.getChannelById(vcIdD)
+        expect(vcD.channelId).to.equal(vcIdD)
       })
     })
+  })
 
-    describe.skip('Closing a ledger channel', () => {
-      let prevBal, finalBal
-      //   subchanAI =
-      //     '0x90435bc5511017d078b6f6303e406b31acc86c20d1281827ec57a36980f62c69'
-      //   subchanBI =
-      //     '0x5d5e59b9d23d466170b13d14acfbfc9ead28b94cea038664ada8daad511bccff'
-      //   subchanCI =
-      //     '0x4678b2cf2973826ca79b297e1a8d9808a92aa5413b59c5bb6423e7dc84bec2eb'
-      //   subchanDI =
-      //     '0x1a7611163ed1a1360a7accac37f1c691202a06cbbe376edd81d68c24e756e0c0'
-      //   subchanEI =
-      //     '0x1a7611163ed1a1360a7accac37f1c691202a06cbbe376edd81d68c24e756e0c0'
-      it(`should close partyA's LC with the fast close flag`, async () => {
-        prevBal = await client.web3.eth.getBalance(partyA)
-        const response = await client.withdraw(partyA)
-        console.log(response)
-        const tx = await client.web3.eth.getTransaction(response)
-        assert.equal(tx.to.toLowerCase(), contractAddress)
-        assert.equal(tx.from.toLowerCase(), partyA.toLowerCase())
-      }).timeout(8000)
-
-      it(`should transfer balanceA of partyA's lc into wallet`, async () => {
-        lcA = await client.getLcById(subchanAI)
-        const expected = Web3.utils.fromWei(
-          Web3.utils.toBN(lcA.balanceA).add(Web3.utils.toBN(prevBal)),
-          'ether'
-        )
-        finalBal = Web3.utils.fromWei(
-          await client.web3.eth.getBalance(partyA),
-          'ether'
-        )
-        assert.equal(Math.round(expected), Math.round(finalBal))
-      })
-
-      it(`should not let you close an LC with openVCs`, async () => {
-        try {
-          const response = await client.withdraw(partyB) // + 7 ETH
-        } catch (e) {
-          assert.equal(e.statusCode, 600)
-        }
-      }).timeout(9000)
-
-      it('should not interrupt flow in other VCs', async () => {
-        vcE = await client.getChannelByParties({ partyA: partyE, partyB })
-        balanceA = Web3.utils.toBN(Web3.utils.toWei('4', 'ether'))
-        balanceB = Web3.utils.toBN(Web3.utils.toWei('1', 'ether'))
-        await client.updateBalance({
-          channelId: vcE.channelId,
+  describe('Updating a virtual channel', async () => {
+    it('should call updateBalance in vcA', async () => {
+      balanceA = Web3.utils.toBN(Web3.utils.toWei('4', 'ether'))
+      balanceB = Web3.utils.toBN(Web3.utils.toWei('1', 'ether'))
+      const response = await client.updateBalance({
+        channelId: vcIdA,
+        payment: {
           balanceA,
           balanceB
+        },
+        purchaseMeta: {
+          receiver: '0x5aeda56215b167893e80b4fe645ba6d5bab767de',
+          type: 'TIP',
+          fields: {
+            streamId: 6969,
+            performerId: 1337,
+            performerName: 'Agent Smith'
+          }
+        }
+      })
+      vcA = await client.getChannelById(vcIdA)
+      expect(Web3.utils.toBN(vcA.balanceA).eq(balanceA)).to.equal(true)
+      expect(Web3.utils.toBN(vcA.balanceB).eq(balanceB)).to.equal(true)
+    })
+
+    it('partyA should properly sign the proposed update', async () => {
+      const state = await client.getLatestVCStateUpdate(vcIdA)
+      const signer = Connext.recoverSignerFromVCStateUpdate({
+        sig: state.sigA,
+        channelId: vcIdA,
+        nonce: state.nonce,
+        partyA: partyA,
+        partyB: partyB,
+        balanceA: Web3.utils.toBN(state.balanceA),
+        balanceB: Web3.utils.toBN(state.balanceB)
+      })
+      expect(signer.toLowerCase()).to.equal(partyA.toLowerCase())
+    })
+
+    it('partyA should be able to send multiple state updates in a row', async () => {
+      vcA = await client.getChannelById(vcIdA)
+      balanceA = Web3.utils.toBN(vcA.balanceA)
+      balanceB = Web3.utils.toBN(vcA.balanceB)
+      for (let i = 0; i < 10; i++) {
+        balanceA = balanceA.sub(
+          Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
+        )
+        balanceB = balanceB.add(
+          Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
+        )
+        await client.updateBalance({
+          channelId: vcIdA,
+          payment: {
+            balanceA,
+            balanceB
+          },
+          purchaseMeta: {
+            receiver: '0x5aeda56215b167893e80b4fe645ba6d5bab767de',
+            type: 'TIP',
+            fields: {
+              streamId: 6969,
+              performerId: 1337,
+              performerName: 'Agent Smith'
+            }
+          }
         })
-        vcE = await client.getChannelById(vcE.channelId)
-        assert.ok(
-          Web3.utils.toBN(vcE.balanceA).eq(balanceA) &&
-            Web3.utils.toBN(vcE.balanceB).eq(balanceB)
-        )
+      }
+      vcA = await client.getChannelById(vcIdA)
+      expect(balanceA.eq(Web3.utils.toBN(vcA.balanceA))).to.equal(true)
+      expect(balanceB.eq(Web3.utils.toBN(vcA.balanceB))).to.equal(true)
+    })
+
+    it('should not prohibit the creation of a virtual channel', async () => {
+      vcIdE = await client.openChannel({ to: partyB, sender: partyE })
+      vcE = await client.getChannelById(vcIdE)
+      expect(vcE.channelId).to.equal(vcIdE)
+    })
+
+    it('partyB should be able to recieve state updates across multiple vcs', async () => {
+      vcC = await client.getChannelByParties({ partyA: partyC, partyB })
+      vcD = await client.getChannelByParties({ partyA: partyD, partyB })
+      balanceA = Web3.utils.toBN(Web3.utils.toWei('4', 'ether'))
+      balanceB = Web3.utils.toBN(Web3.utils.toWei('1', 'ether'))
+      await client.updateBalance({
+        channelId: vcC.channelId,
+        payment: {
+          balanceA,
+          balanceB
+        },
+        purchaseMeta: {
+          receiver: '0x5aeda56215b167893e80b4fe645ba6d5bab767de',
+          type: 'TIP',
+          fields: {
+            streamId: 6969,
+            performerId: 1337,
+            performerName: 'Agent Smith'
+          }
+        }
       })
-
-      it(`should close partyC's LC with the fast close flag`, async () => {
-        prevBal = await client.web3.eth.getBalance(partyC)
-        const response = await client.withdraw(partyC)
-
-        const tx = await client.web3.eth.getTransaction(response)
-        assert.equal(tx.to.toLowerCase(), contractAddress)
-        assert.equal(tx.from.toLowerCase(), partyC.toLowerCase())
-      }).timeout(5000)
-
-      it(`should transfer balanceA partyC's into wallet`, async () => {
-        lcC = await client.getLcById(subchanCI)
-        const expected = Web3.utils.fromWei(
-          Web3.utils.toBN(lcC.balanceA).add(Web3.utils.toBN(prevBal)),
-          'ether'
-        )
-        finalBal = Web3.utils.fromWei(
-          await client.web3.eth.getBalance(partyC),
-          'ether'
-        )
-        assert.equal(Math.round(expected), Math.round(finalBal))
+      await client.updateBalance({
+        channelId: vcD.channelId,
+        payment: {
+          balanceA,
+          balanceB
+        },
+        purchaseMeta: {
+          receiver: '0x5aeda56215b167893e80b4fe645ba6d5bab767de',
+          type: 'TIP',
+          fields: {
+            streamId: 6969,
+            performerId: 1337,
+            performerName: 'Agent Smith'
+          }
+        }
       })
-
-      it(`should close partyD's LC with the fast close flag`, async () => {
-        prevBal = await client.web3.eth.getBalance(partyD)
-        const response = await client.withdraw(partyD)
-        const tx = await client.web3.eth.getTransaction(response)
-        assert.equal(tx.to.toLowerCase(), contractAddress)
-        assert.equal(tx.from.toLowerCase(), partyD.toLowerCase())
-      }).timeout(5000)
-
-      it(`should transfer balanceA partyD's into wallet`, async () => {
-        lcD = await client.getLcById(subchanDI)
-        const expected = Web3.utils.fromWei(
-          Web3.utils.toBN(lcD.balanceA).add(Web3.utils.toBN(prevBal)),
-          'ether'
+      // multiple balance updates
+      for (let i = 0; i < 10; i++) {
+        balanceA = balanceA.sub(
+          Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
         )
-        finalBal = Web3.utils.fromWei(
-          await client.web3.eth.getBalance(partyD),
-          'ether'
+        balanceB = balanceB.add(
+          Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
         )
-        assert.equal(Math.round(expected), Math.round(finalBal))
+        await client.updateBalance({
+          channelId: i % 2 === 0 ? vcC.channelId : vcD.channelId,
+          payment: {
+            balanceA,
+            balanceB
+          },
+          purchaseMeta: {
+            receiver: '0x5aeda56215b167893e80b4fe645ba6d5bab767de',
+            type: 'TIP',
+            fields: {
+              streamId: 6969,
+              performerId: 1337,
+              performerName: 'Agent Smith'
+            }
+          }
+        })
+      }
+      vcD = await client.getChannelById(vcD.channelId)
+      expect(Web3.utils.toBN(vcD.balanceA).eq(balanceA)).to.equal(true)
+      expect(Web3.utils.toBN(vcD.balanceB).eq(balanceB)).to.equal(true)
+    })
+
+    it('should throw an error if the balanceB decreases', async () => {
+      balanceA = Web3.utils.toBN('4', 'ether')
+      balanceB = Web3.utils.toBN('1', 'ether')
+      try {
+        await client.updateBalance({
+          channelId: vcA.channelId,
+          payment: {
+            balanceA,
+            balanceB
+          },
+          purchaseMeta: {
+            receiver: '0x5aeda56215b167893e80b4fe645ba6d5bab767de',
+            type: 'TIP',
+            fields: {
+              streamId: 6969,
+              performerId: 1337,
+              performerName: 'Agent Smith'
+            }
+          }
+        })
+      } catch (e) {
+        expect(e.statusCode).to.equal(550)
+      }
+    })
+
+    it('should throw an error if no purchaseMeta receiver is included', async () => {
+      balanceA = Web3.utils.toBN('4', 'ether')
+      balanceB = Web3.utils.toBN('1', 'ether')
+      try {
+        await client.updateBalance({
+          channelId: vcA.channelId,
+          payment: {
+            balanceA,
+            balanceB
+          },
+          purchaseMeta: {
+            type: 'TIP',
+            fields: {
+              streamId: 6969,
+              performerId: 1337,
+              performerName: 'Agent Smith'
+            }
+          }
+        })
+      } catch (e) {
+        expect(e.statusCode).to.equal(200)
+      }
+    })
+
+    it('should throw an error if an improper purchaseMeta receiver is provided', async () => {
+      balanceA = Web3.utils.toBN('4', 'ether')
+      balanceB = Web3.utils.toBN('1', 'ether')
+      try {
+        await client.updateBalance({
+          channelId: vcA.channelId,
+          payment: {
+            balanceA,
+            balanceB
+          },
+          purchaseMeta: {
+            receiver: ':)',
+            type: 'TIP',
+            fields: {
+              streamId: 6969,
+              performerId: 1337,
+              performerName: 'Agent Smith'
+            }
+          }
+        })
+      } catch (e) {
+        expect(e.statusCode).to.equal(200)
+      }
+    })
+
+    it('should throw an error if no purchaseMeta type is provided', async () => {
+      balanceA = Web3.utils.toBN('4', 'ether')
+      balanceB = Web3.utils.toBN('1', 'ether')
+      try {
+        await client.updateBalance({
+          channelId: vcA.channelId,
+          payment: {
+            balanceA,
+            balanceB
+          },
+          purchaseMeta: {
+            receiver: '0x5aeda56215b167893e80b4fe645ba6d5bab767de',
+            fields: {
+              streamId: 6969,
+              performerId: 1337,
+              performerName: 'Agent Smith'
+            }
+          }
+        })
+      } catch (e) {
+        expect(e.statusCode).to.equal(200)
+      }
+    })
+
+    it('should throw an error if an improper purchaseMeta type is provided', async () => {
+      balanceA = Web3.utils.toBN('4', 'ether')
+      balanceB = Web3.utils.toBN('1', 'ether')
+      try {
+        await client.updateBalance({
+          channelId: vcA.channelId,
+          payment: {
+            balanceA,
+            balanceB
+          },
+          purchaseMeta: {
+            receiver: '0x5aeda56215b167893e80b4fe645ba6d5bab767de',
+            type: 'FAIL',
+            fields: {
+              streamId: 6969,
+              performerId: 1337,
+              performerName: 'Agent Smith'
+            }
+          }
+        })
+      } catch (e) {
+        expect(e.statusCode).to.equal(200)
+      }
+    })
+
+    it('should throw an error if TIP purchaseMETA is missing the fields object', async () => {
+      balanceA = Web3.utils.toBN('4', 'ether')
+      balanceB = Web3.utils.toBN('1', 'ether')
+      try {
+        await client.updateBalance({
+          channelId: vcA.channelId,
+          payment: {
+            balanceA,
+            balanceB
+          },
+          purchaseMeta: {
+            receiver: '0x5aeda56215b167893e80b4fe645ba6d5bab767de',
+            type: 'TIP'
+          }
+        })
+      } catch (e) {
+        expect(e.statusCode).to.equal(200)
+      }
+    })
+
+    it('should throw an error if TIP purchaseMETA is missing a fields.streamId', async () => {
+      balanceA = Web3.utils.toBN('4', 'ether')
+      balanceB = Web3.utils.toBN('1', 'ether')
+      try {
+        await client.updateBalance({
+          channelId: vcA.channelId,
+          payment: {
+            balanceA,
+            balanceB
+          },
+          purchaseMeta: {
+            receiver: '0x5aeda56215b167893e80b4fe645ba6d5bab767de',
+            type: 'TIP',
+            fields: {
+              performerId: 1337,
+              performerName: 'Agent Smith'
+            }
+          }
+        })
+      } catch (e) {
+        expect(e.statusCode).to.equal(200)
+      }
+    })
+
+    it('should throw an error if TIP purchaseMETA is missing the fields.performerId', async () => {
+      balanceA = Web3.utils.toBN('4', 'ether')
+      balanceB = Web3.utils.toBN('1', 'ether')
+      try {
+        await client.updateBalance({
+          channelId: vcA.channelId,
+          payment: {
+            balanceA,
+            balanceB
+          },
+          purchaseMeta: {
+            receiver: '0x5aeda56215b167893e80b4fe645ba6d5bab767de',
+            type: 'TIP',
+            fields: {
+              streamId: 6969,
+              performerName: 'Agent Smith'
+            }
+          }
+        })
+      } catch (e) {
+        expect(e.statusCode).to.equal(200)
+      }
+    })
+
+    it('should throw an error if TIP purchaseMETA is missing the fields.performerName', async () => {
+      balanceA = Web3.utils.toBN('4', 'ether')
+      balanceB = Web3.utils.toBN('1', 'ether')
+      try {
+        await client.updateBalance({
+          channelId: vcA.channelId,
+          payment: {
+            balanceA,
+            balanceB
+          },
+          purchaseMeta: {
+            receiver: '0x5aeda56215b167893e80b4fe645ba6d5bab767de',
+            type: 'TIP',
+            fields: {
+              streamId: 6969,
+              performerId: 1337
+            }
+          }
+        })
+      } catch (e) {
+        expect(e.statusCode).to.equal(200)
+      }
+    })
+
+    it('should throw an error if a PURCHASE purchaseMeta has no fields', async () => {
+      balanceA = Web3.utils.toBN('4', 'ether')
+      balanceB = Web3.utils.toBN('1', 'ether')
+      try {
+        await client.updateBalance({
+          channelId: vcA.channelId,
+          payment: {
+            balanceA,
+            balanceB
+          },
+          purchaseMeta: {
+            receiver: '0x5aeda56215b167893e80b4fe645ba6d5bab767de',
+            type: 'PURCHASE'
+          }
+        })
+      } catch (e) {
+        expect(e.statusCode).to.equal(200)
+      }
+    })
+
+    it('should throw an error if a PURCHASE purchaseMeta has no fields.productSku', async () => {
+      balanceA = Web3.utils.toBN('4', 'ether')
+      balanceB = Web3.utils.toBN('1', 'ether')
+      try {
+        await client.updateBalance({
+          channelId: vcA.channelId,
+          payment: {
+            balanceA,
+            balanceB
+          },
+          purchaseMeta: {
+            receiver: '0x5aeda56215b167893e80b4fe645ba6d5bab767de',
+            type: 'PURCHASE',
+            fields: {
+              productName: 'Agent Smith'
+            }
+          }
+        })
+      } catch (e) {
+        expect(e.statusCode).to.equal(200)
+      }
+    })
+
+    it('should throw an error if a PURCHASE purchaseMeta has no fields.productName', async () => {
+      balanceA = Web3.utils.toBN('4', 'ether')
+      balanceB = Web3.utils.toBN('1', 'ether')
+      try {
+        await client.updateBalance({
+          channelId: vcA.channelId,
+          payment: {
+            balanceA,
+            balanceB
+          },
+          purchaseMeta: {
+            receiver: '0x5aeda56215b167893e80b4fe645ba6d5bab767de',
+            type: 'PURCHASE',
+            fields: {
+              productSku: 6969
+            }
+          }
+        })
+      } catch (e) {
+        expect(e.statusCode).to.equal(200)
+      }
+    })
+  })
+
+  describe('Closing a virtual channel', () => {
+    it('should change vcA status to settled', async () => {
+      vcA = await client.getChannelByParties({ partyA, partyB })
+      const response = await client.closeChannel(vcA.channelId, partyA)
+      // get vcA
+      vcA = await client.getChannelById(vcA.channelId)
+      expect(vcA.state).to.equal(3)
+    })
+
+    it('should increase lcA balanceA by vcA.balanceA remainder', async () => {
+      // get objs
+      lcA = await client.getLcByPartyA(partyA)
+      // calculate expected balance
+      let prevState = await client.getLcStateByNonce({
+        lcId: lcA.channelId,
+        nonce: lcA.nonce - 1
       })
+      const expectedBalA = Web3.utils
+        .toBN(prevState.balanceA)
+        .add(Web3.utils.toBN(vcA.balanceA))
+      expect(expectedBalA.eq(Web3.utils.toBN(lcA.balanceA))).to.equal(true)
+    })
 
-      it(`should close partyE's LC with the fast close flag`, async () => {
-        await client.closeChannel(vcIdE) // close VCs
-        prevBal = await client.web3.eth.getBalance(partyE)
-        const response = await client.withdraw(partyE)
-        const tx = await client.web3.eth.getTransaction(response)
-        assert.equal(tx.to.toLowerCase(), contractAddress)
-        assert.equal(tx.from.toLowerCase(), partyE.toLowerCase())
-      }).timeout(5000)
-
-      it(`should transfer balanceA partyE's into wallet`, async () => {
-        lcE = await client.getLcById(subchanEI)
-        const expected = Web3.utils.fromWei(
-          Web3.utils.toBN(lcE.balanceA).add(Web3.utils.toBN(prevBal)),
-          'ether'
-        )
-        finalBal = Web3.utils.fromWei(
-          await client.web3.eth.getBalance(partyE),
-          'ether'
-        )
-        assert.equal(Math.round(expected), Math.round(finalBal))
+    it('should increase lcA balanceI by vcA.balanceB', async () => {
+      // calculate expected balance
+      let prevState = await client.getLcStateByNonce({
+        lcId: lcA.channelId,
+        nonce: lcA.nonce - 1
       })
+      const expectedBalI = Web3.utils
+        .toBN(prevState.balanceI)
+        .add(Web3.utils.toBN(vcA.balanceB))
+      expect(expectedBalI.eq(Web3.utils.toBN(lcA.balanceI))).to.equal(true)
+    })
 
-      // it.only('find the fucking issue', async () => {
-      //   lcB = await client.getLcByPartyA(partyB)
-      //   const _balanceI =
-      //   const _balanceA =
-      // })
+    it('should increase lcB balanceA by vcA.balanceB', async () => {
+      // get objs
+      lcB = await client.getLcByPartyA(partyB)
+      // calculate expected balance
+      let prevState = await client.getLcStateByNonce({
+        lcId: subchanBI,
+        nonce: lcB.nonce - 1
+      })
+      const expectedBalA = Web3.utils
+        .toBN(prevState.balanceA)
+        .add(Web3.utils.toBN(vcA.balanceB))
+      expect(expectedBalA.eq(Web3.utils.toBN(lcB.balanceA))).to.equal(true)
+    })
 
-      it(`should close partyB's LC with the fast close flag`, async () => {
-        prevBal = await client.web3.eth.getBalance(partyB) // 95 ETH
+    it('should decrease lcB balanceI by vcA.balanceA', async () => {
+      // calculate expected balance
+      let prevState = await client.getLcStateByNonce({
+        lcId: subchanBI,
+        nonce: lcB.nonce - 1
+      })
+      const expectedBalI = Web3.utils
+        .toBN(prevState.balanceI)
+        .add(Web3.utils.toBN(vcA.balanceA))
+      expect(expectedBalI.eq(Web3.utils.toBN(lcB.balanceI))).to.equal(true)
+    })
+
+    it('should not interrupt the flow of other vcs', async () => {
+      vcC = await client.getChannelByParties({ partyA: partyC, partyB })
+      balanceA = Web3.utils
+        .toBN(vcC.balanceA)
+        .sub(Web3.utils.toBN(Web3.utils.toWei('1', 'ether')))
+      balanceB = Web3.utils
+        .toBN(vcC.balanceB)
+        .add(Web3.utils.toBN(Web3.utils.toWei('1', 'ether')))
+      await client.updateBalance({
+        channelId: vcC.channelId,
+        payment: {
+          balanceA,
+          balanceB
+        },
+        purchaseMeta: {
+          receiver: '0x5aeda56215b167893e80b4fe645ba6d5bab767de',
+          type: 'TIP',
+          fields: {
+            streamId: 6969,
+            performerId: 1337,
+            performerName: 'Agent Smith'
+          }
+        }
+      })
+      vcC = await client.getChannelById(vcC.channelId)
+      expect(balanceA.eq(Web3.utils.toBN(vcC.balanceA))).to.equal(true)
+    })
+
+    it('partyB should be able to close a channel', async () => {
+      vcC = await client.getChannelByParties({ partyA: partyC, partyB })
+      const response = await client.closeChannel(vcC.channelId, partyB)
+      // get vc
+      vcC = await client.getChannelById(vcC.channelId)
+      expect(vcC.state).to.equal(3)
+    })
+
+    // ensure math stays the same
+    it('should increase lcC balanceA by vcC.balanceA remainder', async () => {
+      // get objs
+      lcC = await client.getLcByPartyA(partyC)
+      // calculate expected balance
+      let prevState = await client.getLcStateByNonce({
+        lcId: lcC.channelId,
+        nonce: lcC.nonce - 1
+      })
+      const expectedBalA = Web3.utils
+        .toBN(prevState.balanceA)
+        .add(Web3.utils.toBN(vcC.balanceA))
+      expect(expectedBalA.eq(Web3.utils.toBN(lcC.balanceA))).to.equal(true)
+    })
+
+    it('should increase lcC balanceI by vcC.balanceB', async () => {
+      // calculate expected balance
+      let prevState = await client.getLcStateByNonce({
+        lcId: lcC.channelId,
+        nonce: lcC.nonce - 1
+      })
+      const expectedBalI = Web3.utils
+        .toBN(prevState.balanceI)
+        .add(Web3.utils.toBN(vcC.balanceB))
+      expect(expectedBalI.eq(Web3.utils.toBN(lcC.balanceI))).to.equal(true)
+    })
+
+    it('should increase lcB balanceA by vcC.balanceB', async () => {
+      // get objs
+      lcB = await client.getLcByPartyA(partyB)
+      // calculate expected balance
+      let prevState = await client.getLcStateByNonce({
+        lcId: subchanBI,
+        nonce: lcB.nonce - 1
+      })
+      const expectedBalA = Web3.utils
+        .toBN(prevState.balanceA)
+        .add(Web3.utils.toBN(vcC.balanceB))
+      expect(expectedBalA.eq(Web3.utils.toBN(lcB.balanceA))).to.equal(true)
+    })
+
+    it('should decrease lcB balanceI by vcA.balanceA', async () => {
+      // calculate expected balance
+      let prevState = await client.getLcStateByNonce({
+        lcId: subchanBI,
+        nonce: lcB.nonce - 1
+      })
+      const expectedBalI = Web3.utils
+        .toBN(prevState.balanceI)
+        .add(Web3.utils.toBN(vcC.balanceA))
+      expect(expectedBalI.eq(Web3.utils.toBN(lcB.balanceI))).to.equal(true)
+    })
+
+    it('partyB should be able to close multiple channels', async () => {
+      vcD = await client.getChannelByParties({ partyA: partyD, partyB })
+      vcE = await client.getChannelByParties({ partyA: partyE, partyB })
+      const channelIds = [vcD.channelId, vcE.channelId]
+      for (const channelId of channelIds) {
+        await client.closeChannel(channelId, partyB)
+      }
+      // refetch channels
+      vcD = await client.getChannelById(vcD.channelId)
+      vcE = await client.getChannelById(vcE.channelId)
+
+      expect(vcD.state).to.equal(3)
+      expect(vcE.state).to.equal(3)
+    })
+  })
+
+  describe('Closing a ledger channel', () => {
+    let prevBalA, finalBalA, prevBalI, finalBalI
+
+    before('Create a virtual channel that has not been closed', async () => {
+      vcIdC = await client.openChannel({ to: partyB, sender: partyC })
+      vcC = await client.getChannelById(vcIdC)
+    })
+
+    it(`should close partyA's LC with the fast close flag`, async () => {
+      prevBalA = await client.web3.eth.getBalance(partyA)
+      prevBalI = await client.web3.eth.getBalance(ingridAddress)
+      // send tx
+      const response = await client.withdraw(partyA)
+      const tx = await client.web3.eth.getTransaction(response)
+      expect(tx.to.toLowerCase()).to.equal(contractAddress)
+      expect(tx.from.toLowerCase()).to.equal(partyA.toLowerCase())
+    }).timeout(8000)
+
+    it(`should transfer balanceA of partyA's lc into wallet`, async () => {
+      lcA = await client.getLcByPartyA(partyA)
+      const expected = Web3.utils.fromWei(
+        Web3.utils.toBN(lcA.balanceA).add(Web3.utils.toBN(prevBalA)),
+        'ether'
+      )
+      finalBalA = Web3.utils.fromWei(
+        await client.web3.eth.getBalance(partyA),
+        'ether'
+      )
+      expect(Math.round(expected)).to.equal(Math.round(finalBalA))
+    })
+
+    it(`should transfer balanceI of lc into hubs wallet`, async () => {
+      const expected = Web3.utils.fromWei(
+        Web3.utils.toBN(lcA.balanceI).add(Web3.utils.toBN(prevBalI)),
+        'ether'
+      )
+      finalBalI = Web3.utils.fromWei(
+        await client.web3.eth.getBalance(ingridAddress),
+        'ether'
+      )
+      expect(Math.round(expected)).to.equal(Math.round(finalBalI))
+    })
+
+    it(`should not let you close an LC with openVCs`, async () => {
+      try {
         const response = await client.withdraw(partyB) // + 7 ETH
-        const tx = await client.web3.eth.getTransaction(response)
-        assert.equal(tx.to.toLowerCase(), contractAddress)
-        assert.equal(tx.from.toLowerCase(), partyB.toLowerCase())
-      }).timeout(5000)
+      } catch (e) {
+        expect(e.statusCode).to.equal(600)
+      }
+    }).timeout(9000)
 
-      it(`should transfer balanceA partyB's into wallet`, async () => {
-        lcB = await client.getLcByPartyA(partyB)
-        const expected = Web3.utils.fromWei(
-          Web3.utils.toBN(lcB.balanceA).add(Web3.utils.toBN(prevBal)),
-          'ether'
-        )
-        finalBal = Web3.utils.fromWei(
-          await client.web3.eth.getBalance(partyB),
-          'ether'
-        )
-        assert.equal(Math.round(expected), Math.round(finalBal))
+    it('should not interrupt the flow of open VCs', async () => {
+      vcC = await client.getChannelByParties({ partyA: partyC, partyB })
+      balanceA = Web3.utils
+        .toBN(vcC.balanceA)
+        .sub(Web3.utils.toBN(Web3.utils.toWei('1', 'ether')))
+      balanceB = Web3.utils
+        .toBN(vcC.balanceB)
+        .add(Web3.utils.toBN(Web3.utils.toWei('1', 'ether')))
+      await client.updateBalance({
+        channelId: vcC.channelId,
+        payment: {
+          balanceA,
+          balanceB
+        },
+        purchaseMeta: {
+          receiver: '0x5aeda56215b167893e80b4fe645ba6d5bab767de',
+          type: 'TIP',
+          fields: {
+            streamId: 6969,
+            performerId: 1337,
+            performerName: 'Agent Smith'
+          }
+        }
       })
+      vcC = await client.getChannelById(vcC.channelId)
+      expect(balanceA.eq(Web3.utils.toBN(vcC.balanceA))).to.equal(true)
+    })
+
+    it(`should close partyC's LC with the fast close`, async () => {
+      // close open vcs
+      await client.closeChannel(vcC.channelId, partyC)
+      // send tx
+      const response = await client.withdraw(partyC)
+      const tx = await client.web3.eth.getTransaction(response)
+      expect(tx.to.toLowerCase()).to.equal(contractAddress)
+      expect(tx.from.toLowerCase()).to.equal(partyC.toLowerCase())
+    }).timeout(8000)
+
+    it(`should close partyD's LC with the fast close`, async () => {
+      // send tx
+      const response = await client.withdraw(partyD)
+      const tx = await client.web3.eth.getTransaction(response)
+      expect(tx.to.toLowerCase()).to.equal(contractAddress)
+      expect(tx.from.toLowerCase()).to.equal(partyD.toLowerCase())
+    }).timeout(8000)
+
+    it(`should close partyE's LC with the fast close`, async () => {
+      // send tx
+      const response = await client.withdraw(partyE)
+      const tx = await client.web3.eth.getTransaction(response)
+      expect(tx.to.toLowerCase()).to.equal(contractAddress)
+      expect(tx.from.toLowerCase()).to.equal(partyE.toLowerCase())
+    }).timeout(8000)
+
+    it(`should close partyB's LC with the fast close`, async () => {
+      prevBalA = await client.web3.eth.getBalance(partyB) // 95 ETH
+      const response = await client.withdraw(partyB) // + 7 ETH
+      const tx = await client.web3.eth.getTransaction(response)
+      expect(tx.to.toLowerCase()).to.equal(contractAddress)
+      expect(tx.from.toLowerCase()).to.equal(partyB.toLowerCase())
+    }).timeout(5000)
+
+    it(`should transfer balanceA partyB's into wallet`, async () => {
+      lcB = await client.getLcByPartyA(partyB)
+      const expected = Web3.utils.fromWei(
+        Web3.utils.toBN(lcB.balanceA).add(Web3.utils.toBN(prevBalA)),
+        'ether'
+      )
+      finalBal = Web3.utils.fromWei(
+        await client.web3.eth.getBalance(partyB),
+        'ether'
+      )
+      expect(Math.round(expected)).to.equal(Math.round(finalBal))
     })
   })
 })
