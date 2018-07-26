@@ -1,11 +1,12 @@
 # Table of contents
 
 * [Introduction](intro.md)
-* [What is Connext?](what-is-connext/README.md)
+* [Connext Overview](what-is-connext/README.md)
+  * [FAQ](what-is-connext/faq.md)
   * [Architecture](what-is-connext/architecture.md)
   * [Typical Usage](what-is-connext/typical-usage.md)
   * [Use Cases](what-is-connext/use-cases.md)
-* [What are State Channels?](background-on-state-channels.md)
+* [State Channel Background](background-on-state-channels.md)
 * [Connext Client](connext-client/README.md)
   * [Installation](connext-client/installation.md)
   * [constructor](connext-client/constructor.md)
