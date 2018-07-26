@@ -817,7 +817,7 @@ class Connext {
    * await connext.closeChannels(channels)
    * @param {String[]} channelIds - array of virtual channel IDs you wish to close
    */
-  async closeChannels (channelIds) {
+  async closeChannels (channelIds, sender = null) {
     const methodName = 'closeChannels'
     const isArray = { presence: true, isArray: true }
     Connext.validatorsResponseToError(
@@ -825,14 +825,18 @@ class Connext {
       methodName,
       'channels'
     )
+    if (!sender) {
+      const accounts = await this.web3.eth.getAccounts()
+      sender = accounts[0]
+    }
+    Connext.validatorsResponseToError(validate.single(sender, isAddress), methodName, 'sender')
     // should this try to fast close any of the channels?
     // or just immediately force close in dispute many channels
-    channelIds.forEach(async channelId => {
-      // async ({ channelId, balance }) maybe?
+    for (const channelId of channelIds) {
       console.log('Closing channel:', channelId)
-      await this.closeChannel(channelId)
+      await client.closeChannel(channelId, sender)
       console.log('Channel closed.')
-    })
+    }
   }
 
   /**
