@@ -17,11 +17,9 @@ For a more technically oriented discussion, check out our [State Channel Backgro
 
 ## How does Connext compare to other state channel solutions?
 
-**First**, our implementation of peer-to-peer transactions is significantly cheaper than other solutions on the market, especially for recurring/repeated payments. This means less operational overhead for you.
+Our implementation of peer-to-peer transactions is significantly cheaper than other solutions on the market, especially for recurring/repeated payments. This means less operational overhead for you.
 
-**Second**, our Hub model makes it so that transactions are not reliant on routing; the probability of a failed payment for routing reasons is zero.
-
-**Finally**, we are also focused specifically on applications rather than payment processing, so we can offer an unparalleled developer experience. As an example, our technology does not necessitate P2P-specific technologies and can be implemented trustlessly through traditional web communication layers \(HTTP\).
+We are also focused specifically on applications rather than payment processing, so we can offer an unparalleled developer experience.
 
 For a more detailed description, see [here](../background-on-state-channels.md#what-makes-connexts-implementation-different-from-other-state-channels).
 
