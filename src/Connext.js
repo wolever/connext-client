@@ -510,16 +510,16 @@ class Connext {
       signer: sender
     })
 
-    // ping ingrid
-    const result = await this.openVc({
-      channelId: vcId,
+    // ingrid should add vc params to db
+    const response = await this.networking.post(`virtualchannel/`, {
+      channelId,
       partyA: sender,
       partyB: to.toLowerCase(),
       balanceA: deposit || Web3.utils.toBN(lcA.balanceA),
       vcSig: sigVC0,
       lcSig: sigAtoI
     })
-    return result
+    return response.data.channelId
   }
 
   /**
@@ -674,7 +674,7 @@ class Connext {
       throw new VCUpdateError(methodName, 551, 'Invalid channel balances')
     }
 
-    if (balanceB.lt(Web3.utils.toBN(vc.balanceB))) {
+    if (balanceB.lte(Web3.utils.toBN(vc.balanceB))) {
       throw new VCUpdateError(
         methodName,
         'Updates can only be additive to balanceB'
@@ -3287,79 +3287,6 @@ class Connext {
     } catch (e) {
       return null
     }
-  }
-
-  // HELPER FUNCTION TO HAVE INGRID SET UP VC
-  async openVc ({ channelId, partyA, partyB, balanceA, vcSig, lcSig }) {
-    // validate params
-    const methodName = 'openVc'
-    const isHexStrict = { presence: true, isHex: true }
-    const isAddress = { presence: true, isAddress: true }
-    const isHex = { presence: true, isHex: true }
-    const isBN = { presence: true, isBN: true }
-    Connext.validatorsResponseToError(
-      validate.single(channelId, isHexStrict),
-      methodName,
-      'channelId'
-    )
-    Connext.validatorsResponseToError(
-      validate.single(partyA, isAddress),
-      methodName,
-      'partyA'
-    )
-    Connext.validatorsResponseToError(
-      validate.single(partyB, isAddress),
-      methodName,
-      'partyB'
-    )
-    Connext.validatorsResponseToError(
-      validate.single(balanceA, isBN),
-      methodName,
-      'balanceA'
-    )
-    Connext.validatorsResponseToError(
-      validate.single(vcSig, isHex),
-      methodName,
-      'vcSig'
-    )
-    Connext.validatorsResponseToError(
-      validate.single(lcSig, isHex),
-      methodName,
-      'lcSig'
-    )
-    if (balanceA.isNeg() || balanceA.isZero()) {
-      throw new VCOpenError(methodName, 'Invalid channel balance provided')
-    }
-
-    // verify sigs -- signer === partyA
-    // lcSig -- add later
-    // vcSig
-    let signer = Connext.recoverSignerFromVCStateUpdate({
-      sig: vcSig,
-      channelId,
-      nonce: 0,
-      partyA,
-      partyB,
-      balanceA,
-      balanceB: Web3.utils.toBN('0')
-    })
-    if (signer.toLowerCase() !== partyA.toLowerCase()) {
-      throw new VCOpenError(
-        methodName,
-        'PartyA did not sign channel opening cert'
-      )
-    }
-
-    // ingrid should add vc params to db
-    const response = await this.networking.post(`virtualchannel/`, {
-      channelId,
-      partyA: partyA.toLowerCase(),
-      partyB: partyB.toLowerCase(),
-      balanceA: balanceA.toString(),
-      lcSig,
-      vcSig
-    })
-    return response.data.channelId
   }
 
   // ingrid verifies the vc0s and sets up vc and countersigns lc updates
