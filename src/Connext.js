@@ -23,6 +23,11 @@ const META_TYPES = {
   'UNCATEGORIZED': 2
 }
 
+const CHANNEL_TYPES = {
+  'LEDGER': 0,
+  'VIRTUAL': 1
+}
+
 // ***************************************
 // ******* PARAMETER VALIDATION **********
 // ***************************************
@@ -605,24 +610,48 @@ class Connext {
   }
 
   /**
-   * Updates channel balance by provided ID and balances.
-   *
-   * In the unidirectional scheme, this function is called by the "A" party only, and only updates that increase the balance of the "B" party are accepted.
-   *
-   * Increments the nonce and generates a signed state update, which is then posted to the hub/watcher.
-   *
-   * @example
-   * await connext.updateBalance({
-   *   channelId: 10,
-   *   balance: web3.utils.toBN(web3.utils.toWei(0.5, 'ether'))
-   * })
-   * @param {Object} params - the method object
-   * @param {String} params.channelId - ID of channel
-   * @param {BigNumber} params.balanceA - channel balance in Wei (of "A" party)
-   * @param {BigNumber} params.balanceB - channel balance in Wei (of "B" party)
-   * @returns {Promise} resolves to the signature of the "A" party on the balance update
+   * Send multiple balance updates simultaneously from a single account.
+   * 
+   * @param {Object[]} payments - payments object
+   * @param {String} sender - (optional) defaults to accounts[0]
    */
-  async updateBalance ({ channelId, payment, purchaseMeta }) {
+  async updateBalances (payments, sender = null) {
+    const methodName = 'updateBalances'
+    const isAddress = { presence: true, isAddress: true }
+    const isArray = { presence: true, isAddress: true }
+    Connext.validatorsResponseToError(validate.single(payments, isArray), methodName, 'payments')
+    if (!sender) {
+      const accounts = await this.web3.eth.getAccounts()
+      sender = accounts[0]
+    }
+    Connext.validatorsResponseToError(validate.single(sender, isAddress), methodName, 'sender')
+    for (const payment in payments) {
+      // generate signature
+      let sig
+      switch(payment.type) {
+        case 0: // ledger update
+          sig = await this.threadUpdateHandler(payment)
+          payment.sig = sig
+        case 1: // vc update
+          sig = await this.channelUpdateHandler(payment)
+          payment.sig = sig
+        default:
+          throw new LCUpdateError(methodName, 'Incorrect channel type specified. Must be LEDGER or VIRTUAL.')
+      }
+    }
+    // pass payments object to hub
+    const response = await this.networking.post(
+      `/payments/`,
+      {
+        payments
+      }
+    )
+    return response.data
+  }
+
+  // handle thread state updates from updateBalances
+  // payment object contains fields balanceA and balanceB
+  async threadUpdateHandler ({ channelId, payment, purchaseMeta }) {
     // validate params
     const methodName = 'updateBalance'
     const isHexStrict = { presence: true, isHexStrict: true }
@@ -692,21 +721,7 @@ class Connext {
       signer: vc.partyA
     }
     const sig = await this.createVCStateUpdate(state)
-    // post signed update to watcher
-    payment = {
-      sig,
-      balanceA: balanceA.toString(),
-      balanceB: balanceB.toString(),
-      nonce: vc.nonce + 1
-    }
-    const response = await this.networking.post(
-      `virtualchannel/${channelId}/update`,
-      {
-        payment,
-        purchaseMeta
-      }
-    )
-    return response.data
+    return sig
   }
 
   /**
