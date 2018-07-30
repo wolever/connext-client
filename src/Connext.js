@@ -802,9 +802,6 @@ class Connext {
       .toBN(thread.balanceA)
       .add(Web3.utils.toBN(thread.balanceB))
     if (!balanceA.add(balanceB).eq(threadBalance)) {
-      // console.log('balanceA.add(balanceB):', balanceA.add(balanceB).toString())
-      // console.log('threadBalance:', threadBalance.toString())
-      // console.log('equal?:',balanceA.add(balanceB).eq(threadBalance))
       throw new VCUpdateError(methodName, 551, 'Invalid thread balances')
     }
     // unidirectional to B
