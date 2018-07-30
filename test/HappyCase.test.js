@@ -92,7 +92,10 @@ describe('Connext happy case testing flow', () => {
       it(
         'should create a ledger channel with the hub and partyA and wait for chainsaw',
         async () => {
-          subchanAI = await client.register(initialDeposit, partyA)
+          subchanAI = await client.register(
+            Web3.utils.toBN(Web3.utils.toWei('6', 'ether')),
+            partyA
+          )
           // ensure lc is in the database
           await interval(async (iterationNumber, stop) => {
             lcA = await client.getLcById(subchanAI)
@@ -291,16 +294,22 @@ describe('Connext happy case testing flow', () => {
   describe('Creating a virtual channel', () => {
     describe('openChannel between partyA and partyB', () => {
       it('should create a new virtual channel between partyA and partyB', async () => {
-        vcIdA = await client.openChannel({ to: partyB, sender: partyA })
+        vcIdA = await client.openChannel({
+          to: partyB,
+          sender: partyA,
+          deposit: initialDeposit
+        })
         vcA = await client.getChannelById(vcIdA)
         expect(vcA.channelId).to.equal(vcIdA)
       })
 
-      it('balanceA in lcA should be 0', async () => {
+      it('balanceA in lcA should be 1', async () => {
         lcA = await client.getLcById(subchanAI)
-        expect(Web3.utils.toBN('0').eq(Web3.utils.toBN(lcA.balanceA))).to.equal(
-          true
-        )
+        expect(
+          Web3.utils
+            .toBN(Web3.utils.toWei('1', 'ether'))
+            .eq(Web3.utils.toBN(lcA.balanceA))
+        ).to.equal(true)
       })
 
       it('hub should countersign proposed LC update', async () => {
@@ -357,27 +366,36 @@ describe('Connext happy case testing flow', () => {
     })
   })
 
-  describe('Updating a virtual channel', async () => {
-    it('should call updateBalance in vcA', async () => {
+  describe('Updating balances in a channel', async () => {
+    it('should call updateBalances in vcA', async () => {
       balanceA = Web3.utils.toBN(Web3.utils.toWei('4', 'ether'))
       balanceB = Web3.utils.toBN(Web3.utils.toWei('1', 'ether'))
-      const response = await client.updateBalance({
-        channelId: vcIdA,
-        payment: {
-          balanceA,
-          balanceB
-        },
-        purchaseMeta: {
-          receiver: '0x5aeda56215b167893e80b4fe645ba6d5bab767de',
-          type: 'TIP',
-          fields: {
-            streamId: 6969,
-            performerId: 1337,
-            performerName: 'Agent Smith'
+      const response = await client.updateBalances(
+        [
+          {
+            type: 'VIRTUAL',
+            channelId: vcIdA,
+            payment: {
+              balanceA,
+              balanceB
+            },
+            meta: {
+              receiver: '0x5aeda56215b167893e80b4fe645ba6d5bab767de',
+              type: 'TIP',
+              fields: {
+                streamId: 6969,
+                performerId: 1337,
+                performerName: 'Agent Smith'
+              }
+            }
           }
-        }
-      })
+        ],
+        partyA
+      )
       vcA = await client.getChannelById(vcIdA)
+      console.log('vcA:', vcA)
+      console.log('balanceA:', balanceA.toString())
+      console.log('balanceB:', balanceB.toString())
       expect(Web3.utils.toBN(vcA.balanceA).eq(balanceA)).to.equal(true)
       expect(Web3.utils.toBN(vcA.balanceB).eq(balanceB)).to.equal(true)
     })
@@ -407,13 +425,56 @@ describe('Connext happy case testing flow', () => {
         balanceB = balanceB.add(
           Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
         )
-        await client.updateBalance({
+        await client.updateBalances(
+          [
+            {
+              type: 'VIRTUAL',
+              channelId: vcIdA,
+              payment: {
+                balanceA,
+                balanceB
+              },
+              meta: {
+                receiver: '0x5aeda56215b167893e80b4fe645ba6d5bab767de',
+                type: 'TIP',
+                fields: {
+                  streamId: 6969,
+                  performerId: 1337,
+                  performerName: 'Agent Smith'
+                }
+              }
+            }
+          ],
+          partyA
+        )
+      }
+      vcA = await client.getChannelById(vcIdA)
+      expect(balanceA.eq(Web3.utils.toBN(vcA.balanceA))).to.equal(true)
+      expect(balanceB.eq(Web3.utils.toBN(vcA.balanceB))).to.equal(true)
+    })
+
+    it('should be able to send ledger and virtual channel updates', async () => {
+      vcA = await client.getChannelById(vcIdA)
+      lcA = await client.getLcById(subchanAI)
+      const balDiff = Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
+      const vcA1 = Web3.utils.toBN(vcA.balanceA).sub(balDiff)
+      const vcA2 = vcA1.sub(balDiff)
+      const lcA1 = Web3.utils.toBN(lcA.balanceA).sub(balDiff)
+      const lcA2 = lcA1.sub(balDiff)
+      const vcB1 = Web3.utils.toBN(vcA.balanceB).add(balDiff)
+      const vcB2 = vcB1.add(balDiff)
+      const lcI1 = Web3.utils.toBN(lcA.balanceI).add(balDiff)
+      const lcI2 = lcI1.add(balDiff)
+
+      const payments = [
+        {
+          type: 'VIRTUAL',
           channelId: vcIdA,
           payment: {
-            balanceA,
-            balanceB
+            balanceA: vcA1,
+            balanceB: vcB1
           },
-          purchaseMeta: {
+          meta: {
             receiver: '0x5aeda56215b167893e80b4fe645ba6d5bab767de',
             type: 'TIP',
             fields: {
@@ -422,11 +483,70 @@ describe('Connext happy case testing flow', () => {
               performerName: 'Agent Smith'
             }
           }
-        })
-      }
+        },
+        {
+          type: 'LEDGER',
+          channelId: subchanAI,
+          payment: {
+            balanceA: lcA1,
+            balanceI: lcI1
+          },
+          meta: {
+            receiver: '0x5aeda56215b167893e80b4fe645ba6d5bab767de',
+            type: 'PURCHASE',
+            fields: {
+              productSku: 6969,
+              productName: 'Agent Smith'
+            }
+          }
+        },
+        {
+          type: 'VIRTUAL',
+          channelId: vcIdA,
+          payment: {
+            balanceA: vcA2,
+            balanceB: vcB2
+          },
+          meta: {
+            receiver: '0x5aeda56215b167893e80b4fe645ba6d5bab767de',
+            type: 'TIP',
+            fields: {
+              streamId: 6969,
+              performerId: 1337,
+              performerName: 'Agent Smith'
+            }
+          }
+        },
+        {
+          type: 'LEDGER',
+          channelId: subchanAI,
+          payment: {
+            balanceA: lcA2,
+            balanceI: lcI2
+          },
+          meta: {
+            receiver: '0x5aeda56215b167893e80b4fe645ba6d5bab767de',
+            type: 'PURCHASE',
+            fields: {
+              productSku: 6969,
+              productName: 'Agent Smith'
+            }
+          }
+        }
+      ]
+
+      const response = await client.updateBalances(payments, partyA)
+      console.log(response)
+      expect(response.status).to.equal(200)
+      // verify new balances
       vcA = await client.getChannelById(vcIdA)
-      expect(balanceA.eq(Web3.utils.toBN(vcA.balanceA))).to.equal(true)
-      expect(balanceB.eq(Web3.utils.toBN(vcA.balanceB))).to.equal(true)
+      lcA = await client.getLcById(subchanAI)
+      // vc
+      expect(vcA.balanceA).to.equal(vcA2.toString())
+      expect(vcA.balanceB).to.equal(vcB2.toString())
+      // lc
+      expect(lcA.balanceA).to.equal(lcA2.toString())
+      expect(lcA.balanceI).to.equal(lcI2.toString())
     })
 
     it('should not prohibit the creation of a virtual channel', async () => {
@@ -440,38 +560,50 @@ describe('Connext happy case testing flow', () => {
       vcD = await client.getChannelByParties({ partyA: partyD, partyB })
       balanceA = Web3.utils.toBN(Web3.utils.toWei('4', 'ether'))
       balanceB = Web3.utils.toBN(Web3.utils.toWei('1', 'ether'))
-      await client.updateBalance({
-        channelId: vcC.channelId,
-        payment: {
-          balanceA,
-          balanceB
-        },
-        purchaseMeta: {
-          receiver: '0x5aeda56215b167893e80b4fe645ba6d5bab767de',
-          type: 'TIP',
-          fields: {
-            streamId: 6969,
-            performerId: 1337,
-            performerName: 'Agent Smith'
+      await client.updateBalances(
+        [
+          {
+            type: 'VIRTUAL',
+            channelId: vcC.channelId,
+            payment: {
+              balanceA,
+              balanceB
+            },
+            meta: {
+              receiver: '0x5aeda56215b167893e80b4fe645ba6d5bab767de',
+              type: 'TIP',
+              fields: {
+                streamId: 6969,
+                performerId: 1337,
+                performerName: 'Agent Smith'
+              }
+            }
           }
-        }
-      })
-      await client.updateBalance({
-        channelId: vcD.channelId,
-        payment: {
-          balanceA,
-          balanceB
-        },
-        purchaseMeta: {
-          receiver: '0x5aeda56215b167893e80b4fe645ba6d5bab767de',
-          type: 'TIP',
-          fields: {
-            streamId: 6969,
-            performerId: 1337,
-            performerName: 'Agent Smith'
+        ],
+        partyC
+      )
+      await client.updateBalances(
+        [
+          {
+            type: 'VIRTUAL',
+            channelId: vcD.channelId,
+            payment: {
+              balanceA,
+              balanceB
+            },
+            meta: {
+              receiver: '0x5aeda56215b167893e80b4fe645ba6d5bab767de',
+              type: 'TIP',
+              fields: {
+                streamId: 6969,
+                performerId: 1337,
+                performerName: 'Agent Smith'
+              }
+            }
           }
-        }
-      })
+        ],
+        partyD
+      )
       // multiple balance updates
       for (let i = 0; i < 10; i++) {
         balanceA = balanceA.sub(
@@ -480,22 +612,29 @@ describe('Connext happy case testing flow', () => {
         balanceB = balanceB.add(
           Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
         )
-        await client.updateBalance({
-          channelId: i % 2 === 0 ? vcC.channelId : vcD.channelId,
-          payment: {
-            balanceA,
-            balanceB
-          },
-          purchaseMeta: {
-            receiver: '0x5aeda56215b167893e80b4fe645ba6d5bab767de',
-            type: 'TIP',
-            fields: {
-              streamId: 6969,
-              performerId: 1337,
-              performerName: 'Agent Smith'
+        const sender = i % 2 === 0 ? partyC : partyD
+        await client.updateBalances(
+          [
+            {
+              type: 'VIRTUAL',
+              channelId: i % 2 === 0 ? vcC.channelId : vcD.channelId,
+              payment: {
+                balanceA,
+                balanceB
+              },
+              meta: {
+                receiver: '0x5aeda56215b167893e80b4fe645ba6d5bab767de',
+                type: 'TIP',
+                fields: {
+                  streamId: 6969,
+                  performerId: 1337,
+                  performerName: 'Agent Smith'
+                }
+              }
             }
-          }
-        })
+          ],
+          sender
+        )
       }
       vcD = await client.getChannelById(vcD.channelId)
       expect(Web3.utils.toBN(vcD.balanceA).eq(balanceA)).to.equal(true)
@@ -506,280 +645,30 @@ describe('Connext happy case testing flow', () => {
       balanceA = Web3.utils.toBN('4', 'ether')
       balanceB = Web3.utils.toBN('1', 'ether')
       try {
-        await client.updateBalance({
-          channelId: vcA.channelId,
-          payment: {
-            balanceA,
-            balanceB
-          },
-          purchaseMeta: {
-            receiver: '0x5aeda56215b167893e80b4fe645ba6d5bab767de',
-            type: 'TIP',
-            fields: {
-              streamId: 6969,
-              performerId: 1337,
-              performerName: 'Agent Smith'
+        await client.updateBalances(
+          [
+            {
+              type: 'VIRTUAL',
+              channelId: vcA.channelId,
+              payment: {
+                balanceA,
+                balanceB
+              },
+              meta: {
+                receiver: '0x5aeda56215b167893e80b4fe645ba6d5bab767de',
+                type: 'TIP',
+                fields: {
+                  streamId: 6969,
+                  performerId: 1337,
+                  performerName: 'Agent Smith'
+                }
+              }
             }
-          }
-        })
+          ],
+          partyA
+        )
       } catch (e) {
         expect(e.statusCode).to.equal(550)
-      }
-    })
-
-    it('should throw an error if no purchaseMeta receiver is included', async () => {
-      balanceA = Web3.utils.toBN('4', 'ether')
-      balanceB = Web3.utils.toBN('1', 'ether')
-      try {
-        await client.updateBalance({
-          channelId: vcA.channelId,
-          payment: {
-            balanceA,
-            balanceB
-          },
-          purchaseMeta: {
-            type: 'TIP',
-            fields: {
-              streamId: 6969,
-              performerId: 1337,
-              performerName: 'Agent Smith'
-            }
-          }
-        })
-      } catch (e) {
-        expect(e.statusCode).to.equal(200)
-      }
-    })
-
-    it('should throw an error if an improper purchaseMeta receiver is provided', async () => {
-      balanceA = Web3.utils.toBN('4', 'ether')
-      balanceB = Web3.utils.toBN('1', 'ether')
-      try {
-        await client.updateBalance({
-          channelId: vcA.channelId,
-          payment: {
-            balanceA,
-            balanceB
-          },
-          purchaseMeta: {
-            receiver: ':)',
-            type: 'TIP',
-            fields: {
-              streamId: 6969,
-              performerId: 1337,
-              performerName: 'Agent Smith'
-            }
-          }
-        })
-      } catch (e) {
-        expect(e.statusCode).to.equal(200)
-      }
-    })
-
-    it('should throw an error if no purchaseMeta type is provided', async () => {
-      balanceA = Web3.utils.toBN('4', 'ether')
-      balanceB = Web3.utils.toBN('1', 'ether')
-      try {
-        await client.updateBalance({
-          channelId: vcA.channelId,
-          payment: {
-            balanceA,
-            balanceB
-          },
-          purchaseMeta: {
-            receiver: '0x5aeda56215b167893e80b4fe645ba6d5bab767de',
-            fields: {
-              streamId: 6969,
-              performerId: 1337,
-              performerName: 'Agent Smith'
-            }
-          }
-        })
-      } catch (e) {
-        expect(e.statusCode).to.equal(200)
-      }
-    })
-
-    it('should throw an error if an improper purchaseMeta type is provided', async () => {
-      balanceA = Web3.utils.toBN('4', 'ether')
-      balanceB = Web3.utils.toBN('1', 'ether')
-      try {
-        await client.updateBalance({
-          channelId: vcA.channelId,
-          payment: {
-            balanceA,
-            balanceB
-          },
-          purchaseMeta: {
-            receiver: '0x5aeda56215b167893e80b4fe645ba6d5bab767de',
-            type: 'FAIL',
-            fields: {
-              streamId: 6969,
-              performerId: 1337,
-              performerName: 'Agent Smith'
-            }
-          }
-        })
-      } catch (e) {
-        expect(e.statusCode).to.equal(200)
-      }
-    })
-
-    it('should throw an error if TIP purchaseMETA is missing the fields object', async () => {
-      balanceA = Web3.utils.toBN('4', 'ether')
-      balanceB = Web3.utils.toBN('1', 'ether')
-      try {
-        await client.updateBalance({
-          channelId: vcA.channelId,
-          payment: {
-            balanceA,
-            balanceB
-          },
-          purchaseMeta: {
-            receiver: '0x5aeda56215b167893e80b4fe645ba6d5bab767de',
-            type: 'TIP'
-          }
-        })
-      } catch (e) {
-        expect(e.statusCode).to.equal(200)
-      }
-    })
-
-    it('should throw an error if TIP purchaseMETA is missing a fields.streamId', async () => {
-      balanceA = Web3.utils.toBN('4', 'ether')
-      balanceB = Web3.utils.toBN('1', 'ether')
-      try {
-        await client.updateBalance({
-          channelId: vcA.channelId,
-          payment: {
-            balanceA,
-            balanceB
-          },
-          purchaseMeta: {
-            receiver: '0x5aeda56215b167893e80b4fe645ba6d5bab767de',
-            type: 'TIP',
-            fields: {
-              performerId: 1337,
-              performerName: 'Agent Smith'
-            }
-          }
-        })
-      } catch (e) {
-        expect(e.statusCode).to.equal(200)
-      }
-    })
-
-    it('should throw an error if TIP purchaseMETA is missing the fields.performerId', async () => {
-      balanceA = Web3.utils.toBN('4', 'ether')
-      balanceB = Web3.utils.toBN('1', 'ether')
-      try {
-        await client.updateBalance({
-          channelId: vcA.channelId,
-          payment: {
-            balanceA,
-            balanceB
-          },
-          purchaseMeta: {
-            receiver: '0x5aeda56215b167893e80b4fe645ba6d5bab767de',
-            type: 'TIP',
-            fields: {
-              streamId: 6969,
-              performerName: 'Agent Smith'
-            }
-          }
-        })
-      } catch (e) {
-        expect(e.statusCode).to.equal(200)
-      }
-    })
-
-    it('should throw an error if TIP purchaseMETA is missing the fields.performerName', async () => {
-      balanceA = Web3.utils.toBN('4', 'ether')
-      balanceB = Web3.utils.toBN('1', 'ether')
-      try {
-        await client.updateBalance({
-          channelId: vcA.channelId,
-          payment: {
-            balanceA,
-            balanceB
-          },
-          purchaseMeta: {
-            receiver: '0x5aeda56215b167893e80b4fe645ba6d5bab767de',
-            type: 'TIP',
-            fields: {
-              streamId: 6969,
-              performerId: 1337
-            }
-          }
-        })
-      } catch (e) {
-        expect(e.statusCode).to.equal(200)
-      }
-    })
-
-    it('should throw an error if a PURCHASE purchaseMeta has no fields', async () => {
-      balanceA = Web3.utils.toBN('4', 'ether')
-      balanceB = Web3.utils.toBN('1', 'ether')
-      try {
-        await client.updateBalance({
-          channelId: vcA.channelId,
-          payment: {
-            balanceA,
-            balanceB
-          },
-          purchaseMeta: {
-            receiver: '0x5aeda56215b167893e80b4fe645ba6d5bab767de',
-            type: 'PURCHASE'
-          }
-        })
-      } catch (e) {
-        expect(e.statusCode).to.equal(200)
-      }
-    })
-
-    it('should throw an error if a PURCHASE purchaseMeta has no fields.productSku', async () => {
-      balanceA = Web3.utils.toBN('4', 'ether')
-      balanceB = Web3.utils.toBN('1', 'ether')
-      try {
-        await client.updateBalance({
-          channelId: vcA.channelId,
-          payment: {
-            balanceA,
-            balanceB
-          },
-          purchaseMeta: {
-            receiver: '0x5aeda56215b167893e80b4fe645ba6d5bab767de',
-            type: 'PURCHASE',
-            fields: {
-              productName: 'Agent Smith'
-            }
-          }
-        })
-      } catch (e) {
-        expect(e.statusCode).to.equal(200)
-      }
-    })
-
-    it('should throw an error if a PURCHASE purchaseMeta has no fields.productName', async () => {
-      balanceA = Web3.utils.toBN('4', 'ether')
-      balanceB = Web3.utils.toBN('1', 'ether')
-      try {
-        await client.updateBalance({
-          channelId: vcA.channelId,
-          payment: {
-            balanceA,
-            balanceB
-          },
-          purchaseMeta: {
-            receiver: '0x5aeda56215b167893e80b4fe645ba6d5bab767de',
-            type: 'PURCHASE',
-            fields: {
-              productSku: 6969
-            }
-          }
-        })
-      } catch (e) {
-        expect(e.statusCode).to.equal(200)
       }
     })
   })
@@ -853,22 +742,28 @@ describe('Connext happy case testing flow', () => {
       balanceB = Web3.utils
         .toBN(vcC.balanceB)
         .add(Web3.utils.toBN(Web3.utils.toWei('1', 'ether')))
-      await client.updateBalance({
-        channelId: vcC.channelId,
-        payment: {
-          balanceA,
-          balanceB
-        },
-        purchaseMeta: {
-          receiver: '0x5aeda56215b167893e80b4fe645ba6d5bab767de',
-          type: 'TIP',
-          fields: {
-            streamId: 6969,
-            performerId: 1337,
-            performerName: 'Agent Smith'
+      await client.updateBalances(
+        [
+          {
+            type: 'VIRTUAL',
+            channelId: vcC.channelId,
+            payment: {
+              balanceA,
+              balanceB
+            },
+            meta: {
+              receiver: '0x5aeda56215b167893e80b4fe645ba6d5bab767de',
+              type: 'TIP',
+              fields: {
+                streamId: 6969,
+                performerId: 1337,
+                performerName: 'Agent Smith'
+              }
+            }
           }
-        }
-      })
+        ],
+        partyC
+      )
       vcC = await client.getChannelById(vcC.channelId)
       expect(balanceA.eq(Web3.utils.toBN(vcC.balanceA))).to.equal(true)
     })
@@ -1015,7 +910,7 @@ describe('Connext happy case testing flow', () => {
           balanceA,
           balanceB
         },
-        purchaseMeta: {
+        meta: {
           receiver: '0x5aeda56215b167893e80b4fe645ba6d5bab767de',
           type: 'TIP',
           fields: {
