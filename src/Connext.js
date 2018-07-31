@@ -36,9 +36,23 @@ const PAYMENT_TYPES = {
   'VIRTUAL': 1
 }
 
+const CHANNEL_TYPES = {
+  'ETH': 0,
+  'TOKEN': 1,
+  'TOKEN_ETH': 2,
+}
+
 // ***************************************
 // ******* PARAMETER VALIDATION **********
 // ***************************************
+validate.validators.isValidDepositObject = value => {
+  if (!value) {
+    return `Value cannot be undefined`
+  } else if (!value.tokenDeposit && !value.ethDeposit) {
+    return `${value} does not contain tokenDeposit or ethDeposit fields`
+  }
+}
+
 validate.validators.isValidMeta = value => {
   if (!value) {
     return `Value cannot be undefined.`
@@ -250,22 +264,33 @@ class Connext {
    * const deposit = Web3.utils.toBN(Web3.utils.toWei('1', 'ether))
    * const lcId = await connext.register(deposit)
    *
-   * @param {BN} initialDeposit - deposit in wei
+   * @param {Object} initialDeposits - deposits in wei (must have at least one deposit)
+   * @param {BN} initialDeposits.ethDeposit - deposit in eth (may be null)
+   * @param {BN} initialDeposits.tokenDeposit - deposit in tokens (may be null)
    * @param {String} sender - (optional) counterparty with hub in ledger channel, defaults to accounts[0]
    * @param {Number} challenge - (optional) challenge period in seconds
    * @returns {Promise} resolves to the ledger channel id of the created channel
    */
-  async register (initialDeposit, sender = null, challenge = null) {
+  async register (initialDeposits, tokenAddress = null, sender = null, challenge = null) {
     // validate params
     const methodName = 'register'
-    const isBN = { presence: true, isBN: true }
+    const isValidDepositObject = { presence: true, isValidDepositObject: true }
     const isAddress = { presence: true, isAddress: true }
     const isPositiveInt = { presence: true, isPositiveInt: true }
     Connext.validatorsResponseToError(
-      validate.single(initialDeposit, isBN),
+      validate.single(initialDeposits, isValidDepositObject),
       methodName,
       'initialDeposit'
     )
+    if (tokenAddress) {
+      // should probably do a better check for contract specific addresses
+      // maybe a whitelisted token address array
+      Connext.validatorsResponseToError(
+        validate.single(tokenAddress, isAddress),
+        methodName,
+        'tokenAddress'
+      )
+    }
     if (sender) {
       Connext.validatorsResponseToError(
         validate.single(sender, isAddress),
@@ -285,6 +310,19 @@ class Connext {
     } else {
       // get challenge timer from ingrid
       challenge = await this.getLedgerChannelChallengeTimer()
+    }
+    // determine channel type
+    const { ethDeposit, tokenDeposit } = initialDeposits
+    let channelType
+    if (ethDeposit && tokenDeposit) {
+      // token and eth
+      channelType = Object.keys(CHANNEL_TYPES)[2]
+    } else if (tokenDeposit) {
+      channelType = Object.keys(CHANNEL_TYPES)[1]
+    } else if (ethDeposit) {
+      channelType = Object.keys(CHANNEL_TYPES)[0]
+    } else {
+      throw new LCOpenError(methodName, `Error determining channel deposit types.`)
     }
     // verify channel does not exist between ingrid and sender
     let lc = await this.getLcByPartyA(sender)
@@ -317,11 +355,6 @@ class Connext {
 
     // generate additional initial lc params
     const lcId = Connext.getNewChannelId()
-    // verify channel ID does not exist
-    lc = await this.getLcById(lcId)
-    if (lc != null) {
-      throw new LCOpenError(methodName, 'Channel by that ID already exists')
-    }
 
     const contractResult = await this.createLedgerChannelContractHandler({
       lcId,
