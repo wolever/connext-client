@@ -1003,7 +1003,7 @@ class Connext {
     // or just immediately force close in dispute many channels
     for (const channelId of channelIds) {
       console.log('Closing channel:', channelId)
-      await client.closeChannel(channelId, sender)
+      await this.closeChannel(channelId, sender)
       console.log('Channel closed.')
     }
   }
