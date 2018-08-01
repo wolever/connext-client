@@ -2327,7 +2327,8 @@ class Connext {
       )
       .send({
         from: sender,
-        value: depositInWei
+        value: depositInWei,
+        gas: 1000000,
       })
 
     if (!result.transactionHash) {
