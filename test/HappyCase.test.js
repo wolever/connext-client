@@ -4,6 +4,7 @@ const expect = chai.expect
 const Web3 = require('web3')
 const fetch = require('fetch-cookie')(require('node-fetch'))
 const interval = require('interval-promise')
+const { genAuthHash } = require('./helpers/utils')
 
 global.fetch = fetch
 
@@ -29,12 +30,6 @@ let balanceA, balanceB, balanceC, balanceD, balanceI
 let initialDeposit = Web3.utils.toBN(Web3.utils.toWei('5', 'ether'))
 let vcIdA, vcIdC, vcIdD, vcIdE
 let vcA, vcC, vcD, vcE
-
-function genAuthHash (nonce, origin) {
-  let msg = `SpankWallet authentication message: ${web3.utils.sha3(nonce)} ${web3.utils.sha3(origin)}`
-
-  return web3.utils.sha3(msg)
-}
 
 describe('Connext happy case testing flow', () => {
   before('authenticate', async () => {

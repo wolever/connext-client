@@ -2,7 +2,7 @@ const channelManagerAbi = require('../artifacts/LedgerChannel.json')
 const util = require('ethereumjs-util')
 const Web3 = require('web3')
 const validate = require('validate.js')
-const {validateTipPurchaseMeta, validatePurchasePurchaseMeta, LCOpenError, ParameterValidationError, ContractError, VCOpenError, LCUpdateError, VCUpdateError, LCCloseError, VCCloseError} = require('./helpers/Errors')
+const {validateBalance, validateTipPurchaseMeta, validatePurchasePurchaseMeta, LCOpenError, ParameterValidationError, ContractError, VCOpenError, LCUpdateError, VCUpdateError, LCCloseError, VCCloseError} = require('./helpers/Errors')
 const MerkleTree = require('./helpers/MerkleTree')
 const Utils = require('./helpers/utils')
 const crypto = require('crypto')
@@ -50,6 +50,13 @@ validate.validators.isValidDepositObject = value => {
     return `Value cannot be undefined`
   } else if (!value.tokenDeposit && !value.ethDeposit) {
     return `${value} does not contain tokenDeposit or ethDeposit fields`
+  }
+  if (value.tokenDeposit && !validateBalance(value.tokenDeposit)) {
+    return `${value.tokenDeposit} is not a valid deposit`
+  } else if (value.ethDeposit && !validateBalance(value.ethDeposit)) {
+    return `${value.ethDeposit} is not a valid deposit`
+  } else {
+    return null
   }
 }
 
@@ -310,61 +317,58 @@ class Connext {
     } else {
       // get challenge timer from ingrid
       challenge = await this.getLedgerChannelChallengeTimer()
-    }
-    // determine channel type
-    const { ethDeposit, tokenDeposit } = initialDeposits
-    let channelType
-    if (ethDeposit && tokenDeposit) {
-      // token and eth
-      channelType = Object.keys(CHANNEL_TYPES)[2]
-    } else if (tokenDeposit) {
-      channelType = Object.keys(CHANNEL_TYPES)[1]
-    } else if (ethDeposit) {
-      channelType = Object.keys(CHANNEL_TYPES)[0]
-    } else {
-      throw new LCOpenError(methodName, `Error determining channel deposit types.`)
-    }
-    // verify channel does not exist between ingrid and sender
-    let lc = await this.getLcByPartyA(sender)
-    if (lc != null && CHANNEL_STATES[lc.state] === 1) {
-      throw new LCOpenError(
-        methodName,
-        401,
-        `PartyA has open channel with hub, ID: ${lc.channelId}`
-      )
-    }
+      console.log(challenge)
 
-    // verify deposit is positive
-    if (initialDeposit.isNeg()) {
-      throw new LCOpenError(methodName, 'Invalid deposit provided')
     }
+    // // determine channel type
+    // const { ethDeposit, tokenDeposit } = initialDeposits
+    // let channelType
+    // if (ethDeposit && tokenDeposit) {
+    //   // token and eth
+    //   channelType = Object.keys(CHANNEL_TYPES)[2]
+    // } else if (tokenDeposit) {
+    //   channelType = Object.keys(CHANNEL_TYPES)[1]
+    // } else if (ethDeposit) {
+    //   channelType = Object.keys(CHANNEL_TYPES)[0]
+    // } else {
+    //   throw new LCOpenError(methodName, `Error determining channel deposit types.`)
+    // }
+    // // verify channel does not exist between ingrid and sender
+    // let lc = await this.getLcByPartyA(sender)
+    // if (lc != null && CHANNEL_STATES[lc.state] === 1) {
+    //   throw new LCOpenError(
+    //     methodName,
+    //     401,
+    //     `PartyA has open channel with hub, ID: ${lc.channelId}`
+    //   )
+    // }
 
-    // verify opening state channel with different account
-    if (sender.toLowerCase() === this.ingridAddress.toLowerCase()) {
-      throw new LCOpenError(methodName, 'Cannot open a channel with yourself')
-    }
+    // // verify opening state channel with different account
+    // if (sender.toLowerCase() === this.ingridAddress.toLowerCase()) {
+    //   throw new LCOpenError(methodName, 'Cannot open a channel with yourself')
+    // }
 
-    // verify ingrid has balance in account
-    const hubBalance = await this.web3.eth.getBalance(this.ingridAddress)
-    if (Web3.utils.toBN(hubBalance).isZero()) {
-      throw new LCOpenError(
-        methodName,
-        'Hub has insufficient funds to join channel'
-      )
-    }
+    // // verify ingrid has balance in account
+    // const hubBalance = await this.web3.eth.getBalance(this.ingridAddress)
+    // if (Web3.utils.toBN(hubBalance).isZero()) {
+    //   throw new LCOpenError(
+    //     methodName,
+    //     'Hub has insufficient funds to join channel'
+    //   )
+    // }
 
-    // generate additional initial lc params
-    const lcId = Connext.getNewChannelId()
+    // // generate additional initial lc params
+    // const lcId = Connext.getNewChannelId()
 
-    const contractResult = await this.createLedgerChannelContractHandler({
-      lcId,
-      challenge,
-      initialDeposit,
-      sender
-    })
-    console.log('tx hash:', contractResult.transactionHash)
+    // const contractResult = await this.createLedgerChannelContractHandler({
+    //   lcId,
+    //   challenge,
+    //   initialDeposit,
+    //   sender
+    // })
+    // console.log('tx hash:', contractResult.transactionHash)
 
-    return lcId
+    // return lcId
   }
 
   /**
@@ -2181,10 +2185,7 @@ class Connext {
       const accounts = await this.web3.eth.getAccounts()
       sender = accounts[0].toLowerCase()
     }
-    // verify deposit is positive and nonzero
-    if (initialDeposit.isNeg()) {
-      throw new LCOpenError(methodName, 'Invalid deposit provided')
-    }
+
     // verify partyA !== partyI
     if (sender === ingridAddress) {
       throw new LCOpenError(methodName, 'Cannot open a channel with yourself')

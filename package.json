@@ -13,7 +13,8 @@
     "docs:clean": "rimraf _book",
     "test": "mocha --recursive --exit --compilers js:babel-core/register",
     "test-happy": "mocha test/**/HappyCase.test.js --recursive --exit --compilers js:babel-core/register",
-    "test-disputes": "mocha test/**/Disputes.test.js --recursive --exit --compilers js:babel-core/register"
+    "test-disputes": "mocha test/**/Disputes.test.js --recursive --exit --compilers js:babel-core/register",
+    "test-unit": "mocha test/unit/**.test.js --recursive --exit --compilers js:babel-core/register"
   },
   "repository": {
     "type": "git",
@@ -63,6 +64,7 @@
     "interval-promise": "^1.2.0",
     "jsdoc-babel": "^0.4.0",
     "jsdoc-to-markdown": "^4.0.1",
+    "nock": "^9.4.4",
     "node-fetch": "^2.1.2",
     "npm": "^6.1.0",
     "sinon": "^6.1.3",
@@ -77,6 +79,7 @@
     "ethereumjs-util": "^5.2.0",
     "gitbook": "^3.2.3",
     "human-standard-token-abi": "^1.0.2",
+    "sinon-stub-promise": "^4.0.0",
     "truffle-contract": "^3.0.4",
     "validate.js": "^0.12.0",
     "web3": "1.0.0-beta.34"
