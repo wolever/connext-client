@@ -6,6 +6,8 @@ const fetch = require('fetch-cookie')(require('node-fetch'))
 const interval = require('interval-promise')
 const { genAuthHash } = require('../helpers/utils')
 const nock = require('nock')
+const sinon = require('sinon')
+const { createStubbedContract, createStubbedHub } = require('../helpers/stubs')
 
 global.fetch = fetch
 
@@ -33,35 +35,6 @@ describe('register()', () => {
     ingridAddress = accounts[0]
     partyA = accounts[1]
 
-    // const origin = 'localhost'
-
-    // const challengeRes = await fetch(`${ingridUrl}/auth/challenge`, {
-    //   method: 'POST',
-    //   credentials: 'include'
-    // })
-    // const challengeJson = await challengeRes.json()
-    // const nonce = challengeJson.nonce
-
-    // const hash = genAuthHash(nonce, origin)
-    // const signature = await web3.eth.sign(hash, ingridAddress)
-
-    // const authRes = await fetch(`${ingridUrl}/auth/response`, {
-    //   method: 'POST',
-    //   headers: {
-    //     'Content-Type': 'application/json',
-    //     Origin: origin
-    //   },
-    //   credentials: 'include',
-    //   body: JSON.stringify({
-    //     signature,
-    //     nonce,
-    //     origin,
-    //     address: ingridAddress.toLowerCase()
-    //   })
-    // })
-
-    // const authJson = await authRes.json()
-
     const authJson = { token: 'SwSNTnh3LlEJg1N9iiifFgOIKq998PGA' }
 
     // init client instance
@@ -76,37 +49,37 @@ describe('register()', () => {
 
   describe('mocked contract and hub happy case', () => {
     let stubHub
-    beforeEach('create stubbed hub methods', () => {
-      // ledger channel request
-    //   stubHub = sinon.fakeServer.create()
-    //   stubHub.autoRespond = true
-    //   stubHub.respondWith('GET', `${ingridUrl}/ledgerchannel/challenge`, [
-    //     200,
-    //     { 'Content-Type': 'application/json' },
-    //     `[{ "challenge": 'sad'}]`
-    //   ])
-    // })
-    nock(`${ingridUrl}`)
-      //define the method to be intercepted
-      .get('/postcodes/')
-      //respond with a OK and the specified JSON response
-      .reply(200, {
-        "status": 200,
-        "message": "This is a mocked response"
-      });
+    beforeEach('create stubbed hub methods', async () => {
+      // stub contract methods
+      client.channelManagerInstance.methods = createStubbedContract()
+
+      // stub hub methods
+      stubHub = await createStubbedHub(`${client.ingridUrl}`)
+    })
 
     it('should return create an ETH only subchanAI', async () => {
-      console.log(stubHub)
+      // control for lcId
+      let stub = sinon
+        .stub(Connext, 'getNewChannelId')
+        .returns(
+          '0x1000000000000000000000000000000000000000000000000000000000000000'
+        )
       const initialDeposits = {
         ethDeposit: Web3.utils.toBN(Web3.utils.toWei('5', 'ether')),
         tokenDepsit: null
       }
       subchanAI = await client.register(initialDeposits, null, partyA)
-      //   stubHub.respond()
+      expect(subchanAI).to.equal(
+        '0x1000000000000000000000000000000000000000000000000000000000000000'
+      )
+      expect(
+        client.channelManagerInstance.methods.createChannel.calledOnce
+      ).to.equal(true)
     })
 
     afterEach('restore hub', () => {
-      stubHub.restore()
+      nock.restore()
+      nock.cleanAll()
     })
   })
 
