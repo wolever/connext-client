@@ -2,7 +2,7 @@ const channelManagerAbi = require('../artifacts/LedgerChannel.json')
 const util = require('ethereumjs-util')
 const Web3 = require('web3')
 const validate = require('validate.js')
-const {validateTipPurchaseMeta, validatePurchasePurchaseMeta, LCOpenError, ParameterValidationError, ContractError, VCOpenError, LCUpdateError, VCUpdateError, LCCloseError, VCCloseError} = require('./helpers/Errors')
+const {validateBalance, validateTipPurchaseMeta, validatePurchasePurchaseMeta, LCOpenError, ParameterValidationError, ContractError, VCOpenError, LCUpdateError, VCUpdateError, LCCloseError, VCCloseError} = require('./helpers/Errors')
 const MerkleTree = require('./helpers/MerkleTree')
 const Utils = require('./helpers/utils')
 const crypto = require('crypto')
@@ -36,9 +36,37 @@ const PAYMENT_TYPES = {
   'VIRTUAL': 1
 }
 
+const CHANNEL_TYPES = {
+  'ETH': 0,
+  'TOKEN': 1,
+  'TOKEN_ETH': 2,
+}
+
 // ***************************************
 // ******* PARAMETER VALIDATION **********
 // ***************************************
+validate.validators.isValidChannelType = value => {
+  if (!value) {
+    return `Value vannot be undefined`
+  } else if (CHANNEL_TYPES[value] === -1) {
+    return `${value} is not the `
+  }
+}
+validate.validators.isValidDepositObject = value => {
+  if (!value) {
+    return `Value cannot be undefined`
+  } else if (!value.tokenDeposit && !value.ethDeposit) {
+    return `${value} does not contain tokenDeposit or ethDeposit fields`
+  }
+  if (value.tokenDeposit && !validateBalance(value.tokenDeposit)) {
+    return `${value.tokenDeposit} is not a valid deposit`
+  } else if (value.ethDeposit && !validateBalance(value.ethDeposit)) {
+    return `${value.ethDeposit} is not a valid deposit`
+  } else {
+    return null
+  }
+}
+
 validate.validators.isValidMeta = value => {
   if (!value) {
     return `Value cannot be undefined.`
@@ -250,22 +278,33 @@ class Connext {
    * const deposit = Web3.utils.toBN(Web3.utils.toWei('1', 'ether))
    * const lcId = await connext.register(deposit)
    *
-   * @param {BN} initialDeposit - deposit in wei
+   * @param {Object} initialDeposits - deposits in wei (must have at least one deposit)
+   * @param {BN} initialDeposits.ethDeposit - deposit in eth (may be null)
+   * @param {BN} initialDeposits.tokenDeposit - deposit in tokens (may be null)
    * @param {String} sender - (optional) counterparty with hub in ledger channel, defaults to accounts[0]
    * @param {Number} challenge - (optional) challenge period in seconds
    * @returns {Promise} resolves to the ledger channel id of the created channel
    */
-  async register (initialDeposit, sender = null, challenge = null) {
+  async register (initialDeposits, tokenAddress = null, sender = null, challenge = null) {
     // validate params
     const methodName = 'register'
-    const isBN = { presence: true, isBN: true }
+    const isValidDepositObject = { presence: true, isValidDepositObject: true }
     const isAddress = { presence: true, isAddress: true }
     const isPositiveInt = { presence: true, isPositiveInt: true }
     Connext.validatorsResponseToError(
-      validate.single(initialDeposit, isBN),
+      validate.single(initialDeposits, isValidDepositObject),
       methodName,
-      'initialDeposit'
+      'initialDeposits'
     )
+    if (tokenAddress) {
+      // should probably do a better check for contract specific addresses
+      // maybe a whitelisted token address array
+      Connext.validatorsResponseToError(
+        validate.single(tokenAddress, isAddress),
+        methodName,
+        'tokenAddress'
+      )
+    }
     if (sender) {
       Connext.validatorsResponseToError(
         validate.single(sender, isAddress),
@@ -285,20 +324,29 @@ class Connext {
     } else {
       // get challenge timer from ingrid
       challenge = await this.getLedgerChannelChallengeTimer()
+
+    }
+    // determine channel type
+    const { ethDeposit, tokenDeposit } = initialDeposits
+    let channelType
+    if (ethDeposit && tokenDeposit) {
+      // token and eth
+      channelType = Object.keys(CHANNEL_TYPES)[2]
+    } else if (tokenDeposit) {
+      channelType = Object.keys(CHANNEL_TYPES)[1]
+    } else if (ethDeposit) {
+      channelType = Object.keys(CHANNEL_TYPES)[0]
+    } else {
+      throw new LCOpenError(methodName, `Error determining channel deposit types.`)
     }
     // verify channel does not exist between ingrid and sender
-    let lc = await this.getLcByPartyA(sender)
-    if (lc != null && CHANNEL_STATES[lc.state] === 1) {
+    let channel = await this.getLcByPartyA(sender)
+    if (channel != null && CHANNEL_STATES[channel.state] === 1) {
       throw new LCOpenError(
         methodName,
         401,
-        `PartyA has open channel with hub, ID: ${lc.channelId}`
+        `PartyA has open channel with hub, ID: ${channel.channelId}`
       )
-    }
-
-    // verify deposit is positive
-    if (initialDeposit.isNeg()) {
-      throw new LCOpenError(methodName, 'Invalid deposit provided')
     }
 
     // verify opening state channel with different account
@@ -316,22 +364,18 @@ class Connext {
     }
 
     // generate additional initial lc params
-    const lcId = Connext.getNewChannelId()
-    // verify channel ID does not exist
-    lc = await this.getLcById(lcId)
-    if (lc != null) {
-      throw new LCOpenError(methodName, 'Channel by that ID already exists')
-    }
+    const channelId = Connext.getNewChannelId()
 
-    const contractResult = await this.createLedgerChannelContractHandler({
-      lcId,
+    const contractResult = await this.createChannelContractHandler ({
+      channelId,
       challenge,
-      initialDeposit,
+      initialDeposits,
+      channelType,
       sender
     })
     console.log('tx hash:', contractResult.transactionHash)
 
-    return lcId
+    return channelId
   }
 
   /**
@@ -2106,39 +2150,48 @@ class Connext {
   // ******** CONTRACT HANDLERS ************
   // ***************************************
 
-  async createLedgerChannelContractHandler ({
+  async createChannelContractHandler ({
     ingridAddress = this.ingridAddress,
-    lcId,
-    initialDeposit,
+    channelId,
+    initialDeposits,
     challenge,
+    channelType,
+    tokenAddress = null,
     sender = null
   }) {
-    const methodName = 'createLedgerChannelContractHandler'
+    const methodName = 'createChannelContractHandler'
     // validate
     const isHexStrict = { presence: true, isHexStrict: true }
-    const isBN = { presence: true, isBN: true }
     const isAddress = { presence: true, isAddress: true }
     const isPositiveInt = { presence: true, isPositiveInt: true }
+    const isValidDepositObject = { presence: true, isValidDepositObject: true}
     Connext.validatorsResponseToError(
       validate.single(ingridAddress, isAddress),
       methodName,
       'ingridAddress'
     )
     Connext.validatorsResponseToError(
-      validate.single(lcId, isHexStrict),
+      validate.single(channelId, isHexStrict),
       methodName,
-      'lcId'
+      'channelId'
+    )
+    Connext.validatorsResponseToError(
+      validate.single(initialDeposits, isValidDepositObject),
+      methodName,
+      'initialDeposits'
     )
     Connext.validatorsResponseToError(
       validate.single(challenge, isPositiveInt),
       methodName,
       'challenge'
     )
-    Connext.validatorsResponseToError(
-      validate.single(initialDeposit, isBN),
-      methodName,
-      'initialDeposit'
-    )
+    if (tokenAddress) {
+      Connext.validatorsResponseToError(
+        validate.single(tokenAddress, isAddress),
+        methodName,
+        'tokenAddress'
+      )
+    } 
     if (sender) {
       Connext.validatorsResponseToError(
         validate.single(sender, isAddress),
@@ -2149,21 +2202,45 @@ class Connext {
       const accounts = await this.web3.eth.getAccounts()
       sender = accounts[0].toLowerCase()
     }
-    // verify deposit is positive and nonzero
-    if (initialDeposit.isNeg()) {
-      throw new LCOpenError(methodName, 'Invalid deposit provided')
-    }
+
     // verify partyA !== partyI
     if (sender === ingridAddress) {
       throw new LCOpenError(methodName, 'Cannot open a channel with yourself')
     }
-    const result = await this.channelManagerInstance.methods
-      .createChannel(lcId, ingridAddress, challenge)
-      .send({
-        from: sender,
-        value: initialDeposit,
-        gas: 750000
-      })
+
+    let result
+    switch (CHANNEL_TYPES[channelType]) {
+      case 0: // ETH
+        tokenAddress = '0x0'
+        result = await this.channelManagerInstance.methods
+          .createChannel(channelId, ingridAddress, challenge, tokenAddress, initialDeposits.ethDeposit)
+          .send({
+            from: sender,
+            value: initialDeposits.ethDeposit,
+            gas: 750000
+          })
+        break
+      case 1: // TOKEN
+      result = await this.channelManagerInstance.methods
+        .createChannel(channelId, ingridAddress, challenge, tokenAddress, initialDeposits.tokenDeposit)
+        .send({
+          from: sender,
+          value: initialDeposits.tokenDeposit,
+          gas: 750000
+        })
+        break
+      case 2: // ETH/TOKEN
+      result = await this.channelManagerInstance.methods
+        .createChannel(channelId, ingridAddress, challenge, tokenAddress, initialDeposits.tokenDeposit, initialDeposits.ethDeposit)
+        .send({
+          from: sender,
+          value: initialDeposits.tokenDeposit,
+          gas: 750000
+        })
+        break
+      default:
+        throw new LCOpenError(methodName, 'Invalid channel type')
+    }
 
     if (!result.transactionHash) {
       throw new ContractError(

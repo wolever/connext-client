@@ -1,3 +1,5 @@
+const Web3 = require('web3')
+
 export class VCCloseError extends Error {
   constructor (...args) {
     // [methodName, statusCode, message]
@@ -159,6 +161,17 @@ export function validatePurchasePurchaseMeta (meta) {
   }
   const { productSku, productName } = meta.fields
   if (!productSku || !productName) {
+    return false
+  } else {
+    return true
+  }
+}
+
+export function validateBalance (value) {
+  if (!value) {
+    return false
+  }
+  if (!Web3.utils.isBN(value) || value.isNeg()) {
     return false
   } else {
     return true
