@@ -55,6 +55,12 @@ describe('register()', () => {
 
       // stub hub methods
       stubHub = await createStubbedHub(`${client.ingridUrl}`)
+      // update get open lc to return null
+      stubHub
+        .get(`/ledgerchannel/a/${partyA.toLowerCase()}?status=LCS_OPENED`)
+        .reply(200, {
+          data: []
+        })
     })
 
     it('should return create an ETH only subchanAI', async () => {

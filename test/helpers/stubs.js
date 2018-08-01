@@ -31,19 +31,23 @@ export async function createStubbedHub (baseUrl) {
   const ingridAddress = accounts[0]
   const partyA = accounts[1]
 
-  let stubHub = nock(baseUrl)
-    .persist(true)
+  let stubHub = nock(baseUrl).persist(true)
+  // get challenge timer
+  stubHub
     // define the method to be intercepted
     .get('/ledgerchannel/challenge')
     // respond with a OK and the specified JSON response
     .reply(200, {
       challenge: 3600
     })
-
+  // get open ledger channels
   stubHub
     .get(`/ledgerchannel/a/${partyA.toLowerCase()}?status=LCS_OPENED`)
     .reply(200, {
       data: []
     })
+
+  stubHub.get().reply()
+
   return stubHub
 }
