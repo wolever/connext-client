@@ -8,6 +8,7 @@ const { genAuthHash } = require('../helpers/utils')
 const nock = require('nock')
 const sinon = require('sinon')
 const { createStubbedContract, createStubbedHub } = require('../helpers/stubs')
+const TokenAbi = require('../../artifacts/SimpleToken.json')
 
 global.fetch = fetch
 
@@ -21,6 +22,7 @@ let ingridAddress
 let ingridUrl = 'http://localhost:8080'
 let contractAddress = '0xdec16622bfe1f0cdaf6f7f20437d2a040cccb0a1'
 let watcherUrl = ''
+let tokenAddress
 
 // for accounts
 let accounts
@@ -29,7 +31,8 @@ let partyA, partyB, partyC, partyD, partyE
 // for initial ledger channel states
 let subchanAI
 
-describe('register()', () => {
+describe('register()', function () {
+  this.timeout(120000)
   before('authenticate', async () => {
     accounts = await web3.eth.getAccounts()
     ingridAddress = accounts[0]
@@ -45,21 +48,64 @@ describe('register()', () => {
       ingridUrl,
       contractAddress
     })
+
+    // deploy token contract
+    let simpleToken = new web3.eth.Contract(TokenAbi.abi)
+    console.log('Deploying token contract...')
+    simpleToken = await simpleToken
+      .deploy({
+        data: TokenAbi.bytecode
+      })
+      .send({
+        from: accounts[0],
+        gas: 1500000
+      })
+    console.log('Deployed token contract at:', simpleToken.options.address)
+    tokenAddress = simpleToken.options.address
+
+    console.log(
+      'token balance 1:',
+      await simpleToken.methods.balanceOf(accounts[2]).call({
+        from: accounts[0]
+      })
+    )
+
+    // fund accounts with tokens
+    for (const account of accounts) {
+      await simpleToken.methods
+        .transfer(account, Web3.utils.toWei('500', 'ether'))
+        .send({
+          from: accounts[0]
+        })
+    }
+    console.log(
+      'token balance 2:',
+      await simpleToken.methods.balanceOf(accounts[2]).call({
+        from: accounts[0]
+      })
+    )
   })
 
   describe('mocked contract and hub happy case', () => {
-    let stubHub
+    let stubHub, stub
     beforeEach('create stubbed hub methods', async () => {
+      // activate nock
+      if (!nock.isActive()) nock.activate()
       // stub contract methods
       client.channelManagerInstance.methods = createStubbedContract()
 
       // stub hub methods
-      stubHub = await createStubbedHub(`${client.ingridUrl}`)
+      stubHub = await createStubbedHub(`${client.ingridUrl}`, 'NO_LC')
     })
 
     it('should return create an ETH only subchanAI', async () => {
+      stubHub
+        .get(`/ledgerchannel/a/${partyA.toLowerCase()}?status=LCS_OPENED`)
+        .reply(200, {
+          data: []
+        })
       // control for lcId
-      let stub = sinon
+      stub = sinon
         .stub(Connext, 'getNewChannelId')
         .returns(
           '0x1000000000000000000000000000000000000000000000000000000000000000'
@@ -77,7 +123,48 @@ describe('register()', () => {
       ).to.equal(true)
     })
 
+    it('should return create an TOKEN only subchanAI', async () => {
+      // control for lcId
+      stub = sinon
+        .stub(Connext, 'getNewChannelId')
+        .returns(
+          '0x2000000000000000000000000000000000000000000000000000000000000000'
+        )
+      const initialDeposits = {
+        ethDeposit: null,
+        tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('1', 'ether'))
+      }
+      subchanAI = await client.register(initialDeposits, tokenAddress, partyA)
+      expect(subchanAI).to.equal(
+        '0x2000000000000000000000000000000000000000000000000000000000000000'
+      )
+      expect(
+        client.channelManagerInstance.methods.createChannel.calledOnce
+      ).to.equal(true)
+    })
+
+    it('should return create an TOKEN/ETH subchanAI', async () => {
+      // control for lcId
+      stub = sinon
+        .stub(Connext, 'getNewChannelId')
+        .returns(
+          '0x3000000000000000000000000000000000000000000000000000000000000000'
+        )
+      const initialDeposits = {
+        ethDeposit: Web3.utils.toBN(Web3.utils.toWei('5', 'ether')),
+        tokenDepsit: Web3.utils.toBN(Web3.utils.toWei('1', 'ether'))
+      }
+      subchanAI = await client.register(initialDeposits, tokenAddress, partyA)
+      expect(subchanAI).to.equal(
+        '0x3000000000000000000000000000000000000000000000000000000000000000'
+      )
+      expect(
+        client.channelManagerInstance.methods.createChannel.calledOnce
+      ).to.equal(true)
+    })
+
     afterEach('restore hub', () => {
+      Connext.getNewChannelId.restore()
       nock.restore()
       nock.cleanAll()
     })

@@ -7,6 +7,7 @@ const MerkleTree = require('./helpers/MerkleTree')
 const Utils = require('./helpers/utils')
 const crypto = require('crypto')
 const networking = require('./helpers/networking')
+const tokenAbi = require('human-standard-token-abi')
 
 // Channel enums
 const CHANNEL_STATES = {
@@ -323,7 +324,7 @@ class Connext {
       )
     } else {
       // get challenge timer from ingrid
-      challenge = await this.getLedgerChannelChallengeTimer()
+      challenge = await this.getChannelChallengeTimer()
 
     }
     // determine channel type
@@ -354,15 +355,6 @@ class Connext {
       throw new LCOpenError(methodName, 'Cannot open a channel with yourself')
     }
 
-    // verify ingrid has balance in account
-    const hubBalance = await this.web3.eth.getBalance(this.ingridAddress)
-    if (Web3.utils.toBN(hubBalance).isZero()) {
-      throw new LCOpenError(
-        methodName,
-        'Hub has insufficient funds to join channel'
-      )
-    }
-
     // generate additional initial lc params
     const channelId = Connext.getNewChannelId()
 
@@ -371,6 +363,7 @@ class Connext {
       challenge,
       initialDeposits,
       channelType,
+      tokenAddress: tokenAddress ? tokenAddress : null,
       sender
     })
     console.log('tx hash:', contractResult.transactionHash)
@@ -391,20 +384,23 @@ class Connext {
    * const deposit = Web3.utils.toBN(Web3.utils.toWei('1','ether'))
    * const txHash = await connext.deposit(deposit)
    *
-   * @param {BN} depositInWei - value of the deposit
+   * @param {Object} deposits - deposit object
+   * @param {BN} deposits.ethDeposit - value of the channel deposit in ETH
+   * @param {BN} deposits.tokenDeposit - value of the channel deposit in tokens
    * @param {String} sender - (optional) ETH address sending funds to the ledger channel
    * @param {String} recipient - (optional) ETH address recieving funds in their ledger channel
+   * @param {String} tokenAddress - (optional, for testing) contract address of channel tokens
    * @returns {Promise} resolves to the transaction hash of the onchain deposit.
    */
-  async deposit (depositInWei, sender = null, recipient = sender) {
+  async deposit (deposits, sender = null, recipient = sender, tokenAddress = null) {
     // validate params
     const methodName = 'deposit'
-    const isBN = { presence: true, isBN: true }
+    const isValidDepositObject = { presence: true, isValidDepositObject: true }
     const isAddress = { presence: true, isAddress: true }
     Connext.validatorsResponseToError(
-      validate.single(depositInWei, isBN),
+      validate.single(deposits, isValidDepositObject),
       methodName,
-      'depositInWei'
+      'deposits'
     )
     const accounts = await this.web3.eth.getAccounts()
     if (sender) {
@@ -425,30 +421,27 @@ class Connext {
     } else {
       recipient = accounts[0].toLowerCase()
     }
-    // verify deposit is positive and nonzero
-    if (depositInWei.isNeg() || depositInWei.isZero()) {
-      throw new LCUpdateError(methodName, 'Invalid deposit provided')
-    }
 
-    const lc = await this.getLcByPartyA(recipient)
-    // verify lc is open
-    if (CHANNEL_STATES[lc.state] !== 1) {
+    const channel = await this.getLcByPartyA(recipient)
+    // verify channel is open
+    if (CHANNEL_STATES[channel.state] !== 1) {
       throw new LCUpdateError(methodName, 'Channel is not in the right state')
     }
-    // verify recipient is in lc
+    // verify recipient is in channel
     if (
-      lc.partyA !== recipient.toLowerCase() &&
-      lc.partyI !== recipient.toLowerCase()
+      channel.partyA.toLowerCase() !== recipient.toLowerCase() &&
+      channel.partyI.toLowerCase() !== recipient.toLowerCase()
     ) {
       throw new LCUpdateError(methodName, 'Recipient is not member of channel')
     }
 
     // call contract handler
     const result = await this.depositContractHandler({
-      lcId: lc.channelId,
-      depositInWei,
+      channelId: channel.channelId,
+      deposits,
       recipient,
-      sender
+      sender,
+      tokenAddress
     })
     return result
   }
@@ -1003,7 +996,7 @@ class Connext {
     // or just immediately force close in dispute many channels
     for (const channelId of channelIds) {
       console.log('Closing channel:', channelId)
-      await client.closeChannel(channelId, sender)
+      await this.closeChannel(channelId, sender)
       console.log('Channel closed.')
     }
   }
@@ -2208,9 +2201,9 @@ class Connext {
       throw new LCOpenError(methodName, 'Cannot open a channel with yourself')
     }
 
-    let result
+    let result, token, tokenApproval
     switch (CHANNEL_TYPES[channelType]) {
-      case 0: // ETH
+      case CHANNEL_TYPES.ETH: // ETH
         tokenAddress = '0x0'
         result = await this.channelManagerInstance.methods
           .createChannel(channelId, ingridAddress, challenge, tokenAddress, initialDeposits.ethDeposit)
@@ -2220,23 +2213,41 @@ class Connext {
             gas: 750000
           })
         break
-      case 1: // TOKEN
-      result = await this.channelManagerInstance.methods
-        .createChannel(channelId, ingridAddress, challenge, tokenAddress, initialDeposits.tokenDeposit)
-        .send({
+      case CHANNEL_TYPES.TOKEN: // TOKEN
+        // approve token transfer
+        token = new this.web3.eth.Contract(tokenAbi, tokenAddress)
+        tokenApproval = await token.methods.approve(ingridAddress, initialDeposits.tokenDeposit).send( {
           from: sender,
-          value: initialDeposits.tokenDeposit,
           gas: 750000
         })
+        if (tokenApproval) {
+          result = await this.channelManagerInstance.methods
+          .createChannel(channelId, ingridAddress, challenge, tokenAddress, initialDeposits.tokenDeposit)
+          .send({
+            from: sender,
+            gas: 750000
+          })
+        } else {
+          throw new LCOpenError(methodName, 'Token transfer failed.')
+        }
         break
-      case 2: // ETH/TOKEN
-      result = await this.channelManagerInstance.methods
-        .createChannel(channelId, ingridAddress, challenge, tokenAddress, initialDeposits.tokenDeposit, initialDeposits.ethDeposit)
-        .send({
-          from: sender,
-          value: initialDeposits.tokenDeposit,
-          gas: 750000
+      case CHANNEL_TYPES.TOKEN_ETH: // ETH/TOKEN
+        // approve token transfer
+        token = new this.web3.eth.Contract(tokenAbi, tokenAddress)
+        tokenApproval = await token.approve.call(ingridAddress, initialDeposits.tokenDeposit, {
+          from: sender
         })
+        if (tokenApproval) {
+          result = await this.channelManagerInstance.methods
+            .createChannel(channelId, ingridAddress, challenge, tokenAddress, initialDeposits.ethDeposit, initialDeposits.tokenDeposit)
+            .send({
+              from: sender,
+              value: initialDeposits.ethDeposit,
+              gas: 750000
+          })
+        } else {
+          throw new LCOpenError(methodName, 'Token transfer failed.')
+        }
         break
       default:
         throw new LCOpenError(methodName, 'Invalid channel type')
@@ -2336,25 +2347,26 @@ class Connext {
   }
 
   async depositContractHandler ({
-    lcId,
-    depositInWei,
+    channelId,
+    deposits,
     sender = null,
-    recipient = sender
+    recipient = sender,
+    tokenAddress = null // for testing, otherwise get from channel
   }) {
     const methodName = 'depositContractHandler'
     // validate
     const isHexStrict = { presence: true, isHexStrict: true }
-    const isBN = { presence: true, isBN: true }
+    const isValidDepositObject = { presence: true, isValidDepositObject: true }
     const isAddress = { presence: true, isAddress: true }
     Connext.validatorsResponseToError(
-      validate.single(lcId, isHexStrict),
+      validate.single(channelId, isHexStrict),
       methodName,
-      'lcId'
+      'channelId'
     )
     Connext.validatorsResponseToError(
-      validate.single(depositInWei, isBN),
+      validate.single(deposits, isValidDepositObject),
       methodName,
-      'depositInWei'
+      'deposits'
     )
     const accounts = await this.web3.eth.getAccounts()
     if (sender) {
@@ -2377,18 +2389,14 @@ class Connext {
       recipient = sender
     }
 
-    // verify deposit is nonzero
-    if (depositInWei.isNeg() || depositInWei.isZero()) {
-      throw new LCUpdateError(methodName, 'Invalid deposit provided')
-    }
-    // verify requires
-    const lc = await this.getLcById(lcId)
-    if (CHANNEL_STATES[lc.state] !== 1) {
+    // verify requires --> already checked in deposit() fn, necessary?
+    const channel = await this.getLcById(channelId)
+    if (CHANNEL_STATES[channel.state] !== 1) {
       throw new ContractError(methodName, 'Channel is not open')
     }
     if (
-      recipient.toLowerCase() !== lc.partyA &&
-      recipient.toLowerCase() !== lc.partyI
+      recipient.toLowerCase() !== channel.partyA.toLowerCase() &&
+      recipient.toLowerCase() !== channel.partyI.toLowerCase()
     ) {
       throw new ContractError(
         methodName,
@@ -2396,17 +2404,83 @@ class Connext {
       )
     }
 
-    // call LC method
-    const result = await this.channelManagerInstance.methods
-      .deposit(
-        lcId, // PARAM NOT IN CONTRACT YET, SHOULD BE
-        recipient
-      )
-      .send({
-        from: sender,
-        value: depositInWei,
-        gas: 1000000,
-      })
+    // determine deposit type
+    const { ethDeposit, tokenDeposit } = deposits
+    let depositType
+    if (ethDeposit && tokenDeposit) {
+      // token and eth
+      tokenAddress = tokenAddress ? tokenAddress : channel.tokenAddress
+      depositType = Object.keys(CHANNEL_TYPES)[2]
+    } else if (tokenDeposit) {
+      tokenAddress = tokenAddress ? tokenAddress : channel.tokenAddress
+      depositType = Object.keys(CHANNEL_TYPES)[1]
+    } else if (ethDeposit) {
+      depositType = Object.keys(CHANNEL_TYPES)[0]
+    }
+
+    let result, token, tokenApproval
+    switch (CHANNEL_TYPES[depositType]) {
+      case CHANNEL_TYPES.ETH:
+        // call contract method
+        result = await this.channelManagerInstance.methods
+        .deposit(
+          channelId, // PARAM NOT IN CONTRACT YET, SHOULD BE
+          recipient,
+          [deposits.ethDeposit, 0],
+          false
+        )
+        .send({
+          from: sender,
+          value: deposits.ethDeposit,
+          gas: 1000000,
+        })
+        break
+      case CHANNEL_TYPES.TOKEN:
+        // approve transfer
+        token = new this.web3.eth.Contract(tokenAbi, tokenAddress)
+        tokenApproval = await token.methods.approve(this.ingridAddress, deposits.tokenDeposit).send({
+          from: sender,
+          gas: 750000
+        })
+        if (tokenApproval) {
+          result = await this.channelManagerInstance.methods
+            .deposit(
+              channelId, // PARAM NOT IN CONTRACT YET, SHOULD BE
+              recipient,
+              [0, deposits.tokenDeposit],
+              false
+            )
+            .send({
+              from: sender,
+              gas: 1000000,
+            })
+        }
+        break
+      case CHANNEL_TYPES.TOKEN_ETH:
+        // approve transfer
+        token = new this.web3.eth.Contract(tokenAbi, tokenAddress)
+        tokenApproval = await token.methods.approve(this.ingridAddress, deposits.tokenDeposit).send({
+          from: sender,
+          gas: 750000
+        })
+        if (tokenApproval) {
+          result = await this.channelManagerInstance.methods
+            .deposit(
+              channelId, // PARAM NOT IN CONTRACT YET, SHOULD BE
+              recipient,
+              [deposits.ethDeposit, deposits.tokenDeposit],
+              false
+            )
+            .send({
+              from: sender,
+              value: deposits.ethDeposit,
+              gas: 1000000,
+            })
+        }
+        break
+      default:
+        throw new LCUpdateError(methodName, `Invalid deposit type detected`)
+    }
 
     if (!result.transactionHash) {
       throw new ContractError(
@@ -3373,7 +3447,7 @@ class Connext {
     }
   }
 
-  async getLedgerChannelChallengeTimer () {
+  async getChannelChallengeTimer () {
     const response = await this.networking.get(`ledgerchannel/challenge`)
     return response.data.challenge
   }
