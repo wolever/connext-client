@@ -2,11 +2,8 @@ require('dotenv').config()
 const chai = require('chai')
 const expect = chai.expect
 const Web3 = require('web3')
-const fetch = require('fetch-cookie')(require('node-fetch'))
-
 const nock = require('nock')
 const { createStubbedHub } = require('../helpers/stubs')
-
 const Connext = require('../../src/Connext')
 
 // named variables
