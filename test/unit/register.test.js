@@ -95,16 +95,15 @@ describe('register()', function () {
       client.channelManagerInstance.methods = createStubbedContract()
 
       // stub hub methods
-      stubHub = await createStubbedHub(`${client.ingridUrl}`)
-      // update get open lc to return null
+      stubHub = await createStubbedHub(`${client.ingridUrl}`, 'NO_LC')
+    })
+
+    it('should return create an ETH only subchanAI', async () => {
       stubHub
         .get(`/ledgerchannel/a/${partyA.toLowerCase()}?status=LCS_OPENED`)
         .reply(200, {
           data: []
         })
-    })
-
-    it('should return create an ETH only subchanAI', async () => {
       // control for lcId
       stub = sinon
         .stub(Connext, 'getNewChannelId')
