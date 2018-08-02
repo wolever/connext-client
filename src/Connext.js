@@ -7,6 +7,7 @@ const MerkleTree = require('./helpers/MerkleTree')
 const Utils = require('./helpers/utils')
 const crypto = require('crypto')
 const networking = require('./helpers/networking')
+const tokenAbi = require('human-standard-token-abi')
 
 // Channel enums
 const CHANNEL_STATES = {
@@ -371,6 +372,7 @@ class Connext {
       challenge,
       initialDeposits,
       channelType,
+      tokenAddress: tokenAddress ? tokenAddress : null,
       sender
     })
     console.log('tx hash:', contractResult.transactionHash)
@@ -2208,9 +2210,9 @@ class Connext {
       throw new LCOpenError(methodName, 'Cannot open a channel with yourself')
     }
 
-    let result
+    let result, token, tokenApproval
     switch (CHANNEL_TYPES[channelType]) {
-      case 0: // ETH
+      case CHANNEL_TYPES.ETH: // ETH
         tokenAddress = '0x0'
         result = await this.channelManagerInstance.methods
           .createChannel(channelId, ingridAddress, challenge, tokenAddress, initialDeposits.ethDeposit)
@@ -2220,23 +2222,41 @@ class Connext {
             gas: 750000
           })
         break
-      case 1: // TOKEN
-      result = await this.channelManagerInstance.methods
-        .createChannel(channelId, ingridAddress, challenge, tokenAddress, initialDeposits.tokenDeposit)
-        .send({
+      case CHANNEL_TYPES.TOKEN: // TOKEN
+        // approve token transfer
+        token = new this.web3.eth.Contract(tokenAbi, tokenAddress)
+        tokenApproval = await token.methods.approve(ingridAddress, initialDeposits.tokenDeposit).send( {
           from: sender,
-          value: initialDeposits.tokenDeposit,
           gas: 750000
         })
+        if (tokenApproval) {
+          result = await this.channelManagerInstance.methods
+          .createChannel(channelId, ingridAddress, challenge, tokenAddress, initialDeposits.tokenDeposit)
+          .send({
+            from: sender,
+            gas: 750000
+          })
+        } else {
+          throw new LCOpenError(methodName, 'Token transfer failed.')
+        }
         break
-      case 2: // ETH/TOKEN
-      result = await this.channelManagerInstance.methods
-        .createChannel(channelId, ingridAddress, challenge, tokenAddress, initialDeposits.tokenDeposit, initialDeposits.ethDeposit)
-        .send({
-          from: sender,
-          value: initialDeposits.tokenDeposit,
-          gas: 750000
+      case CHANNEL_TYPES.TOKEN_ETH: // ETH/TOKEN
+        // approve token transfer
+        token = new this.web3.eth.Contract(tokenAbi, tokenAddress)
+        tokenApproval = await token.approve.call(ingridAddress, initialDeposits.tokenDeposit, {
+          from: sender
         })
+        if (tokenApproval) {
+          result = await this.channelManagerInstance.methods
+            .createChannel(channelId, ingridAddress, challenge, tokenAddress, initialDeposits.ethDeposit, initialDeposits.tokenDeposit)
+            .send({
+              from: sender,
+              value: initialDeposits.ethDeposit,
+              gas: 750000
+          })
+        } else {
+          throw new LCOpenError(methodName, 'Token transfer failed.')
+        }
         break
       default:
         throw new LCOpenError(methodName, 'Invalid channel type')
