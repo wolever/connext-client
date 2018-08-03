@@ -3,8 +3,6 @@ const chai = require('chai')
 const expect = chai.expect
 const Web3 = require('web3')
 const fetch = require('fetch-cookie')(require('node-fetch'))
-const { createStubbedContract, createStubbedHub } = require('../helpers/stubs')
-const nock = require('nock')
 
 global.fetch = fetch
 
