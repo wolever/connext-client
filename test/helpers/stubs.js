@@ -173,5 +173,45 @@ export async function createStubbedHub (baseUrl, type) {
     nonce: 0
   })
 
+  // post to payments endpoint
+  // 1 payment, return array of 1
+  stubHub
+    .post(`/payments/`, body => {
+      return body.payments.length === 1
+    })
+    .reply(200, [
+      {
+        id: 2,
+        balanceA: '20000',
+        balanceB: '6000',
+        nonce: 2,
+        sigA: '0x6e4f3d1782440461d72436afb5f087b74db3d034a9623cc0c10e0819dba7d2eb45818f11d2ceaf4e647eae4e946115bcb22cb99d5b1c6e134efbbc7629898e8f01',
+        sigB: null
+      }
+    ])
+  // 1 payment, return array of 2
+  stubHub
+    .post(`/payments/`, body => {
+      return body.payments.length === 2
+    })
+    .reply(200, [
+      {
+        id: 2,
+        balanceA: '20000',
+        balanceB: '6000',
+        nonce: 2,
+        sigA: '0x6e4f3d1782440461d72436afb5f087b74db3d034a9623cc0c10e0819dba7d2eb45818f11d2ceaf4e647eae4e946115bcb22cb99d5b1c6e134efbbc7629898e8f01',
+        sigB: null
+      },
+      {
+        id: 3,
+        balanceA: '20000',
+        balanceB: '6000',
+        nonce: 2,
+        sigA: '0x6e4f3d1782440461d72436afb5f087b74db3d034a9623cc0c10e0819dba7d2eb45818f11d2ceaf4e647eae4e946115bcb22cb99d5b1c6e134efbbc7629898e8f01',
+        sigB: null
+      }
+    ])
+
   return stubHub
 }
