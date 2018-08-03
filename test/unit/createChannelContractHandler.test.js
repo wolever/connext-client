@@ -179,311 +179,311 @@ describe('createChannelContractHandler()', () => {
         expect(e.statusCode).to.equal(200)
       }
     })
-  })
 
-  it('should fail if initialDeposits.tokenDeposit is not a BN', async () => {
-    const initialDeposits = {
-      tokenDeposit: 'fail',
-      ethDeposit: null
-    }
-    let channelId =
-      '0x1000000000000000000000000000000000000000000000000000000000000000'
-    let challenge = 3600
-    let channelType = 'ETH'
-    try {
-      await client.createChannelContractHandler({
-        channelId,
-        initialDeposits,
-        challenge,
-        channelType,
-        tokenAddress: null,
-        sender: partyA
-      })
-    } catch (e) {
-      expect(e.statusCode).to.equal(200)
-    }
-  })
+    it('should fail if initialDeposits.tokenDeposit is not a BN', async () => {
+      const initialDeposits = {
+        tokenDeposit: 'fail',
+        ethDeposit: null
+      }
+      let channelId =
+        '0x1000000000000000000000000000000000000000000000000000000000000000'
+      let challenge = 3600
+      let channelType = 'ETH'
+      try {
+        await client.createChannelContractHandler({
+          channelId,
+          initialDeposits,
+          challenge,
+          channelType,
+          tokenAddress: null,
+          sender: partyA
+        })
+      } catch (e) {
+        expect(e.statusCode).to.equal(200)
+      }
+    })
 
-  it('should fail if initialDeposits.tokenDeposit is negative', async () => {
-    const initialDeposits = {
-      tokenDeposit: Web3.utils.toBN('-5'),
-      ethDeposit: null
-    }
-    let channelId =
-      '0x1000000000000000000000000000000000000000000000000000000000000000'
-    let challenge = 3600
-    let channelType = 'ETH'
-    try {
-      await client.createChannelContractHandler({
-        channelId,
-        initialDeposits,
-        challenge,
-        channelType,
-        tokenAddress: null,
-        sender: partyA
-      })
-    } catch (e) {
-      expect(e.statusCode).to.equal(200)
-    }
-  })
+    it('should fail if initialDeposits.tokenDeposit is negative', async () => {
+      const initialDeposits = {
+        tokenDeposit: Web3.utils.toBN('-5'),
+        ethDeposit: null
+      }
+      let channelId =
+        '0x1000000000000000000000000000000000000000000000000000000000000000'
+      let challenge = 3600
+      let channelType = 'ETH'
+      try {
+        await client.createChannelContractHandler({
+          channelId,
+          initialDeposits,
+          challenge,
+          channelType,
+          tokenAddress: null,
+          sender: partyA
+        })
+      } catch (e) {
+        expect(e.statusCode).to.equal(200)
+      }
+    })
 
-  it('should fail if initialDeposits.tokenDeposit is negative and initialDeposits.ethDeposit is valid', async () => {
-    const initialDeposits = {
-      tokenDeposit: Web3.utils.toBN('-5'),
-      ethDeposit: Web3.utils.toBN(Web3.utils.toWei('5', 'ether'))
-    }
-    let channelId =
-      '0x1000000000000000000000000000000000000000000000000000000000000000'
-    let challenge = 3600
-    let channelType = 'ETH'
-    try {
-      await client.createChannelContractHandler({
-        channelId,
-        initialDeposits,
-        challenge,
-        channelType,
-        tokenAddress: null,
-        sender: partyA
-      })
-    } catch (e) {
-      expect(e.statusCode).to.equal(200)
-    }
-  })
+    it('should fail if initialDeposits.tokenDeposit is negative and initialDeposits.ethDeposit is valid', async () => {
+      const initialDeposits = {
+        tokenDeposit: Web3.utils.toBN('-5'),
+        ethDeposit: Web3.utils.toBN(Web3.utils.toWei('5', 'ether'))
+      }
+      let channelId =
+        '0x1000000000000000000000000000000000000000000000000000000000000000'
+      let challenge = 3600
+      let channelType = 'ETH'
+      try {
+        await client.createChannelContractHandler({
+          channelId,
+          initialDeposits,
+          challenge,
+          channelType,
+          tokenAddress: null,
+          sender: partyA
+        })
+      } catch (e) {
+        expect(e.statusCode).to.equal(200)
+      }
+    })
 
-  it('should fail if initialDeposits.ethDeposit is negative and initialDeposits.tokenDeposit is valid', async () => {
-    const initialDeposits = {
-      ethDeposit: Web3.utils.toBN('-5'),
-      tokenDepsit: Web3.utils.toBN(Web3.utils.toWei('5', 'ether'))
-    }
-    let channelId =
-      '0x1000000000000000000000000000000000000000000000000000000000000000'
-    let challenge = 3600
-    let channelType = 'ETH'
-    try {
-      await client.createChannelContractHandler({
-        channelId,
-        initialDeposits,
-        challenge,
-        channelType,
-        tokenAddress: null,
-        sender: partyA
-      })
-    } catch (e) {
-      expect(e.statusCode).to.equal(200)
-    }
-  })
+    it('should fail if initialDeposits.ethDeposit is negative and initialDeposits.tokenDeposit is valid', async () => {
+      const initialDeposits = {
+        ethDeposit: Web3.utils.toBN('-5'),
+        tokenDepsit: Web3.utils.toBN(Web3.utils.toWei('5', 'ether'))
+      }
+      let channelId =
+        '0x1000000000000000000000000000000000000000000000000000000000000000'
+      let challenge = 3600
+      let channelType = 'ETH'
+      try {
+        await client.createChannelContractHandler({
+          channelId,
+          initialDeposits,
+          challenge,
+          channelType,
+          tokenAddress: null,
+          sender: partyA
+        })
+      } catch (e) {
+        expect(e.statusCode).to.equal(200)
+      }
+    })
 
-  it('should fail if initialDeposits.tokenDeposit is not BN and initialDeposits.ethDeposit is valid', async () => {
-    const initialDeposits = {
-      tokenDeposit: 'fail',
-      ethDeposit: Web3.utils.toBN(Web3.utils.toWei('5', 'ether'))
-    }
-    let channelId =
-      '0x1000000000000000000000000000000000000000000000000000000000000000'
-    let challenge = 3600
-    let channelType = 'ETH'
-    try {
-      await client.createChannelContractHandler({
-        channelId,
-        initialDeposits,
-        challenge,
-        channelType,
-        tokenAddress: null,
-        sender: partyA
-      })
-    } catch (e) {
-      expect(e.statusCode).to.equal(200)
-    }
-  })
+    it('should fail if initialDeposits.tokenDeposit is not BN and initialDeposits.ethDeposit is valid', async () => {
+      const initialDeposits = {
+        tokenDeposit: 'fail',
+        ethDeposit: Web3.utils.toBN(Web3.utils.toWei('5', 'ether'))
+      }
+      let channelId =
+        '0x1000000000000000000000000000000000000000000000000000000000000000'
+      let challenge = 3600
+      let channelType = 'ETH'
+      try {
+        await client.createChannelContractHandler({
+          channelId,
+          initialDeposits,
+          challenge,
+          channelType,
+          tokenAddress: null,
+          sender: partyA
+        })
+      } catch (e) {
+        expect(e.statusCode).to.equal(200)
+      }
+    })
 
-  it('should fail if initialDeposits.ethDeposit is not BN and initialDeposits.tokenDeposit is valid', async () => {
-    const initialDeposits = {
-      ethDeposit: 'fail',
-      tokenDepsit: Web3.utils.toBN(Web3.utils.toWei('5', 'ether'))
-    }
-    let channelId =
-      '0x1000000000000000000000000000000000000000000000000000000000000000'
-    let challenge = 3600
-    let channelType = 'ETH'
-    try {
-      await client.createChannelContractHandler({
-        channelId,
-        initialDeposits,
-        challenge,
-        channelType,
-        tokenAddress: null,
-        sender: partyA
-      })
-    } catch (e) {
-      expect(e.statusCode).to.equal(200)
-    }
-  })
+    it('should fail if initialDeposits.ethDeposit is not BN and initialDeposits.tokenDeposit is valid', async () => {
+      const initialDeposits = {
+        ethDeposit: 'fail',
+        tokenDepsit: Web3.utils.toBN(Web3.utils.toWei('5', 'ether'))
+      }
+      let channelId =
+        '0x1000000000000000000000000000000000000000000000000000000000000000'
+      let challenge = 3600
+      let channelType = 'ETH'
+      try {
+        await client.createChannelContractHandler({
+          channelId,
+          initialDeposits,
+          challenge,
+          channelType,
+          tokenAddress: null,
+          sender: partyA
+        })
+      } catch (e) {
+        expect(e.statusCode).to.equal(200)
+      }
+    })
 
-  it('should fail if invalid token address is supplied', async () => {
-    const initialDeposits = {
-      ethDeposit: Web3.utils.toBN(Web3.utils.toWei('5', 'ether')),
-      tokenDepsit: Web3.utils.toBN(Web3.utils.toWei('5', 'ether'))
-    }
-    const tokenAddress = 'fail'
-    let channelId =
-      '0x1000000000000000000000000000000000000000000000000000000000000000'
-    let challenge = 3600
-    let channelType = 'ETH'
-    try {
-      await client.createChannelContractHandler({
-        channelId,
-        initialDeposits,
-        challenge,
-        channelType,
-        tokenAddress,
-        sender: partyA
-      })
-    } catch (e) {
-      expect(e.statusCode).to.equal(200)
-    }
-  })
+    it('should fail if invalid token address is supplied', async () => {
+      const initialDeposits = {
+        ethDeposit: Web3.utils.toBN(Web3.utils.toWei('5', 'ether')),
+        tokenDepsit: Web3.utils.toBN(Web3.utils.toWei('5', 'ether'))
+      }
+      const tokenAddress = 'fail'
+      let channelId =
+        '0x1000000000000000000000000000000000000000000000000000000000000000'
+      let challenge = 3600
+      let channelType = 'ETH'
+      try {
+        await client.createChannelContractHandler({
+          channelId,
+          initialDeposits,
+          challenge,
+          channelType,
+          tokenAddress,
+          sender: partyA
+        })
+      } catch (e) {
+        expect(e.statusCode).to.equal(200)
+      }
+    })
 
-  it('should fail if invalid sender address is supplied', async () => {
-    const initialDeposits = {
-      ethDeposit: Web3.utils.toBN(Web3.utils.toWei('5', 'ether')),
-      tokenDepsit: Web3.utils.toBN(Web3.utils.toWei('5', 'ether'))
-    }
-    const tokenAddress = client.contractAddress
-    const sender = 'fail'
-    let channelId =
-      '0x1000000000000000000000000000000000000000000000000000000000000000'
-    let challenge = 3600
-    let channelType = 'ETH'
-    try {
-      await client.createChannelContractHandler({
-        channelId,
-        initialDeposits,
-        challenge,
-        channelType,
-        tokenAddress,
-        sender
-      })
-    } catch (e) {
-      expect(e.statusCode).to.equal(200)
-    }
-  })
+    it('should fail if invalid sender address is supplied', async () => {
+      const initialDeposits = {
+        ethDeposit: Web3.utils.toBN(Web3.utils.toWei('5', 'ether')),
+        tokenDepsit: Web3.utils.toBN(Web3.utils.toWei('5', 'ether'))
+      }
+      const tokenAddress = client.contractAddress
+      const sender = 'fail'
+      let channelId =
+        '0x1000000000000000000000000000000000000000000000000000000000000000'
+      let challenge = 3600
+      let channelType = 'ETH'
+      try {
+        await client.createChannelContractHandler({
+          channelId,
+          initialDeposits,
+          challenge,
+          channelType,
+          tokenAddress,
+          sender
+        })
+      } catch (e) {
+        expect(e.statusCode).to.equal(200)
+      }
+    })
 
-  it('should fail if invalid challenge period type is supplied', async () => {
-    const initialDeposits = {
-      ethDeposit: Web3.utils.toBN(Web3.utils.toWei('5', 'ether')),
-      tokenDepsit: Web3.utils.toBN(Web3.utils.toWei('5', 'ether'))
-    }
-    const tokenAddress = client.contractAddress
-    const challenge = 'fail'
-    let channelId =
-      '0x1000000000000000000000000000000000000000000000000000000000000000'
-    let channelType = 'ETH'
-    try {
-      await client.createChannelContractHandler({
-        channelId,
-        initialDeposits,
-        challenge,
-        channelType,
-        tokenAddress,
-        sender: partyA
-      })
-    } catch (e) {
-      expect(e.statusCode).to.equal(200)
-    }
-  })
+    it('should fail if invalid challenge period type is supplied', async () => {
+      const initialDeposits = {
+        ethDeposit: Web3.utils.toBN(Web3.utils.toWei('5', 'ether')),
+        tokenDepsit: Web3.utils.toBN(Web3.utils.toWei('5', 'ether'))
+      }
+      const tokenAddress = client.contractAddress
+      const challenge = 'fail'
+      let channelId =
+        '0x1000000000000000000000000000000000000000000000000000000000000000'
+      let channelType = 'ETH'
+      try {
+        await client.createChannelContractHandler({
+          channelId,
+          initialDeposits,
+          challenge,
+          channelType,
+          tokenAddress,
+          sender: partyA
+        })
+      } catch (e) {
+        expect(e.statusCode).to.equal(200)
+      }
+    })
 
-  it('should fail if negative challenge period is supplied', async () => {
-    const initialDeposits = {
-      ethDeposit: Web3.utils.toBN(Web3.utils.toWei('5', 'ether')),
-      tokenDepsit: Web3.utils.toBN(Web3.utils.toWei('5', 'ether'))
-    }
-    const tokenAddress = client.contractAddress
-    const challenge = -25
-    let channelId =
-      '0x1000000000000000000000000000000000000000000000000000000000000000'
-    let channelType = 'ETH'
-    try {
-      await client.createChannelContractHandler({
-        channelId,
-        initialDeposits,
-        challenge,
-        channelType,
-        tokenAddress,
-        sender: partyA
-      })
-    } catch (e) {
-      expect(e.statusCode).to.equal(200)
-    }
-  })
+    it('should fail if negative challenge period is supplied', async () => {
+      const initialDeposits = {
+        ethDeposit: Web3.utils.toBN(Web3.utils.toWei('5', 'ether')),
+        tokenDepsit: Web3.utils.toBN(Web3.utils.toWei('5', 'ether'))
+      }
+      const tokenAddress = client.contractAddress
+      const challenge = -25
+      let channelId =
+        '0x1000000000000000000000000000000000000000000000000000000000000000'
+      let channelType = 'ETH'
+      try {
+        await client.createChannelContractHandler({
+          channelId,
+          initialDeposits,
+          challenge,
+          channelType,
+          tokenAddress,
+          sender: partyA
+        })
+      } catch (e) {
+        expect(e.statusCode).to.equal(200)
+      }
+    })
 
-  it('should fail if no channelId is provided', async () => {
-    const initialDeposits = {
-      ethDeposit: Web3.utils.toBN(Web3.utils.toWei('5', 'ether')),
-      tokenDepsit: Web3.utils.toBN(Web3.utils.toWei('5', 'ether'))
-    }
-    const tokenAddress = client.contractAddress
-    const challenge = 3600
-    let channelType = 'ETH'
-    try {
-      await client.createChannelContractHandler({
-        channelId: null,
-        initialDeposits,
-        challenge,
-        channelType,
-        tokenAddress,
-        sender: partyA
-      })
-    } catch (e) {
-      expect(e.statusCode).to.equal(200)
-    }
-  })
+    it('should fail if no channelId is provided', async () => {
+      const initialDeposits = {
+        ethDeposit: Web3.utils.toBN(Web3.utils.toWei('5', 'ether')),
+        tokenDepsit: Web3.utils.toBN(Web3.utils.toWei('5', 'ether'))
+      }
+      const tokenAddress = client.contractAddress
+      const challenge = 3600
+      let channelType = 'ETH'
+      try {
+        await client.createChannelContractHandler({
+          channelId: null,
+          initialDeposits,
+          challenge,
+          channelType,
+          tokenAddress,
+          sender: partyA
+        })
+      } catch (e) {
+        expect(e.statusCode).to.equal(200)
+      }
+    })
 
-  it('should fail if invalid channelId is provided', async () => {
-    const initialDeposits = {
-      ethDeposit: Web3.utils.toBN(Web3.utils.toWei('5', 'ether')),
-      tokenDepsit: Web3.utils.toBN(Web3.utils.toWei('5', 'ether'))
-    }
-    const tokenAddress = client.contractAddress
-    const challenge = 3600
-    let channelId = 'fail'
-    let channelType = 'ETH'
-    try {
-      await client.createChannelContractHandler({
-        channelId,
-        initialDeposits,
-        challenge,
-        channelType,
-        tokenAddress,
-        sender: partyA
-      })
-    } catch (e) {
-      expect(e.statusCode).to.equal(200)
-    }
-  })
+    it('should fail if invalid channelId is provided', async () => {
+      const initialDeposits = {
+        ethDeposit: Web3.utils.toBN(Web3.utils.toWei('5', 'ether')),
+        tokenDepsit: Web3.utils.toBN(Web3.utils.toWei('5', 'ether'))
+      }
+      const tokenAddress = client.contractAddress
+      const challenge = 3600
+      let channelId = 'fail'
+      let channelType = 'ETH'
+      try {
+        await client.createChannelContractHandler({
+          channelId,
+          initialDeposits,
+          challenge,
+          channelType,
+          tokenAddress,
+          sender: partyA
+        })
+      } catch (e) {
+        expect(e.statusCode).to.equal(200)
+      }
+    })
 
-  it('should fail if invalid channelType is provided', async () => {
-    const initialDeposits = {
-      ethDeposit: Web3.utils.toBN(Web3.utils.toWei('5', 'ether')),
-      tokenDepsit: Web3.utils.toBN(Web3.utils.toWei('5', 'ether'))
-    }
-    const tokenAddress = client.contractAddress
-    const challenge = 3600
-    let channelId =
-      '0x1000000000000000000000000000000000000000000000000000000000000000'
-    let channelType = 'fail'
-    try {
-      await client.createChannelContractHandler({
-        channelId,
-        initialDeposits,
-        challenge,
-        channelType,
-        tokenAddress,
-        sender: partyA
-      })
-    } catch (e) {
-      expect(e.message).to.equal(
-        '[400: createChannelContractHandler] Invalid channel type'
-      )
-    }
+    it('should fail if invalid channelType is provided', async () => {
+      const initialDeposits = {
+        ethDeposit: Web3.utils.toBN(Web3.utils.toWei('5', 'ether')),
+        tokenDepsit: Web3.utils.toBN(Web3.utils.toWei('5', 'ether'))
+      }
+      const tokenAddress = client.contractAddress
+      const challenge = 3600
+      let channelId =
+        '0x1000000000000000000000000000000000000000000000000000000000000000'
+      let channelType = 'fail'
+      try {
+        await client.createChannelContractHandler({
+          channelId,
+          initialDeposits,
+          challenge,
+          channelType,
+          tokenAddress,
+          sender: partyA
+        })
+      } catch (e) {
+        expect(e.message).to.equal(
+          '[400: createChannelContractHandler] Invalid channel type'
+        )
+      }
+    })
   })
 })

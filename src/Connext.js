@@ -33,8 +33,8 @@ const META_TYPES = {
 }
 
 const PAYMENT_TYPES = {
-  'LEDGER': 0,
-  'VIRTUAL': 1
+  'CHANNEL': 0,
+  'THREAD': 1
 }
 
 const CHANNEL_TYPES = {
@@ -46,6 +46,25 @@ const CHANNEL_TYPES = {
 // ***************************************
 // ******* PARAMETER VALIDATION **********
 // ***************************************
+validate.validators.isPositiveBnString = value => {
+  let bnVal
+  if (Web3.utils.isBN(value)) {
+    bnVal = value
+  } else {
+    // try to convert to BN
+    try {
+      bnVal = Web3.utils.toBN(val)
+    } catch (e) {
+      return `${value} cannot be converted to BN`
+    }
+  }
+  
+  if (bnVal.isNeg()) {
+    return `${value} cannot be negative`
+  } else {
+    return null
+  }
+}
 validate.validators.isValidChannelType = value => {
   if (!value) {
     return `Value vannot be undefined`
@@ -137,6 +156,14 @@ validate.validators.isArray = value => {
     return null
   } else {
     return `${value} is not an array.`
+  }
+}
+
+validate.validators.isObj = value => {
+  if (value instanceof Object && value) {
+    return null
+  } else {
+    return `${value} is not an object.`
   }
 }
 
@@ -552,7 +579,7 @@ class Connext {
       balanceB: Web3.utils.toBN(0),
       signer: sender
     }
-    const sigVC0 = await this.createVCStateUpdate(vc0)
+    const sigVC0 = await this.createThreadStateUpdate(vc0)
     const sigAtoI = await this.createLCUpdateOnVCOpen({
       vc0,
       lc: lcA,
@@ -642,7 +669,7 @@ class Connext {
       balanceB: Web3.utils.toBN(0),
       signer: sender
     }
-    const vcSig = await this.createVCStateUpdate(vc0)
+    const vcSig = await this.createThreadStateUpdate(vc0)
     // generate lcSig
     const lcSig = await this.createLCUpdateOnVCOpen({
       vc0,
@@ -675,23 +702,22 @@ class Connext {
     }
     Connext.validatorsResponseToError(validate.single(sender, isAddress), methodName, 'sender')
     const updatedPayments = await Promise.all(payments.map( async (payment, index) => {
-      // for (let payment of payments) {
       // generate payment
       let updatedPayment
       switch(PAYMENT_TYPES[payment.type]) {
-        case 0: // ledger update
+        case PAYMENT_TYPES.CHANNEL: // channel update
           updatedPayment = await this.channelUpdateHandler(payment, index + 1, sender)
           break
-        case 1: // vc update
+        case PAYMENT_TYPES.THREAD: // thread update
           updatedPayment = await this.threadUpdateHandler(payment, index + 1, sender)
           break
         default:
-          throw new LCUpdateError(methodName, 'Incorrect channel type specified. Must be LEDGER or VIRTUAL.')
+          throw new LCUpdateError(methodName, 'Incorrect channel type specified. Must be CHANNEL or THREAD.')
       }
       updatedPayment.type = payment.type
       return updatedPayment
     }))
-    
+
     const response = await this.networking.post(
       `payments/`,
       {
@@ -705,12 +731,16 @@ class Connext {
     const methodName = 'channelUpdateHandler'
     const isAddress= { presence: true, isAddress: true }
     const isHexStrict = { presence: true, isHexStrict: true }
-    const isBN = { presence: true, isBN: true }
+    const isValidDepositObject = { presence: true, isValidDepositObject: true }
     const isValidMeta = { presence: true, isValidMeta: true }
+    const isObj = { presence: true, isObj: true }
+    const isPositiveInt = { presence: true, isPositiveInt: true }
+
     if (!sender) {
       const accounts = await this.web3.eth.getAccounts()
       sender = accounts[0]
     }
+    Connext.validatorsResponseToError(validate.single(payment, isObj), methodName, 'payment')
     const { balanceA, balanceB, channelId } = payment
     // validate inputs
     Connext.validatorsResponseToError(validate.single(sender, isAddress), methodName, 'sender')
@@ -720,12 +750,12 @@ class Connext {
       'channelId'
     )
     Connext.validatorsResponseToError(
-      validate.single(balanceA, isBN),
+      validate.single(balanceA, isValidDepositObject),
       methodName,
       'balanceA'
     )
     Connext.validatorsResponseToError(
-      validate.single(balanceB, isBN),
+      validate.single(balanceB, isValidDepositObject),
       methodName,
       'balanceB'
     )
@@ -735,11 +765,11 @@ class Connext {
       methodName,
       'meta'
     )
-
-    // validate proposed state update
-    if (balanceA.isNeg() || balanceB.isNeg()) {
-      throw new LCUpdateError(methodName, 'Balances cannot be negative')
-    }
+    Connext.validatorsResponseToError(
+      validate.single(increment, isPositiveInt),
+      methodName,
+      'increment'
+    )
     const channel = await this.getLcById(channelId)
     // must exist
     if (!channel) {
@@ -750,20 +780,62 @@ class Connext {
       throw new LCUpdateError(methodName, 'Channel is in invalid state')
     }
     // must be senders channel
-    if (channel.partyA !== sender.toLowerCase() && channel.partyI !== sender.toLowerCase()) {
+    if (channel.partyA.toLowerCase() !== sender.toLowerCase() && channel.partyI.toLowerCase() !== sender.toLowerCase()) {
       throw new LCUpdateError(methodName, 'Not your channel')
     }
-    // cannot change channel balance
-    const channelBalance = Web3.utils.toBN(channel.balanceA).add(Web3.utils.toBN(channel.balanceI))
-    if (!balanceA.add(balanceB).eq(channelBalance)) {
-      throw new LCUpdateError(methodName, 'Channel balance cannot change')
+    // check what type of update
+    let updateType
+    if (balanceA.ethDeposit && balanceA.tokenDeposit && balanceB.ethDeposit && balanceB.tokenDeposit) {
+      // token and eth
+      updateType = Object.keys(CHANNEL_TYPES)[2]
+    } else if (balanceA.tokenDeposit && balanceB.tokenDeposit) {
+      updateType = Object.keys(CHANNEL_TYPES)[1]
+    } else if (balanceA.ethDeposit && balanceB.ethDeposit) {
+      updateType = Object.keys(CHANNEL_TYPES)[0]
     }
-    // can only increase balanceI
-    if (balanceB.lte(Web3.utils.toBN(channel.balanceI))) {
-      throw new LCUpdateError(methodName, 'Channel updates can only increase hub balance')
+
+    const channelEthBal = Web3.utils.toBN(channel.ethBalanceA).add(Web3.utils.toBN(channel.ethBalanceI))
+    const channelTokenBal = Web3.utils.toBN(channel.tokenBalanceA).add(Web3.utils.toBN(channel.tokenBalanceI))
+    let proposedEthBalance, proposedTokenBalance
+    switch (CHANNEL_TYPES[updateType]) {
+      case CHANNEL_TYPES.ETH:
+        if (balanceB.ethDeposit.lte(Web3.utils.toBN(channel.ethBalanceI))) {
+          throw new LCUpdateError(methodName, 'Channel updates can only increase hub ETH balance')
+        }
+        proposedEthBalance = Web3.utils.toBN(balanceA.ethDeposit).add(balanceB.ethDeposit) // proposed balance
+        break
+      
+      case CHANNEL_TYPES.TOKEN:
+        if (balanceB.tokenDeposit.lte(Web3.utils.toBN(channel.tokenBalanceI))) {
+          throw new LCUpdateError(methodName, 'Channel updates can only increase hub balance')
+        }
+        proposedTokenBalance = Web3.utils.toBN(balanceA.tokenDeposit).add(balanceB.tokenDeposit)
+        break
+      
+      case CHANNEL_TYPES.TOKEN_ETH:
+        if (balanceB.ethDeposit.lte(Web3.utils.toBN(channel.ethBalanceI))) {
+          throw new LCUpdateError(methodName, 'Channel updates can only increase hub ETH balance')
+        }
+        if (balanceB.tokenDeposit.lte(Web3.utils.toBN(channel.tokenBalanceI))) {
+          throw new LCUpdateError(methodName, 'Channel updates can only increase hub balance')
+        }
+        proposedEthBalance = Web3.utils.toBN(balanceA.ethDeposit).add(balanceB.ethDeposit)
+        proposedTokenBalance = Web3.utils.toBN(balanceA.tokenDeposit).add(balanceB.tokenDeposit)
+        break
+      default:
+        throw new LCUpdateError(methodName, 'Error determining channel deposit types.')
     }
+
+    if (proposedEthBalance && !proposedEthBalance.eq(channelEthBal)) {
+      throw new LCUpdateError(methodName, 'Channel ETH balance cannot change')
+    }
+
+    if (proposedTokenBalance && !proposedTokenBalance.eq(channelTokenBal)) {
+      throw new LCUpdateError(methodName, 'Channel token balance cannot change')
+    }
+
     // generate signature
-    const sig = await this.createLCStateUpdate({
+    const sig = await this.createChannelStateUpdate({
       channelId,
       nonce: channel.nonce + increment,
       openVcs: channel.openVcs,
@@ -774,9 +846,12 @@ class Connext {
       balanceI: balanceB,
       signer: sender
     })
+    // return sig
     const state = {
-      balanceA: balanceA.toString(),
-      balanceB: balanceB.toString(),
+      ethBalanceA: proposedEthBalance ? balanceA.ethDeposit.toString() : Web3.utils.toBN(channel.ethBalanceA).toString(),
+      ethBalanceI: proposedEthBalance ? balanceB.ethDeposit.toString() : Web3.utils.toBN(channel.ethBalanceI).toString(),
+      tokenBalanceA: proposedTokenBalance ? balanceA.tokenDeposit.toString() : Web3.utils.toBN(channel.tokenBalanceA).toString(),
+      tokenBalanceI: proposedTokenBalance ? balanceB.tokenDeposit.toString() : Web3.utils.toBN(channel.tokenBalanceI).toString(),
       channelId,
       nonce: channel.nonce + increment,
       sig,
@@ -790,13 +865,18 @@ class Connext {
     // validate params
     const methodName = 'threadUpdateHandler'
     const isHexStrict = { presence: true, isHexStrict: true }
-    const isBN = { presence: true, isBN: true }
+    const isValidDepositObject = { presence: true, isValidDepositObject: true }
     const isValidMeta = { presence: true, isValidMeta: true }
+    const isPositiveInt = { presence: true, isPositiveInt: true }
+    const isObj = { presence: true, isObj: true }
+    const isAddress = { presence: true, isAddress: true }
+
     if (!sender) {
       const accounts = await this.web3.eth.getAccounts()
       sender = accounts[0]
     }
-
+    Connext.validatorsResponseToError(validate.single(payment, isObj), methodName, 'payment')
+    Connext.validatorsResponseToError(validate.single(sender, isAddress), methodName, 'sender')
     const { channelId, balanceA, balanceB } = payment
     Connext.validatorsResponseToError(
       validate.single(channelId, isHexStrict),
@@ -804,12 +884,12 @@ class Connext {
       'channelId'
     )
     Connext.validatorsResponseToError(
-      validate.single(balanceA, isBN),
+      validate.single(balanceA, isValidDepositObject),
       methodName,
       'balanceA'
     )
     Connext.validatorsResponseToError(
-      validate.single(balanceB, isBN),
+      validate.single(balanceB, isValidDepositObject),
       methodName,
       'balanceB'
     )
@@ -819,11 +899,11 @@ class Connext {
       methodName,
       'meta'
     )
-
-    // balances cant be negative
-    if (balanceA.isNeg() || balanceB.isNeg()) {
-      throw new VCUpdateError(methodName, 'Thread balances cannot be negative')
-    }
+    Connext.validatorsResponseToError(
+      validate.single(increment, isPositiveInt),
+      methodName,
+      'increment'
+    )
     // get the vc
     const thread = await this.getChannelById(channelId)
     // must exist
@@ -834,35 +914,78 @@ class Connext {
     if (THREAD_STATES[thread.state] === 3) {
       throw new VCUpdateError(methodName, 'Thread is in invalid state')
     }
-    // total channel balance cant change
-    const threadBalance = Web3.utils
-      .toBN(thread.balanceA)
-      .add(Web3.utils.toBN(thread.balanceB))
-    if (!balanceA.add(balanceB).eq(threadBalance)) {
-      throw new VCUpdateError(methodName, 551, 'Invalid thread balances')
+    if (sender.toLowerCase() !== thread.partyA.toLowerCase()) {
+      throw new VCUpdateError(methodName, 'Thread updates can only be made by partyA.')
     }
-    // unidirectional to B
-    if (balanceB.lte(Web3.utils.toBN(thread.balanceB))) {
-      throw new VCUpdateError(
-        methodName,
-        'Updates can only be additive to balanceB'
-      )
+
+    // check what type of update
+    let updateType
+    if (balanceA.ethDeposit && balanceA.tokenDeposit && balanceB.ethDeposit && balanceB.tokenDeposit) {
+      // token and eth
+      updateType = Object.keys(CHANNEL_TYPES)[2]
+    } else if (balanceA.tokenDeposit && balanceB.tokenDeposit) {
+      updateType = Object.keys(CHANNEL_TYPES)[1]
+    } else if (balanceA.ethDeposit && balanceB.ethDeposit) {
+      updateType = Object.keys(CHANNEL_TYPES)[0]
+    }
+
+    const threadEthBalance = Web3.utils.toBN(thread.ethBalanceA).add(Web3.utils.toBN(thread.ethBalanceB))
+    const threadTokenBalance = Web3.utils.toBN(thread.tokenBalanceA).add(Web3.utils.toBN(thread.tokenBalanceB))
+    let proposedEthBalance, proposedTokenBalance
+    switch (CHANNEL_TYPES[updateType]) {
+      case CHANNEL_TYPES.ETH:
+        if (balanceB.ethDeposit.lte(Web3.utils.toBN(thread.ethBalanceB))) {
+          throw new VCUpdateError(methodName, 'Thread updates can only increase partyB ETH balance')
+        }
+        proposedEthBalance = Web3.utils.toBN(balanceA.ethDeposit).add(balanceB.ethDeposit) // proposed balance
+        break
+      
+      case CHANNEL_TYPES.TOKEN:
+        if (balanceB.tokenDeposit.lte(Web3.utils.toBN(thread.tokenBalanceB))) {
+          throw new VCUpdateError(methodName, 'Thread updates can only increase partyB token balance')
+        }
+        proposedTokenBalance = Web3.utils.toBN(balanceA.tokenDeposit).add(balanceB.tokenDeposit)
+        break
+      
+      case CHANNEL_TYPES.TOKEN_ETH:
+        if (balanceB.ethDeposit.lte(Web3.utils.toBN(thread.ethBalanceB))) {
+          throw new VCUpdateError(methodName, 'Thread updates can only increase partyB ETH balance')
+        }
+        if (balanceB.tokenDeposit.lte(Web3.utils.toBN(thread.tokenBalanceB))) {
+          throw new VCUpdateError(methodName, 'Thread updates can only increase partyB token balance')
+        }
+        proposedEthBalance = Web3.utils.toBN(balanceA.ethDeposit).add(balanceB.ethDeposit)
+        proposedTokenBalance = Web3.utils.toBN(balanceA.tokenDeposit).add(balanceB.tokenDeposit)
+        break
+      default:
+        throw new VCUpdateError(methodName, 'Error determining thread deposit types.')
+    }
+
+    if (proposedEthBalance && !proposedEthBalance.eq(threadEthBalance)) {
+      throw new VCUpdateError(methodName, 'Thread ETH balance cannot change')
+    }
+
+    if (proposedTokenBalance && !proposedTokenBalance.eq(threadTokenBalance)) {
+      throw new VCUpdateError(methodName, 'Thread token balance cannot change')
     }
 
     // generate new state update
-    const sig = await this.createVCStateUpdate({
+    const sig = await this.createThreadStateUpdate({
       channelId,
       nonce: thread.nonce + increment,
       partyA: thread.partyA,
       partyB: thread.partyB,
       balanceA: balanceA,
       balanceB: balanceB,
+      updateType,
       signer: sender
     })
     // return sig
     const state = {
-      balanceA: balanceA.toString(),
-      balanceB: balanceB.toString(),
+      ethBalanceA: proposedEthBalance ? balanceA.ethDeposit.toString() : Web3.utils.toBN(thread.ethBalanceA).toString(),
+      ethBalanceB: proposedEthBalance ? balanceB.ethDeposit.toString() : Web3.utils.toBN(thread.ethBalanceB).toString(),
+      tokenBalanceA: proposedTokenBalance ? balanceA.tokenDeposit.toString() : Web3.utils.toBN(thread.tokenBalanceA).toString(),
+      tokenBalanceB: proposedTokenBalance ? balanceB.tokenDeposit.toString() : Web3.utils.toBN(thread.tokenBalanceB).toString(),
       channelId,
       nonce: thread.nonce + increment,
       sig,
@@ -921,7 +1044,7 @@ class Connext {
     }
     const vcN = await this.getLatestVCStateUpdate(channelId)
     // verify vcN was signed by agentA
-    const signer = Connext.recoverSignerFromVCStateUpdate({
+    const signer = Connext.recoverSignerFromThreadStateUpdate({
       sig: vcN.sigA,
       channelId: channelId,
       nonce: vcN.nonce,
@@ -1055,7 +1178,7 @@ class Connext {
         throw new LCCloseError(methodName, 'Cannot close channel with open VCs')
       }
       // i-signed?
-      const signer = Connext.recoverSignerFromLCStateUpdate({
+      const signer = Connext.recoverSignerFromChannelStateUpdate({
         sig: lcState.sigI,
         isClose: lcState.isClose,
         channelId: lc.channelId,
@@ -1099,7 +1222,7 @@ class Connext {
       balanceI: Web3.utils.toBN(lcState.balanceI),
       signer: sender
     }
-    const sig = await this.createLCStateUpdate(sigParams)
+    const sig = await this.createChannelStateUpdate(sigParams)
     const lcFinal = await this.fastCloseLcHandler({ sig, lcId: lc.channelId })
     if (!lcFinal.sigI) {
       throw new LCCloseError(
@@ -1266,7 +1389,7 @@ class Connext {
     let state = await this.getLcStateByNonce({ vcId, nonce })
 
     // verify sigI
-    const signer = Connext.recoverSignerFromLCStateUpdate({
+    const signer = Connext.recoverSignerFromChannelStateUpdate({
       sig: state.sigI,
       isClose: state.isClose,
       channelId: lcId,
@@ -1284,7 +1407,7 @@ class Connext {
 
     state.signer = state.partyA
     state.channelId = vcId
-    const sigA = await this.createLCStateUpdate(state)
+    const sigA = await this.createChannelStateUpdate(state)
     const response = await this.networking.post(
       `ledgerchannel/${lcId}/update/${nonce}/cosign`,
       {
@@ -1314,7 +1437,6 @@ class Connext {
    *
    * @param {Object} params - the method object
    * @param {Boolean} params.isClose - flag indicating whether or not this is closing state
-   * @param {String} params.channelId - ID of the ledger channel you are creating a state update for
    * @param {Number} params.nonce - the sequence of the ledger channel update
    * @param {Number} params.openVcs - the number of open virtual channels associated with this ledger channel
    * @param {String} params.vcRootHash - the root hash of the Merkle tree containing all initial states of the open virtual channels
@@ -1324,22 +1446,22 @@ class Connext {
    * @param {Number} params.balanceI - updated balance of partyI
    * @returns {String} the hash of the state data
    */
-  static createLCStateUpdateFingerprint ({
+  static createChannelStateUpdateFingerprint ({
     isClose,
-    channelId,
     nonce,
     openVcs,
     vcRootHash,
     partyA,
     partyI,
-    balanceA,
-    balanceI
+    ethBalanceA,
+    ethBalanceI,
+    tokenBalanceA,
+    tokenBalanceI
   }) {
     // validate params
-    const methodName = 'createLCStateUpdateFingerprint'
+    const methodName = 'createChannelStateUpdateFingerprint'
     // validate
     // validatorOpts
-    const isHexStrict = { presence: true, isHexStrict: true }
     const isHex = { presence: true, isHex: true }
     const isBN = { presence: true, isBN: true }
     const isAddress = { presence: true, isAddress: true }
@@ -1350,12 +1472,6 @@ class Connext {
       validate.single(isClose, isBool),
       methodName,
       'isClose'
-    )
-
-    Connext.validatorsResponseToError(
-      validate.single(channelId, isHexStrict),
-      methodName,
-      'channelId'
     )
     Connext.validatorsResponseToError(
       validate.single(nonce, isPositiveInt),
@@ -1383,14 +1499,24 @@ class Connext {
       'partyI'
     )
     Connext.validatorsResponseToError(
-      validate.single(balanceA, isBN),
+      validate.single(ethBalanceA, isBN),
       methodName,
-      'balanceA'
+      'ethBalanceA'
     )
     Connext.validatorsResponseToError(
-      validate.single(balanceI, isBN),
+      validate.single(ethBalanceI, isBN),
       methodName,
-      'balanceI'
+      'ethBalanceI'
+    )
+    Connext.validatorsResponseToError(
+      validate.single(tokenBalanceA, isBN),
+      methodName,
+      'tokenBalanceA'
+    )
+    Connext.validatorsResponseToError(
+      validate.single(tokenBalanceI, isBN),
+      methodName,
+      'tokenBalanceI'
     )
     // generate state update to sign
     const hash = Web3.utils.soliditySha3(
@@ -1400,14 +1526,16 @@ class Connext {
       { type: 'bytes32', value: vcRootHash },
       { type: 'address', value: partyA }, // address will be returned bytepadded
       { type: 'address', value: partyI }, // address is returned bytepadded
-      { type: 'uint256', value: balanceA },
-      { type: 'uint256', value: balanceI }
+      { type: 'uint256', value: ethBalanceA },
+      { type: 'uint256', value: ethBalanceI },
+      { type: 'uint256', value: tokenBalanceA },
+      { type: 'uint256', value: tokenBalanceI }
     )
     return hash
   }
 
   /**
-   * Recovers the signer from the hashed data generated by the Connext.createLCStateUpdateFingerprint function.
+   * Recovers the signer from the hashed data generated by the Connext.createChannelStateUpdateFingerprint function.
    *
    * @param {Object} params - the method object
    * @param {String} params.sig - the signature of the data from an unknown agent
@@ -1422,22 +1550,22 @@ class Connext {
    * @param {Number} params.balanceI - updated balance of partyI
    * @returns {String} the ETH address of the person who signed the data
    */
-  static recoverSignerFromLCStateUpdate ({
+  static recoverSignerFromChannelStateUpdate ({
     sig,
     isClose,
-    channelId,
     nonce,
     openVcs,
     vcRootHash,
     partyA,
     partyI,
-    balanceA,
-    balanceI
+    ethBalanceA,
+    ethBalanceI,
+    tokenBalanceA,
+    tokenBalanceI
   }) {
-    const methodName = 'recoverSignerFromLCStateUpdate'
+    const methodName = 'recoverSignerFromChannelStateUpdate'
     // validate
     // validatorOpts
-    const isHexStrict = { presence: true, isHexStrict: true }
     const isHex = { presence: true, isHex: true }
     const isBN = { presence: true, isBN: true }
     const isAddress = { presence: true, isAddress: true }
@@ -1457,11 +1585,6 @@ class Connext {
     )
 
     Connext.validatorsResponseToError(
-      validate.single(channelId, isHexStrict),
-      methodName,
-      'channelId'
-    )
-    Connext.validatorsResponseToError(
       validate.single(nonce, isPositiveInt),
       methodName,
       'nonce'
@@ -1487,38 +1610,50 @@ class Connext {
       'partyI'
     )
     Connext.validatorsResponseToError(
-      validate.single(balanceA, isBN),
+      validate.single(ethBalanceA, isBN),
       methodName,
-      'balanceA'
+      'ethBalanceA'
     )
     Connext.validatorsResponseToError(
-      validate.single(balanceI, isBN),
+      validate.single(ethBalanceI, isBN),
       methodName,
-      'balanceI'
+      'ethBalanceI'
+    )
+    Connext.validatorsResponseToError(
+      validate.single(tokenBalanceA, isBN),
+      methodName,
+      'tokenBalanceA'
+    )
+    Connext.validatorsResponseToError(
+      validate.single(tokenBalanceI, isBN),
+      methodName,
+      'tokenBalanceI'
     )
 
     console.log('recovering signer from:', JSON.stringify({
       isClose,
-      channelId,
       nonce,
       openVcs,
       vcRootHash,
       partyA,
       partyI,
-      balanceA,
-      balanceI
+      ethBalanceA,
+      ethBalanceI,
+      tokenBalanceA,
+      tokenBalanceI
     }))
     // generate fingerprint
-    let fingerprint = Connext.createLCStateUpdateFingerprint({
+    let fingerprint = Connext.createChannelStateUpdateFingerprint({
       isClose,
-      channelId,
       nonce,
       openVcs,
       vcRootHash,
       partyA,
       partyI,
-      balanceA,
-      balanceI
+      ethBalanceA,
+      ethBalanceI,
+      tokenBalanceA,
+      tokenBalanceI
     })
     fingerprint = util.toBuffer(fingerprint)
 
@@ -1551,18 +1686,43 @@ class Connext {
    * @param {Number} params.balanceB - updated balance of partyB
    * @returns {String} hash of the virtual channel state data
    */
-  static createVCStateUpdateFingerprint ({
+  static createThreadStateUpdateFingerprint ({
     channelId,
     nonce,
     partyA,
     partyB,
-    balanceA,
-    balanceB
+    ethBalanceA,
+    ethBalanceB,
+    tokenBalanceA,
+    tokenBalanceB
   }) {
-    const methodName = 'createVCStateUpdateFingerprint'
+    const methodName = 'createThreadStateUpdateFingerprint'
     // typecast balances incase chained
-    balanceA = Web3.utils.toBN(balanceA)
-    balanceB = Web3.utils.toBN(balanceB)
+    const isPositiveBnString = { presence: true, isPositiveBnString: true }
+    Connext.validatorsResponseToError(
+      validate.single(ethBalanceA, isPositiveBnString),
+      methodName,
+      'ethBalanceA'
+    )
+    Connext.validatorsResponseToError(
+      validate.single(ethBalanceB, isPositiveBnString),
+      methodName,
+      'ethBalanceB'
+    )
+    Connext.validatorsResponseToError(
+      validate.single(tokenBalanceA, isPositiveBnString),
+      methodName,
+      'tokenBalanceA'
+    )
+    Connext.validatorsResponseToError(
+      validate.single(tokenBalanceB, isPositiveBnString),
+      methodName,
+      'tokenBalanceB'
+    )
+    ethBalanceA = Web3.utils.toBN(ethBalanceA)
+    ethBalanceB = Web3.utils.toBN(ethBalanceB)
+    tokenBalanceA = Web3.utils.toBN(tokenBalanceA)
+    tokenBalanceB = Web3.utils.toBN(tokenBalanceB)
     // validate
     const isHexStrict = { presence: true, isHexStrict: true }
     const isBN = { presence: true, isBN: true }
@@ -1590,18 +1750,7 @@ class Connext {
       'partyB'
     )
 
-    Connext.validatorsResponseToError(
-      validate.single(balanceA, isBN),
-      methodName,
-      'balanceA'
-    )
-
-    Connext.validatorsResponseToError(
-      validate.single(balanceB, isBN),
-      methodName,
-      'balanceB'
-    )
-    const hubBond = balanceA.add(balanceB)
+    const hubBond = ethBalanceA.add(ethBalanceB).add(tokenBalanceA).add(tokenBalanceB)
 
     // generate state update to sign
     const hash = Web3.utils.soliditySha3(
@@ -1610,17 +1759,19 @@ class Connext {
       { type: 'address', value: partyA },
       { type: 'address', value: partyB },
       { type: 'uint256', value: hubBond },
-      { type: 'uint256', value: balanceA },
-      { type: 'uint256', value: balanceB }
+      { type: 'uint256', value: ethBalanceA },
+      { type: 'uint256', value: ethBalanceB },
+      { type: 'uint256', value: tokenBalanceA },
+      { type: 'uint256', value: tokenBalanceB }
     )
     return hash
   }
 
   /**
-   * Recovers the signer from the hashed data generated by the Connext.createVCStateUpdateFingerprint function.
+   * Recovers the signer from the hashed data generated by the Connext.createThreadStateUpdateFingerprint function.
    *
    * @param {Object} params - the method object
-   * @param {String} params.sig - signature of the data created in Connext.createVCStateUpdate
+   * @param {String} params.sig - signature of the data created in Connext.createThreadStateUpdate
    * @param {String} params.channelId - ID of the virtual channel you are creating a state update for
    * @param {Number} params.nonce - the sequence of the state update
    * @param {String} params.partyA - ETH address of partyA
@@ -1629,20 +1780,45 @@ class Connext {
    * @param {Number} params.balanceB - updated balance of partyB
    * @returns {String} ETH address of the person who signed the data
    */
-  static recoverSignerFromVCStateUpdate ({
+  static recoverSignerFromThreadStateUpdate ({
     sig,
     channelId,
     nonce,
     partyA,
     partyB,
-    balanceA,
-    balanceB
+    ethBalanceA,
+    ethBalanceB,
+    tokenBalanceA,
+    tokenBalanceB
   }) {
-    const methodName = 'recoverSignerFromVCStateUpdate'
+    const methodName = 'recoverSignerFromThreadStateUpdate'
     // validate
     // typecast balances incase chained
-    balanceA = Web3.utils.toBN(balanceA)
-    balanceB = Web3.utils.toBN(balanceB)
+    const isPositiveBnString = { presence: true, isPositiveBnString: true }
+    Connext.validatorsResponseToError(
+      validate.single(ethBalanceA, isPositiveBnString),
+      methodName,
+      'ethBalanceA'
+    )
+    Connext.validatorsResponseToError(
+      validate.single(ethBalanceB, isPositiveBnString),
+      methodName,
+      'ethBalanceB'
+    )
+    Connext.validatorsResponseToError(
+      validate.single(tokenBalanceA, isPositiveBnString),
+      methodName,
+      'tokenBalanceA'
+    )
+    Connext.validatorsResponseToError(
+      validate.single(tokenBalanceB, isPositiveBnString),
+      methodName,
+      'tokenBalanceB'
+    )
+    ethBalanceA = Web3.utils.toBN(ethBalanceA)
+    ethBalanceB = Web3.utils.toBN(ethBalanceB)
+    tokenBalanceA = Web3.utils.toBN(tokenBalanceA)
+    tokenBalanceB = Web3.utils.toBN(tokenBalanceB)
     // validatorOpts'
     const isHex = { presence: true, isHex: true }
     const isHexStrict = { presence: true, isHexStrict: true }
@@ -1679,33 +1855,25 @@ class Connext {
       'partyB'
     )
 
-    Connext.validatorsResponseToError(
-      validate.single(balanceA, isBN),
-      methodName,
-      'balanceA'
-    )
-
-    Connext.validatorsResponseToError(
-      validate.single(balanceB, isBN),
-      methodName,
-      'balanceB'
-    )
-
     console.log('recovering signer from:', JSON.stringify({
       channelId,
       nonce,
       partyA,
       partyB,
-      balanceA,
-      balanceB
+      ethBalanceA,
+      ethBalanceB,
+      tokenBalanceA,
+      tokenBalanceB
     }))
-    let fingerprint = Connext.createVCStateUpdateFingerprint({
+    let fingerprint = Connext.createThreadStateUpdateFingerprint({
       channelId,
       nonce,
       partyA,
       partyB,
-      balanceA,
-      balanceB
+      ethBalanceA,
+      ethBalanceB,
+      tokenBalanceA,
+      tokenBalanceB
     })
     fingerprint = util.toBuffer(fingerprint)
     const prefix = Buffer.from('\x19Ethereum Signed Message:\n')
@@ -1746,7 +1914,7 @@ class Connext {
   //  * @param {String} params.signer - (optional) ETH address of person signing data, defaults to account[0]
   //  * @returns {String} signature of signer on data provided
   //  */
-  async createLCStateUpdate ({
+  async createChannelStateUpdate ({
     isClose = false, // default isnt close LC
     channelId,
     nonce,
@@ -1760,7 +1928,7 @@ class Connext {
     signer = null,
     hubBond = null
   }) {
-    const methodName = 'createLCStateUpdate'
+    const methodName = 'createChannelStateUpdate'
     // validate
     // validatorOpts
     const isHexStrict = { presence: true, isHexStrict: true }
@@ -1769,6 +1937,7 @@ class Connext {
     const isAddress = { presence: true, isAddress: true }
     const isPositiveInt = { presence: true, isPositiveInt: true }
     const isBool = { presence: true, isBool: true }
+    const isValidDepositObject = { presence: true, isValidDepositObject: true }
 
     Connext.validatorsResponseToError(
       validate.single(isClose, isBool),
@@ -1806,12 +1975,12 @@ class Connext {
       'partyI'
     )
     Connext.validatorsResponseToError(
-      validate.single(balanceA, isBN),
+      validate.single(balanceA, isValidDepositObject),
       methodName,
       'balanceA'
     )
     Connext.validatorsResponseToError(
-      validate.single(balanceI, isBN),
+      validate.single(balanceI, isValidDepositObject),
       methodName,
       'balanceI'
     )
@@ -1841,15 +2010,17 @@ class Connext {
     ) {
       throw new LCUpdateError(methodName, 'Invalid signer detected')
     }
-    // balances must be positive
-    if (balanceA.isNeg() || balanceI.isNeg()) {
-      throw new LCUpdateError(methodName, 'Cannot have negative balances')
-    }
 
     // validate update
     const emptyRootHash = Connext.generateVcRootHash({ vc0s: [] })
-    const lc = await this.getLcById(channelId)
-    if (lc == null) {
+    const channel = await this.getLcById(channelId)
+    let proposedEthBalance, proposedTokenBalance
+    if (channel == null) {
+      // set initial balances to 0 if thread does not exist
+      channel.ethBalanceA = '0'
+      channel.ethBalanceB = '0'
+      channel.tokenBalanceA = '0'
+      channel.tokenBalanceB = '0'
       // generating opening cert
       if (nonce !== 0) {
         throw new LCOpenError(methodName, 'Invalid nonce detected')
@@ -1863,23 +2034,31 @@ class Connext {
       if (partyA === partyI) {
         throw new LCOpenError(methodName, 'Cannot open channel with yourself')
       }
+      if (balanceA.ethDeposit && balanceI.ethDeposit) {
+        // channel includes ETH
+        proposedEthBalance = balanceA.ethDeposit.add(balanceI.ethDeposit)
+      }
+      if (balanceA.tokenDeposit && balanceI.tokenDeposit) {
+        // channel includes token
+        proposedTokenBalance = balanceA.tokenDeposit.add(balanceI.tokenDeposit)
+      }
     } else {
       // updating existing lc
       // must be open
-      if (CHANNEL_STATES[lc.state] === 3) {
+      if (CHANNEL_STATES[channel.state] === 3) {
         throw new LCUpdateError(
           methodName,
           'Channel is in invalid state to accept updates'
         )
       }
       // nonce always increasing
-      if (nonce < lc.nonce) {
+      if (nonce < channel.nonce) {
         throw new LCUpdateError(methodName, 'Invalid nonce')
       }
       // only open/close 1 vc per update, or dont open any
       if (
-        Math.abs(Number(openVcs) - Number(lc.openVcs)) !== 1 &&
-        Math.abs(Number(openVcs) - Number(lc.openVcs)) !== 0
+        Math.abs(Number(openVcs) - Number(channel.openVcs)) !== 1 &&
+        Math.abs(Number(openVcs) - Number(channel.openVcs)) !== 0
       ) {
         throw new LCUpdateError(
           methodName,
@@ -1887,23 +2066,29 @@ class Connext {
         )
       }
       // parties cant change
-      if (partyA !== lc.partyA || partyI !== lc.partyI) {
+      if (partyA.toLowerCase() !== channel.partyA.toLowerCase() || partyI.toLowerCase() !== channel.partyI.toLowerCase()) {
         throw new LCUpdateError(methodName, 'Invalid channel parties')
+      }
+      if (balanceA.ethDeposit && balanceI.ethDeposit) {
+        // channel includes ETH
+        proposedEthBalance = balanceA.ethDeposit.add(balanceI.ethDeposit)
+      }
+      if (balanceA.tokenDeposit && balanceI.tokenDeposit) {
+        // channel includes token
+        proposedTokenBalance = balanceA.tokenDeposit.add(balanceI.tokenDeposit)
       }
       // no change in total balance
       // add ledger channel balances of both parties from previously, subctract new balance of vc being opened
-      let isOpeningVc = openVcs - lc.openVcs === 1
-      const channelBal = isOpeningVc
-        ? Web3.utils
-            .toBN(lc.balanceA)
-            .add(Web3.utils.toBN(lc.balanceI))
-            .sub(hubBond)
-        : Web3.utils
-            .toBN(lc.balanceA)
-            .add(Web3.utils.toBN(lc.balanceI))
-            .add(hubBond)
-      if (balanceA.add(balanceI).eq(channelBal) === false) {
-        throw new LCUpdateError(methodName, 'Invalid balance proposed')
+      let isOpeningVc = openVcs - channel.openVcs === 1
+      // verify updates dont change channel balance
+      const ethChannelBalance = isOpeningVc ? Web3.utils.toBN(channel.ethBalanceA).add(Web3.utils.toBN(channel.ethBalanceI)).sub(hubBond) : Web3.utils.toBN(channel.ethBalanceA).add(Web3.utils.toBN(channel.ethBalanceI)).add(hubBond)
+      const tokenChannelBalance = isOpeningVc ? Web3.utils.toBN(channel.tokenBalanceA).add(Web3.utils.toBN(channel.tokenBalanceI)).sub(hubBond) : Web3.utils.toBN(channel.tokenBalanceA).add(Web3.utils.toBN(channel.tokenBalanceI)).add(hubBond)
+
+      if (proposedEthBalance && !proposedEthBalance.eq(ethChannelBalance)) {
+        throw new LCUpdateError(methodName, 'Invalid ETH balance proposed')
+      }
+      if (proposedTokenBalance && !proposedTokenBalance.eq(tokenChannelBalance)) {
+        throw new LCUpdateError(methodName, 'Invalid token balance proposed')
       }
     }
 
@@ -1919,16 +2104,17 @@ class Connext {
       balanceI
     }))
     // generate sig
-    const hash = Connext.createLCStateUpdateFingerprint({
+    const hash = Connext.createChannelStateUpdateFingerprint({
       isClose,
-      channelId,
       nonce,
       openVcs,
       vcRootHash,
       partyA,
       partyI,
-      balanceA,
-      balanceI
+      ethBalanceA: proposedEthBalance ? balanceA.ethDeposit : Web3.utils.toBN('0'),
+      ethBalanceI: proposedEthBalance ? balanceI.ethDeposit : Web3.utils.toBN('0'),
+      tokenBalanceA: proposedTokenBalance ? balanceA.tokenDeposit : Web3.utils.toBN('0'),
+      tokenBalanceI: proposedTokenBalance ? balanceI.tokenDeposit : Web3.utils.toBN('0'),
     })
     let sig
     if (unlockedAccountPresent) {
@@ -1954,22 +2140,23 @@ class Connext {
   //  * @param {String} params.signer - (optional) ETH address of person signing data, defaults to account[0]
   //  * @returns {String} signature of signer on data provided
   //  */
-  async createVCStateUpdate ({
+  async createThreadStateUpdate ({
     channelId,
     nonce,
     partyA,
     partyB,
     balanceA,
     balanceB,
+    updateType,
     unlockedAccountPresent = process.env.DEV ? process.env.DEV : false,
     signer = null // if true, use sign over personal.sign. dev needs true
   }) {
     // validate
-    const methodName = 'createVCStateUpdate'
+    const methodName = 'createThreadStateUpdate'
     // validate
     // validatorOpts'
     const isHexStrict = { presence: true, isHexStrict: true }
-    const isBN = { presence: true, isBN: true }
+    const isValidDepositObject = { presence: true, isValidDepositObject: true }
     const isAddress = { presence: true, isAddress: true }
     const isPositiveInt = { presence: true, isPositiveInt: true }
     Connext.validatorsResponseToError(
@@ -1993,83 +2180,122 @@ class Connext {
       'partyB'
     )
     Connext.validatorsResponseToError(
-      validate.single(balanceA, isBN),
+      validate.single(balanceA, isValidDepositObject),
       methodName,
       'balanceA'
     )
     Connext.validatorsResponseToError(
-      validate.single(balanceB, isBN),
+      validate.single(balanceB, isValidDepositObject),
       methodName,
       'balanceB'
     )
     // verify subchannel
-    const lcA = await this.getLcByPartyA(partyA)
+    const subchanA = await this.getLcByPartyA(partyA)
 
     // verify channel state update
-    const vc = await this.getChannelById(channelId)
-    if (vc === null) {
+    let thread = await this.getChannelById(channelId)
+    let proposedEthBalance, proposedTokenBalance
+    if (thread === null) {
+      // set initial balances to 0 if thread does not exist
+      thread.ethBalanceA = '0'
+      thread.ethBalanceB = '0'
+      thread.tokenBalanceA = '0'
+      thread.tokenBalanceB = '0'
       // channel does not exist, generating opening state
       if (nonce !== 0) {
         throw new VCOpenError(methodName, 'Invalid nonce detected')
       }
-      if (!balanceB.isZero()) {
-        throw new VCOpenError(methodName, 'Invalid balance detected')
+      if (balanceB.ethDeposit && !balanceB.ethDeposit.isZero()) {
+        throw new VCOpenError(methodName, 'Invalid initial ETH balanceB detected')
       }
-      if (balanceA.isZero() || balanceA.isNeg()) {
-        throw new VCOpenError(methodName, 'Invalid balance detected')
+      if (balanceB.tokenDeposit && !balanceB.tokenDeposit.isZero()) {
+        throw new VCOpenError(methodName, 'Invalid initial token balanceB detected')
       }
       if (partyA.toLowerCase() === partyB.toLowerCase()) {
-        throw new VCOpenError(methodName, 'Cannot open channel with yourself')
+        throw new VCOpenError(methodName, 'Cannot open thread with yourself')
       }
-      if (Web3.utils.toBN(lcA.balanceA).lt(balanceA)) {
-        throw new VCOpenError(methodName, 'Insufficient balance detected')
+      if (balanceA.ethDeposit) { // update includes eth
+         if(Web3.utils.toBN(subchanA.ethBalanceA).lt(balanceA.ethDeposit)) {
+          throw new VCOpenError(methodName, 'Insufficient ETH channel balance detected')
+        }
+        proposedEthBalance = balanceA.ethDeposit        
+      }
+      if (balanceA.tokenDeposit) {
+        if (Web3.utils.toBN(subchanA.tokenBalanceA).lt(balanceA.tokenDeposit)) {
+         throw new VCOpenError(methodName, 'Insufficient ETH channel balance detected')
+        }
+        proposedTokenBalance = balanceA.tokenDeposit
       }
     } else {
-      // vc exists
-      if (THREAD_STATES[vc.state] === 3) {
-        throw new VCUpdateError(methodName, 'Channel is in invalid state')
+      // thread exists
+      if (THREAD_STATES[thread.state] === 3) {
+        throw new VCUpdateError(methodName, 'Thread is in invalid state')
       }
-      if (nonce < vc.nonce + 1 && nonce !== 0) {
+      if (nonce < thread.nonce + 1 && nonce !== 0) {
         // could be joining
         throw new VCUpdateError(methodName, 'Invalid nonce')
       }
-      if (balanceA.isNeg() || balanceB.isNeg()) {
-        throw new VCUpdateError(methodName, 'Balances cannot be negative')
-      }
       if (
-        !balanceA
-          .add(balanceB)
-          .eq(Web3.utils.toBN(vc.balanceA).add(Web3.utils.toBN(vc.balanceB)))
-      ) {
-        throw new VCUpdateError(methodName, 'Invalid update detected')
-      }
-      if (
-        partyA.toLowerCase() !== vc.partyA ||
-        partyB.toLowerCase() !== vc.partyB
+        partyA.toLowerCase() !== thread.partyA ||
+        partyB.toLowerCase() !== thread.partyB
       ) {
         throw new VCUpdateError(methodName, 'Invalid parties detected')
+      }
+      // verify updates dont change channel balance
+      const threadEthBalance = Web3.utils.toBN(thread.ethBalanceA).add(Web3.utils.toBN(thread.ethBalanceB))
+      const threadTokenBalance = Web3.utils.toBN(thread.tokenBalanceA).add(Web3.utils.toBN(thread.tokenBalanceB))
+      switch (CHANNEL_TYPES[updateType]) {
+        case CHANNEL_TYPES.ETH:
+          if (balanceB.ethDeposit.lte(Web3.utils.toBN(thread.ethBalanceB))) {
+            throw new VCUpdateError(methodName, 'Thread updates can only increase partyB ETH balance')
+          }
+          proposedEthBalance = Web3.utils.toBN(balanceA.ethDeposit).add(balanceB.ethDeposit) // proposed balance
+          break
+        
+        case CHANNEL_TYPES.TOKEN:
+          if (balanceB.tokenDeposit.lte(Web3.utils.toBN(thread.tokenBalanceB))) {
+            throw new VCUpdateError(methodName, 'Thread updates can only increase partyB token balance')
+          }
+          proposedTokenBalance = Web3.utils.toBN(balanceA.tokenDeposit).add(balanceB.tokenDeposit)
+          break
+        
+        case CHANNEL_TYPES.TOKEN_ETH:
+          if (balanceB.ethDeposit.lte(Web3.utils.toBN(thread.ethBalanceB))) {
+            throw new VCUpdateError(methodName, 'Thread updates can only increase partyB ETH balance')
+          }
+          if (balanceB.tokenDeposit.lte(Web3.utils.toBN(thread.tokenBalanceB))) {
+            throw new VCUpdateError(methodName, 'Thread updates can only increase partyB token balance')
+          }
+          proposedEthBalance = Web3.utils.toBN(balanceA.ethDeposit).add(balanceB.ethDeposit)
+          proposedTokenBalance = Web3.utils.toBN(balanceA.tokenDeposit).add(balanceB.tokenDeposit)
+          break
+        default:
+          throw new VCUpdateError(methodName, 'Invalid thread update type.')
+      }
+      if (proposedEthBalance && !proposedEthBalance.eq(threadEthBalance)) {
+        throw new VCUpdateError(methodName, 'Thread ETH balance cannot change')
+      }
+  
+      if (proposedTokenBalance && !proposedTokenBalance.eq(threadTokenBalance)) {
+        throw new VCUpdateError(methodName, 'Thread token balance cannot change')
       }
     }
 
     // get accounts
     const accounts = await this.web3.eth.getAccounts()
     // generate and sign hash
-    const hash = Connext.createVCStateUpdateFingerprint({
+    const state = {
       channelId,
       nonce,
       partyA,
       partyB,
-      balanceA,
-      balanceB
-    })
-    console.log('signing:', JSON.stringify({
-      channelId,
-      nonce,
-      partyA,
-      partyB,
-      balanceA,
-      balanceB
-    }))
+      ethBalanceA: proposedEthBalance ? balanceA.ethDeposit : Web3.utils.toBN(thread.ethBalanceA),
+      ethBalanceB: proposedEthBalance ? balanceB.ethDeposit : Web3.utils.toBN(thread.ethBalanceB),
+      tokenBalanceA: proposedTokenBalance ? balanceA.tokenDeposit : Web3.utils.toBN(thread.tokenBalanceA),
+      tokenBalanceB: proposedTokenBalance ? balanceB.tokenDeposit : Web3.utils.toBN(thread.tokenBalanceB),
+    }
+    const hash = Connext.createThreadStateUpdateFingerprint(state)
+    console.log('signing:', JSON.stringify(state))
     let sig
     if (signer && unlockedAccountPresent) {
       sig = await this.web3.eth.sign(hash, signer)
@@ -2124,7 +2350,7 @@ class Connext {
     let elems = vc0s.map(vc0 => {
       // vc0 is the initial state of each vc
       // hash each initial state and convert hash to buffer
-      const hash = Connext.createVCStateUpdateFingerprint(vc0)
+      const hash = Connext.createThreadStateUpdateFingerprint(vc0)
       const vcBuf = Utils.hexToBuffer(hash)
       return vcBuf
     })
@@ -2571,12 +2797,12 @@ class Connext {
       balanceA,
       balanceI
     }
-    let signer = Connext.recoverSignerFromLCStateUpdate(state)
+    let signer = Connext.recoverSignerFromChannelStateUpdate(state)
     if (signer !== this.ingridAddress.toLowerCase()) {
       throw new LCCloseError(methodName, 'Ingrid did not sign closing update')
     }
     state.sig = sigA
-    signer = Connext.recoverSignerFromLCStateUpdate(state)
+    signer = Connext.recoverSignerFromChannelStateUpdate(state)
     if (signer !== sender) {
       throw new LCCloseError(methodName, 'PartyA did not sign closing update')
     }
@@ -2857,7 +3083,7 @@ class Connext {
     let merkle, stateHash
     if (proof === null) {
       // generate proof from lc
-      stateHash = Connext.createVCStateUpdateFingerprint({
+      stateHash = Connext.createThreadStateUpdateFingerprint({
         channelId: vcId,
         nonce,
         partyA,
@@ -3783,7 +4009,7 @@ class Connext {
       signer: signer,
       hubBond: Web3.utils.toBN(vc0.balanceA).add(Web3.utils.toBN(vc0.balanceB))
     }
-    const sigAtoI = await this.createLCStateUpdate(updateAtoI)
+    const sigAtoI = await this.createChannelStateUpdate(updateAtoI)
     return sigAtoI
   }
 
@@ -3857,7 +4083,7 @@ class Connext {
       signer: signer,
       hubBond: Web3.utils.toBN(vcN.balanceA).add(Web3.utils.toBN(vcN.balanceB))
     }
-    const sigAtoI = await this.createLCStateUpdate(updateAtoI)
+    const sigAtoI = await this.createChannelStateUpdate(updateAtoI)
     return sigAtoI
   }
 }
