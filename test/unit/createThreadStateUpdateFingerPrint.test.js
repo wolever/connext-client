@@ -24,7 +24,7 @@ let accounts
 let partyA
 let partyB
 
-describe.only('createThreadStateUpdateFingerprint()', function () {
+describe('createThreadStateUpdateFingerprint()', function () {
   before('init client and accounts', async () => {
     accounts = await web3.eth.getAccounts()
     ingridAddress = accounts[0]

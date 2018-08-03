@@ -22,7 +22,7 @@ let accounts
 let partyA
 let partyB
 
-describe.only('recoverSignerFromThreadStateUpdate()', function () {
+describe('recoverSignerFromThreadStateUpdate()', function () {
   before('init client and accounts', async () => {
     accounts = await web3.eth.getAccounts()
     ingridAddress = accounts[0]
