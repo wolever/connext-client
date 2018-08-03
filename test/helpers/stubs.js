@@ -35,6 +35,10 @@ export async function createStubbedHub (baseUrl, type) {
   // channel IDs
   const channelId1 =
     '0x1000000000000000000000000000000000000000000000000000000000000000'
+  const channelId2 =
+    '0x2000000000000000000000000000000000000000000000000000000000000000'
+  const channelId3 =
+    '0x3000000000000000000000000000000000000000000000000000000000000000'
   // thread IDs
   const threadId1 =
     '0x0100000000000000000000000000000000000000000000000000000000000000'
@@ -84,12 +88,43 @@ export async function createStubbedHub (baseUrl, type) {
       break
   }
   // get channel 1 by ID
+  // ETH_TOKEN lc
   stubHub.get(`/ledgerchannel/${channelId1}`).reply(200, {
     channelId: channelId1,
     partyA: partyA.toLowerCase(),
     partyI: ingridAddress.toLowerCase(),
     state: 'LCS_OPENED',
     ethBalanceA: Web3.utils.toWei('5', 'ether'),
+    ethBalanceI: '0',
+    tokenBalanceA: Web3.utils.toWei('5', 'ether'),
+    tokenBalanceI: '0',
+    nonce: 0,
+    openVcs: 0,
+    vcRootHash: Connext.generateVcRootHash({ vc0s: [] })
+  })
+
+  // ETH lc
+  stubHub.get(`/ledgerchannel/${channelId2}`).reply(200, {
+    channelId: channelId2,
+    partyA: partyA.toLowerCase(),
+    partyI: ingridAddress.toLowerCase(),
+    state: 'LCS_OPENED',
+    ethBalanceA: Web3.utils.toWei('5', 'ether'),
+    ethBalanceI: '0',
+    tokenBalanceA: '0',
+    tokenBalanceI: '0',
+    nonce: 0,
+    openVcs: 0,
+    vcRootHash: Connext.generateVcRootHash({ vc0s: [] })
+  })
+
+  // TOKEN lc
+  stubHub.get(`/ledgerchannel/${channelId3}`).reply(200, {
+    channelId: channelId3,
+    partyA: partyA.toLowerCase(),
+    partyI: ingridAddress.toLowerCase(),
+    state: 'LCS_OPENED',
+    ethBalanceA: '0',
     ethBalanceI: '0',
     tokenBalanceA: Web3.utils.toWei('5', 'ether'),
     tokenBalanceI: '0',
