@@ -23,7 +23,7 @@ let watcherUrl = ''
 let accounts
 let partyA
 
-describe.only('channelUpdateHandler()', function () {
+describe('channelUpdateHandler()', function () {
   beforeEach('init client and accounts', async () => {
     accounts = await web3.eth.getAccounts()
     ingridAddress = accounts[0]
