@@ -76,10 +76,32 @@ export async function createStubbedHub (baseUrl, type) {
             vcRootHash: Connext.generateVcRootHash({ vc0s: [] })
           }
         ])
+      stubHub
+        .get(`/ledgerchannel/a/${partyB.toLowerCase()}?status=LCS_OPENED`)
+        .reply(200, [
+          {
+            channelId: '0x2000000000000000000000000000000000000000000000000000000000000000',
+            partyA: partyB.toLowerCase(),
+            partyI: ingridAddress.toLowerCase(),
+            state: 'LCS_OPENED',
+            ethBalanceA: Web3.utils.toWei('5', 'ether'),
+            ethBalanceI: '0',
+            tokenBalanceA: Web3.utils.toWei('5', 'ether'),
+            tokenBalanceI: '0',
+            nonce: 0,
+            openVcs: 0,
+            vcRootHash: Connext.generateVcRootHash({ vc0s: [] })
+          }
+        ])
       break
     case 'NO_LC':
       stubHub
         .get(`/ledgerchannel/a/${partyA.toLowerCase()}?status=LCS_OPENED`)
+        .reply(200, {
+          data: []
+        })
+      stubHub
+        .get(`/ledgerchannel/a/${partyB.toLowerCase()}?status=LCS_OPENED`)
         .reply(200, {
           data: []
         })
@@ -213,5 +235,29 @@ export async function createStubbedHub (baseUrl, type) {
       }
     ])
 
+  // add initial states endpoint
+  stubHub.get(`/ledgerchannel/${channelId1}/vcinitialstates`).reply(200, [])
+
+  stubHub
+    .post(`/virtualchannel/`, body => {
+      return body.channelId === threadId1
+    })
+    .reply(200, {
+      channelId: threadId1
+    })
+  stubHub
+    .post(`/virtualchannel/`, body => {
+      return body.channelId === threadId2
+    })
+    .reply(200, {
+      channelId: threadId2
+    })
+  stubHub
+    .post(`/virtualchannel/`, body => {
+      return body.channelId === threadId3
+    })
+    .reply(200, {
+      channelId: threadId3
+    })
   return stubHub
 }
