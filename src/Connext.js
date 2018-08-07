@@ -1287,7 +1287,7 @@ class Connext {
     }
 
     const response = await this.consensusCloseChannelContractHandler({
-      lcId: lc.channelId,
+      channelId: lc.channelId,
       nonce: lcState.nonce + 1,
       balanceA: Web3.utils.toBN(lcState.balanceA),
       balanceI: Web3.utils.toBN(lcState.balanceI),
@@ -2807,7 +2807,7 @@ class Connext {
   }
 
   async consensusCloseChannelContractHandler ({
-    lcId,
+    channelId,
     nonce,
     balanceA,
     balanceI,
@@ -2819,13 +2819,13 @@ class Connext {
     // validate
     const isHexStrict = { presence: true, isHexStrict: true }
     const isPositiveInt = { presence: true, isPositiveInt: true }
-    const isBN = { presence: true, isBN: true }
+    const isValidDepositObject = { presence: true, isValidDepositObject: true }
     const isHex = { presence: true, isHex: true }
     const isAddress = { presence: true, isAddress: true }
     Connext.validatorsResponseToError(
-      validate.single(lcId, isHexStrict),
+      validate.single(channelId, isHexStrict),
       methodName,
-      'lcId'
+      'channelId'
     )
     Connext.validatorsResponseToError(
       validate.single(nonce, isPositiveInt),
@@ -2833,12 +2833,12 @@ class Connext {
       'nonce'
     )
     Connext.validatorsResponseToError(
-      validate.single(balanceA, isBN),
+      validate.single(balanceA, isValidDepositObject),
       methodName,
       'balanceA'
     )
     Connext.validatorsResponseToError(
-      validate.single(balanceI, isBN),
+      validate.single(balanceI, isValidDepositObject),
       methodName,
       'balanceI'
     )
@@ -2867,27 +2867,29 @@ class Connext {
     let state = {
       sig: sigI,
       isClose: true,
-      channelId: lcId,
+      channelId,
       nonce,
       openVcs: 0,
       vcRootHash: emptyRootHash,
       partyA: sender,
       partyI: this.ingridAddress,
-      balanceA,
-      balanceI
+      ethBalanceA: balanceA.ethDeposit ? balanceA.ethDeposit : Web3.utils.toBN('0'),
+      ethBalanceI: balanceI.ethDeposit ? balanceI.ethDeposit : Web3.utils.toBN('0'),
+      tokenBalanceA: balanceA.tokenDeposit ? balanceA.tokenDeposit : Web3.utils.toBN('0'),
+      tokenBalanceI: balanceA.tokenDeposit ? balanceI.tokenDeposit : Web3.utils.toBN('0'),
     }
     let signer = Connext.recoverSignerFromChannelStateUpdate(state)
-    if (signer !== this.ingridAddress.toLowerCase()) {
+    if (signer.toLowerCase() !== this.ingridAddress.toLowerCase()) {
       throw new LCCloseError(methodName, 'Ingrid did not sign closing update')
     }
     state.sig = sigA
     signer = Connext.recoverSignerFromChannelStateUpdate(state)
-    if (signer !== sender) {
+    if (signer.toLowerCase() !== sender.toLowerCase()) {
       throw new LCCloseError(methodName, 'PartyA did not sign closing update')
     }
 
     const result = await this.channelManagerInstance.methods
-      .consensusCloseChannel(lcId, nonce, balanceA, balanceI, sigA, sigI)
+      .consensusCloseChannel(channelId, nonce, state.ethBalanceA, state.ethBalanceI, state.tokenDepositA, state.tokenDepositI, sigA, sigI)
       .send({
         from: sender,
         gas: 1000000
