@@ -54,7 +54,7 @@ describe('fastCloseChannelHandler()', () => {
       // stub hub methods
       stubHub = await createStubbedHub(
         `${client.ingridUrl}`,
-        'OPEN_LC_OPEN_VC',
+        'OPEN_LC_CLOSED_VC',
         'UPDATED'
       )
     })

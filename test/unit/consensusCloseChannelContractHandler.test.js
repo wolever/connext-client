@@ -25,7 +25,7 @@ let partyB
 let partyC
 let partyD
 
-describe.only('consensusCloseChannelContractHandler()', () => {
+describe('consensusCloseChannelContractHandler()', () => {
   before('init client and accounts', async () => {
     accounts = await web3.eth.getAccounts()
     ingridAddress = accounts[0]
@@ -57,7 +57,7 @@ describe.only('consensusCloseChannelContractHandler()', () => {
       stubHub = await createStubbedHub(
         `${client.ingridUrl}`,
         'OPEN_LC_OPEN_VC',
-        'UPDATED'
+        'OPEN_LC_CLOSED_VC'
       )
     })
 
