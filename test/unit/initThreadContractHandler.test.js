@@ -25,7 +25,7 @@ let partyB
 let partyC
 let partyD
 
-describe('initThreadStateContractHandler()', () => {
+describe('initThreadContractHandler()', () => {
   before('init client and accounts', async () => {
     accounts = await web3.eth.getAccounts()
     ingridAddress = accounts[0]
@@ -61,7 +61,7 @@ describe('initThreadStateContractHandler()', () => {
       )
     })
 
-    it('should call initThreadStateContractHandler for an ETH/TOKEN vc', async () => {
+    it('should call initThreadContractHandler for an ETH/TOKEN vc', async () => {
       const subchanId =
         '0x1000000000000000000000000000000000000000000000000000000000000000'
       const threadId =
@@ -81,7 +81,7 @@ describe('initThreadStateContractHandler()', () => {
         tokenBalanceB: Web3.utils.toBN('0')
       })
       const sigA = await client.web3.eth.sign(hash, partyA)
-      const response = await client.initThreadStateContractHandler({
+      const response = await client.initThreadContractHandler({
         subchanId,
         threadId,
         partyA,
@@ -92,7 +92,7 @@ describe('initThreadStateContractHandler()', () => {
       expect(response.transactionHash).to.equal('transactionHash')
     })
 
-    it('should call initThreadStateContractHandler for an ETH vc', async () => {
+    it('should call initThreadContractHandler for an ETH vc', async () => {
       const subchanId =
         '0x3000000000000000000000000000000000000000000000000000000000000000'
       const threadId =
@@ -112,7 +112,7 @@ describe('initThreadStateContractHandler()', () => {
         tokenBalanceB: Web3.utils.toBN('0')
       })
       const sigA = await client.web3.eth.sign(hash, partyC)
-      const response = await client.initThreadStateContractHandler({
+      const response = await client.initThreadContractHandler({
         subchanId,
         threadId,
         partyA: partyC,
@@ -123,7 +123,7 @@ describe('initThreadStateContractHandler()', () => {
       expect(response.transactionHash).to.equal('transactionHash')
     })
 
-    it('should call initThreadStateContractHandler for a TOKEN vc', async () => {
+    it('should call initThreadContractHandler for a TOKEN vc', async () => {
       const subchanId =
         '0x4000000000000000000000000000000000000000000000000000000000000000'
       const threadId =
@@ -143,7 +143,7 @@ describe('initThreadStateContractHandler()', () => {
         tokenBalanceB: Web3.utils.toBN('0')
       })
       const sigA = await client.web3.eth.sign(hash, partyD)
-      const response = await client.initThreadStateContractHandler({
+      const response = await client.initThreadContractHandler({
         subchanId,
         threadId,
         partyA: partyD,
@@ -170,7 +170,7 @@ describe('initThreadStateContractHandler()', () => {
       }
       const sigA = '0x030000000000000'
       try {
-        await client.initThreadStateContractHandler({
+        await client.initThreadContractHandler({
           threadId,
           partyA: partyD,
           partyB,
@@ -192,7 +192,7 @@ describe('initThreadStateContractHandler()', () => {
       }
       const sigA = '0x030000000000000'
       try {
-        await client.initThreadStateContractHandler({
+        await client.initThreadContractHandler({
           subchanId,
           threadId,
           partyA: partyD,
@@ -215,7 +215,7 @@ describe('initThreadStateContractHandler()', () => {
       }
       const sigA = '0x030000000000000'
       try {
-        await client.initThreadStateContractHandler({
+        await client.initThreadContractHandler({
           subchanId,
           threadId,
           partyA: partyD,
@@ -237,7 +237,7 @@ describe('initThreadStateContractHandler()', () => {
       }
       const sigA = '0x030000000000000'
       try {
-        await client.initThreadStateContractHandler({
+        await client.initThreadContractHandler({
           subchanId,
           partyA: partyD,
           partyB,
@@ -259,7 +259,7 @@ describe('initThreadStateContractHandler()', () => {
       }
       const sigA = '0x030000000000000'
       try {
-        await client.initThreadStateContractHandler({
+        await client.initThreadContractHandler({
           subchanId,
           threadId,
           partyA: partyD,
@@ -282,7 +282,7 @@ describe('initThreadStateContractHandler()', () => {
       }
       const sigA = '0x030000000000000'
       try {
-        await client.initThreadStateContractHandler({
+        await client.initThreadContractHandler({
           subchanId,
           threadId,
           partyA: partyD,
@@ -306,7 +306,7 @@ describe('initThreadStateContractHandler()', () => {
       }
       const sigA = '0x030000000000000'
       try {
-        await client.initThreadStateContractHandler({
+        await client.initThreadContractHandler({
           threadId,
           subchanId,
           partyB,
@@ -329,7 +329,7 @@ describe('initThreadStateContractHandler()', () => {
       }
       const sigA = '0x030000000000000'
       try {
-        await client.initThreadStateContractHandler({
+        await client.initThreadContractHandler({
           subchanId,
           threadId,
           partyA: null,
@@ -353,7 +353,7 @@ describe('initThreadStateContractHandler()', () => {
       }
       const sigA = '0x030000000000000'
       try {
-        await client.initThreadStateContractHandler({
+        await client.initThreadContractHandler({
           subchanId,
           threadId,
           partyA: 'fail',
@@ -377,7 +377,7 @@ describe('initThreadStateContractHandler()', () => {
       }
       const sigA = '0x030000000000000'
       try {
-        await client.initThreadStateContractHandler({
+        await client.initThreadContractHandler({
           threadId,
           subchanId,
           partyA,
@@ -400,7 +400,7 @@ describe('initThreadStateContractHandler()', () => {
       }
       const sigA = '0x030000000000000'
       try {
-        await client.initThreadStateContractHandler({
+        await client.initThreadContractHandler({
           subchanId,
           threadId,
           partyA,
@@ -424,7 +424,7 @@ describe('initThreadStateContractHandler()', () => {
       }
       const sigA = '0x030000000000000'
       try {
-        await client.initThreadStateContractHandler({
+        await client.initThreadContractHandler({
           subchanId,
           threadId,
           partyA,
@@ -444,7 +444,7 @@ describe('initThreadStateContractHandler()', () => {
         '0x3000000000000000000000000000000000000000000000000000000000000000'
       const sigA = '0x030000000000000'
       try {
-        await client.initThreadStateContractHandler({
+        await client.initThreadContractHandler({
           threadId,
           subchanId,
           partyA,
@@ -463,7 +463,7 @@ describe('initThreadStateContractHandler()', () => {
         '0x0300000000000000000000000000000000000000000000000000000000000000'
       const sigA = '0x030000000000000'
       try {
-        await client.initThreadStateContractHandler({
+        await client.initThreadContractHandler({
           subchanId,
           threadId,
           partyA,
@@ -483,7 +483,7 @@ describe('initThreadStateContractHandler()', () => {
         '0x3000000000000000000000000000000000000000000000000000000000000000'
       const sigA = '0x030000000000000'
       try {
-        await client.initThreadStateContractHandler({
+        await client.initThreadContractHandler({
           subchanId,
           threadId,
           partyA,
@@ -506,7 +506,7 @@ describe('initThreadStateContractHandler()', () => {
         ethDeposit: Web3.utils.toBN('0')
       }
       try {
-        await client.initThreadStateContractHandler({
+        await client.initThreadContractHandler({
           threadId,
           subchanId,
           partyA,
@@ -528,7 +528,7 @@ describe('initThreadStateContractHandler()', () => {
         ethDeposit: Web3.utils.toBN('0')
       }
       try {
-        await client.initThreadStateContractHandler({
+        await client.initThreadContractHandler({
           subchanId,
           threadId,
           partyA,
@@ -552,7 +552,7 @@ describe('initThreadStateContractHandler()', () => {
       }
       const sigA = 'fail'
       try {
-        await client.initThreadStateContractHandler({
+        await client.initThreadContractHandler({
           subchanId,
           threadId,
           partyA,
@@ -576,7 +576,7 @@ describe('initThreadStateContractHandler()', () => {
       }
       const sigA = '0x300000'
       try {
-        await client.initThreadStateContractHandler({
+        await client.initThreadContractHandler({
           subchanId,
           threadId,
           partyA,

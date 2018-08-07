@@ -3148,7 +3148,7 @@ class Connext {
     return result
   }
 
-  async initThreadStateContractHandler ({
+  async initThreadContractHandler ({
     subchanId,
     threadId,
     proof = null,
@@ -3158,7 +3158,7 @@ class Connext {
     sigA,
     sender = null
   }) {
-    const methodName = 'initThreadStateContractHandler'
+    const methodName = 'initThreadContractHandler'
     // validate
     const isAddress = { presence: true, isAddress: true }
     const isHexStrict = { presence: true, isHexStrict: true }
