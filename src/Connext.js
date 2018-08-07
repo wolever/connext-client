@@ -1277,7 +1277,7 @@ class Connext {
       signer: sender
     }
     const sig = await this.createChannelStateUpdate(sigParams)
-    const lcFinal = await this.fastCloseLcHandler({ sig, lcId: lc.channelId })
+    const lcFinal = await this.fastCloseChannelHandler({ sig, channelId: lc.channelId })
     if (!lcFinal.sigI) {
       throw new LCCloseError(
         methodName,
@@ -3985,9 +3985,9 @@ class Connext {
     }
   }
 
-  async fastCloseLcHandler ({ sig, lcId }) {
+  async fastCloseChannelHandler ({ sig, channelId }) {
     // validate params
-    const methodName = 'fastCloseLcHandler'
+    const methodName = 'fastCloseChannelHandler'
     const isHexStrict = { presence: true, isHexStrict: true }
     const isHex = { presence: true, isHex: true }
     Connext.validatorsResponseToError(
@@ -3996,12 +3996,12 @@ class Connext {
       'sig'
     )
     Connext.validatorsResponseToError(
-      validate.single(lcId, isHexStrict),
+      validate.single(channelId, isHexStrict),
       methodName,
-      'lcId'
+      'channelId'
     )
     const response = await this.networking.post(
-      `ledgerchannel/${lcId}/fastclose`,
+      `ledgerchannel/${channelId}/fastclose`,
       {
         sig
       }

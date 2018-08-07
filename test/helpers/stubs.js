@@ -898,5 +898,119 @@ export async function createStubbedHub (
       channelId: threadId3
     })
 
+  // add post to fastclose lc endpoint
+  // ETH/TOKEN channel (viewer)
+  // generate hash
+  const hashA = Connext.createChannelStateUpdateFingerprint({
+    partyA,
+    partyI: ingridAddress,
+    isClose: true,
+    nonce: 3,
+    openVcs: 0,
+    vcRootHash: Connext.generateVcRootHash({ vc0s: [] }),
+    ethBalanceA: Web3.utils.toBN(Web3.utils.toWei('4.9', 'ether')),
+    ethBalanceI: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
+    tokenBalanceA: Web3.utils.toBN(Web3.utils.toWei('4.9', 'ether')),
+    tokenBalanceI: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
+  })
+  const sigAFinal = await web3.eth.sign(hashA, partyA)
+  let sigIFinal = await web3.eth.sign(hashA, ingridAddress)
+  stubHub.post(`/ledgerchannel/${channelId1}/fastclose`).reply(200, {
+    isClose: true,
+    nonce: 3,
+    openVcs: 0,
+    vcRootHash: Connext.generateVcRootHash({ vc0s: [] }),
+    ethBalanceA: Web3.utils.toBN(Web3.utils.toWei('4.9', 'ether')).toString(),
+    ethBalanceI: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')).toString(),
+    tokenBalanceA: Web3.utils.toBN(Web3.utils.toWei('4.9', 'ether')).toString(),
+    tokenBalanceI: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')).toString(),
+    sigA: sigAFinal,
+    sigI: sigIFinal
+  })
+
+  // ETH/TOKEN channel (receiver)
+  const hashB = Connext.createChannelStateUpdateFingerprint({
+    partyA: partyB,
+    partyI: ingridAddress,
+    isClose: true,
+    nonce: 3,
+    openVcs: 0,
+    vcRootHash: Connext.generateVcRootHash({ vc0s: [] }),
+    ethBalanceA: Web3.utils.toBN(Web3.utils.toWei('0.2', 'ether')),
+    ethBalanceI: Web3.utils.toBN(Web3.utils.toWei('0', 'ether')),
+    tokenBalanceA: Web3.utils.toBN(Web3.utils.toWei('0.2', 'ether')),
+    tokenBalanceI: Web3.utils.toBN(Web3.utils.toWei('0', 'ether'))
+  })
+  const sigBFinal = await web3.eth.sign(hashB, partyB)
+  sigIFinal = await web3.eth.sign(hashB, ingridAddress)
+  stubHub.post(`/ledgerchannel/${channelId2}/fastclose`).reply(200, {
+    isClose: true,
+    nonce: 3,
+    openVcs: 0,
+    vcRootHash: Connext.generateVcRootHash({ vc0s: [] }),
+    ethBalanceA: Web3.utils.toBN(Web3.utils.toWei('0.2', 'ether')).toString(),
+    ethBalanceI: '0',
+    tokenBalanceA: Web3.utils.toBN(Web3.utils.toWei('0.2', 'ether')).toString(),
+    tokenBalanceI: '0',
+    sigA: sigBFinal,
+    sigI: sigIFinal
+  })
+
+  // ETH channel (viewer)
+  const hashC = Connext.createChannelStateUpdateFingerprint({
+    partyA: partyC,
+    partyI: ingridAddress,
+    isClose: true,
+    nonce: 3,
+    openVcs: 0,
+    vcRootHash: Connext.generateVcRootHash({ vc0s: [] }),
+    ethBalanceA: Web3.utils.toBN(Web3.utils.toWei('4.9', 'ether')),
+    ethBalanceI: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
+    tokenBalanceA: Web3.utils.toBN(Web3.utils.toWei('0', 'ether')),
+    tokenBalanceI: Web3.utils.toBN(Web3.utils.toWei('0', 'ether'))
+  })
+  const sigCFinal = await web3.eth.sign(hashC, partyC)
+  sigIFinal = await web3.eth.sign(hashC, ingridAddress)
+  stubHub.post(`/ledgerchannel/${channelId3}/fastclose`).reply(200, {
+    isClose: true,
+    nonce: 3,
+    openVcs: 0,
+    vcRootHash: Connext.generateVcRootHash({ vc0s: [] }),
+    ethBalanceA: Web3.utils.toBN(Web3.utils.toWei('4.9', 'ether')).toString(),
+    ethBalanceI: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')).toString(),
+    tokenBalanceA: '0',
+    tokenBalanceI: '0',
+    sigA: sigCFinal,
+    sigI: sigIFinal
+  })
+
+  // TOKEN channel (viewer)
+  const hashD = Connext.createChannelStateUpdateFingerprint({
+    partyA: partyD,
+    partyI: ingridAddress,
+    isClose: true,
+    nonce: 3,
+    openVcs: 0,
+    vcRootHash: Connext.generateVcRootHash({ vc0s: [] }),
+    ethBalanceA: Web3.utils.toBN(Web3.utils.toWei('0', 'ether')),
+    ethBalanceI: Web3.utils.toBN(Web3.utils.toWei('0', 'ether')),
+    tokenBalanceA: Web3.utils.toBN(Web3.utils.toWei('4.9', 'ether')),
+    tokenBalanceI: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
+  })
+  const sigDFinal = await web3.eth.sign(hashD, partyD)
+  sigIFinal = await web3.eth.sign(hashD, ingridAddress)
+  stubHub.post(`/ledgerchannel/${channelId4}/fastclose`).reply(200, {
+    isClose: true,
+    nonce: 3,
+    openVcs: 0,
+    vcRootHash: Connext.generateVcRootHash({ vc0s: [] }),
+    ethBalanceA: '0',
+    ethBalanceI: '0',
+    tokenBalanceA: Web3.utils.toBN(Web3.utils.toWei('4.9', 'ether')).toString(),
+    tokenBalanceI: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')).toString(),
+    sigA: sigDFinal,
+    sigI: sigIFinal
+  })
+
   return stubHub
 }
