@@ -602,28 +602,72 @@ export async function createStubbedHub (
 
       // add get latest thread state endpoint
       // ETH/TOKEN
+      let sigA = await web3.eth.sign(
+        Connext.createThreadStateUpdateFingerprint({
+          channelId: threadId1,
+          partyA,
+          partyB,
+          ethBalanceA: Web3.utils.toWei('1', 'ether'),
+          ethBalanceB: Web3.utils.toBN('0'),
+          tokenBalanceA: Web3.utils.toWei('1', 'ether').toString(),
+          tokenBalanceB: Web3.utils.toBN('0'),
+          nonce: 0
+        }),
+        partyA
+      )
       stubHub.get(`/virtualchannel/${threadId1}/update/latest`).reply(200, {
         ethBalanceA: Web3.utils.toWei('1', 'ether').toString(),
         ethBalanceB: '0',
         tokenBalanceA: Web3.utils.toWei('1', 'ether').toString(),
         tokenBalanceB: '0',
-        nonce: 0
+        nonce: 0,
+        sigA
       })
+
       // ETH
+      sigA = await web3.eth.sign(
+        Connext.createThreadStateUpdateFingerprint({
+          channelId: threadId2,
+          partyA: partyC,
+          partyB,
+          ethBalanceA: Web3.utils.toWei('1', 'ether').toString(),
+          ethBalanceB: Web3.utils.toBN('0'),
+          tokenBalanceA: Web3.utils.toBN('0'),
+          tokenBalanceB: Web3.utils.toBN('0'),
+          nonce: 0
+        }),
+        partyC
+      )
       stubHub.get(`/virtualchannel/${threadId2}/update/latest`).reply(200, {
         ethBalanceA: Web3.utils.toWei('1', 'ether').toString(),
         ethBalanceB: '0',
         tokenBalanceA: '0',
         tokenBalanceB: '0',
-        nonce: 0
+        nonce: 0,
+        sigA
       })
+
       // TOKEN
+      sigA = await web3.eth.sign(
+        Connext.createThreadStateUpdateFingerprint({
+          channelId: threadId3,
+          partyA: partyD,
+          partyB,
+          ethBalanceA: Web3.utils.toBN('0'),
+          ethBalanceB: Web3.utils.toBN('0'),
+          tokenBalanceA: Web3.utils.toWei('1', 'ether').toString(),
+          tokenBalanceB: Web3.utils.toBN('0'),
+          nonce: 0
+        }),
+        partyD
+      )
       stubHub.get(`/virtualchannel/${threadId3}/update/latest`).reply(200, {
         ethBalanceA: '0',
         ethBalanceB: '0',
         tokenBalanceA: Web3.utils.toWei('1', 'ether').toString(),
         tokenBalanceB: '0',
-        nonce: 0
+        nonce: 0,
+        sigA
       })
 
       break
@@ -670,29 +714,120 @@ export async function createStubbedHub (
 
       // add get latest thread state endpoint
       // ETH/TOKEN
+      sigA = await web3.eth.sign(
+        Connext.createThreadStateUpdateFingerprint({
+          channelId: threadId1,
+          partyA: partyA,
+          partyB,
+          ethBalanceA: Web3.utils.toWei('0.9', 'ether'),
+          ethBalanceB: Web3.utils.toWei('0.1', 'ether'),
+          tokenBalanceA: Web3.utils.toWei('0.9', 'ether'),
+          tokenBalanceB: Web3.utils.toWei('0.1', 'ether'),
+          nonce: 1
+        }),
+        partyA
+      )
       stubHub.get(`/virtualchannel/${threadId1}/update/latest`).reply(200, {
         ethBalanceA: Web3.utils.toWei('0.9', 'ether').toString(),
         ethBalanceB: Web3.utils.toWei('0.1', 'ether').toString(),
         tokenBalanceA: Web3.utils.toWei('0.9', 'ether').toString(),
         tokenBalanceB: Web3.utils.toWei('0.1', 'ether').toString(),
-        nonce: 1
+        nonce: 1,
+        sigA
       })
+
       // ETH
+      sigA = await web3.eth.sign(
+        Connext.createThreadStateUpdateFingerprint({
+          channelId: threadId2,
+          partyA: partyC,
+          partyB,
+          ethBalanceA: Web3.utils.toWei('0.9', 'ether'),
+          ethBalanceB: Web3.utils.toWei('0.1', 'ether'),
+          tokenBalanceA: Web3.utils.toBN('0'),
+          tokenBalanceB: Web3.utils.toBN('0'),
+          nonce: 1
+        }),
+        partyC
+      )
       stubHub.get(`/virtualchannel/${threadId2}/update/latest`).reply(200, {
         ethBalanceA: Web3.utils.toWei('0.9', 'ether').toString(),
         ethBalanceB: Web3.utils.toWei('0.1', 'ether').toString(),
         tokenBalanceA: '0',
         tokenBalanceB: '0',
-        nonce: 1
+        nonce: 1,
+        sigA
       })
+
       // TOKEN
+      sigA = await web3.eth.sign(
+        Connext.createThreadStateUpdateFingerprint({
+          channelId: threadId3,
+          partyA: partyD,
+          partyB,
+          ethBalanceA: Web3.utils.toBN('0'),
+          ethBalanceB: Web3.utils.toBN('0'),
+          tokenBalanceA: Web3.utils.toWei('0.9', 'ether'),
+          tokenBalanceB: Web3.utils.toWei('0.1', 'ether'),
+          nonce: 1
+        }),
+        partyD
+      )
       stubHub.get(`/virtualchannel/${threadId3}/update/latest`).reply(200, {
         ethBalanceA: '0',
         ethBalanceB: '0',
         tokenBalanceA: Web3.utils.toWei('0.9', 'ether').toString(),
         tokenBalanceB: Web3.utils.toWei('0.1', 'ether').toString(),
-        nonce: 1
+        nonce: 1,
+        sigA
       })
+
+      // post to close VC endpoint
+      let sigParams = {
+        isClose: false,
+        nonce: 2,
+        openVcs: 0,
+        vcRootHash: Connext.generateVcRootHash({ vc0s: [] }),
+        partyA: partyA.toLowerCase(),
+        partyI: ingridAddress,
+        ethBalanceA: Web3.utils.toBN(Web3.utils.toWei('4.9', 'ether')),
+        ethBalanceI: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
+        tokenBalanceA: Web3.utils.toBN(Web3.utils.toWei('4.9', 'ether')),
+        tokenBalanceI: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
+      }
+      const sigItoAThread1 = await web3.eth.sign(
+        Connext.createChannelStateUpdateFingerprint(sigParams),
+        ingridAddress
+      )
+      // update for eth only thread
+      sigParams.partyA = partyC.toLowerCase()
+      sigParams.tokenBalanceA = sigParams.tokenBalanceI = Web3.utils.toBN('0')
+      const sigItoAThread2 = await web3.eth.sign(
+        Connext.createChannelStateUpdateFingerprint(sigParams),
+        ingridAddress
+      )
+      // update for token only thread
+      sigParams.partyA = partyD.toLowerCase()
+      sigParams.tokenBalanceA = Web3.utils.toBN(
+        Web3.utils.toWei('4.9', 'ether')
+      )
+      sigParams.tokenBalanceI = Web3.utils.toBN(
+        Web3.utils.toWei('0.1', 'ether')
+      )
+      sigParams.ethBalanceA = sigParams.ethBalanceI = Web3.utils.toBN('0')
+      const sigItoAThread3 = await web3.eth.sign(
+        Connext.createChannelStateUpdateFingerprint(sigParams),
+        ingridAddress
+      )
+      stubHub
+        .post(`/virtualchannel/${threadId1}/close`)
+        .reply(200, { sigI: sigItoAThread1 })
+      stubHub
+        .post(`/virtualchannel/${threadId2}/close`)
+        .reply(200, { sigI: sigItoAThread2 })
+      stubHub
+        .post(`/virtualchannel/${threadId3}/close`)
+        .reply(200, { sigI: sigItoAThread3 })
 
       break
 
