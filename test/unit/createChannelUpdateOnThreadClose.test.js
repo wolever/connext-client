@@ -51,7 +51,11 @@ describe('createChannelUpdateOnThreadClose()', () => {
       // activate nock
       if (!nock.isActive()) nock.activate()
       // stub hub methods
-      stubHub = await createStubbedHub(`${client.ingridUrl}`, 'OPEN_LC_OPEN_VC')
+      stubHub = await createStubbedHub(
+        `${client.ingridUrl}`,
+        'OPEN_LC_OPEN_VC',
+        'UPDATED'
+      )
     })
 
     it('should create a channel update reflecting the close of an ETH/TOKEN thread', async () => {
