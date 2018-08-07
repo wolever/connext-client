@@ -21,8 +21,7 @@ let watcherUrl = ''
 
 // for accounts
 let accounts
-let partyA
-let partyB
+let partyA, partyB, partyC, partyD
 
 describe('createChannelStateUpdate()', function () {
   before('init client and accounts', async () => {
@@ -30,6 +29,8 @@ describe('createChannelStateUpdate()', function () {
     ingridAddress = accounts[0]
     partyA = accounts[1]
     partyB = accounts[2]
+    partyC = accounts[3]
+    partyD = accounts[4]
     const authJson = { token: 'SwSNTnh3LlEJg1N9iiifFgOIKq998PGA' }
 
     // init client instance
@@ -49,7 +50,7 @@ describe('createChannelStateUpdate()', function () {
       if (!nock.isActive()) nock.activate()
 
       // stub hub methods
-      stubHub = await createStubbedHub(`${client.ingridUrl}`, 'OPEN_LC')
+      stubHub = await createStubbedHub(`${client.ingridUrl}`, 'OPEN_LC_NO_VC')
     })
 
     it('should sign a TOKEN/ETH state update', async () => {
@@ -87,48 +88,13 @@ describe('createChannelStateUpdate()', function () {
       expect(signer.toLowerCase()).to.equal(partyA.toLowerCase())
     })
 
-    it('should sign a TOKEN state update', async () => {
+    it('should sign a ETH state update', async () => {
       const update = {
         channelId: '0x3000000000000000000000000000000000000000000000000000000000000000',
         nonce: 0,
         openVcs: 0,
         vcRootHash: Connext.generateVcRootHash({ vc0s: [] }),
-        partyA,
-        partyI: ingridAddress,
-        balanceA: {
-          tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('5', 'ether')),
-          ethDeposit: null
-        },
-        balanceI: {
-          tokenDeposit: Web3.utils.toBN('0'),
-          ethDeposit: null
-        },
-        signer: partyA
-      }
-      const sig = await client.createChannelStateUpdate(update)
-      const signer = Connext.recoverSignerFromChannelStateUpdate({
-        sig,
-        isClose: false,
-        nonce: update.nonce,
-        openVcs: update.openVcs,
-        vcRootHash: update.vcRootHash,
-        partyA,
-        partyI: update.partyI,
-        ethBalanceA: Web3.utils.toBN('0'),
-        ethBalanceI: Web3.utils.toBN('0'),
-        tokenBalanceI: update.balanceI.tokenDeposit,
-        tokenBalanceA: update.balanceA.tokenDeposit
-      })
-      expect(signer.toLowerCase()).to.equal(partyA.toLowerCase())
-    })
-
-    it('should sign a ETH state update', async () => {
-      const update = {
-        channelId: '0x2000000000000000000000000000000000000000000000000000000000000000',
-        nonce: 0,
-        openVcs: 0,
-        vcRootHash: Connext.generateVcRootHash({ vc0s: [] }),
-        partyA,
+        partyA: partyC,
         partyI: ingridAddress,
         balanceA: {
           tokenDeposit: null,
@@ -138,7 +104,7 @@ describe('createChannelStateUpdate()', function () {
           tokenDeposit: null,
           ethDeposit: Web3.utils.toBN('0')
         },
-        signer: partyA
+        signer: partyC
       }
       const sig = await client.createChannelStateUpdate(update)
       const signer = Connext.recoverSignerFromChannelStateUpdate({
@@ -147,14 +113,49 @@ describe('createChannelStateUpdate()', function () {
         nonce: update.nonce,
         openVcs: update.openVcs,
         vcRootHash: update.vcRootHash,
-        partyA,
+        partyA: partyC,
         partyI: update.partyI,
         ethBalanceA: update.balanceA.ethDeposit,
         ethBalanceI: update.balanceI.ethDeposit,
         tokenBalanceI: Web3.utils.toBN('0'),
         tokenBalanceA: Web3.utils.toBN('0')
       })
-      expect(signer.toLowerCase()).to.equal(partyA.toLowerCase())
+      expect(signer.toLowerCase()).to.equal(partyC.toLowerCase())
+    })
+
+    it('should sign a TOKEN state update', async () => {
+      const update = {
+        channelId: '0x4000000000000000000000000000000000000000000000000000000000000000',
+        nonce: 0,
+        openVcs: 0,
+        vcRootHash: Connext.generateVcRootHash({ vc0s: [] }),
+        partyA: partyD,
+        partyI: ingridAddress,
+        balanceA: {
+          tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('5', 'ether')),
+          ethDeposit: null
+        },
+        balanceI: {
+          tokenDeposit: Web3.utils.toBN('0'),
+          ethDeposit: null
+        },
+        signer: partyD
+      }
+      const sig = await client.createChannelStateUpdate(update)
+      const signer = Connext.recoverSignerFromChannelStateUpdate({
+        sig,
+        isClose: false,
+        nonce: update.nonce,
+        openVcs: update.openVcs,
+        vcRootHash: update.vcRootHash,
+        partyA: partyD,
+        partyI: update.partyI,
+        ethBalanceA: Web3.utils.toBN('0'),
+        ethBalanceI: Web3.utils.toBN('0'),
+        tokenBalanceI: update.balanceI.tokenDeposit,
+        tokenBalanceA: update.balanceA.tokenDeposit
+      })
+      expect(signer.toLowerCase()).to.equal(partyD.toLowerCase())
     })
 
     afterEach('restore hub', () => {

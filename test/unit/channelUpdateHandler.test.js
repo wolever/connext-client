@@ -21,13 +21,16 @@ let watcherUrl = ''
 
 // for accounts
 let accounts
-let partyA
+let partyA, partyB, partyC, partyD
 
 describe('channelUpdateHandler()', function () {
   beforeEach('init client and accounts', async () => {
     accounts = await web3.eth.getAccounts()
     ingridAddress = accounts[0]
     partyA = accounts[1]
+    partyB = accounts[2]
+    partyC = accounts[3]
+    partyD = accounts[4]
     const authJson = { token: 'SwSNTnh3LlEJg1N9iiifFgOIKq998PGA' }
 
     // init client instance
@@ -49,15 +52,15 @@ describe('channelUpdateHandler()', function () {
       client.channelManagerInstance.methods = createStubbedContract()
 
       // stub hub methods
-      stubHub = await createStubbedHub(`${client.ingridUrl}`, 'NO_LC')
+      stubHub = await createStubbedHub(`${client.ingridUrl}`, 'OPEN_LC_OPEN_VC')
     })
 
     it('should create an ETH/TOKEN channel update', async () => {
       const channelId =
         '0x1000000000000000000000000000000000000000000000000000000000000000'
       const balanceA = {
-        tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('4', 'ether')),
-        ethDeposit: Web3.utils.toBN(Web3.utils.toWei('4', 'ether'))
+        tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('3', 'ether')),
+        ethDeposit: Web3.utils.toBN(Web3.utils.toWei('3', 'ether'))
       }
       const balanceB = {
         tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('1', 'ether')),
@@ -83,18 +86,54 @@ describe('channelUpdateHandler()', function () {
         increment,
         sender
       )
-      console.log('updatedPayment:', updatedPayment)
       expect(updatedPayment.payment.tokenBalanceA).to.equal(payment.balanceA.tokenDeposit.toString())
       expect(updatedPayment.payment.tokenBalanceI).to.equal(payment.balanceB.tokenDeposit.toString())
       expect(updatedPayment.payment.ethBalanceA).to.equal(payment.balanceA.ethDeposit.toString())
       expect(updatedPayment.payment.ethBalanceI).to.equal(payment.balanceB.ethDeposit.toString())
     })
 
-    it('should create an TOKEN channel update', async () => {
+    it('should create an ETH channel update', async () => {
         const channelId =
           '0x3000000000000000000000000000000000000000000000000000000000000000'
         const balanceA = {
-          tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('4', 'ether')),
+          tokenDeposit: null,
+          ethDeposit: Web3.utils.toBN(Web3.utils.toWei('3', 'ether'))
+        }
+        const balanceB = {
+          tokenDeposit: null,
+          ethDeposit: Web3.utils.toBN(Web3.utils.toWei('1', 'ether'))
+        }
+        const payment = {
+          balanceA,
+          balanceB,
+          channelId
+        }
+        const meta = {
+          receiver: '0x5aeda56215b167893e80b4fe645ba6d5bab767de',
+          type: 'PURCHASE',
+          fields: {
+            productSku: 6969,
+            productName: 'Agent Smith'
+          }
+        }
+        const increment = 1
+        const sender = partyC
+        const updatedPayment = await client.channelUpdateHandler(
+          { payment, meta },
+          increment,
+          sender
+        )
+        expect(updatedPayment.payment.ethBalanceA).to.equal(payment.balanceA.ethDeposit.toString())
+        expect(updatedPayment.payment.ethBalanceI).to.equal(payment.balanceB.ethDeposit.toString())
+        expect(updatedPayment.payment.tokenBalanceA).to.equal('0')
+        expect(updatedPayment.payment.tokenBalanceI).to.equal('0')
+      })
+
+    it('should create an TOKEN channel update', async () => {
+        const channelId =
+          '0x4000000000000000000000000000000000000000000000000000000000000000'
+        const balanceA = {
+          tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('3', 'ether')),
           ethDeposit: null
         }
         const balanceB = {
@@ -115,7 +154,7 @@ describe('channelUpdateHandler()', function () {
           }
         }
         const increment = 1
-        const sender = partyA
+        const sender = partyD
         const updatedPayment = await client.channelUpdateHandler(
           { payment, meta },
           increment,
@@ -125,43 +164,6 @@ describe('channelUpdateHandler()', function () {
         expect(updatedPayment.payment.tokenBalanceI).to.equal(payment.balanceB.tokenDeposit.toString())
         expect(updatedPayment.payment.ethBalanceA).to.equal('0')
         expect(updatedPayment.payment.ethBalanceI).to.equal('0')
-      })
-
-      it('should create an ETH channel update', async () => {
-        const channelId =
-          '0x2000000000000000000000000000000000000000000000000000000000000000'
-        const balanceA = {
-          tokenDeposit: null,
-          ethDeposit: Web3.utils.toBN(Web3.utils.toWei('4', 'ether'))
-        }
-        const balanceB = {
-          tokenDeposit: null,
-          ethDeposit: Web3.utils.toBN(Web3.utils.toWei('1', 'ether'))
-        }
-        const payment = {
-          balanceA,
-          balanceB,
-          channelId
-        }
-        const meta = {
-          receiver: '0x5aeda56215b167893e80b4fe645ba6d5bab767de',
-          type: 'PURCHASE',
-          fields: {
-            productSku: 6969,
-            productName: 'Agent Smith'
-          }
-        }
-        const increment = 1
-        const sender = partyA
-        const updatedPayment = await client.channelUpdateHandler(
-          { payment, meta },
-          increment,
-          sender
-        )
-        expect(updatedPayment.payment.ethBalanceA).to.equal(payment.balanceA.ethDeposit.toString())
-        expect(updatedPayment.payment.ethBalanceI).to.equal(payment.balanceB.ethDeposit.toString())
-        expect(updatedPayment.payment.tokenBalanceA).to.equal('0')
-        expect(updatedPayment.payment.tokenBalanceI).to.equal('0')
       })
 
     afterEach('restore hub', () => {

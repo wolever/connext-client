@@ -1,4 +1,3 @@
-require('dotenv').config()
 const chai = require('chai')
 const expect = chai.expect
 const Web3 = require('web3')
@@ -48,7 +47,7 @@ describe('createChannelUpdateOnThreadOpen()', () => {
       // activate nock
       if (!nock.isActive()) nock.activate()
       // stub hub methods
-      stubHub = await createStubbedHub(`${client.ingridUrl}`, 'OPEN_LC')
+      stubHub = await createStubbedHub(`${client.ingridUrl}`, 'OPEN_LC_NO_VC')
     })
 
     it('should correctly generate and sign a channel update representing opening a new ETH/TOKEN thread', async () => {

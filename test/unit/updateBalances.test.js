@@ -21,13 +21,15 @@ let watcherUrl = ''
 
 // for accounts
 let accounts
-let partyA
+let partyA, partyC, partyD
 
 describe('updateBalances()', function () {
   beforeEach('init client and accounts', async () => {
     accounts = await web3.eth.getAccounts()
     ingridAddress = accounts[0]
     partyA = accounts[1]
+    partyC = accounts[3]
+    partyD = accounts[4]
     const authJson = { token: 'SwSNTnh3LlEJg1N9iiifFgOIKq998PGA' }
 
     // init client instance
@@ -49,7 +51,7 @@ describe('updateBalances()', function () {
       client.channelManagerInstance.methods = createStubbedContract()
 
       // stub hub methods
-      stubHub = await createStubbedHub(`${client.ingridUrl}`, 'NO_LC')
+      stubHub = await createStubbedHub(`${client.ingridUrl}`, 'OPEN_LC_OPEN_VC')
     })
 
     it('should create a channel and thread state update with ETH and TOKEN updates', async () => {
@@ -66,8 +68,8 @@ describe('updateBalances()', function () {
         tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
       }
       const channelBalanceA = {
-        ethDeposit: Web3.utils.toBN(Web3.utils.toWei('4', 'ether')),
-        tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('4', 'ether'))
+        ethDeposit: Web3.utils.toBN(Web3.utils.toWei('3', 'ether')),
+        tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('3', 'ether'))
       }
       const channelBalanceB = {
         ethDeposit: Web3.utils.toBN(Web3.utils.toWei('1', 'ether')),
@@ -115,9 +117,9 @@ describe('updateBalances()', function () {
 
     it('should create a channel and thread state update with ETH only updates', async () => {
       const channelId =
-        '0x1000000000000000000000000000000000000000000000000000000000000000'
+        '0x3000000000000000000000000000000000000000000000000000000000000000'
       const threadId =
-        '0x0100000000000000000000000000000000000000000000000000000000000000'
+        '0x0200000000000000000000000000000000000000000000000000000000000000'
       const threadBalanceA = {
         ethDeposit: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether')),
         tokenDeposit: null
@@ -127,7 +129,7 @@ describe('updateBalances()', function () {
         tokenDeposit: null
       }
       const channelBalanceA = {
-        ethDeposit: Web3.utils.toBN(Web3.utils.toWei('4', 'ether')),
+        ethDeposit: Web3.utils.toBN(Web3.utils.toWei('3', 'ether')),
         tokenDeposit: null
       }
       const channelBalanceB = {
@@ -170,15 +172,15 @@ describe('updateBalances()', function () {
         }
       ]
 
-      const results = await client.updateBalances(payments, partyA)
+      const results = await client.updateBalances(payments, partyC)
       expect(results.length).to.equal(2)
     })
 
     it('should create a channel and thread state update with TOKEN only updates', async () => {
       const channelId =
-        '0x1000000000000000000000000000000000000000000000000000000000000000'
+        '0x4000000000000000000000000000000000000000000000000000000000000000'
       const threadId =
-        '0x0100000000000000000000000000000000000000000000000000000000000000'
+        '0x0300000000000000000000000000000000000000000000000000000000000000'
       const threadBalanceA = {
         ethDeposit: null,
         tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether'))
@@ -189,7 +191,7 @@ describe('updateBalances()', function () {
       }
       const channelBalanceA = {
         ethDeposit: null,
-        tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('4', 'ether'))
+        tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('3', 'ether'))
       }
       const channelBalanceB = {
         ethDeposit: null,
@@ -231,7 +233,7 @@ describe('updateBalances()', function () {
         }
       ]
 
-      const results = await client.updateBalances(payments, partyA)
+      const results = await client.updateBalances(payments, partyD)
       expect(results.length).to.equal(2)
     })
 
@@ -239,8 +241,8 @@ describe('updateBalances()', function () {
       const channelId =
         '0x1000000000000000000000000000000000000000000000000000000000000000'
       const channelBalanceA = {
-        ethDeposit: Web3.utils.toBN(Web3.utils.toWei('4', 'ether')),
-        tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('4', 'ether'))
+        ethDeposit: Web3.utils.toBN(Web3.utils.toWei('3', 'ether')),
+        tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('3', 'ether'))
       }
       const channelBalanceB = {
         ethDeposit: Web3.utils.toBN(Web3.utils.toWei('1', 'ether')),
@@ -273,7 +275,7 @@ describe('updateBalances()', function () {
       const channelId =
         '0x1000000000000000000000000000000000000000000000000000000000000000'
       const channelBalanceA = {
-        ethDeposit: Web3.utils.toBN(Web3.utils.toWei('4', 'ether')),
+        ethDeposit: Web3.utils.toBN(Web3.utils.toWei('3', 'ether')),
         tokenDeposit: null
       }
       const channelBalanceB = {
@@ -308,7 +310,7 @@ describe('updateBalances()', function () {
         '0x1000000000000000000000000000000000000000000000000000000000000000'
       const channelBalanceA = {
         ethDeposit: null,
-        tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('4', 'ether'))
+        tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('3', 'ether'))
       }
       const channelBalanceB = {
         ethDeposit: null,

@@ -70,7 +70,7 @@ describe('deposit()', function () {
       client.channelManagerInstance.methods = createStubbedContract()
 
       // stub hub methods
-      stubHub = await createStubbedHub(`${client.ingridUrl}`, 'OPEN_LC')
+      stubHub = await createStubbedHub(`${client.ingridUrl}`, 'OPEN_LC_NO_VC')
     })
 
     it('should create an ETH only deposit', async () => {

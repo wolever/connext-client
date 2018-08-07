@@ -50,7 +50,7 @@ describe('openChannel()', function () {
       if (!nock.isActive()) nock.activate()
 
       // stub hub methods
-      stubHub = await createStubbedHub(`${client.ingridUrl}`, 'OPEN_LC')
+      stubHub = await createStubbedHub(`${client.ingridUrl}`, 'OPEN_LC_NO_VC')
     })
 
     it('should create a new virtual channel', async () => {

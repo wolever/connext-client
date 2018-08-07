@@ -21,8 +21,7 @@ let watcherUrl = ''
 
 // for accounts
 let accounts
-let partyA
-let partyB
+let partyA, partyB, partyC, partyD
 
 describe('createThreadStateUpdate()', function () {
   before('init client and accounts', async () => {
@@ -30,6 +29,8 @@ describe('createThreadStateUpdate()', function () {
     ingridAddress = accounts[0]
     partyA = accounts[1]
     partyB = accounts[2]
+    partyC = accounts[3]
+    partyD = accounts[4]
     const authJson = { token: 'SwSNTnh3LlEJg1N9iiifFgOIKq998PGA' }
 
     // init client instance
@@ -49,7 +50,7 @@ describe('createThreadStateUpdate()', function () {
       if (!nock.isActive()) nock.activate()
 
       // stub hub methods
-      stubHub = await createStubbedHub(`${client.ingridUrl}`, 'OPEN_LC')
+      stubHub = await createStubbedHub(`${client.ingridUrl}`, 'OPEN_LC_OPEN_VC')
     })
 
     it('should sign the proposed TOKEN_ETH state update', async () => {
@@ -85,44 +86,11 @@ describe('createThreadStateUpdate()', function () {
       expect(signer.toLowerCase()).to.equal(update.signer.toLowerCase())
     })
 
-    it('should sign the proposed TOKEN state update', async () => {
-      const update = {
-        channelId: '0x0300000000000000000000000000000000000000000000000000000000000000',
-        nonce: 1,
-        partyA,
-        partyB,
-        balanceA: {
-          tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether')),
-          ethDeposit: null
-        },
-        balanceB: {
-          tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
-          ethDeposit: null
-        },
-        updateType: 'TOKEN',
-        signer: partyA
-      }
-      const sig = await client.createThreadStateUpdate(update)
-      const sigParams = {
-        sig,
-        channelId: update.channelId,
-        nonce: update.nonce,
-        partyA,
-        partyB,
-        ethBalanceA: Web3.utils.toBN('0'),
-        ethBalanceB: Web3.utils.toBN('0'),
-        tokenBalanceA: update.balanceA.tokenDeposit,
-        tokenBalanceB: update.balanceB.tokenDeposit
-      }
-      const signer = Connext.recoverSignerFromThreadStateUpdate(sigParams)
-      expect(signer.toLowerCase()).to.equal(update.signer.toLowerCase())
-    })
-
     it('should sign the proposed ETH state update', async () => {
       const update = {
         channelId: '0x0200000000000000000000000000000000000000000000000000000000000000',
         nonce: 1,
-        partyA,
+        partyA: partyC,
         partyB,
         balanceA: {
           ethDeposit: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether')),
@@ -133,19 +101,52 @@ describe('createThreadStateUpdate()', function () {
           tokenDeposit: null
         },
         updateType: 'ETH',
-        signer: partyA
+        signer: partyC
       }
       const sig = await client.createThreadStateUpdate(update)
       const sigParams = {
         sig,
         channelId: update.channelId,
         nonce: update.nonce,
-        partyA,
+        partyA: partyC,
         partyB,
         ethBalanceA: update.balanceA.ethDeposit,
         ethBalanceB: update.balanceB.ethDeposit,
         tokenBalanceA: Web3.utils.toBN('0'),
         tokenBalanceB: Web3.utils.toBN('0')
+      }
+      const signer = Connext.recoverSignerFromThreadStateUpdate(sigParams)
+      expect(signer.toLowerCase()).to.equal(update.signer.toLowerCase())
+    })
+
+    it('should sign the proposed TOKEN state update', async () => {
+      const update = {
+        channelId: '0x0300000000000000000000000000000000000000000000000000000000000000',
+        nonce: 1,
+        partyA: partyD,
+        partyB,
+        balanceA: {
+          tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether')),
+          ethDeposit: null
+        },
+        balanceB: {
+          tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
+          ethDeposit: null
+        },
+        updateType: 'TOKEN',
+        signer: partyD
+      }
+      const sig = await client.createThreadStateUpdate(update)
+      const sigParams = {
+        sig,
+        channelId: update.channelId,
+        nonce: update.nonce,
+        partyA: partyD,
+        partyB,
+        ethBalanceA: Web3.utils.toBN('0'),
+        ethBalanceB: Web3.utils.toBN('0'),
+        tokenBalanceA: update.balanceA.tokenDeposit,
+        tokenBalanceB: update.balanceB.tokenDeposit
       }
       const signer = Connext.recoverSignerFromThreadStateUpdate(sigParams)
       expect(signer.toLowerCase()).to.equal(update.signer.toLowerCase())
