@@ -64,7 +64,10 @@ describe('closeChannel()', () => {
         '0x0100000000000000000000000000000000000000000000000000000000000000'
       const sender = partyA
       const sigItoA = await client.closeChannel(threadId, sender)
+      const channelId =
+        '0x1000000000000000000000000000000000000000000000000000000000000000'
       const sigParams = {
+        channelId,
         sig: sigItoA,
         isClose: false,
         partyA: sender.toLowerCase(),
@@ -86,7 +89,10 @@ describe('closeChannel()', () => {
         '0x0200000000000000000000000000000000000000000000000000000000000000'
       const sender = partyC
       const sigItoA = await client.closeChannel(threadId, sender)
+      const channelId =
+        '0x3000000000000000000000000000000000000000000000000000000000000000'
       const sigParams = {
+        channelId,
         sig: sigItoA,
         isClose: false,
         partyA: sender.toLowerCase(),
@@ -108,7 +114,10 @@ describe('closeChannel()', () => {
         '0x0300000000000000000000000000000000000000000000000000000000000000'
       const sender = partyD
       const sigItoA = await client.closeChannel(threadId, sender)
+      const channelId =
+        '0x4000000000000000000000000000000000000000000000000000000000000000'
       const sigParams = {
+        channelId,
         sig: sigItoA,
         isClose: false,
         partyA: sender.toLowerCase(),

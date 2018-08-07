@@ -1517,6 +1517,7 @@ class Connext {
    * @returns {String} the hash of the state data
    */
   static createChannelStateUpdateFingerprint ({
+    channelId,
     isClose,
     nonce,
     openVcs,
@@ -1533,11 +1534,16 @@ class Connext {
     // validate
     // validatorOpts
     const isHex = { presence: true, isHex: true }
+    const isHexStrict = { presence: true, isHexStrict: true }
     const isBN = { presence: true, isBN: true }
     const isAddress = { presence: true, isAddress: true }
     const isPositiveInt = { presence: true, isPositiveInt: true }
     const isBool = { presence: true, isBool: true }
-
+    Connext.validatorsResponseToError(
+      validate.single(channelId, isHexStrict),
+      methodName,
+      'channelId'
+    )
     Connext.validatorsResponseToError(
       validate.single(isClose, isBool),
       methodName,
@@ -1590,6 +1596,7 @@ class Connext {
     )
     // generate state update to sign
     const hash = Web3.utils.soliditySha3(
+      { type: 'bytes32', value: channelId },
       { type: 'bool', value: isClose },
       { type: 'uint256', value: nonce },
       { type: 'uint256', value: openVcs },
@@ -1621,6 +1628,7 @@ class Connext {
    * @returns {String} the ETH address of the person who signed the data
    */
   static recoverSignerFromChannelStateUpdate ({
+    channelId,
     sig,
     isClose,
     nonce,
@@ -1636,11 +1644,17 @@ class Connext {
     const methodName = 'recoverSignerFromChannelStateUpdate'
     // validate
     // validatorOpts
+    const isHexStrict = { presence: true, isHexStrict: true }
     const isHex = { presence: true, isHex: true }
     const isBN = { presence: true, isBN: true }
     const isAddress = { presence: true, isAddress: true }
     const isPositiveInt = { presence: true, isPositiveInt: true }
     const isBool = { presence: true, isBool: true }
+    Connext.validatorsResponseToError(
+      validate.single(channelId, isHexStrict),
+      methodName,
+      'channelId'
+    )
 
     Connext.validatorsResponseToError(
       validate.single(sig, isHex),
@@ -1702,6 +1716,7 @@ class Connext {
 
     console.log('recovering signer from:', JSON.stringify({
       sig,
+      channelId,
       isClose,
       nonce,
       openVcs,
@@ -1715,6 +1730,7 @@ class Connext {
     }))
     // generate fingerprint
     let fingerprint = Connext.createChannelStateUpdateFingerprint({
+      channelId,
       isClose,
       nonce,
       openVcs,
@@ -2191,6 +2207,7 @@ class Connext {
     }))
     // generate sig
     const hash = Connext.createChannelStateUpdateFingerprint({
+      channelId,
       isClose,
       nonce,
       openVcs,

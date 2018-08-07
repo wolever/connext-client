@@ -42,6 +42,7 @@ describe('createChannelStateUpdateFingerprint()', function () {
 
   it('should generate a hash of the input data using Web3', () => {
     const state = {
+      channelId: '0x1000000000000000000000000000000000000000000000000000000000000000',
       isClose: false,
       nonce: 0,
       openVcs: 0,
@@ -55,6 +56,7 @@ describe('createChannelStateUpdateFingerprint()', function () {
     }
     const hash = Connext.createChannelStateUpdateFingerprint(state)
     const expectedHash = Web3.utils.soliditySha3(
+      { type: 'bytes32', value: state.channelId },
       { type: 'bool', value: state.isClose },
       { type: 'uint256', value: state.nonce },
       { type: 'uint256', value: state.openVcs },
@@ -72,6 +74,7 @@ describe('createChannelStateUpdateFingerprint()', function () {
   describe('parameter validation', () => {
     it('should fail if it is missing isClose flag', () => {
       const state = {
+        channelId: '0x1000000000000000000000000000000000000000000000000000000000000000',
         nonce: 0,
         openVcs: 0,
         vcRootHash: Connext.generateVcRootHash({ vc0s: [] }),
@@ -92,7 +95,7 @@ describe('createChannelStateUpdateFingerprint()', function () {
     it('should fail if isClose flag is null', () => {
       const state = {
         isClose: null,
-
+        channelId: '0x1000000000000000000000000000000000000000000000000000000000000000',
         nonce: 0,
         openVcs: 0,
         vcRootHash: Connext.generateVcRootHash({ vc0s: [] }),
@@ -113,7 +116,7 @@ describe('createChannelStateUpdateFingerprint()', function () {
     it('should fail if isClose flag is invalid', () => {
       const state = {
         isClose: 'fail',
-
+        channelId: '0x1000000000000000000000000000000000000000000000000000000000000000',
         nonce: 0,
         openVcs: 0,
         vcRootHash: Connext.generateVcRootHash({ vc0s: [] }),
@@ -134,7 +137,7 @@ describe('createChannelStateUpdateFingerprint()', function () {
     it('should fail if it is missing nonce', () => {
       const state = {
         isClose: false,
-
+        channelId: '0x1000000000000000000000000000000000000000000000000000000000000000',
         openVcs: 0,
         vcRootHash: Connext.generateVcRootHash({ vc0s: [] }),
         partyA,
@@ -154,7 +157,7 @@ describe('createChannelStateUpdateFingerprint()', function () {
     it('should fail if nonce is null', () => {
       const state = {
         isClose: false,
-
+        channelId: '0x1000000000000000000000000000000000000000000000000000000000000000',
         nonce: null,
         openVcs: 0,
         vcRootHash: Connext.generateVcRootHash({ vc0s: [] }),
@@ -174,7 +177,7 @@ describe('createChannelStateUpdateFingerprint()', function () {
     it('should fail if nonce is invalid', () => {
       const state = {
         isClose: false,
-
+        channelId: '0x1000000000000000000000000000000000000000000000000000000000000000',
         nonce: 'fail',
         openVcs: 0,
         vcRootHash: Connext.generateVcRootHash({ vc0s: [] }),
@@ -195,7 +198,7 @@ describe('createChannelStateUpdateFingerprint()', function () {
     it('should fail if no openVcs', () => {
       const state = {
         isClose: false,
-
+        channelId: '0x1000000000000000000000000000000000000000000000000000000000000000',
         nonce: 0,
         vcRootHash: Connext.generateVcRootHash({ vc0s: [] }),
         partyA,
@@ -215,7 +218,7 @@ describe('createChannelStateUpdateFingerprint()', function () {
     it('should fail if null openVcs', () => {
       const state = {
         isClose: false,
-
+        channelId: '0x1000000000000000000000000000000000000000000000000000000000000000',
         nonce: 0,
         openVcs: null,
         vcRootHash: Connext.generateVcRootHash({ vc0s: [] }),
@@ -236,7 +239,7 @@ describe('createChannelStateUpdateFingerprint()', function () {
     it('should fail if invalid openVCs', () => {
       const state = {
         isClose: false,
-
+        channelId: '0x1000000000000000000000000000000000000000000000000000000000000000',
         nonce: 0,
         openVcs: 'fail',
         vcRootHash: Connext.generateVcRootHash({ vc0s: [] }),
@@ -257,7 +260,7 @@ describe('createChannelStateUpdateFingerprint()', function () {
     it('should fail if no vcRootHash', () => {
       const state = {
         isClose: false,
-
+        channelId: '0x1000000000000000000000000000000000000000000000000000000000000000',
         nonce: 0,
         openVcs: 0,
         partyA,
@@ -277,7 +280,7 @@ describe('createChannelStateUpdateFingerprint()', function () {
     it('should fail if vcRootHash is null', () => {
       const state = {
         isClose: false,
-
+        channelId: '0x1000000000000000000000000000000000000000000000000000000000000000',
         nonce: 0,
         openVcs: 0,
         vcRootHash: null,
@@ -298,7 +301,7 @@ describe('createChannelStateUpdateFingerprint()', function () {
     it('should fail if vcRootHash is invalid', () => {
       const state = {
         isClose: false,
-
+        channelId: '0x1000000000000000000000000000000000000000000000000000000000000000',
         nonce: 0,
         openVcs: 0,
         vcRootHash: 'fail',
@@ -319,7 +322,7 @@ describe('createChannelStateUpdateFingerprint()', function () {
     it('should fail if no partyA', () => {
       const state = {
         isClose: false,
-
+        channelId: '0x1000000000000000000000000000000000000000000000000000000000000000',
         nonce: 0,
         openVcs: 0,
         vcRootHash: Connext.generateVcRootHash({ vc0s: [] }),
@@ -339,7 +342,7 @@ describe('createChannelStateUpdateFingerprint()', function () {
     it('should fail if partyA is null', () => {
       const state = {
         isClose: false,
-
+        channelId: '0x1000000000000000000000000000000000000000000000000000000000000000',
         nonce: 0,
         openVcs: 0,
         vcRootHash: Connext.generateVcRootHash({ vc0s: [] }),
@@ -360,7 +363,7 @@ describe('createChannelStateUpdateFingerprint()', function () {
     it('should fail if partyA is invalid', () => {
       const state = {
         isClose: false,
-
+        channelId: '0x1000000000000000000000000000000000000000000000000000000000000000',
         nonce: 0,
         openVcs: 0,
         vcRootHash: Connext.generateVcRootHash({ vc0s: [] }),
@@ -381,7 +384,7 @@ describe('createChannelStateUpdateFingerprint()', function () {
     it('should fail if partyI doesnt exist', () => {
       const state = {
         isClose: false,
-
+        channelId: '0x1000000000000000000000000000000000000000000000000000000000000000',
         nonce: 0,
         openVcs: 0,
         vcRootHash: Connext.generateVcRootHash({ vc0s: [] }),
@@ -401,7 +404,7 @@ describe('createChannelStateUpdateFingerprint()', function () {
     it('should fail if partyI is null', () => {
       const state = {
         isClose: false,
-
+        channelId: '0x1000000000000000000000000000000000000000000000000000000000000000',
         nonce: 0,
         openVcs: 0,
         vcRootHash: Connext.generateVcRootHash({ vc0s: [] }),
@@ -422,7 +425,7 @@ describe('createChannelStateUpdateFingerprint()', function () {
     it('should fail if partyI is invalid', () => {
       const state = {
         isClose: false,
-
+        channelId: '0x1000000000000000000000000000000000000000000000000000000000000000',
         nonce: 0,
         openVcs: 0,
         vcRootHash: Connext.generateVcRootHash({ vc0s: [] }),
@@ -443,7 +446,7 @@ describe('createChannelStateUpdateFingerprint()', function () {
     it('should fail if ethBalanceA doesnt exist', () => {
       const state = {
         isClose: false,
-
+        channelId: '0x1000000000000000000000000000000000000000000000000000000000000000',
         nonce: 0,
         openVcs: 0,
         vcRootHash: Connext.generateVcRootHash({ vc0s: [] }),
@@ -463,7 +466,7 @@ describe('createChannelStateUpdateFingerprint()', function () {
     it('should fail if ethBalanceA is null', () => {
       const state = {
         isClose: false,
-
+        channelId: '0x1000000000000000000000000000000000000000000000000000000000000000',
         nonce: 0,
         openVcs: 0,
         vcRootHash: Connext.generateVcRootHash({ vc0s: [] }),
@@ -484,7 +487,7 @@ describe('createChannelStateUpdateFingerprint()', function () {
     it('should fail if ethBalanceA is invalid', () => {
       const state = {
         isClose: false,
-
+        channelId: '0x1000000000000000000000000000000000000000000000000000000000000000',
         nonce: 0,
         openVcs: 0,
         vcRootHash: Connext.generateVcRootHash({ vc0s: [] }),
@@ -505,7 +508,7 @@ describe('createChannelStateUpdateFingerprint()', function () {
     it('should fail if ethBalanceI doesnt exist', () => {
       const state = {
         isClose: false,
-
+        channelId: '0x1000000000000000000000000000000000000000000000000000000000000000',
         nonce: 0,
         openVcs: 0,
         vcRootHash: Connext.generateVcRootHash({ vc0s: [] }),
@@ -525,7 +528,7 @@ describe('createChannelStateUpdateFingerprint()', function () {
     it('should fail if ethBalanceI is null', () => {
       const state = {
         isClose: false,
-
+        channelId: '0x1000000000000000000000000000000000000000000000000000000000000000',
         nonce: 0,
         openVcs: 0,
         vcRootHash: Connext.generateVcRootHash({ vc0s: [] }),
@@ -546,7 +549,7 @@ describe('createChannelStateUpdateFingerprint()', function () {
     it('should fail if ethBalanceI is invalid', () => {
       const state = {
         isClose: false,
-
+        channelId: '0x1000000000000000000000000000000000000000000000000000000000000000',
         nonce: 0,
         openVcs: 0,
         vcRootHash: Connext.generateVcRootHash({ vc0s: [] }),
@@ -567,7 +570,7 @@ describe('createChannelStateUpdateFingerprint()', function () {
     it('should fail if tokenBalanceA doesnt exist', () => {
       const state = {
         isClose: false,
-
+        channelId: '0x1000000000000000000000000000000000000000000000000000000000000000',
         nonce: 0,
         openVcs: 0,
         vcRootHash: Connext.generateVcRootHash({ vc0s: [] }),
@@ -587,7 +590,7 @@ describe('createChannelStateUpdateFingerprint()', function () {
     it('should fail if tokenBalanceA is null', () => {
       const state = {
         isClose: false,
-
+        channelId: '0x1000000000000000000000000000000000000000000000000000000000000000',
         nonce: 0,
         openVcs: 0,
         vcRootHash: Connext.generateVcRootHash({ vc0s: [] }),
@@ -608,7 +611,7 @@ describe('createChannelStateUpdateFingerprint()', function () {
     it('should fail if tokenBalanceA is invalid', () => {
       const state = {
         isClose: false,
-
+        channelId: '0x1000000000000000000000000000000000000000000000000000000000000000',
         nonce: 0,
         openVcs: 0,
         vcRootHash: Connext.generateVcRootHash({ vc0s: [] }),
@@ -629,7 +632,7 @@ describe('createChannelStateUpdateFingerprint()', function () {
     it('should fail if tokenBalanceI doesnt exist', () => {
       const state = {
         isClose: false,
-
+        channelId: '0x1000000000000000000000000000000000000000000000000000000000000000',
         nonce: 0,
         openVcs: 0,
         vcRootHash: Connext.generateVcRootHash({ vc0s: [] }),
@@ -649,7 +652,7 @@ describe('createChannelStateUpdateFingerprint()', function () {
     it('should fail if tokenBalanceI is null', () => {
       const state = {
         isClose: false,
-
+        channelId: '0x1000000000000000000000000000000000000000000000000000000000000000',
         nonce: 0,
         openVcs: 0,
         vcRootHash: Connext.generateVcRootHash({ vc0s: [] }),
@@ -670,7 +673,7 @@ describe('createChannelStateUpdateFingerprint()', function () {
     it('should fail if tokenBalanceI is invalid', () => {
       const state = {
         isClose: false,
-
+        channelId: '0x1000000000000000000000000000000000000000000000000000000000000000',
         nonce: 0,
         openVcs: 0,
         vcRootHash: Connext.generateVcRootHash({ vc0s: [] }),

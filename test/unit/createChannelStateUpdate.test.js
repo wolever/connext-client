@@ -73,6 +73,7 @@ describe('createChannelStateUpdate()', function () {
       }
       const sig = await client.createChannelStateUpdate(update)
       const signer = Connext.recoverSignerFromChannelStateUpdate({
+        channelId: update.channelId,
         sig,
         isClose: false,
         nonce: update.nonce,
@@ -108,6 +109,7 @@ describe('createChannelStateUpdate()', function () {
       }
       const sig = await client.createChannelStateUpdate(update)
       const signer = Connext.recoverSignerFromChannelStateUpdate({
+        channelId: update.channelId,
         sig,
         isClose: false,
         nonce: update.nonce,
@@ -143,6 +145,7 @@ describe('createChannelStateUpdate()', function () {
       }
       const sig = await client.createChannelStateUpdate(update)
       const signer = Connext.recoverSignerFromChannelStateUpdate({
+        channelId: update.channelId,
         sig,
         isClose: false,
         nonce: update.nonce,
