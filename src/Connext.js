@@ -3135,11 +3135,9 @@ class Connext {
     subchanId,
     threadId,
     proof = null,
-    nonce,
     partyA,
     partyB,
     balanceA,
-    balanceB,
     sigA,
     sender = null
   }) {
@@ -3149,7 +3147,6 @@ class Connext {
     const isHexStrict = { presence: true, isHexStrict: true }
     const isValidDepositObject = { presence: true, isValidDepositObject: true }
     const isHex = { presence: true, isHex: true }
-    const isPositiveInt = { presence: true, isPositiveInt: true }
     Connext.validatorsResponseToError(
       validate.single(subchanId, isHexStrict),
       methodName,
@@ -3159,11 +3156,6 @@ class Connext {
       validate.single(threadId, isHexStrict),
       methodName,
       'threadId'
-    )
-    Connext.validatorsResponseToError(
-      validate.single(nonce, isPositiveInt),
-      methodName,
-      'nonce'
     )
     Connext.validatorsResponseToError(
       validate.single(partyA, isAddress),
@@ -3181,11 +3173,6 @@ class Connext {
       'balanceA'
     )
     Connext.validatorsResponseToError(
-      validate.single(balanceB, isValidDepositObject),
-      methodName,
-      'balanceB'
-    )
-    Connext.validatorsResponseToError(
       validate.single(sigA, isHex),
       methodName,
       'sigA'
@@ -3201,22 +3188,20 @@ class Connext {
       sender = accounts[0].toLowerCase()
     }
     const ethBalanceA = balanceA.ethDeposit ? balanceA.ethDeposit : Web3.utils.toBN('0')
-    const ethBalanceB = balanceB.ethDeposit ? balanceB.ethDeposit : Web3.utils.toBN('0')
-
     const tokenBalanceA = balanceA.tokenDeposit ? balanceA.tokenDeposit : Web3.utils.toBN('0')
-    const tokenBalanceB = balanceB.tokenDeposit ? balanceB.tokenDeposit : Web3.utils.toBN('0')    
+    
     let merkle, stateHash
     if (proof === null) {
       // generate proof from lc
       stateHash = Connext.createThreadStateUpdateFingerprint({
         channelId: threadId,
-        nonce,
+        nonce: 0,
         partyA,
         partyB,
         ethBalanceA,
-        ethBalanceB,
+        ethBalanceB: Web3.utils.toBN('0'),
         tokenBalanceA,
-        tokenBalanceB,
+        tokenBalanceB: Web3.utils.toBN('0'),
       })
       const vc0s = await this.getVcInitialStates(subchanId)
       merkle = Connext.generateMerkleTree(vc0s)
@@ -3231,19 +3216,17 @@ class Connext {
 
       proof = Utils.marshallState(proof)
     }
-    const hubEthBond = ethBalanceA.add(ethBalanceB)
-    const hubTokenBond = tokenBalanceA.add(tokenBalanceB)
 
     const results = await this.channelManagerInstance.methods
       .initVCstate(
         subchanId,
         threadId,
         proof,
-        nonce,
+        0,
         partyA,
         partyB,
-        [ hubEthBond, hubTokenBond ],
-        [ ethBalanceA, ethBalanceB, tokenBalanceA, tokenBalanceB ],
+        [ ethBalanceA, tokenBalanceA ],
+        [ ethBalanceA, Web3.utils.toBN('0'), tokenBalanceA, Web3.utils.toBN('0')],
         sigA
       )
       // .estimateGas({
