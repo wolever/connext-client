@@ -42,6 +42,7 @@ describe('recoverSignerFromChannelStateUpdateFingerprint()', function () {
 
   it('should generate a hash of the input data using Web3', async () => {
     let state = {
+      channelId: '0x1000000000000000000000000000000000000000000000000000000000000000',
       isClose: false,
       nonce: 0,
       openVcs: 0,

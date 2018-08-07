@@ -1517,6 +1517,7 @@ class Connext {
    * @returns {String} the hash of the state data
    */
   static createChannelStateUpdateFingerprint ({
+    channelId,
     isClose,
     nonce,
     openVcs,
@@ -1533,11 +1534,16 @@ class Connext {
     // validate
     // validatorOpts
     const isHex = { presence: true, isHex: true }
+    const isHexStrict = { presence: true, isHexStrict: true }
     const isBN = { presence: true, isBN: true }
     const isAddress = { presence: true, isAddress: true }
     const isPositiveInt = { presence: true, isPositiveInt: true }
     const isBool = { presence: true, isBool: true }
-
+    Connext.validatorsResponseToError(
+      validate.single(channelId, isHexStrict),
+      methodName,
+      'channelId'
+    )
     Connext.validatorsResponseToError(
       validate.single(isClose, isBool),
       methodName,
@@ -1590,6 +1596,7 @@ class Connext {
     )
     // generate state update to sign
     const hash = Web3.utils.soliditySha3(
+      { type: 'bytes32', value: channelId },
       { type: 'bool', value: isClose },
       { type: 'uint256', value: nonce },
       { type: 'uint256', value: openVcs },
@@ -1621,6 +1628,7 @@ class Connext {
    * @returns {String} the ETH address of the person who signed the data
    */
   static recoverSignerFromChannelStateUpdate ({
+    channelId,
     sig,
     isClose,
     nonce,
@@ -1636,11 +1644,17 @@ class Connext {
     const methodName = 'recoverSignerFromChannelStateUpdate'
     // validate
     // validatorOpts
+    const isHexStrict = { presence: true, isHexStrict: true }
     const isHex = { presence: true, isHex: true }
     const isBN = { presence: true, isBN: true }
     const isAddress = { presence: true, isAddress: true }
     const isPositiveInt = { presence: true, isPositiveInt: true }
     const isBool = { presence: true, isBool: true }
+    Connext.validatorsResponseToError(
+      validate.single(channelId, isHexStrict),
+      methodName,
+      'channelId'
+    )
 
     Connext.validatorsResponseToError(
       validate.single(sig, isHex),
@@ -1702,6 +1716,7 @@ class Connext {
 
     console.log('recovering signer from:', JSON.stringify({
       sig,
+      channelId,
       isClose,
       nonce,
       openVcs,
@@ -1715,6 +1730,7 @@ class Connext {
     }))
     // generate fingerprint
     let fingerprint = Connext.createChannelStateUpdateFingerprint({
+      channelId,
       isClose,
       nonce,
       openVcs,
@@ -2191,6 +2207,7 @@ class Connext {
     }))
     // generate sig
     const hash = Connext.createChannelStateUpdateFingerprint({
+      channelId,
       isClose,
       nonce,
       openVcs,
@@ -2527,7 +2544,13 @@ class Connext {
       case CHANNEL_TYPES.ETH: // ETH
         tokenAddress = '0x0'
         result = await this.channelManagerInstance.methods
-          .createChannel(channelId, ingridAddress, challenge, tokenAddress, initialDeposits.ethDeposit)
+          .createChannel(
+            channelId, 
+            ingridAddress, 
+            challenge, 
+            tokenAddress, 
+            [initialDeposits.ethDeposit, Web3.utils.toBN('0')]
+          )
           .send({
             from: sender,
             value: initialDeposits.ethDeposit,
@@ -2543,7 +2566,13 @@ class Connext {
         })
         if (tokenApproval) {
           result = await this.channelManagerInstance.methods
-          .createChannel(channelId, ingridAddress, challenge, tokenAddress, initialDeposits.tokenDeposit)
+          .createChannel(
+            channelId, 
+            ingridAddress, 
+            challenge, 
+            tokenAddress, 
+            [Web3.utils.toBN('0'), initialDeposits.tokenDeposit]
+          )
           .send({
             from: sender,
             gas: 750000
@@ -2560,7 +2589,13 @@ class Connext {
         })
         if (tokenApproval) {
           result = await this.channelManagerInstance.methods
-            .createChannel(channelId, ingridAddress, challenge, tokenAddress, initialDeposits.ethDeposit, initialDeposits.tokenDeposit)
+            .createChannel(
+              channelId, 
+              ingridAddress, 
+              challenge, 
+              tokenAddress, 
+              [initialDeposits.ethDeposit, initialDeposits.tokenDeposit]
+            )
             .send({
               from: sender,
               value: initialDeposits.ethDeposit,
@@ -2905,7 +2940,12 @@ class Connext {
     }
 
     const result = await this.channelManagerInstance.methods
-      .consensusCloseChannel(channelId, nonce, state.ethBalanceA, state.ethBalanceI, state.tokenDepositA, state.tokenDepositI, sigA, sigI)
+      .consensusCloseChannel(
+        channelId, 
+        nonce, 
+        [ state.ethBalanceA, state.ethBalanceI, state.tokenDepositA, state.tokenDepositI ], 
+        sigA, 
+        sigI)
       .send({
         from: sender,
         gas: 1000000
@@ -3108,39 +3148,31 @@ class Connext {
     return result
   }
 
-  async initVcStateContractHandler ({
+  async initThreadContractHandler ({
     subchanId,
-    vcId,
+    threadId,
     proof = null,
-    nonce,
     partyA,
     partyB,
     balanceA,
-    balanceB,
     sigA,
     sender = null
   }) {
-    const methodName = 'initVcStateContractHandler'
+    const methodName = 'initThreadContractHandler'
     // validate
     const isAddress = { presence: true, isAddress: true }
     const isHexStrict = { presence: true, isHexStrict: true }
-    const isBN = { presence: true, isBN: true }
+    const isValidDepositObject = { presence: true, isValidDepositObject: true }
     const isHex = { presence: true, isHex: true }
-    const isPositiveInt = { presence: true, isPositiveInt: true }
     Connext.validatorsResponseToError(
       validate.single(subchanId, isHexStrict),
       methodName,
       'subchanId'
     )
     Connext.validatorsResponseToError(
-      validate.single(vcId, isHexStrict),
+      validate.single(threadId, isHexStrict),
       methodName,
-      'vcId'
-    )
-    Connext.validatorsResponseToError(
-      validate.single(nonce, isPositiveInt),
-      methodName,
-      'nonce'
+      'threadId'
     )
     Connext.validatorsResponseToError(
       validate.single(partyA, isAddress),
@@ -3153,14 +3185,9 @@ class Connext {
       'partyB'
     )
     Connext.validatorsResponseToError(
-      validate.single(balanceA, isBN),
+      validate.single(balanceA, isValidDepositObject),
       methodName,
       'balanceA'
-    )
-    Connext.validatorsResponseToError(
-      validate.single(balanceB, isBN),
-      methodName,
-      'balanceB'
     )
     Connext.validatorsResponseToError(
       validate.single(sigA, isHex),
@@ -3177,16 +3204,21 @@ class Connext {
       const accounts = await this.web3.eth.getAccounts()
       sender = accounts[0].toLowerCase()
     }
+    const ethBalanceA = balanceA.ethDeposit ? balanceA.ethDeposit : Web3.utils.toBN('0')
+    const tokenBalanceA = balanceA.tokenDeposit ? balanceA.tokenDeposit : Web3.utils.toBN('0')
+    
     let merkle, stateHash
     if (proof === null) {
       // generate proof from lc
       stateHash = Connext.createThreadStateUpdateFingerprint({
-        channelId: vcId,
-        nonce,
+        channelId: threadId,
+        nonce: 0,
         partyA,
         partyB,
-        balanceA,
-        balanceB
+        ethBalanceA,
+        ethBalanceB: Web3.utils.toBN('0'),
+        tokenBalanceA,
+        tokenBalanceB: Web3.utils.toBN('0'),
       })
       const vc0s = await this.getVcInitialStates(subchanId)
       merkle = Connext.generateMerkleTree(vc0s)
@@ -3201,19 +3233,17 @@ class Connext {
 
       proof = Utils.marshallState(proof)
     }
-    const hubBond = balanceA.add(balanceB)
 
     const results = await this.channelManagerInstance.methods
       .initVCstate(
         subchanId,
-        vcId,
+        threadId,
         proof,
-        nonce,
+        0,
         partyA,
         partyB,
-        hubBond,
-        balanceA,
-        balanceB,
+        [ ethBalanceA, tokenBalanceA ],
+        [ ethBalanceA, Web3.utils.toBN('0'), tokenBalanceA, Web3.utils.toBN('0')],
         sigA
       )
       // .estimateGas({

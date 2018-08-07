@@ -405,7 +405,7 @@ export async function createStubbedHub (
       stubHub.get(`/ledgerchannel/${channelId4}/vcinitialstates`).reply(200, [
         {
           channelId: threadId3,
-          partyA: partyA.toLowerCase(),
+          partyA: partyD.toLowerCase(),
           partyB: partyB.toLowerCase(),
           nonce: 0,
           ethBalanceA: '0',
@@ -909,6 +909,7 @@ export async function createStubbedHub (
 
       // post to close VC endpoint
       let sigParams = {
+        channelId: channelId1,
         isClose: false,
         nonce: 2,
         openVcs: 0,
@@ -926,6 +927,7 @@ export async function createStubbedHub (
       )
       // update for eth only thread
       sigParams.partyA = partyC.toLowerCase()
+      sigParams.channelId = channelId3
       sigParams.tokenBalanceA = sigParams.tokenBalanceI = Web3.utils.toBN('0')
       const sigItoAThread2 = await web3.eth.sign(
         Connext.createChannelStateUpdateFingerprint(sigParams),
@@ -933,6 +935,7 @@ export async function createStubbedHub (
       )
       // update for token only thread
       sigParams.partyA = partyD.toLowerCase()
+      sigParams.channelId = channelId4
       sigParams.tokenBalanceA = Web3.utils.toBN(
         Web3.utils.toWei('4.9', 'ether')
       )
@@ -1027,6 +1030,7 @@ export async function createStubbedHub (
   // ETH/TOKEN channel (viewer)
   // generate hash
   let hash = Connext.createChannelStateUpdateFingerprint({
+    channelId: channelId1,
     partyA,
     partyI: ingridAddress,
     isClose: true,
@@ -1055,6 +1059,7 @@ export async function createStubbedHub (
 
   // ETH/TOKEN channel (receiver)
   hash = Connext.createChannelStateUpdateFingerprint({
+    channelId: channelId2,
     partyA: partyB,
     partyI: ingridAddress,
     isClose: true,
@@ -1083,6 +1088,7 @@ export async function createStubbedHub (
 
   // ETH channel (viewer)
   hash = Connext.createChannelStateUpdateFingerprint({
+    channelId: channelId3,
     partyA: partyC,
     partyI: ingridAddress,
     isClose: true,
@@ -1111,6 +1117,7 @@ export async function createStubbedHub (
 
   // TOKEN channel (viewer)
   hash = Connext.createChannelStateUpdateFingerprint({
+    channelId: channelId4,
     partyA: partyD,
     partyI: ingridAddress,
     isClose: true,
