@@ -53,7 +53,7 @@ validate.validators.isPositiveBnString = value => {
   } else {
     // try to convert to BN
     try {
-      bnVal = Web3.utils.toBN(val)
+      bnVal = Web3.utils.toBN(value)
     } catch (e) {
       return `${value} cannot be converted to BN`
     }
@@ -1062,16 +1062,16 @@ class Connext {
    * @param {Number} channelId - ID of the virtual channel to close
    * @returns {Promise} resolves to the signature of the hub on the generated update if accepted, or the result of closing the channel on chain if there is a dispute
    */
-  async closeChannel (channelId, sender = null) {
+  async closeChannel (threadId, sender = null) {
     // validate params
     const methodName = 'closeChannel'
     const isHexStrict = { presence: true, isHexStrict: true }
-    Connext.validatorsResponseToError(
-      validate.single(channelId, isHexStrict),
-      methodName,
-      'channelId'
-    )
     const isAddress = { presence: true, isAddress: true }
+    Connext.validatorsResponseToError(
+      validate.single(threadId, isHexStrict),
+      methodName,
+      'threadId'
+    )
     if (sender) {
       Connext.validatorsResponseToError(
         validate.single(sender, isAddress),
@@ -1084,56 +1084,58 @@ class Connext {
     }
 
     // get latest state in vc
-    const vc = await this.getChannelById(channelId)
-    if (!vc) {
-      throw new VCCloseError(methodName, 'Channel not found')
+    const thread = await this.getChannelById(threadId)
+    if (!thread) {
+      throw new VCCloseError(methodName, 'Thread not found')
     }
     // must be opened or opening
-    if (THREAD_STATES[vc.state] !== 1 && THREAD_STATES[vc.state] !== 0) {
-      throw new VCCloseError(methodName, 'Channel is in invalid state')
+    if (THREAD_STATES[thread.state] !== THREAD_STATES.VCS_OPENING && THREAD_STATES[thread.state] !== THREAD_STATES.VCS_OPENED) {
+      throw new VCCloseError(methodName, 'Thread is in invalid state')
     }
-    const vcN = await this.getLatestVCStateUpdate(channelId)
-    // verify vcN was signed by agentA
+    const latestThreadState = await this.getLatestThreadState(threadId)
+    // verify latestThreadState was signed by agentA
     const signer = Connext.recoverSignerFromThreadStateUpdate({
-      sig: vcN.sigA,
-      channelId: channelId,
-      nonce: vcN.nonce,
-      partyA: vc.partyA,
-      partyB: vc.partyB,
-      balanceA: Web3.utils.toBN(vcN.balanceA),
-      balanceB: Web3.utils.toBN(vcN.balanceB)
+      sig: latestThreadState.sigA,
+      channelId: threadId,
+      nonce: latestThreadState.nonce,
+      partyA: thread.partyA,
+      partyB: thread.partyB,
+      ethBalanceA: Web3.utils.toBN(latestThreadState.ethBalanceA),
+      ethBalanceB: Web3.utils.toBN(latestThreadState.ethBalanceB),
+      tokenBalanceA: Web3.utils.toBN(latestThreadState.tokenBalanceA),
+      tokenBalanceB: Web3.utils.toBN(latestThreadState.tokenBalanceB),
     })
-    if (signer.toLowerCase() !== vc.partyA.toLowerCase()) {
+    if (signer.toLowerCase() !== thread.partyA.toLowerCase()) {
       throw new VCCloseError(
         methodName,
-        'Incorrect signer detected on latest update'
+        'Incorrect signer detected on latest thread update'
       )
     }
 
-    vcN.channelId = channelId
-    vcN.partyA = vc.partyA
-    vcN.partyB = vc.partyB
+    latestThreadState.channelId = threadId
+    latestThreadState.partyA = thread.partyA
+    latestThreadState.partyB = thread.partyB
     // get partyA ledger channel
     const subchan = await this.getLcByPartyA(sender)
     // generate decomposed lc update
-    const sigAtoI = await this.createLCUpdateOnVCClose({
-      vcN,
+    const sigAtoI = await this.createChannelUpdateOnThreadClose({
+      latestThreadState,
       subchan,
       signer: sender.toLowerCase()
     })
 
     // request ingrid closes vc with this update
-    const fastCloseSig = await this.fastCloseVCHandler({
+    const fastCloseSig = await this.fastCloseThreadHandler({
       sig: sigAtoI,
       signer: sender.toLowerCase(),
-      channelId: vcN.channelId
+      channelId: threadId
     })
 
     if (!fastCloseSig) {
       throw new VCCloseError(
         methodName,
         651,
-        'Hub did not cosign proposed LC update, call initVC and settleVC'
+        'Hub did not cosign proposed channel update, call initThread and settleThread'
       )
     }
     // ingrid cosigned update
@@ -1167,11 +1169,13 @@ class Connext {
     Connext.validatorsResponseToError(validate.single(sender, isAddress), methodName, 'sender')
     // should this try to fast close any of the channels?
     // or just immediately force close in dispute many channels
-    for (const channelId of channelIds) {
+    const results = await Promise.all(channelIds.map( channelId => {
       console.log('Closing channel:', channelId)
-      await this.closeChannel(channelId, sender)
+      const response = this.closeChannel(channelId, sender)
       console.log('Channel closed.')
-    }
+      return response
+    }))
+    return results
   }
 
   /**
@@ -1681,6 +1685,7 @@ class Connext {
     )
 
     console.log('recovering signer from:', JSON.stringify({
+      sig,
       isClose,
       nonce,
       openVcs,
@@ -1908,6 +1913,7 @@ class Connext {
     )
 
     console.log('recovering signer from:', JSON.stringify({
+      sig,
       channelId,
       nonce,
       partyA,
@@ -3751,9 +3757,9 @@ class Connext {
     return response.data.challenge
   }
 
-  async getLatestVCStateUpdate (channelId) {
+  async getLatestThreadState (channelId) {
     // validate params
-    const methodName = 'getLatestVCStateUpdate'
+    const methodName = 'getLatestThreadState'
     const isHexStrict = { presence: true, isHexStrict: true }
     Connext.validatorsResponseToError(
       validate.single(channelId, isHexStrict),
@@ -3941,9 +3947,9 @@ class Connext {
     return response.data.channelId
   }
 
-  async fastCloseVCHandler ({ sig, signer, channelId }) {
+  async fastCloseThreadHandler ({ sig, signer, channelId }) {
     // validate params
-    const methodName = 'fastCloseVCHandler'
+    const methodName = 'fastCloseThreadHandler'
     const isHex = { presence: true, isHex: true }
     const isHexStrict = { presence: true, isHexStrict: true }
     const isAddress = { presence: true, isAddress: true }
@@ -4116,15 +4122,15 @@ class Connext {
     return sigAtoI
   }
 
-  async createLCUpdateOnVCClose ({ vcN, subchan, signer = null }) {
-    const methodName = 'createLCUpdateOnVCClose'
+  async createChannelUpdateOnThreadClose ({ latestThreadState, subchan, signer = null }) {
+    const methodName = 'createChannelUpdateOnThreadClose'
     const isThreadState = { presence: true, isThreadState: true }
     const isChannelObj = { presence: true, isChannelObj: true }
     const isAddress = { presence: true, isAddress: true }
     Connext.validatorsResponseToError(
-      validate.single(vcN, isThreadState),
+      validate.single(latestThreadState, isThreadState),
       methodName,
-      'vcN'
+      'latestThreadState'
     )
     Connext.validatorsResponseToError(
       validate.single(subchan, isChannelObj),
@@ -4147,44 +4153,50 @@ class Connext {
     }
     // must be party in vc
     if (
-      signer.toLowerCase() !== vcN.partyA &&
-      signer.toLowerCase() !== vcN.partyB
+      signer.toLowerCase() !== latestThreadState.partyA.toLowerCase() &&
+      signer.toLowerCase() !== latestThreadState.partyB.toLowerCase()
     ) {
       throw new VCCloseError(methodName, 'Not your channel')
     }
-    if (CHANNEL_STATES[subchan.state] !== 1 && CHANNEL_STATES[subchan.state] !== 2) {
+    if (CHANNEL_STATES[subchan.state] !== CHANNEL_STATES.LCS_OPENED && CHANNEL_STATES[subchan.state] !== CHANNEL_STATES.LCS_SETTLING) {
       throw new VCCloseError(methodName, 'Channel is in invalid state')
     }
 
-    let vcInitialStates = await this.getVcInitialStates(subchan.channelId)
+    let threadInitialStates = await this.getVcInitialStates(subchan.channelId)
     // array of state objects, which include the channel id and nonce
     // remove initial state of vcN
-    vcInitialStates = vcInitialStates.filter(val => {
-      return val.channelId !== vcN.channelId
+    threadInitialStates = threadInitialStates.filter(threadState => {
+      return threadState.channelId !== latestThreadState.channelId
     })
-    const newRootHash = Connext.generateVcRootHash({ vc0s: vcInitialStates })
+    const newRootHash = Connext.generateVcRootHash({ vc0s: threadInitialStates })
+
+    // add balance from thread to channel balance
+    const subchanEthBalanceA = signer.toLowerCase() === latestThreadState.partyA ? Web3.utils.toBN(subchan.ethBalanceA).add(Web3.utils.toBN(latestThreadState.ethBalanceA)) : Web3.utils.toBN(subchan.ethBalanceA).add(Web3.utils.toBN(latestThreadState.ethBalanceB))
+    // add counterparty balance from thread to channel balance
+    const subchanEthBalanceI = signer.toLowerCase() === latestThreadState.partyA ? Web3.utils.toBN(subchan.ethBalanceI).add(Web3.utils.toBN(latestThreadState.ethBalanceB)) : Web3.utils.toBN(subchan.ethBalanceI).add(Web3.utils.toBN(latestThreadState.ethBalanceA))
+    
+    const subchanTokenBalanceA = signer.toLowerCase() === latestThreadState.partyA ? Web3.utils.toBN(subchan.tokenBalanceA).add(Web3.utils.toBN(latestThreadState.tokenBalanceA)) : Web3.utils.toBN(subchan.tokenBalanceA).add(Web3.utils.toBN(latestThreadState.tokenBalanceB))
+    
+    const subchanTokenBalanceI = signer.toLowerCase() === latestThreadState.partyA ? Web3.utils.toBN(subchan.tokenBalanceI).add(Web3.utils.toBN(latestThreadState.tokenBalanceB)) : Web3.utils.toBN(subchan.tokenBalanceI).add(Web3.utils.toBN(latestThreadState.tokenBalanceA))
 
     const updateAtoI = {
       channelId: subchan.channelId,
       nonce: subchan.nonce + 1,
-      openVcs: vcInitialStates.length,
+      openVcs: threadInitialStates.length,
       vcRootHash: newRootHash,
       partyA: signer,
       partyI: this.ingridAddress,
-      balanceA:
-        signer === vcN.partyA
-          ? Web3.utils.toBN(subchan.balanceA).add(Web3.utils.toBN(vcN.balanceA))
-          : Web3.utils
-              .toBN(subchan.balanceA)
-              .add(Web3.utils.toBN(vcN.balanceB)),
-      balanceI:
-        signer === vcN.partyA
-          ? Web3.utils.toBN(subchan.balanceI).add(Web3.utils.toBN(vcN.balanceB))
-          : Web3.utils
-              .toBN(subchan.balanceI)
-              .add(Web3.utils.toBN(vcN.balanceA)),
-      signer: signer,
-      hubBond: Web3.utils.toBN(vcN.balanceA).add(Web3.utils.toBN(vcN.balanceB))
+      balanceA: {
+        ethDeposit: subchanEthBalanceA,
+        tokenDeposit: subchanTokenBalanceA,
+      },
+      balanceI: {
+        ethDeposit: subchanEthBalanceI,
+        tokenDeposit: subchanTokenBalanceI,
+      },
+      hubEthBond: Web3.utils.toBN(latestThreadState.ethBalanceA).add(Web3.utils.toBN(latestThreadState.ethBalanceB)),
+      hubTokenBond: Web3.utils.toBN(latestThreadState.tokenBalanceA).add(Web3.utils.toBN(latestThreadState.tokenBalanceB)),
+      signer,
     }
     const sigAtoI = await this.createChannelStateUpdate(updateAtoI)
     return sigAtoI

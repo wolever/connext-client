@@ -21,14 +21,16 @@ let watcherUrl = ''
 
 // for accounts
 let accounts
-let partyA
-let partyB
+let partyA, partyB, partyC, partyD
 
 describe('threadUpdateHandler()', function () {
   beforeEach('init client and accounts', async () => {
     accounts = await web3.eth.getAccounts()
     ingridAddress = accounts[0]
     partyA = accounts[1]
+    partyB = accounts[2]
+    partyC = accounts[3]
+    partyD = accounts[4]
     const authJson = { token: 'SwSNTnh3LlEJg1N9iiifFgOIKq998PGA' }
 
     // init client instance
@@ -90,6 +92,43 @@ describe('threadUpdateHandler()', function () {
       expect(updatedPayment.payment.tokenBalanceB).to.equal(payment.balanceB.tokenDeposit.toString())
     })
 
+    it('should create an ETH channel update', async () => {
+      const channelId =
+        '0x0200000000000000000000000000000000000000000000000000000000000000'
+      const balanceA = {
+        tokenDeposit: null,
+        ethDeposit: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether'))
+      }
+      const balanceB = {
+        tokenDeposit: null,
+        ethDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
+      }
+      const payment = {
+        balanceA,
+        balanceB,
+        channelId
+      }
+      const meta = {
+        receiver: '0x5aeda56215b167893e80b4fe645ba6d5bab767de',
+        type: 'PURCHASE',
+        fields: {
+          productSku: 6969,
+          productName: 'Agent Smith'
+        }
+      }
+      const increment = 1
+      const sender = partyC
+      const updatedPayment = await client.threadUpdateHandler(
+        { payment, meta },
+        increment,
+        sender
+      )
+      expect(updatedPayment.payment.ethBalanceA).to.equal(payment.balanceA.ethDeposit.toString())
+      expect(updatedPayment.payment.ethBalanceB).to.equal(payment.balanceB.ethDeposit.toString())
+      expect(updatedPayment.payment.tokenBalanceA).to.equal('0')
+      expect(updatedPayment.payment.tokenBalanceB).to.equal('0')
+    })
+
     it('should create an TOKEN channel update', async () => {
         const channelId =
           '0x0300000000000000000000000000000000000000000000000000000000000000'
@@ -115,7 +154,7 @@ describe('threadUpdateHandler()', function () {
           }
         }
         const increment = 1
-        const sender = partyA
+        const sender = partyD
         const updatedPayment = await client.threadUpdateHandler(
           { payment, meta },
           increment,
@@ -125,43 +164,6 @@ describe('threadUpdateHandler()', function () {
         expect(updatedPayment.payment.ethBalanceB).to.equal('0')
         expect(updatedPayment.payment.tokenBalanceA).to.equal(payment.balanceA.tokenDeposit.toString())
         expect(updatedPayment.payment.tokenBalanceB).to.equal(payment.balanceB.tokenDeposit.toString())
-      })
-
-      it('should create an ETH channel update', async () => {
-        const channelId =
-          '0x0200000000000000000000000000000000000000000000000000000000000000'
-        const balanceA = {
-          tokenDeposit: null,
-          ethDeposit: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether'))
-        }
-        const balanceB = {
-          tokenDeposit: null,
-          ethDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
-        }
-        const payment = {
-          balanceA,
-          balanceB,
-          channelId
-        }
-        const meta = {
-          receiver: '0x5aeda56215b167893e80b4fe645ba6d5bab767de',
-          type: 'PURCHASE',
-          fields: {
-            productSku: 6969,
-            productName: 'Agent Smith'
-          }
-        }
-        const increment = 1
-        const sender = partyA
-        const updatedPayment = await client.threadUpdateHandler(
-          { payment, meta },
-          increment,
-          sender
-        )
-        expect(updatedPayment.payment.ethBalanceA).to.equal(payment.balanceA.ethDeposit.toString())
-        expect(updatedPayment.payment.ethBalanceB).to.equal(payment.balanceB.ethDeposit.toString())
-        expect(updatedPayment.payment.tokenBalanceA).to.equal('0')
-        expect(updatedPayment.payment.tokenBalanceB).to.equal('0')
       })
 
     afterEach('restore hub', () => {
