@@ -25,7 +25,7 @@ let accounts
 let partyA
 let partyB
 
-describe.only('openChannel()', function () {
+describe('openChannel()', function () {
   before('init client and accounts', async () => {
     accounts = await web3.eth.getAccounts()
     ingridAddress = accounts[0]
