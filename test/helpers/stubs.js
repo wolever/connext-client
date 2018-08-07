@@ -26,7 +26,11 @@ export function createStubbedContract () {
   return contractMethods
 }
 
-export async function createStubbedHub (baseUrl, type) {
+export async function createStubbedHub (
+  baseUrl,
+  channelType,
+  threadType = 'NOT_UPDATED'
+) {
   const web3 = new Web3('http://localhost:8545')
   const accounts = await web3.eth.getAccounts()
   const ingridAddress = accounts[0]
@@ -43,6 +47,7 @@ export async function createStubbedHub (baseUrl, type) {
     '0x3000000000000000000000000000000000000000000000000000000000000000'
   const channelId4 =
     '0x4000000000000000000000000000000000000000000000000000000000000000'
+
   // thread IDs
   const threadId1 =
     '0x0100000000000000000000000000000000000000000000000000000000000000'
@@ -52,6 +57,7 @@ export async function createStubbedHub (baseUrl, type) {
     '0x0300000000000000000000000000000000000000000000000000000000000000'
 
   let stubHub = nock(baseUrl).persist(true)
+
   // get challenge timer
   stubHub
     // define the method to be intercepted
@@ -62,7 +68,7 @@ export async function createStubbedHub (baseUrl, type) {
     })
 
   // get open ledger channels by partyA
-  switch (type) {
+  switch (channelType) {
     case 'OPEN_LC_OPEN_VC':
       // partyA LC has ETH/TOKEN
       stubHub
@@ -274,7 +280,7 @@ export async function createStubbedHub (baseUrl, type) {
 
   // get vc initial states by lc id
   // get ledger channels by id
-  switch (type) {
+  switch (channelType) {
     case 'OPEN_LC_OPEN_VC':
       // add initial states endpoints
       stubHub.get(`/ledgerchannel/${channelId1}/vcinitialstates`).reply(200, [
@@ -551,45 +557,148 @@ export async function createStubbedHub (baseUrl, type) {
       break
   }
 
-  // get thread 1 by ID (nonce = 0)
-  // ETH_TOKEN vc
-  stubHub.get(`/virtualchannel/${threadId1}`).reply(200, {
-    channelId: threadId1,
-    partyA: partyA.toLowerCase(),
-    partyB: partyB.toLowerCase(),
-    state: 'VCS_OPENING',
-    ethBalanceA: Web3.utils.toWei('1', 'ether').toString(),
-    ethBalanceB: '0',
-    tokenBalanceA: Web3.utils.toWei('1', 'ether').toString(),
-    tokenBalanceB: '0',
-    nonce: 0
-  })
+  // maybe we wont need this..
+  switch (threadType) {
+    case 'NOT_UPDATED':
+      // get thread 1 by ID (nonce = 0)
+      // ETH_TOKEN vc
+      stubHub.get(`/virtualchannel/${threadId1}`).reply(200, {
+        channelId: threadId1,
+        partyA: partyA.toLowerCase(),
+        partyB: partyB.toLowerCase(),
+        state: 'VCS_OPENING',
+        ethBalanceA: Web3.utils.toWei('1', 'ether').toString(),
+        ethBalanceB: '0',
+        tokenBalanceA: Web3.utils.toWei('1', 'ether').toString(),
+        tokenBalanceB: '0',
+        nonce: 0
+      })
 
-  // ETH VC
-  stubHub.get(`/virtualchannel/${threadId2}`).reply(200, {
-    channelId: threadId2,
-    partyA: partyC.toLowerCase(),
-    partyB: partyB.toLowerCase(),
-    state: 'VCS_OPENING',
-    ethBalanceA: Web3.utils.toWei('1', 'ether').toString(),
-    ethBalanceB: '0',
-    tokenBalanceA: '0',
-    tokenBalanceB: '0',
-    nonce: 0
-  })
+      // ETH VC
+      stubHub.get(`/virtualchannel/${threadId2}`).reply(200, {
+        channelId: threadId2,
+        partyA: partyC.toLowerCase(),
+        partyB: partyB.toLowerCase(),
+        state: 'VCS_OPENING',
+        ethBalanceA: Web3.utils.toWei('1', 'ether').toString(),
+        ethBalanceB: '0',
+        tokenBalanceA: '0',
+        tokenBalanceB: '0',
+        nonce: 0
+      })
 
-  // TOKEN VC
-  stubHub.get(`/virtualchannel/${threadId3}`).reply(200, {
-    channelId: threadId3,
-    partyA: partyD.toLowerCase(),
-    partyB: partyB.toLowerCase(),
-    state: 'VCS_OPENING',
-    ethBalanceA: '0',
-    ethBalanceB: '0',
-    tokenBalanceA: Web3.utils.toWei('1', 'ether').toString(),
-    tokenBalanceB: '0',
-    nonce: 0
-  })
+      // TOKEN VC
+      stubHub.get(`/virtualchannel/${threadId3}`).reply(200, {
+        channelId: threadId3,
+        partyA: partyD.toLowerCase(),
+        partyB: partyB.toLowerCase(),
+        state: 'VCS_OPENING',
+        ethBalanceA: '0',
+        ethBalanceB: '0',
+        tokenBalanceA: Web3.utils.toWei('1', 'ether').toString(),
+        tokenBalanceB: '0',
+        nonce: 0
+      })
+
+      // add get latest thread state endpoint
+      // ETH/TOKEN
+      stubHub.get(`/virtualchannel/${threadId1}/update/latest`).reply(200, {
+        ethBalanceA: Web3.utils.toWei('1', 'ether').toString(),
+        ethBalanceB: '0',
+        tokenBalanceA: Web3.utils.toWei('1', 'ether').toString(),
+        tokenBalanceB: '0',
+        nonce: 0
+      })
+      // ETH
+      stubHub.get(`/virtualchannel/${threadId2}/update/latest`).reply(200, {
+        ethBalanceA: Web3.utils.toWei('1', 'ether').toString(),
+        ethBalanceB: '0',
+        tokenBalanceA: '0',
+        tokenBalanceB: '0',
+        nonce: 0
+      })
+      // TOKEN
+      stubHub.get(`/virtualchannel/${threadId3}/update/latest`).reply(200, {
+        ethBalanceA: '0',
+        ethBalanceB: '0',
+        tokenBalanceA: Web3.utils.toWei('1', 'ether').toString(),
+        tokenBalanceB: '0',
+        nonce: 0
+      })
+
+      break
+
+    case 'UPDATED':
+      // ETH_TOKEN vc
+      stubHub.get(`/virtualchannel/${threadId1}`).reply(200, {
+        channelId: threadId1,
+        partyA: partyA.toLowerCase(),
+        partyB: partyB.toLowerCase(),
+        state: 'VCS_OPENING',
+        ethBalanceA: Web3.utils.toWei('0.9', 'ether').toString(),
+        ethBalanceB: Web3.utils.toWei('0.1', 'ether').toString(),
+        tokenBalanceA: Web3.utils.toWei('0.9', 'ether').toString(),
+        tokenBalanceB: Web3.utils.toWei('0.1', 'ether').toString(),
+        nonce: 1
+      })
+
+      // ETH VC
+      stubHub.get(`/virtualchannel/${threadId2}`).reply(200, {
+        channelId: threadId2,
+        partyA: partyC.toLowerCase(),
+        partyB: partyB.toLowerCase(),
+        state: 'VCS_OPENING',
+        ethBalanceA: Web3.utils.toWei('0.9', 'ether').toString(),
+        ethBalanceB: Web3.utils.toWei('0.1', 'ether').toString(),
+        tokenBalanceA: '0',
+        tokenBalanceB: '0',
+        nonce: 1
+      })
+
+      // TOKEN VC
+      stubHub.get(`/virtualchannel/${threadId3}`).reply(200, {
+        channelId: threadId3,
+        partyA: partyD.toLowerCase(),
+        partyB: partyB.toLowerCase(),
+        state: 'VCS_OPENING',
+        ethBalanceA: '0',
+        ethBalanceB: '0',
+        tokenBalanceA: Web3.utils.toWei('0.9', 'ether').toString(),
+        tokenBalanceB: Web3.utils.toWei('0.1', 'ether').toString(),
+        nonce: 1
+      })
+
+      // add get latest thread state endpoint
+      // ETH/TOKEN
+      stubHub.get(`/virtualchannel/${threadId1}/update/latest`).reply(200, {
+        ethBalanceA: Web3.utils.toWei('0.9', 'ether').toString(),
+        ethBalanceB: Web3.utils.toWei('0.1', 'ether').toString(),
+        tokenBalanceA: Web3.utils.toWei('0.9', 'ether').toString(),
+        tokenBalanceB: Web3.utils.toWei('0.1', 'ether').toString(),
+        nonce: 1
+      })
+      // ETH
+      stubHub.get(`/virtualchannel/${threadId2}/update/latest`).reply(200, {
+        ethBalanceA: Web3.utils.toWei('0.9', 'ether').toString(),
+        ethBalanceB: Web3.utils.toWei('0.1', 'ether').toString(),
+        tokenBalanceA: '0',
+        tokenBalanceB: '0',
+        nonce: 1
+      })
+      // TOKEN
+      stubHub.get(`/virtualchannel/${threadId3}/update/latest`).reply(200, {
+        ethBalanceA: '0',
+        ethBalanceB: '0',
+        tokenBalanceA: Web3.utils.toWei('0.9', 'ether').toString(),
+        tokenBalanceB: Web3.utils.toWei('0.1', 'ether').toString(),
+        nonce: 1
+      })
+
+      break
+
+    default:
+      break
+  }
 
   // post to payments endpoint
   // 1 payment, return array of 1
@@ -631,7 +740,7 @@ export async function createStubbedHub (baseUrl, type) {
       }
     ])
 
-  // add get thread by IDs endpoints
+  // add post to create vc endpoint
   stubHub
     .post(`/virtualchannel/`, body => {
       return body.channelId === threadId1
@@ -654,30 +763,5 @@ export async function createStubbedHub (baseUrl, type) {
       channelId: threadId3
     })
 
-  // add get latest thread state endpoint
-  // ETH/TOKEN
-  stubHub.get(`/virtualchannel/${threadId1}/update/latest`).reply(200, {
-    ethBalanceA: Web3.utils.toWei('0.9', 'ether').toString(),
-    ethBalanceB: Web3.utils.toWei('0.1', 'ether').toString(),
-    tokenBalanceA: Web3.utils.toWei('0.9', 'ether').toString(),
-    tokenBalanceB: Web3.utils.toWei('0.1', 'ether').toString(),
-    nonce: 1
-  })
-  // ETH
-  stubHub.get(`/virtualchannel/${threadId2}/update/latest`).reply(200, {
-    ethBalanceA: Web3.utils.toWei('0.9', 'ether').toString(),
-    ethBalanceB: Web3.utils.toWei('0.1', 'ether').toString(),
-    tokenBalanceA: '0',
-    tokenBalanceB: '0',
-    nonce: 1
-  })
-  // TOKEN
-  stubHub.get(`/virtualchannel/${threadId3}/update/latest`).reply(200, {
-    ethBalanceA: '0',
-    ethBalanceB: '0',
-    tokenBalanceA: Web3.utils.toWei('0.9', 'ether').toString(),
-    tokenBalanceB: Web3.utils.toWei('0.1', 'ether').toString(),
-    nonce: 1
-  })
   return stubHub
 }
