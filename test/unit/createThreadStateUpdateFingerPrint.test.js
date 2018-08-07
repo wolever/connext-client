@@ -54,16 +54,15 @@ describe('createThreadStateUpdateFingerprint()', function () {
       tokenBalanceB: Web3.utils.toBN('0')
     }
     const hash = Connext.createThreadStateUpdateFingerprint(state)
-    const hubBond = state.ethBalanceA
-      .add(state.ethBalanceB)
-      .add(state.tokenBalanceA)
-      .add(state.tokenBalanceB)
+    const hubBondEth = state.ethBalanceA.add(state.ethBalanceB)
+    const hubBondToken = state.tokenBalanceA.add(state.tokenBalanceB)
     const expectedHash = Web3.utils.soliditySha3(
       { type: 'bytes32', value: state.channelId },
       { type: 'uint256', value: state.nonce },
       { type: 'address', value: state.partyA },
       { type: 'address', value: state.partyB },
-      { type: 'uint256', value: hubBond },
+      { type: 'uint256', value: hubBondEth },
+      { type: 'uint256', value: hubBondToken },
       { type: 'uint256', value: state.ethBalanceA },
       { type: 'uint256', value: state.ethBalanceB },
       { type: 'uint256', value: state.tokenBalanceA },

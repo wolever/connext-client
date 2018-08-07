@@ -67,9 +67,26 @@ export async function createStubbedHub (baseUrl, type) {
             partyA: partyA.toLowerCase(),
             partyI: ingridAddress.toLowerCase(),
             state: 'LCS_OPENED',
-            ethBalanceA: Web3.utils.toWei('5', 'ether'),
+            ethBalanceA: Web3.utils.toWei('5', 'ether').toString(),
             ethBalanceI: '0',
-            tokenBalanceA: Web3.utils.toWei('5', 'ether'),
+            tokenBalanceA: Web3.utils.toWei('5', 'ether').toString(),
+            tokenBalanceI: '0',
+            nonce: 0,
+            openVcs: 0,
+            vcRootHash: Connext.generateVcRootHash({ vc0s: [] })
+          }
+        ])
+      stubHub
+        .get(`/ledgerchannel/a/${partyB.toLowerCase()}?status=LCS_OPENED`)
+        .reply(200, [
+          {
+            channelId: '0x2000000000000000000000000000000000000000000000000000000000000000',
+            partyA: partyB.toLowerCase(),
+            partyI: ingridAddress.toLowerCase(),
+            state: 'LCS_OPENED',
+            ethBalanceA: Web3.utils.toWei('5', 'ether').toString(),
+            ethBalanceI: '0',
+            tokenBalanceA: Web3.utils.toWei('5', 'ether').toString(),
             tokenBalanceI: '0',
             nonce: 0,
             openVcs: 0,
@@ -80,6 +97,11 @@ export async function createStubbedHub (baseUrl, type) {
     case 'NO_LC':
       stubHub
         .get(`/ledgerchannel/a/${partyA.toLowerCase()}?status=LCS_OPENED`)
+        .reply(200, {
+          data: []
+        })
+      stubHub
+        .get(`/ledgerchannel/a/${partyB.toLowerCase()}?status=LCS_OPENED`)
         .reply(200, {
           data: []
         })
@@ -94,9 +116,9 @@ export async function createStubbedHub (baseUrl, type) {
     partyA: partyA.toLowerCase(),
     partyI: ingridAddress.toLowerCase(),
     state: 'LCS_OPENED',
-    ethBalanceA: Web3.utils.toWei('5', 'ether'),
+    ethBalanceA: Web3.utils.toWei('5', 'ether').toString(),
     ethBalanceI: '0',
-    tokenBalanceA: Web3.utils.toWei('5', 'ether'),
+    tokenBalanceA: Web3.utils.toWei('5', 'ether').toString(),
     tokenBalanceI: '0',
     nonce: 0,
     openVcs: 0,
@@ -109,7 +131,7 @@ export async function createStubbedHub (baseUrl, type) {
     partyA: partyA.toLowerCase(),
     partyI: ingridAddress.toLowerCase(),
     state: 'LCS_OPENED',
-    ethBalanceA: Web3.utils.toWei('5', 'ether'),
+    ethBalanceA: Web3.utils.toWei('5', 'ether').toString(),
     ethBalanceI: '0',
     tokenBalanceA: '0',
     tokenBalanceI: '0',
@@ -126,7 +148,7 @@ export async function createStubbedHub (baseUrl, type) {
     state: 'LCS_OPENED',
     ethBalanceA: '0',
     ethBalanceI: '0',
-    tokenBalanceA: Web3.utils.toWei('5', 'ether'),
+    tokenBalanceA: Web3.utils.toWei('5', 'ether').toString(),
     tokenBalanceI: '0',
     nonce: 0,
     openVcs: 0,
@@ -140,9 +162,9 @@ export async function createStubbedHub (baseUrl, type) {
     partyA: partyA.toLowerCase(),
     partyB: partyB.toLowerCase(),
     state: 'VCS_OPENING',
-    ethBalanceA: Web3.utils.toWei('1', 'ether'),
+    ethBalanceA: Web3.utils.toWei('1', 'ether').toString(),
     ethBalanceB: '0',
-    tokenBalanceA: Web3.utils.toWei('1', 'ether'),
+    tokenBalanceA: Web3.utils.toWei('1', 'ether').toString(),
     tokenBalanceB: '0',
     nonce: 0
   })
@@ -153,7 +175,7 @@ export async function createStubbedHub (baseUrl, type) {
     partyA: partyA.toLowerCase(),
     partyB: partyB.toLowerCase(),
     state: 'VCS_OPENING',
-    ethBalanceA: Web3.utils.toWei('1', 'ether'),
+    ethBalanceA: Web3.utils.toWei('1', 'ether').toString(),
     ethBalanceB: '0',
     tokenBalanceA: '0',
     tokenBalanceB: '0',
@@ -168,7 +190,7 @@ export async function createStubbedHub (baseUrl, type) {
     state: 'VCS_OPENING',
     ethBalanceA: '0',
     ethBalanceB: '0',
-    tokenBalanceA: Web3.utils.toWei('1', 'ether'),
+    tokenBalanceA: Web3.utils.toWei('1', 'ether').toString(),
     tokenBalanceB: '0',
     nonce: 0
   })
@@ -213,5 +235,29 @@ export async function createStubbedHub (baseUrl, type) {
       }
     ])
 
+  // add initial states endpoint
+  stubHub.get(`/ledgerchannel/${channelId1}/vcinitialstates`).reply(200, [])
+
+  stubHub
+    .post(`/virtualchannel/`, body => {
+      return body.channelId === threadId1
+    })
+    .reply(200, {
+      channelId: threadId1
+    })
+  stubHub
+    .post(`/virtualchannel/`, body => {
+      return body.channelId === threadId2
+    })
+    .reply(200, {
+      channelId: threadId2
+    })
+  stubHub
+    .post(`/virtualchannel/`, body => {
+      return body.channelId === threadId3
+    })
+    .reply(200, {
+      channelId: threadId3
+    })
   return stubHub
 }
