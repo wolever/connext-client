@@ -32,6 +32,8 @@ export async function createStubbedHub (baseUrl, type) {
   const ingridAddress = accounts[0]
   const partyA = accounts[1]
   const partyB = accounts[2]
+  const partyC = accounts[3]
+  const partyD = accounts[4]
   // channel IDs
   const channelId1 =
     '0x1000000000000000000000000000000000000000000000000000000000000000'
@@ -39,6 +41,8 @@ export async function createStubbedHub (baseUrl, type) {
     '0x2000000000000000000000000000000000000000000000000000000000000000'
   const channelId3 =
     '0x3000000000000000000000000000000000000000000000000000000000000000'
+  const channelId4 =
+    '0x4000000000000000000000000000000000000000000000000000000000000000'
   // thread IDs
   const threadId1 =
     '0x0100000000000000000000000000000000000000000000000000000000000000'
@@ -56,9 +60,156 @@ export async function createStubbedHub (baseUrl, type) {
     .reply(200, {
       challenge: 3600
     })
-  // get open ledger channels
+
+  // get open ledger channels by partyA
   switch (type) {
-    case 'OPEN_LC':
+    case 'OPEN_LC_OPEN_VC':
+      // partyA LC has ETH/TOKEN
+      stubHub
+        .get(`/ledgerchannel/a/${partyA.toLowerCase()}?status=LCS_OPENED`)
+        .reply(200, [
+          {
+            channelId: channelId1,
+            partyA: partyA.toLowerCase(),
+            partyI: ingridAddress.toLowerCase(),
+            state: 'LCS_OPENED',
+            ethBalanceA: Web3.utils.toWei('4', 'ether').toString(),
+            ethBalanceI: '0',
+            tokenBalanceA: Web3.utils.toWei('4', 'ether').toString(),
+            tokenBalanceI: '0',
+            nonce: 1,
+            openVcs: 1,
+            vcRootHash: Connext.generateVcRootHash({
+              vc0s: [
+                {
+                  channelId: threadId1,
+                  partyA: partyA.toLowerCase(),
+                  partyB: partyB.toLowerCase(),
+                  nonce: 0,
+                  ethBalanceA: Web3.utils.toWei('1', 'ether').toString(),
+                  ethBalanceB: '0',
+                  tokenBalanceA: Web3.utils.toWei('1', 'ether').toString(),
+                  tokenBalanceB: '0'
+                }
+              ]
+            })
+          }
+        ])
+      // partyC LC has ETH only
+      stubHub
+        .get(`/ledgerchannel/a/${partyC.toLowerCase()}?status=LCS_OPENED`)
+        .reply(200, [
+          {
+            channelId: channelId3,
+            partyA: partyC.toLowerCase(),
+            partyI: ingridAddress.toLowerCase(),
+            state: 'LCS_OPENED',
+            ethBalanceA: Web3.utils.toWei('4', 'ether').toString(),
+            ethBalanceI: '0',
+            tokenBalanceA: '0',
+            tokenBalanceI: '0',
+            nonce: 1,
+            openVcs: 1,
+            vcRootHash: Connext.generateVcRootHash({
+              vc0s: [
+                {
+                  channelId: threadId2, // eth only thread
+                  partyA: partyC.toLowerCase(),
+                  partyB: partyB.toLowerCase(),
+                  nonce: 0,
+                  ethBalanceA: Web3.utils.toWei('1', 'ether').toString(),
+                  ethBalanceB: '0',
+                  tokenBalanceA: '0',
+                  tokenBalanceB: '0'
+                }
+              ]
+            })
+          }
+        ])
+      // partyD LC has TOKEN only
+      stubHub
+        .get(`/ledgerchannel/a/${partyD.toLowerCase()}?status=LCS_OPENED`)
+        .reply(200, [
+          {
+            channelId: channelId4,
+            partyA: partyD.toLowerCase(),
+            partyI: ingridAddress.toLowerCase(),
+            state: 'LCS_OPENED',
+            ethBalanceA: '0',
+            ethBalanceI: '0',
+            tokenBalanceA: Web3.utils.toWei('4', 'ether').toString(),
+            tokenBalanceI: '0',
+            nonce: 1,
+            openVcs: 1,
+            vcRootHash: Connext.generateVcRootHash({
+              vc0s: [
+                {
+                  channelId: threadId3, // eth only thread
+                  partyA: partyD.toLowerCase(),
+                  partyB: partyB.toLowerCase(),
+                  nonce: 0,
+                  ethBalanceA: '0',
+                  ethBalanceB: '0',
+                  tokenBalanceA: Web3.utils.toWei('1', 'ether').toString(),
+                  tokenBalanceB: '0'
+                }
+              ]
+            })
+          }
+        ])
+      // partyB LC is recieving all threads
+      stubHub
+        .get(`/ledgerchannel/a/${partyB.toLowerCase()}?status=LCS_OPENED`)
+        .reply(200, [
+          {
+            channelId: channelId2,
+            partyA: partyB.toLowerCase(),
+            partyI: ingridAddress.toLowerCase(),
+            state: 'LCS_OPENED',
+            ethBalanceA: '0',
+            ethBalanceI: Web3.utils.toWei('5', 'ether').toString(),
+            tokenBalanceA: '0',
+            tokenBalanceI: Web3.utils.toWei('5', 'ether').toString(),
+            nonce: 3,
+            openVcs: 3,
+            vcRootHash: Connext.generateVcRootHash({
+              vc0s: [
+                {
+                  channelId: threadId1, // eth + token thread
+                  partyA: partyA.toLowerCase(),
+                  partyB: partyB.toLowerCase(),
+                  nonce: 0,
+                  ethBalanceA: Web3.utils.toWei('1', 'ether').toString(),
+                  ethBalanceB: '0',
+                  tokenBalanceA: Web3.utils.toWei('1', 'ether').toString(),
+                  tokenBalanceB: '0'
+                },
+                {
+                  channelId: threadId2, // eth only thread
+                  partyA: partyC.toLowerCase(),
+                  partyB: partyB.toLowerCase(),
+                  nonce: 0,
+                  ethBalanceA: Web3.utils.toWei('1', 'ether').toString(),
+                  ethBalanceB: '0',
+                  tokenBalanceA: '0',
+                  tokenBalanceB: '0'
+                },
+                {
+                  channelId: threadId3, // token only thread
+                  partyA: partyD.toLowerCase(),
+                  partyB: partyB.toLowerCase(),
+                  nonce: 0,
+                  ethBalanceA: '0',
+                  ethBalanceB: '0',
+                  tokenBalanceA: Web3.utils.toWei('1', 'ether').toString(),
+                  tokenBalanceB: '0'
+                }
+              ]
+            })
+          }
+        ])
+      break
+    case 'OPEN_LC_NO_VC':
       stubHub
         .get(`/ledgerchannel/a/${partyA.toLowerCase()}?status=LCS_OPENED`)
         .reply(200, [
@@ -94,6 +245,7 @@ export async function createStubbedHub (baseUrl, type) {
           }
         ])
       break
+
     case 'NO_LC':
       stubHub
         .get(`/ledgerchannel/a/${partyA.toLowerCase()}?status=LCS_OPENED`)
@@ -105,55 +257,299 @@ export async function createStubbedHub (baseUrl, type) {
         .reply(200, {
           data: []
         })
+      stubHub
+        .get(`/ledgerchannel/a/${partyC.toLowerCase()}?status=LCS_OPENED`)
+        .reply(200, {
+          data: []
+        })
+      stubHub
+        .get(`/ledgerchannel/a/${partyD.toLowerCase()}?status=LCS_OPENED`)
+        .reply(200, {
+          data: []
+        })
       break
     default:
       break
   }
-  // get channel 1 by ID
-  // ETH_TOKEN lc
-  stubHub.get(`/ledgerchannel/${channelId1}`).reply(200, {
-    channelId: channelId1,
-    partyA: partyA.toLowerCase(),
-    partyI: ingridAddress.toLowerCase(),
-    state: 'LCS_OPENED',
-    ethBalanceA: Web3.utils.toWei('5', 'ether').toString(),
-    ethBalanceI: '0',
-    tokenBalanceA: Web3.utils.toWei('5', 'ether').toString(),
-    tokenBalanceI: '0',
-    nonce: 0,
-    openVcs: 0,
-    vcRootHash: Connext.generateVcRootHash({ vc0s: [] })
-  })
 
-  // ETH lc
-  stubHub.get(`/ledgerchannel/${channelId2}`).reply(200, {
-    channelId: channelId2,
-    partyA: partyA.toLowerCase(),
-    partyI: ingridAddress.toLowerCase(),
-    state: 'LCS_OPENED',
-    ethBalanceA: Web3.utils.toWei('5', 'ether').toString(),
-    ethBalanceI: '0',
-    tokenBalanceA: '0',
-    tokenBalanceI: '0',
-    nonce: 0,
-    openVcs: 0,
-    vcRootHash: Connext.generateVcRootHash({ vc0s: [] })
-  })
+  // get vc initial states by lc id
+  // get ledger channels by id
+  switch (type) {
+    case 'OPEN_LC_OPEN_VC':
+      // add initial states endpoints
+      stubHub.get(`/ledgerchannel/${channelId1}/vcinitialstates`).reply(200, [
+        {
+          channelId: threadId1,
+          partyA: partyA.toLowerCase(),
+          partyB: partyB.toLowerCase(),
+          nonce: 0,
+          ethBalanceA: Web3.utils.toWei('1', 'ether').toString(),
+          ethBalanceB: '0',
+          tokenBalanceA: Web3.utils.toWei('1', 'ether').toString(),
+          tokenBalanceB: '0'
+        }
+      ])
+      stubHub.get(`/ledgerchannel/${channelId2}/vcinitialstates`).reply(200, [
+        {
+          channelId: threadId1, // eth + token thread
+          partyA: partyA.toLowerCase(),
+          partyB: partyB.toLowerCase(),
+          nonce: 0,
+          ethBalanceA: Web3.utils.toWei('1', 'ether').toString(),
+          ethBalanceB: '0',
+          tokenBalanceA: Web3.utils.toWei('1', 'ether').toString(),
+          tokenBalanceB: '0'
+        },
+        {
+          channelId: threadId2, // eth only thread
+          partyA: partyC.toLowerCase(),
+          partyB: partyB.toLowerCase(),
+          nonce: 0,
+          ethBalanceA: Web3.utils.toWei('1', 'ether').toString(),
+          ethBalanceB: '0',
+          tokenBalanceA: '0',
+          tokenBalanceB: '0'
+        },
+        {
+          channelId: threadId3, // token only thread
+          partyA: partyD.toLowerCase(),
+          partyB: partyB.toLowerCase(),
+          nonce: 0,
+          ethBalanceA: '0',
+          ethBalanceB: '0',
+          tokenBalanceA: Web3.utils.toWei('1', 'ether').toString(),
+          tokenBalanceB: '0'
+        }
+      ])
+      stubHub.get(`/ledgerchannel/${channelId3}/vcinitialstates`).reply(200, [
+        {
+          channelId: threadId2,
+          partyA: partyC.toLowerCase(),
+          partyB: partyB.toLowerCase(),
+          nonce: 0,
+          ethBalanceA: Web3.utils.toWei('1', 'ether').toString(),
+          ethBalanceB: '0',
+          tokenBalanceA: '0',
+          tokenBalanceB: '0'
+        }
+      ])
+      stubHub.get(`/ledgerchannel/${channelId4}/vcinitialstates`).reply(200, [
+        {
+          channelId: threadId3,
+          partyA: partyA.toLowerCase(),
+          partyB: partyB.toLowerCase(),
+          nonce: 0,
+          ethBalanceA: '0',
+          ethBalanceB: '0',
+          tokenBalanceA: Web3.utils.toWei('1', 'ether').toString(),
+          tokenBalanceB: '0'
+        }
+      ])
 
-  // TOKEN lc
-  stubHub.get(`/ledgerchannel/${channelId3}`).reply(200, {
-    channelId: channelId3,
-    partyA: partyA.toLowerCase(),
-    partyI: ingridAddress.toLowerCase(),
-    state: 'LCS_OPENED',
-    ethBalanceA: '0',
-    ethBalanceI: '0',
-    tokenBalanceA: Web3.utils.toWei('5', 'ether').toString(),
-    tokenBalanceI: '0',
-    nonce: 0,
-    openVcs: 0,
-    vcRootHash: Connext.generateVcRootHash({ vc0s: [] })
-  })
+      // channel 1 - ETH/TOKEN (viewer)
+      stubHub.get(`/ledgerchannel/${channelId1}`).reply(200, {
+        channelId: channelId1,
+        partyA: partyA.toLowerCase(),
+        partyI: ingridAddress.toLowerCase(),
+        state: 'LCS_OPENED',
+        ethBalanceA: Web3.utils.toWei('4', 'ether').toString(),
+        ethBalanceI: '0',
+        tokenBalanceA: Web3.utils.toWei('4', 'ether').toString(),
+        tokenBalanceI: '0',
+        nonce: 1,
+        openVcs: 1,
+        vcRootHash: Connext.generateVcRootHash({
+          vc0s: [
+            {
+              channelId: threadId1,
+              partyA: partyA.toLowerCase(),
+              partyB: partyB.toLowerCase(),
+              nonce: 0,
+              ethBalanceA: Web3.utils.toWei('1', 'ether').toString(),
+              ethBalanceB: '0',
+              tokenBalanceA: Web3.utils.toWei('1', 'ether').toString(),
+              tokenBalanceB: '0'
+            }
+          ]
+        })
+      })
+
+      // channel 2 - receiver
+      stubHub.get(`/ledgerchannel/${channelId2}`).reply(200, {
+        channelId: channelId2,
+        partyA: partyB.toLowerCase(),
+        partyI: ingridAddress.toLowerCase(),
+        state: 'LCS_OPENED',
+        ethBalanceA: '0',
+        ethBalanceI: Web3.utils.toWei('5', 'ether').toString(),
+        tokenBalanceA: '0',
+        tokenBalanceI: Web3.utils.toWei('5', 'ether').toString(),
+        nonce: 3,
+        openVcs: 3,
+        vcRootHash: Connext.generateVcRootHash({
+          vc0s: [
+            {
+              channelId: threadId1, // eth + token thread
+              partyA: partyA.toLowerCase(),
+              partyB: partyB.toLowerCase(),
+              nonce: 0,
+              ethBalanceA: Web3.utils.toWei('1', 'ether').toString(),
+              ethBalanceB: '0',
+              tokenBalanceA: Web3.utils.toWei('1', 'ether').toString(),
+              tokenBalanceB: '0'
+            },
+            {
+              channelId: threadId2, // eth only thread
+              partyA: partyC.toLowerCase(),
+              partyB: partyB.toLowerCase(),
+              nonce: 0,
+              ethBalanceA: Web3.utils.toWei('1', 'ether').toString(),
+              ethBalanceB: '0',
+              tokenBalanceA: '0',
+              tokenBalanceB: '0'
+            },
+            {
+              channelId: threadId3, // token only thread
+              partyA: partyD.toLowerCase(),
+              partyB: partyB.toLowerCase(),
+              nonce: 0,
+              ethBalanceA: '0',
+              ethBalanceB: '0',
+              tokenBalanceA: Web3.utils.toWei('1', 'ether').toString(),
+              tokenBalanceB: '0'
+            }
+          ]
+        })
+      })
+
+      // channel 3 - ETH (viewer)
+      stubHub.get(`/ledgerchannel/${channelId3}`).reply(200, {
+        channelId: channelId3,
+        partyA: partyC.toLowerCase(),
+        partyI: ingridAddress.toLowerCase(),
+        state: 'LCS_OPENED',
+        ethBalanceA: Web3.utils.toWei('4', 'ether').toString(),
+        ethBalanceI: '0',
+        tokenBalanceA: '0',
+        tokenBalanceI: '0',
+        nonce: 1,
+        openVcs: 1,
+        vcRootHash: Connext.generateVcRootHash({
+          vc0s: [
+            {
+              channelId: threadId2,
+              partyA: partyC.toLowerCase(),
+              partyB: partyB.toLowerCase(),
+              nonce: 0,
+              ethBalanceA: Web3.utils.toWei('1', 'ether').toString(),
+              ethBalanceB: '0',
+              tokenBalanceA: '0',
+              tokenBalanceB: '0'
+            }
+          ]
+        })
+      })
+
+      // channel 4 - TOKEN (viewer)
+      stubHub.get(`/ledgerchannel/${channelId4}`).reply(200, {
+        channelId: channelId4,
+        partyA: partyD.toLowerCase(),
+        partyI: ingridAddress.toLowerCase(),
+        state: 'LCS_OPENED',
+        ethBalanceA: '0',
+        ethBalanceI: '0',
+        tokenBalanceA: Web3.utils.toWei('4', 'ether').toString(),
+        tokenBalanceI: '0',
+        nonce: 1,
+        openVcs: 1,
+        vcRootHash: Connext.generateVcRootHash({
+          vc0s: [
+            {
+              channelId: threadId3,
+              partyA: partyA.toLowerCase(),
+              partyB: partyB.toLowerCase(),
+              nonce: 0,
+              ethBalanceA: '0',
+              ethBalanceB: '0',
+              tokenBalanceA: Web3.utils.toWei('1', 'ether').toString(),
+              tokenBalanceB: '0'
+            }
+          ]
+        })
+      })
+      break
+
+    case 'OPEN_LC_NO_VC':
+      // add initial states endpoints
+      stubHub.get(`/ledgerchannel/${channelId1}/vcinitialstates`).reply(200, [])
+      stubHub.get(`/ledgerchannel/${channelId2}/vcinitialstates`).reply(200, [])
+      stubHub.get(`/ledgerchannel/${channelId3}/vcinitialstates`).reply(200, [])
+      stubHub.get(`/ledgerchannel/${channelId4}/vcinitialstates`).reply(200, [])
+
+      // channel 1 - ETH/TOKEN (viewer)
+      stubHub.get(`/ledgerchannel/${channelId1}`).reply(200, {
+        channelId: channelId1,
+        partyA: partyA.toLowerCase(),
+        partyI: ingridAddress.toLowerCase(),
+        state: 'LCS_OPENED',
+        ethBalanceA: Web3.utils.toWei('5', 'ether').toString(),
+        ethBalanceI: '0',
+        tokenBalanceA: Web3.utils.toWei('5', 'ether').toString(),
+        tokenBalanceI: '0',
+        nonce: 0,
+        openVcs: 0,
+        vcRootHash: Connext.generateVcRootHash({ vc0s: [] })
+      })
+
+      // channel 2 - receiver
+      stubHub.get(`/ledgerchannel/${channelId2}`).reply(200, {
+        channelId: channelId2,
+        partyA: partyB.toLowerCase(),
+        partyI: ingridAddress.toLowerCase(),
+        state: 'LCS_OPENED',
+        ethBalanceA: '0',
+        ethBalanceI: Web3.utils.toWei('5', 'ether').toString(),
+        tokenBalanceA: '0',
+        tokenBalanceI: Web3.utils.toWei('5', 'ether').toString(),
+        nonce: 0,
+        openVcs: 0,
+        vcRootHash: Connext.generateVcRootHash({ vc0s: [] })
+      })
+
+      // channel 3 - ETH (viewer)
+      stubHub.get(`/ledgerchannel/${channelId3}`).reply(200, {
+        channelId: channelId3,
+        partyA: partyC.toLowerCase(),
+        partyI: ingridAddress.toLowerCase(),
+        state: 'LCS_OPENED',
+        ethBalanceA: Web3.utils.toWei('5', 'ether').toString(),
+        ethBalanceI: '0',
+        tokenBalanceA: '0',
+        tokenBalanceI: '0',
+        nonce: 0,
+        openVcs: 0,
+        vcRootHash: Connext.generateVcRootHash({ vc0s: [] })
+      })
+
+      // channel 4 - TOKEN (viewer)
+      stubHub.get(`/ledgerchannel/${channelId4}`).reply(200, {
+        channelId: channelId4,
+        partyA: partyD.toLowerCase(),
+        partyI: ingridAddress.toLowerCase(),
+        state: 'LCS_OPENED',
+        ethBalanceA: '0',
+        ethBalanceI: '0',
+        tokenBalanceA: Web3.utils.toWei('5', 'ether').toString(),
+        tokenBalanceI: '0',
+        nonce: 0,
+        openVcs: 0,
+        vcRootHash: Connext.generateVcRootHash({ vc0s: [] })
+      })
+      break
+
+    default:
+      break
+  }
 
   // get thread 1 by ID (nonce = 0)
   // ETH_TOKEN vc
@@ -172,7 +568,7 @@ export async function createStubbedHub (baseUrl, type) {
   // ETH VC
   stubHub.get(`/virtualchannel/${threadId2}`).reply(200, {
     channelId: threadId2,
-    partyA: partyA.toLowerCase(),
+    partyA: partyC.toLowerCase(),
     partyB: partyB.toLowerCase(),
     state: 'VCS_OPENING',
     ethBalanceA: Web3.utils.toWei('1', 'ether').toString(),
@@ -185,7 +581,7 @@ export async function createStubbedHub (baseUrl, type) {
   // TOKEN VC
   stubHub.get(`/virtualchannel/${threadId3}`).reply(200, {
     channelId: threadId3,
-    partyA: partyA.toLowerCase(),
+    partyA: partyD.toLowerCase(),
     partyB: partyB.toLowerCase(),
     state: 'VCS_OPENING',
     ethBalanceA: '0',
@@ -235,9 +631,7 @@ export async function createStubbedHub (baseUrl, type) {
       }
     ])
 
-  // add initial states endpoint
-  stubHub.get(`/ledgerchannel/${channelId1}/vcinitialstates`).reply(200, [])
-
+  // add get thread by IDs endpoints
   stubHub
     .post(`/virtualchannel/`, body => {
       return body.channelId === threadId1
@@ -259,5 +653,31 @@ export async function createStubbedHub (baseUrl, type) {
     .reply(200, {
       channelId: threadId3
     })
+
+  // add get latest thread state endpoint
+  // ETH/TOKEN
+  stubHub.get(`/virtualchannel/${threadId1}/update/latest`).reply(200, {
+    ethBalanceA: Web3.utils.toWei('0.9', 'ether').toString(),
+    ethBalanceB: Web3.utils.toWei('0.1', 'ether').toString(),
+    tokenBalanceA: Web3.utils.toWei('0.9', 'ether').toString(),
+    tokenBalanceB: Web3.utils.toWei('0.1', 'ether').toString(),
+    nonce: 1
+  })
+  // ETH
+  stubHub.get(`/virtualchannel/${threadId2}/update/latest`).reply(200, {
+    ethBalanceA: Web3.utils.toWei('0.9', 'ether').toString(),
+    ethBalanceB: Web3.utils.toWei('0.1', 'ether').toString(),
+    tokenBalanceA: '0',
+    tokenBalanceB: '0',
+    nonce: 1
+  })
+  // TOKEN
+  stubHub.get(`/virtualchannel/${threadId3}/update/latest`).reply(200, {
+    ethBalanceA: '0',
+    ethBalanceB: '0',
+    tokenBalanceA: Web3.utils.toWei('0.9', 'ether').toString(),
+    tokenBalanceB: Web3.utils.toWei('0.1', 'ether').toString(),
+    nonce: 1
+  })
   return stubHub
 }
