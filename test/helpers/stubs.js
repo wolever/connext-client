@@ -405,7 +405,7 @@ export async function createStubbedHub (
       stubHub.get(`/ledgerchannel/${channelId4}/vcinitialstates`).reply(200, [
         {
           channelId: threadId3,
-          partyA: partyA.toLowerCase(),
+          partyA: partyD.toLowerCase(),
           partyB: partyB.toLowerCase(),
           nonce: 0,
           ethBalanceA: '0',
