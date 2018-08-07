@@ -2527,7 +2527,13 @@ class Connext {
       case CHANNEL_TYPES.ETH: // ETH
         tokenAddress = '0x0'
         result = await this.channelManagerInstance.methods
-          .createChannel(channelId, ingridAddress, challenge, tokenAddress, initialDeposits.ethDeposit)
+          .createChannel(
+            channelId, 
+            ingridAddress, 
+            challenge, 
+            tokenAddress, 
+            [initialDeposits.ethDeposit, Web3.utils.toBN('0')]
+          )
           .send({
             from: sender,
             value: initialDeposits.ethDeposit,
@@ -2543,7 +2549,13 @@ class Connext {
         })
         if (tokenApproval) {
           result = await this.channelManagerInstance.methods
-          .createChannel(channelId, ingridAddress, challenge, tokenAddress, initialDeposits.tokenDeposit)
+          .createChannel(
+            channelId, 
+            ingridAddress, 
+            challenge, 
+            tokenAddress, 
+            [Web3.utils.toBN('0'), initialDeposits.tokenDeposit]
+          )
           .send({
             from: sender,
             gas: 750000
@@ -2560,7 +2572,13 @@ class Connext {
         })
         if (tokenApproval) {
           result = await this.channelManagerInstance.methods
-            .createChannel(channelId, ingridAddress, challenge, tokenAddress, initialDeposits.ethDeposit, initialDeposits.tokenDeposit)
+            .createChannel(
+              channelId, 
+              ingridAddress, 
+              challenge, 
+              tokenAddress, 
+              [initialDeposits.ethDeposit, initialDeposits.tokenDeposit]
+            )
             .send({
               from: sender,
               value: initialDeposits.ethDeposit,
@@ -2905,7 +2923,12 @@ class Connext {
     }
 
     const result = await this.channelManagerInstance.methods
-      .consensusCloseChannel(channelId, nonce, state.ethBalanceA, state.ethBalanceI, state.tokenDepositA, state.tokenDepositI, sigA, sigI)
+      .consensusCloseChannel(
+        channelId, 
+        nonce, 
+        [ state.ethBalanceA, state.ethBalanceI, state.tokenDepositA, state.tokenDepositI ], 
+        sigA, 
+        sigI)
       .send({
         from: sender,
         gas: 1000000
@@ -3108,9 +3131,9 @@ class Connext {
     return result
   }
 
-  async initVcStateContractHandler ({
+  async initThreadStateContractHandler ({
     subchanId,
-    vcId,
+    threadId,
     proof = null,
     nonce,
     partyA,
@@ -3120,11 +3143,11 @@ class Connext {
     sigA,
     sender = null
   }) {
-    const methodName = 'initVcStateContractHandler'
+    const methodName = 'initThreadStateContractHandler'
     // validate
     const isAddress = { presence: true, isAddress: true }
     const isHexStrict = { presence: true, isHexStrict: true }
-    const isBN = { presence: true, isBN: true }
+    const isValidDepositObject = { presence: true, isValidDepositObject: true }
     const isHex = { presence: true, isHex: true }
     const isPositiveInt = { presence: true, isPositiveInt: true }
     Connext.validatorsResponseToError(
@@ -3133,9 +3156,9 @@ class Connext {
       'subchanId'
     )
     Connext.validatorsResponseToError(
-      validate.single(vcId, isHexStrict),
+      validate.single(threadId, isHexStrict),
       methodName,
-      'vcId'
+      'threadId'
     )
     Connext.validatorsResponseToError(
       validate.single(nonce, isPositiveInt),
@@ -3153,12 +3176,12 @@ class Connext {
       'partyB'
     )
     Connext.validatorsResponseToError(
-      validate.single(balanceA, isBN),
+      validate.single(balanceA, isValidDepositObject),
       methodName,
       'balanceA'
     )
     Connext.validatorsResponseToError(
-      validate.single(balanceB, isBN),
+      validate.single(balanceB, isValidDepositObject),
       methodName,
       'balanceB'
     )
@@ -3177,16 +3200,23 @@ class Connext {
       const accounts = await this.web3.eth.getAccounts()
       sender = accounts[0].toLowerCase()
     }
+    const ethBalanceA = balanceA.ethDeposit ? balanceA.ethDeposit : Web3.utils.toBN('0')
+    const ethBalanceB = balanceB.ethDeposit ? balanceB.ethDeposit : Web3.utils.toBN('0')
+
+    const tokenBalanceA = balanceA.tokenDeposit ? balanceA.tokenDeposit : Web3.utils.toBN('0')
+    const tokenBalanceB = balanceB.tokenDeposit ? balanceB.tokenDeposit : Web3.utils.toBN('0')    
     let merkle, stateHash
     if (proof === null) {
       // generate proof from lc
       stateHash = Connext.createThreadStateUpdateFingerprint({
-        channelId: vcId,
+        channelId: threadId,
         nonce,
         partyA,
         partyB,
-        balanceA,
-        balanceB
+        ethBalanceA,
+        ethBalanceB,
+        tokenBalanceA,
+        tokenBalanceB,
       })
       const vc0s = await this.getVcInitialStates(subchanId)
       merkle = Connext.generateMerkleTree(vc0s)
@@ -3201,19 +3231,19 @@ class Connext {
 
       proof = Utils.marshallState(proof)
     }
-    const hubBond = balanceA.add(balanceB)
+    const hubEthBond = ethBalanceA.add(ethBalanceB)
+    const hubTokenBond = tokenBalanceA.add(tokenBalanceB)
 
     const results = await this.channelManagerInstance.methods
       .initVCstate(
         subchanId,
-        vcId,
+        threadId,
         proof,
         nonce,
         partyA,
         partyB,
-        hubBond,
-        balanceA,
-        balanceB,
+        [ hubEthBond, hubTokenBond ],
+        [ ethBalanceA, ethBalanceB, tokenBalanceA, tokenBalanceB ],
         sigA
       )
       // .estimateGas({
