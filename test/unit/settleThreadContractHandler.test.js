@@ -25,7 +25,7 @@ let partyB
 let partyC
 let partyD
 
-describe.only('settleThreadContractHandler()', () => {
+describe('settleThreadContractHandler()', () => {
   before('init client and accounts', async () => {
     accounts = await web3.eth.getAccounts()
     ingridAddress = accounts[0]
