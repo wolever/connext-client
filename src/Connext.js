@@ -660,42 +660,44 @@ class Connext {
    *
    * @example
    * const channelId = 10 // pushed to partyB from Ingrid
-   * await connext.joinChannel(channelId)
+   * await connext.joinThread(channelId)
    * @param {String} channelId - ID of the virtual channel
    * @param {String} sender - (optional) ETH address of the person joining the virtual channel (partyB)
    * @returns {Promise} resolves to the virtual channel ID
    */
-  async joinChannel (channelId, sender = null) {
+  async joinThread (threadId, sender = null) {
     // validate params
-    const methodName = 'joinChannel'
+    const methodName = 'joinThread'
     const isHexStrict = { presence: true, isHexStrict: true }
     const isAddress = { presence: true, isAddress: true }
-    Connext.validatorsResponseToError(
+    Connext.threadId(
       validate.single(channelId, isHexStrict),
       methodName,
-      'channelId'
+      'threadId'
     )
-    const vc = await this.getThreadById(channelId)
-    if (vc === null) {
+    const thread = await this.getThreadById(threadId)
+    if (thread === null) {
       throw new VCOpenError(methodName, 'Channel not found')
     }
-
+    const accounts = await this.web3.eth.getAccounts()
     if (sender) {
       Connext.validatorsResponseToError(
         validate.single(sender, isAddress),
         methodName,
         'sender'
       )
-      if (sender.toLowerCase() !== vc.partyB) {
-        throw new VCOpenError(methodName, 'Incorrect channel counterparty')
-      }
     } else {
-      sender = vc.partyB
+      sender = accounts[0]
     }
+
+    if (sender.toLowerCase() !== thread.partyB) {
+      throw new VCOpenError(methodName, 'Incorrect channel counterparty')
+    }
+
     // get channels
-    const lcA = await this.getChannelByPartyA(vc.partyA)
-    const lcB = await this.getChannelByPartyA(sender)
-    if (lcB === null || lcA === null) {
+    const subchanA = await this.getChannelByPartyA(thread.partyA)
+    const subchanB = await this.getChannelByPartyA(sender)
+    if (subchanB === null || subchanA === null) {
       throw new VCOpenError(
         methodName,
         'Missing one or more required subchannels'
@@ -703,27 +705,29 @@ class Connext {
     }
 
     // subchannels in right state
-    if (CHANNEL_STATES[lcB.state] !== CHANNEL_STATES.LCS_OPENED || CHANNEL_STATES[lcA.state] !== CHANNEL_STATES.LCS_OPENED) {
+    if (CHANNEL_STATES[subchanB.state] !== CHANNEL_STATES.LCS_OPENED || CHANNEL_STATES[subchanA.state] !== CHANNEL_STATES.LCS_OPENED) {
       throw new VCOpenError(
         methodName,
         'One or more required subchannels are in the incorrect state'
       )
     }
 
-    const vc0 = {
+    const thread0 = {
       channelId,
       nonce: 0,
-      partyA: vc.partyA, // depending on ingrid for this value
+      partyA: thread.partyA, // depending on ingrid for this value
       partyB: sender,
-      balanceA: Web3.utils.toBN(vc.balanceA), // depending on ingrid for this value
-      balanceB: Web3.utils.toBN(0),
+      ethBalanceA: Web3.utils.toBN(thread.ethBalanceA), // depending on ingrid for this value
+      ethBalanceB: Web3.utils.toBN(0),
+      tokenBalanceA: Web3.utils.toBN(thread.tokenBalanceA),
+      tokenBalanceB: Web3.utils.toBN(0),
       signer: sender
     }
-    const vcSig = await this.createThreadStateUpdate(vc0)
+    const vcSig = await this.createThreadStateUpdate(thread0)
     // generate lcSig
     const lcSig = await this.createChannelUpdateOnThreadOpen({
-      threadInitialState: vc0,
-      channel: lcB,
+      threadInitialState: thread0,
+      channel: subchanB,
       signer: sender
     })
     // ping ingrid with vc0 (hub decomposes to lc)
@@ -3023,7 +3027,7 @@ class Connext {
       throw new LCOpenError(methodName, 'Channel is not in correct state')
     }
     const result = await this.channelManagerInstance.methods
-      .joinChannel(lcId)
+      .joinThread(lcId)
       .send({
         from: sender || this.ingridAddress, // can also be accounts[0], easier for testing
         value: deposit,

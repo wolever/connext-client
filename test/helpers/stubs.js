@@ -13,7 +13,7 @@ export function createStubbedContract () {
 
   const contractMethods = {
     createChannel: sinon.stub().returns(sendTxStub),
-    joinChannel: sinon.stub().returns(sendTxStub),
+    joinThread: sinon.stub().returns(sendTxStub),
     deposit: sinon.stub().returns(sendTxStub),
     consensusCloseChannel: sinon.stub().returns(sendTxStub),
     updateLCstate: sinon.stub().returns(sendTxStub),

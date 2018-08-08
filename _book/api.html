@@ -212,10 +212,10 @@
 
                             <li class="chapter " data-level="2.2.4" data-path="api.html">
 
-                                <a href="api.html#connextjoinchannelchannelid-sender-⇒-promise">
+                                <a href="api.html#connextjoinThreadchannelid-sender-⇒-promise">
 
 
-                                    joinChannel
+                                    joinThread
 
                                 </a>
 
@@ -871,10 +871,10 @@ const lcId = await connext.register(deposit)
                                         <br>
                                     </p>
                                     <p>
-                                        <a id="Connext+joinChannel"></a>
+                                        <a id="Connext+joinThread"></a>
                                     </p>
                                     <p></p>
-                                    <h2 id="connextjoinchannelchannelid-sender-&#x21D2;-promise">connext.joinChannel(channelId, sender) &#x21D2;
+                                    <h2 id="connextjoinThreadchannelid-sender-&#x21D2;-promise">connext.joinThread(channelId, sender) &#x21D2;
                                         <code>Promise</code>
                                     </h2>Joins virtual channel with provided channelId with a deposit of 0 (unidirectional channels).
                                     <p></p>
@@ -921,7 +921,7 @@ const lcId = await connext.register(deposit)
                                         <strong>Example</strong>
                                     </p>
                                     <pre><code class="lang-js"><span class="hljs-keyword">const</span> channelId = <span class="hljs-number">10</span> <span class="hljs-comment">// pushed to partyB from Ingrid</span>
-<span class="hljs-keyword">await</span> connext.joinChannel(channelId)
+<span class="hljs-keyword">await</span> connext.joinThread(channelId)
 </code></pre>
                                     <p>
                                         <br>

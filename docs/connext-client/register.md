@@ -8,7 +8,7 @@ Channel challenge timer is determined by the Hub if the parameter is not supplie
 
 Uses the internal web3 instance to call the createChannel function on the Channel Manager contract, and logs the transaction hash of the channel creation. The function returns the ID of the created channel.
 
-Once the channel is created on chain, users should call the requestJoinChannel function to request that the hub join the channel. This function should be called on a timeout sufficient for the hub to detect the channel and add it to its database.
+Once the channel is created on chain, users should call the requestjoinThread function to request that the hub join the channel. This function should be called on a timeout sufficient for the hub to detect the channel and add it to its database.
 
 If the Hub is unresponsive, or does not join the channel within the challenge period, the client function "ChannelOpenTimeoutContractHandler" can be called by the client to recover the funds.
 

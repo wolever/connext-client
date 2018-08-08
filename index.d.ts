@@ -17,7 +17,7 @@ declare class Connext {
 
   openChannel(opts: Connext.OpenChannelOptions): Promise<any>;
 
-  joinChannel(channelId: string): Promise<any>;
+  joinThread(channelId: string): Promise<any>;
 
   updateBalance(opts: Connext.UpdateBalanceOptions): Promise<any>;
 
