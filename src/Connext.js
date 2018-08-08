@@ -723,17 +723,17 @@ class Connext {
       tokenBalanceB: Web3.utils.toBN(0),
       signer: sender
     }
-    const vcSig = await this.createThreadStateUpdate(thread0)
+    const threadSig = await this.createThreadStateUpdate(thread0)
     // generate lcSig
-    const lcSig = await this.createChannelUpdateOnThreadOpen({
+    const subchanSig = await this.createChannelUpdateOnThreadOpen({
       threadInitialState: thread0,
       channel: subchanB,
       signer: sender
     })
     // ping ingrid with vc0 (hub decomposes to lc)
-    const result = await this.joinVcHandler({
-      vcSig,
-      lcSig,
+    const result = await this.joinThreadHandler({
+      threadSig,
+      subchanSig,
       channelId
     })
     return result
@@ -3981,20 +3981,20 @@ class Connext {
   }
 
   // ingrid verifies the threadInitialStates and sets up vc and countersigns lc updates
-  async joinVcHandler ({ lcSig, vcSig, channelId }) {
+  async joinThreadHandler ({ subchanSig, threadSig, channelId }) {
     // validate params
-    const methodName = 'joinVcHandler'
+    const methodName = 'joinThreadHandler'
     const isHexStrict = { presence: true, isHexStrict: true }
     const isHex = { presence: true, isHex: true }
     Connext.validatorsResponseToError(
-      validate.single(vcSig, isHex),
+      validate.single(threadSig, isHex),
       methodName,
-      'vcSig'
+      'threadSig'
     )
     Connext.validatorsResponseToError(
-      validate.single(lcSig, isHex),
+      validate.single(subchanSig, isHex),
       methodName,
-      'lcSig'
+      'subchanSig'
     )
     Connext.validatorsResponseToError(
       validate.single(channelId, isHexStrict),
@@ -4005,8 +4005,8 @@ class Connext {
     const response = await this.networking.post(
       `virtualchannel/${channelId}/join`,
       {
-        vcSig,
-        lcSig
+        vcSig: threadSig,
+        lcSig: subchanSig,
       }
     )
     return response.data.channelId
