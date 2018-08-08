@@ -118,7 +118,7 @@ describe('Connext dispute cases', function () {
           .toBN(lcB.balanceI)
           .lt(Web3.utils.toBN(Web3.utils.toWei('1', 'ether')))
       ) {
-        await client.requestIngridDeposit({
+        await client.requestHubDeposit({
           lcId: subchanBI,
           deposit: initialDeposit
         })

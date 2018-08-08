@@ -3893,33 +3893,33 @@ class Connext {
    * This function is to be used if the hub has insufficient balance in the ledger channel to create proposed virtual channels.
    *
    * @param {Object} params - the method object
-   * @param {String} params.lcId - id of the ledger channel
+   * @param {String} params.channelId - id of the ledger channel
    * @param {BN} params.deposit - the deposit in Wei
    * @returns {Promise} resolves to the transaction hash of Ingrid calling the deposit function
    */
-  async requestIngridDeposit ({ lcId, deposit }) {
-    const methodName = 'requestIngridDeposit'
+  async requestHubDeposit ({ channelId, deposit }) {
+    const methodName = 'requestHubDeposit'
     const isHexStrict = { presence: true, isHexStrict: true }
-    const isBN = { presence: true, isBN: true }
+    const isValidDepositObject = { presence: true, isValidDepositObject: true }
     Connext.validatorsResponseToError(
-      validate.single(lcId, isHexStrict),
+      validate.single(channelId, isHexStrict),
       methodName,
-      'lcId'
+      'channelId'
     )
     Connext.validatorsResponseToError(
-      validate.single(deposit, isBN),
+      validate.single(deposit, isValidDepositObject),
       methodName,
-      'isBN'
+      'deposit'
     )
     const accountBalance = await this.web3.eth.getBalance(this.ingridAddress)
-    if (deposit.gt(Web3.utils.toBN(accountBalance))) {
+    if (deposit.ethBalanceI && deposit.ethBalanceI.gt(Web3.utils.toBN(accountBalance))) {
       throw new LCUpdateError(
         methodName,
         'Hub does not have sufficient balance for requested deposit'
       )
     }
     const response = await this.networking.post(
-      `ledgerchannel/${lcId}/requestdeposit`,
+      `ledgerchannel/${channelId}/requestdeposit`,
       {
         deposit: deposit.toString()
       }

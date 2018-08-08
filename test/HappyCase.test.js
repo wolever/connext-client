@@ -252,7 +252,7 @@ describe('Connext happy case testing flow', () => {
           .add(Web3.utils.toBN(lcC.balanceA))
           .add(Web3.utils.toBN(lcD.balanceA))
           .add(Web3.utils.toBN(lcE.balanceA))
-        await client.requestIngridDeposit({
+        await client.requestHubDeposit({
           lcId: subchanBI,
           deposit
         })
@@ -276,7 +276,7 @@ describe('Connext happy case testing flow', () => {
         .toBN(balance)
         .add(Web3.utils.toBN(Web3.utils.toWei('1000', 'ether')))
       try {
-        await client.requestIngridDeposit({
+        await client.requestHubDeposit({
           lcId: subchanBI,
           deposit
         })
