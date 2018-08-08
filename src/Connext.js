@@ -3583,21 +3583,21 @@ class Connext {
   /**
    * Returns an array of the virtual channel states associated with the given ledger channel.
    *
-   * @param {String} ledgerChannelId - ID of the ledger channel
+   * @param {String} channelId - ID of the ledger channel
    * @returns {Promise} resolves to an Array of virtual channel objects
    */
-  async getChannelsByLcId (ledgerChannelId) {
+  async getThreadsByChannelId (channelId) {
     // lcState == latest ingrid signed state
-    const methodName = 'getChannelsByLcId'
+    const methodName = 'getThreadsByChannelId'
     const isHexStrict = { presence: true, isHexStrict: true }
     Connext.validatorsResponseToError(
-      validate.single(ledgerChannelId, isHexStrict),
+      validate.single(channelId, isHexStrict),
       methodName,
-      'ledgerChannelId'
+      'channelId'
     )
 
     const response = await this.networking.get(
-      `ledgerchannel/${ledgerChannelId}/vcs`
+      `ledgerchannel/${channelId}/vcs`
     )
     return response.data
   }
@@ -3863,17 +3863,17 @@ class Connext {
     return response.data
   }
 
-  async getDecomposedLcStates (vcId) {
+  async getDecomposedChannelStates (threadId) {
     // validate params
-    const methodName = 'getDecomposedLcStates'
+    const methodName = 'getDecomposedChannelStates'
     const isHexStrict = { presence: true, isHexStrict: true }
     Connext.validatorsResponseToError(
-      validate.single(vcId, isHexStrict),
+      validate.single(threadId, isHexStrict),
       methodName,
-      'vcId'
+      'threadId'
     )
     const response = await this.networking.get(
-      `virtualchannel/${vcId}/decompose`
+      `virtualchannel/${threadId}/decompose`
     )
     return response.data
   }
