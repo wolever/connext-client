@@ -46,7 +46,7 @@ describe('recoverSignerFromChannelStateUpdateFingerprint()', function () {
       isClose: false,
       nonce: 0,
       openVcs: 0,
-      vcRootHash: Connext.generateVcRootHash({ vc0s: [] }),
+      vcRootHash: Connext.generateThreadRootHash({ threadInitialStates: [] }),
       partyA,
       partyI: ingridAddress,
       ethBalanceA: Web3.utils.toBN('1000'),
@@ -70,7 +70,7 @@ describe('recoverSignerFromChannelStateUpdateFingerprint()', function () {
 
         nonce: 0,
         openVcs: 0,
-        vcRootHash: Connext.generateVcRootHash({ vc0s: [] }),
+        vcRootHash: Connext.generateThreadRootHash({ threadInitialStates: [] }),
         partyA,
         partyI: ingridAddress,
         ethBalanceA: Web3.utils.toBN('1000'),
@@ -92,7 +92,7 @@ describe('recoverSignerFromChannelStateUpdateFingerprint()', function () {
 
         nonce: 0,
         openVcs: 0,
-        vcRootHash: Connext.generateVcRootHash({ vc0s: [] }),
+        vcRootHash: Connext.generateThreadRootHash({ threadInitialStates: [] }),
         partyA,
         partyI: ingridAddress,
         ethBalanceA: Web3.utils.toBN('1000'),
@@ -114,7 +114,7 @@ describe('recoverSignerFromChannelStateUpdateFingerprint()', function () {
 
         nonce: 0,
         openVcs: 0,
-        vcRootHash: Connext.generateVcRootHash({ vc0s: [] }),
+        vcRootHash: Connext.generateThreadRootHash({ threadInitialStates: [] }),
         partyA,
         partyI: ingridAddress,
         ethBalanceA: Web3.utils.toBN('1000'),
@@ -135,7 +135,7 @@ describe('recoverSignerFromChannelStateUpdateFingerprint()', function () {
 
         nonce: 0,
         openVcs: 0,
-        vcRootHash: Connext.generateVcRootHash({ vc0s: [] }),
+        vcRootHash: Connext.generateThreadRootHash({ threadInitialStates: [] }),
         partyA,
         partyI: ingridAddress,
         ethBalanceA: Web3.utils.toBN('1000'),
@@ -157,7 +157,7 @@ describe('recoverSignerFromChannelStateUpdateFingerprint()', function () {
 
         nonce: 0,
         openVcs: 0,
-        vcRootHash: Connext.generateVcRootHash({ vc0s: [] }),
+        vcRootHash: Connext.generateThreadRootHash({ threadInitialStates: [] }),
         partyA,
         partyI: ingridAddress,
         ethBalanceA: Web3.utils.toBN('1000'),
@@ -179,7 +179,7 @@ describe('recoverSignerFromChannelStateUpdateFingerprint()', function () {
 
         nonce: 0,
         openVcs: 0,
-        vcRootHash: Connext.generateVcRootHash({ vc0s: [] }),
+        vcRootHash: Connext.generateThreadRootHash({ threadInitialStates: [] }),
         partyA,
         partyI: ingridAddress,
         ethBalanceA: Web3.utils.toBN('1000'),
@@ -200,7 +200,7 @@ describe('recoverSignerFromChannelStateUpdateFingerprint()', function () {
         isClose: false,
 
         openVcs: 0,
-        vcRootHash: Connext.generateVcRootHash({ vc0s: [] }),
+        vcRootHash: Connext.generateThreadRootHash({ threadInitialStates: [] }),
         partyA,
         partyI: ingridAddress,
         ethBalanceA: Web3.utils.toBN('1000'),
@@ -222,7 +222,7 @@ describe('recoverSignerFromChannelStateUpdateFingerprint()', function () {
 
         nonce: null,
         openVcs: 0,
-        vcRootHash: Connext.generateVcRootHash({ vc0s: [] }),
+        vcRootHash: Connext.generateThreadRootHash({ threadInitialStates: [] }),
         partyA,
         partyI: ingridAddress,
         ethBalanceA: Web3.utils.toBN('1000'),
@@ -243,7 +243,7 @@ describe('recoverSignerFromChannelStateUpdateFingerprint()', function () {
 
         nonce: 'fail',
         openVcs: 0,
-        vcRootHash: Connext.generateVcRootHash({ vc0s: [] }),
+        vcRootHash: Connext.generateThreadRootHash({ threadInitialStates: [] }),
         partyA,
         partyI: ingridAddress,
         ethBalanceA: Web3.utils.toBN('1000'),
@@ -264,7 +264,7 @@ describe('recoverSignerFromChannelStateUpdateFingerprint()', function () {
         isClose: false,
 
         nonce: 0,
-        vcRootHash: Connext.generateVcRootHash({ vc0s: [] }),
+        vcRootHash: Connext.generateThreadRootHash({ threadInitialStates: [] }),
         partyA,
         partyI: ingridAddress,
         ethBalanceA: Web3.utils.toBN('1000'),
@@ -286,7 +286,7 @@ describe('recoverSignerFromChannelStateUpdateFingerprint()', function () {
 
         nonce: 0,
         openVcs: null,
-        vcRootHash: Connext.generateVcRootHash({ vc0s: [] }),
+        vcRootHash: Connext.generateThreadRootHash({ threadInitialStates: [] }),
         partyA,
         partyI: ingridAddress,
         ethBalanceA: Web3.utils.toBN('1000'),
@@ -308,7 +308,7 @@ describe('recoverSignerFromChannelStateUpdateFingerprint()', function () {
 
         nonce: 0,
         openVcs: 'fail',
-        vcRootHash: Connext.generateVcRootHash({ vc0s: [] }),
+        vcRootHash: Connext.generateThreadRootHash({ threadInitialStates: [] }),
         partyA,
         partyI: ingridAddress,
         ethBalanceA: Web3.utils.toBN('1000'),
@@ -395,7 +395,7 @@ describe('recoverSignerFromChannelStateUpdateFingerprint()', function () {
 
         nonce: 0,
         openVcs: 0,
-        vcRootHash: Connext.generateVcRootHash({ vc0s: [] }),
+        vcRootHash: Connext.generateThreadRootHash({ threadInitialStates: [] }),
         partyI: ingridAddress,
         ethBalanceA: Web3.utils.toBN('1000'),
         ethBalanceI: Web3.utils.toBN('0'),
@@ -416,7 +416,7 @@ describe('recoverSignerFromChannelStateUpdateFingerprint()', function () {
 
         nonce: 0,
         openVcs: 0,
-        vcRootHash: Connext.generateVcRootHash({ vc0s: [] }),
+        vcRootHash: Connext.generateThreadRootHash({ threadInitialStates: [] }),
         partyA: null,
         partyI: ingridAddress,
         ethBalanceA: Web3.utils.toBN('1000'),
@@ -438,7 +438,7 @@ describe('recoverSignerFromChannelStateUpdateFingerprint()', function () {
 
         nonce: 0,
         openVcs: 0,
-        vcRootHash: Connext.generateVcRootHash({ vc0s: [] }),
+        vcRootHash: Connext.generateThreadRootHash({ threadInitialStates: [] }),
         partyA: 'fail',
         partyI: ingridAddress,
         ethBalanceA: Web3.utils.toBN('1000'),
@@ -460,7 +460,7 @@ describe('recoverSignerFromChannelStateUpdateFingerprint()', function () {
 
         nonce: 0,
         openVcs: 0,
-        vcRootHash: Connext.generateVcRootHash({ vc0s: [] }),
+        vcRootHash: Connext.generateThreadRootHash({ threadInitialStates: [] }),
         partyA,
         ethBalanceA: Web3.utils.toBN('1000'),
         ethBalanceI: Web3.utils.toBN('0'),
@@ -481,7 +481,7 @@ describe('recoverSignerFromChannelStateUpdateFingerprint()', function () {
 
         nonce: 0,
         openVcs: 0,
-        vcRootHash: Connext.generateVcRootHash({ vc0s: [] }),
+        vcRootHash: Connext.generateThreadRootHash({ threadInitialStates: [] }),
         partyA,
         partyI: null,
         ethBalanceA: Web3.utils.toBN('1000'),
@@ -503,7 +503,7 @@ describe('recoverSignerFromChannelStateUpdateFingerprint()', function () {
 
         nonce: 0,
         openVcs: 0,
-        vcRootHash: Connext.generateVcRootHash({ vc0s: [] }),
+        vcRootHash: Connext.generateThreadRootHash({ threadInitialStates: [] }),
         partyA,
         partyI: 'fail',
         ethBalanceA: Web3.utils.toBN('1000'),
@@ -525,7 +525,7 @@ describe('recoverSignerFromChannelStateUpdateFingerprint()', function () {
 
         nonce: 0,
         openVcs: 0,
-        vcRootHash: Connext.generateVcRootHash({ vc0s: [] }),
+        vcRootHash: Connext.generateThreadRootHash({ threadInitialStates: [] }),
         partyA,
         partyI: ingridAddress,
         ethBalanceI: Web3.utils.toBN('0'),
@@ -546,7 +546,7 @@ describe('recoverSignerFromChannelStateUpdateFingerprint()', function () {
 
         nonce: 0,
         openVcs: 0,
-        vcRootHash: Connext.generateVcRootHash({ vc0s: [] }),
+        vcRootHash: Connext.generateThreadRootHash({ threadInitialStates: [] }),
         partyA,
         partyI: ingridAddress,
         ethBalanceA: null,
@@ -568,7 +568,7 @@ describe('recoverSignerFromChannelStateUpdateFingerprint()', function () {
 
         nonce: 0,
         openVcs: 0,
-        vcRootHash: Connext.generateVcRootHash({ vc0s: [] }),
+        vcRootHash: Connext.generateThreadRootHash({ threadInitialStates: [] }),
         partyA,
         partyI: ingridAddress,
         ethBalanceA: 'fail',
@@ -590,7 +590,7 @@ describe('recoverSignerFromChannelStateUpdateFingerprint()', function () {
 
         nonce: 0,
         openVcs: 0,
-        vcRootHash: Connext.generateVcRootHash({ vc0s: [] }),
+        vcRootHash: Connext.generateThreadRootHash({ threadInitialStates: [] }),
         partyA,
         partyI: ingridAddress,
         ethBalanceA: Web3.utils.toBN('1000'),
@@ -611,7 +611,7 @@ describe('recoverSignerFromChannelStateUpdateFingerprint()', function () {
 
         nonce: 0,
         openVcs: 0,
-        vcRootHash: Connext.generateVcRootHash({ vc0s: [] }),
+        vcRootHash: Connext.generateThreadRootHash({ threadInitialStates: [] }),
         partyA,
         partyI: ingridAddress,
         ethBalanceA: Web3.utils.toBN('1000'),
@@ -633,7 +633,7 @@ describe('recoverSignerFromChannelStateUpdateFingerprint()', function () {
 
         nonce: 0,
         openVcs: 0,
-        vcRootHash: Connext.generateVcRootHash({ vc0s: [] }),
+        vcRootHash: Connext.generateThreadRootHash({ threadInitialStates: [] }),
         partyA,
         partyI: ingridAddress,
         ethBalanceA: Web3.utils.toBN('1000'),
@@ -655,7 +655,7 @@ describe('recoverSignerFromChannelStateUpdateFingerprint()', function () {
 
         nonce: 0,
         openVcs: 0,
-        vcRootHash: Connext.generateVcRootHash({ vc0s: [] }),
+        vcRootHash: Connext.generateThreadRootHash({ threadInitialStates: [] }),
         partyA,
         partyI: ingridAddress,
         ethBalanceA: Web3.utils.toBN('1000'),
@@ -676,7 +676,7 @@ describe('recoverSignerFromChannelStateUpdateFingerprint()', function () {
 
         nonce: 0,
         openVcs: 0,
-        vcRootHash: Connext.generateVcRootHash({ vc0s: [] }),
+        vcRootHash: Connext.generateThreadRootHash({ threadInitialStates: [] }),
         partyA,
         partyI: ingridAddress,
         ethBalanceA: Web3.utils.toBN('1000'),
@@ -698,7 +698,7 @@ describe('recoverSignerFromChannelStateUpdateFingerprint()', function () {
 
         nonce: 0,
         openVcs: 0,
-        vcRootHash: Connext.generateVcRootHash({ vc0s: [] }),
+        vcRootHash: Connext.generateThreadRootHash({ threadInitialStates: [] }),
         partyA,
         partyI: ingridAddress,
         ethBalanceA: Web3.utils.toBN('1000'),
@@ -720,7 +720,7 @@ describe('recoverSignerFromChannelStateUpdateFingerprint()', function () {
 
         nonce: 0,
         openVcs: 0,
-        vcRootHash: Connext.generateVcRootHash({ vc0s: [] }),
+        vcRootHash: Connext.generateThreadRootHash({ threadInitialStates: [] }),
         partyA,
         partyI: ingridAddress,
         ethBalanceA: Web3.utils.toBN('1000'),
@@ -741,7 +741,7 @@ describe('recoverSignerFromChannelStateUpdateFingerprint()', function () {
 
         nonce: 0,
         openVcs: 0,
-        vcRootHash: Connext.generateVcRootHash({ vc0s: [] }),
+        vcRootHash: Connext.generateThreadRootHash({ threadInitialStates: [] }),
         partyA,
         partyI: ingridAddress,
         ethBalanceA: Web3.utils.toBN('1000'),
@@ -763,7 +763,7 @@ describe('recoverSignerFromChannelStateUpdateFingerprint()', function () {
 
         nonce: 0,
         openVcs: 0,
-        vcRootHash: Connext.generateVcRootHash({ vc0s: [] }),
+        vcRootHash: Connext.generateThreadRootHash({ threadInitialStates: [] }),
         partyA,
         partyI: ingridAddress,
         ethBalanceA: Web3.utils.toBN('1000'),

@@ -37,7 +37,7 @@ describe('Connext dispute cases', function () {
 
   // before, should init client with LCs and VC
   before(
-    'Should init client and register partyA and partyB with the hub, and create/update a VC between them',
+    'Should init client and openChannel partyA and partyB with the hub, and create/update a VC between them',
     async () => {
       console.log('Initing client..')
       // init web3
@@ -90,35 +90,35 @@ describe('Connext dispute cases', function () {
       console.log('Client properly initialized')
 
       console.log('Creating/Fetching channels with hub..')
-      // register partyA if lcA doesnt exist
-      lcA = await client.getLcByPartyA(partyA)
+      // openChannel partyA if lcA doesnt exist
+      lcA = await client.getChannelByPartyA(partyA)
       if (lcA == null) {
-        subchanAI = await client.register(initialDeposit, partyA, 15)
+        subchanAI = await client.openChannel(initialDeposit, partyA, 15)
         await timeout(30000) // wait for chainsaw and autojoin
-        lcA = await client.getLcByPartyA(partyA)
+        lcA = await client.getChannelByPartyA(partyA)
       } else {
         subchanAI = lcA.channelId
       }
-      // register partyB if lcB doesnt exist
-      lcB = await client.getLcByPartyA(partyB)
+      // openChannel partyB if lcB doesnt exist
+      lcB = await client.getChannelByPartyA(partyB)
       if (lcB == null) {
-        subchanBI = await client.register(initialDeposit, partyB, 15)
+        subchanBI = await client.openChannel(initialDeposit, partyB, 15)
         await timeout(30000) // wait for chainsaw and autojoin
-        lcB = await client.getLcByPartyA(partyA)
+        lcB = await client.getChannelByPartyA(partyA)
       } else {
         subchanBI = lcB.channelId
       }
       // if insufficient funds, request ingrid deposit into subchanBI
       console.log('Ensuring sufficient balances in hub channels..')
       // refetch channels
-      lcA = await client.getLcByPartyA(partyA)
-      lcB = await client.getLcByPartyA(partyB)
+      lcA = await client.getChannelByPartyA(partyA)
+      lcB = await client.getChannelByPartyA(partyB)
       if (
         Web3.utils
           .toBN(lcB.balanceI)
           .lt(Web3.utils.toBN(Web3.utils.toWei('1', 'ether')))
       ) {
-        await client.requestIngridDeposit({
+        await client.requestHubDeposit({
           lcId: subchanBI,
           deposit: initialDeposit
         })
@@ -136,14 +136,14 @@ describe('Connext dispute cases', function () {
 
       // create/update VC between partyA and partyB if doesnt exist
       console.log('Creating/Updating or Fetching thread between A and B..')
-      vc = await client.getChannelByParties({ partyA, partyB })
+      vc = await client.getThreadByParties({ partyA, partyB })
       if (vc == null) {
-        vcId = await client.openChannel({
+        vcId = await client.openThread({
           to: partyB,
           deposit: Web3.utils.toBN(Web3.utils.toWei('1', 'ether')),
           sender: partyA
         })
-        vc = await client.getChannelById(vcId)
+        vc = await client.getThreadById(vcId)
         // update VC 3x
         balanceA = Web3.utils.toBN(vc.balanceA)
         balanceB = Web3.utils.toBN(vc.balanceB)
@@ -174,7 +174,7 @@ describe('Connext dispute cases', function () {
     // ***** TEMPLATE ******
     // it('should call LCOpenTimeout if channel never joined', async () => {
     //   if (lcA.timeout < Date.now()) {
-    //     await client.LCOpenTimeoutContractHandler(subchanAI, partyA)
+    //     await client.ChannelOpenTimeoutContractHandler(subchanAI, partyA)
     //   }
     // })
   })
@@ -197,7 +197,7 @@ describe('Connext dispute cases', function () {
 
     it('should call initVcStateContractHandler', async () => {
       // get initial vc state
-      let vc0 = await client.getVcInitialState(vcId)
+      let vc0 = await client.getThreadInitialState(vcId)
       // init on chain
       const response = await client.initVcStateContractHandler({
         subchanId: subchanAI, // caller subchan
@@ -241,7 +241,7 @@ describe('Connext dispute cases', function () {
       expect(tx.to.toLowerCase()).to.equal(contractAddress)
       // // assert vc status chained
       // await timeout(15000) // wait for chainsaw to change channel status
-      // vc = await client.getChannelById(vcId)
+      // vc = await client.getThreadById(vcId)
       // expect(vc.state).to.equal(2) // settling
     })
 
@@ -250,7 +250,7 @@ describe('Connext dispute cases', function () {
       // right now there is no way to get the challenge timeout info, but well add it like this:
       // while (vc.challengeTimeout < Date.now()) {
       //   await timeout(3000)
-      //   vc = await client.getChannelById(vcId)
+      //   vc = await client.getThreadById(vcId)
       // }
 
       await timeout(16000)
@@ -284,12 +284,12 @@ describe('Connext dispute cases', function () {
     it('should close virtual channels', async () => {
       await client.closeChannel(vcId)
       // get vcA
-      vc = await client.getChannelById(vcId)
+      vc = await client.getThreadById(vcId)
       assert.equal(vc.state, 3)
     })
 
     it('should call withdraw without i-countersiging closing update', async () => {
-      const latestState = await client.getLatestLedgerStateUpdate(subchanAI, [
+      const latestState = await client.getLatestChannelState(subchanAI, [
         'sigI'
       ])
       // mock response from hub for client.fastCloseLCHandler
@@ -319,7 +319,7 @@ describe('Connext dispute cases', function () {
       expect(tx.to.toLowerCase()).to.equal(contractAddress)
 
       await timeout(20000) // wait for chainsaw to pick up settled state change
-      lcA = await client.getLcById(subchanAI)
+      lcA = await client.getChannelById(subchanAI)
       expect(lcA.state).to.equal(2) // settling
     })
 
@@ -329,7 +329,7 @@ describe('Connext dispute cases', function () {
       // already awaited, should not have to again
       // while (lcA.challengeTimeout < Date.now()) {
       //   await timeout(3000)
-      //   lcA = await client.getLcById(subchanAI)
+      //   lcA = await client.getChannelById(subchanAI)
       // }
       // get previous balances
       const prevBalA = await client.web3.eth.getBalance(partyA)

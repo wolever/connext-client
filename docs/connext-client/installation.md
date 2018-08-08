@@ -13,7 +13,7 @@ Most functions in this package return Promises. The preferred way to consume the
 async componentDidMount () {
   try {
     const connext = new Connext(this.state.web3)
-    await connext.register(Web3.utils.toBN(Web3.utils.toWei(1, 'ether')))
+    await connext.openChannel(Web3.utils.toBN(Web3.utils.toWei(1, 'ether')))
   } catch (e) {
     console.log(e)
   }

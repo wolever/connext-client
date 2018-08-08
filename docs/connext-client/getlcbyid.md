@@ -1,6 +1,6 @@
-# getChannelById
+# getThreadById
 
-**connext.getChannelById\(**channelId**\)** ⇒ `Promise`Returns an object representing a channel.
+**connext.getThreadById\(**channelId**\)** ⇒ `Promise`Returns an object representing a channel.
 
 **Kind**: instance method of [`Connext`](./#Connext)  
 **Returns**: `Promise` - resolves to the channel object

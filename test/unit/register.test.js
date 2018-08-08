@@ -31,7 +31,7 @@ let partyA, partyB, partyC, partyD, partyE
 // for initial ledger channel states
 let subchanAI
 
-describe('register()', function () {
+describe('openChannel()', function () {
   this.timeout(120000)
   before('authenticate', async () => {
     accounts = await web3.eth.getAccounts()
@@ -114,7 +114,7 @@ describe('register()', function () {
         ethDeposit: Web3.utils.toBN(Web3.utils.toWei('5', 'ether')),
         tokenDepsit: null
       }
-      subchanAI = await client.register(initialDeposits, null, partyA)
+      subchanAI = await client.openChannel(initialDeposits, null, partyA)
       expect(subchanAI).to.equal(
         '0x1000000000000000000000000000000000000000000000000000000000000000'
       )
@@ -134,7 +134,11 @@ describe('register()', function () {
         ethDeposit: null,
         tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('1', 'ether'))
       }
-      subchanAI = await client.register(initialDeposits, tokenAddress, partyA)
+      subchanAI = await client.openChannel(
+        initialDeposits,
+        tokenAddress,
+        partyA
+      )
       expect(subchanAI).to.equal(
         '0x2000000000000000000000000000000000000000000000000000000000000000'
       )
@@ -154,7 +158,11 @@ describe('register()', function () {
         ethDeposit: Web3.utils.toBN(Web3.utils.toWei('5', 'ether')),
         tokenDepsit: Web3.utils.toBN(Web3.utils.toWei('1', 'ether'))
       }
-      subchanAI = await client.register(initialDeposits, tokenAddress, partyA)
+      subchanAI = await client.openChannel(
+        initialDeposits,
+        tokenAddress,
+        partyA
+      )
       expect(subchanAI).to.equal(
         '0x3000000000000000000000000000000000000000000000000000000000000000'
       )
@@ -173,7 +181,7 @@ describe('register()', function () {
   describe('parameter validation', () => {
     it('should fail if no initialDeposits object is provided', async () => {
       try {
-        await client.register()
+        await client.openChannel()
       } catch (e) {
         expect(e.statusCode).to.equal(200)
       }
@@ -184,7 +192,7 @@ describe('register()', function () {
         fail: 'should fail'
       }
       try {
-        await client.register(initialDeposits)
+        await client.openChannel(initialDeposits)
       } catch (e) {
         expect(e.statusCode).to.equal(200)
       }
@@ -196,7 +204,7 @@ describe('register()', function () {
         tokenDeposit: null
       }
       try {
-        await client.register(initialDeposits)
+        await client.openChannel(initialDeposits)
       } catch (e) {
         expect(e.statusCode).to.equal(200)
       }
@@ -208,7 +216,7 @@ describe('register()', function () {
         tokenDeposit: null
       }
       try {
-        await client.register(initialDeposits)
+        await client.openChannel(initialDeposits)
       } catch (e) {
         expect(e.statusCode).to.equal(200)
       }
@@ -220,7 +228,7 @@ describe('register()', function () {
         tokenDeposit: null
       }
       try {
-        await client.register(initialDeposits)
+        await client.openChannel(initialDeposits)
       } catch (e) {
         expect(e.statusCode).to.equal(200)
       }
@@ -233,7 +241,7 @@ describe('register()', function () {
       ethDeposit: null
     }
     try {
-      await client.register(initialDeposits)
+      await client.openChannel(initialDeposits)
     } catch (e) {
       expect(e.statusCode).to.equal(200)
     }
@@ -245,7 +253,7 @@ describe('register()', function () {
       ethDeposit: null
     }
     try {
-      await client.register(initialDeposits)
+      await client.openChannel(initialDeposits)
     } catch (e) {
       expect(e.statusCode).to.equal(200)
     }
@@ -257,7 +265,7 @@ describe('register()', function () {
       ethDeposit: Web3.utils.toBN(Web3.utils.toWei('5', 'ether'))
     }
     try {
-      await client.register(initialDeposits)
+      await client.openChannel(initialDeposits)
     } catch (e) {
       expect(e.statusCode).to.equal(200)
     }
@@ -269,7 +277,7 @@ describe('register()', function () {
       tokenDepsit: Web3.utils.toBN(Web3.utils.toWei('5', 'ether'))
     }
     try {
-      await client.register(initialDeposits)
+      await client.openChannel(initialDeposits)
     } catch (e) {
       expect(e.statusCode).to.equal(200)
     }
@@ -281,7 +289,7 @@ describe('register()', function () {
       ethDeposit: Web3.utils.toBN(Web3.utils.toWei('5', 'ether'))
     }
     try {
-      await client.register(initialDeposits)
+      await client.openChannel(initialDeposits)
     } catch (e) {
       expect(e.statusCode).to.equal(200)
     }
@@ -293,7 +301,7 @@ describe('register()', function () {
       tokenDepsit: Web3.utils.toBN(Web3.utils.toWei('5', 'ether'))
     }
     try {
-      await client.register(initialDeposits)
+      await client.openChannel(initialDeposits)
     } catch (e) {
       expect(e.statusCode).to.equal(200)
     }
@@ -306,7 +314,7 @@ describe('register()', function () {
     }
     const tokenAddress = 'fail'
     try {
-      await client.register(initialDeposits, tokenAddress)
+      await client.openChannel(initialDeposits, tokenAddress)
     } catch (e) {
       expect(e.statusCode).to.equal(200)
     }
@@ -320,7 +328,7 @@ describe('register()', function () {
     const tokenAddress = client.contractAddress
     const sender = 'fail'
     try {
-      await client.register(initialDeposits, tokenAddress, sender)
+      await client.openChannel(initialDeposits, tokenAddress, sender)
     } catch (e) {
       expect(e.statusCode).to.equal(200)
     }
@@ -335,7 +343,7 @@ describe('register()', function () {
     const sender = partyA
     const challenge = 'fail'
     try {
-      await client.register(initialDeposits, tokenAddress, sender, challenge)
+      await client.openChannel(initialDeposits, tokenAddress, sender, challenge)
     } catch (e) {
       expect(e.statusCode).to.equal(200)
     }
@@ -350,7 +358,7 @@ describe('register()', function () {
     const sender = partyA
     const challenge = -25
     try {
-      await client.register(initialDeposits, tokenAddress, sender, challenge)
+      await client.openChannel(initialDeposits, tokenAddress, sender, challenge)
     } catch (e) {
       expect(e.statusCode).to.equal(200)
     }

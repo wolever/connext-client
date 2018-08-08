@@ -78,7 +78,7 @@ describe('closeChannel()', () => {
         tokenBalanceI: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
         openVcs: 0,
         nonce: 2,
-        vcRootHash: Connext.generateVcRootHash({ vc0s: [] })
+        vcRootHash: Connext.generateThreadRootHash({ threadInitialStates: [] })
       }
       const signer = Connext.recoverSignerFromChannelStateUpdate(sigParams)
       expect(signer.toLowerCase()).to.equal(ingridAddress.toLowerCase())
@@ -103,7 +103,7 @@ describe('closeChannel()', () => {
         tokenBalanceI: Web3.utils.toBN('0'),
         openVcs: 0,
         nonce: 2,
-        vcRootHash: Connext.generateVcRootHash({ vc0s: [] })
+        vcRootHash: Connext.generateThreadRootHash({ threadInitialStates: [] })
       }
       const signer = Connext.recoverSignerFromChannelStateUpdate(sigParams)
       expect(signer.toLowerCase()).to.equal(ingridAddress.toLowerCase())
@@ -128,7 +128,7 @@ describe('closeChannel()', () => {
         tokenBalanceI: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
         openVcs: 0,
         nonce: 2,
-        vcRootHash: Connext.generateVcRootHash({ vc0s: [] })
+        vcRootHash: Connext.generateThreadRootHash({ threadInitialStates: [] })
       }
       const signer = Connext.recoverSignerFromChannelStateUpdate(sigParams)
       expect(signer.toLowerCase()).to.equal(ingridAddress.toLowerCase())

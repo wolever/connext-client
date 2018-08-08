@@ -58,7 +58,7 @@ describe('createChannelStateUpdate()', function () {
         channelId: '0x1000000000000000000000000000000000000000000000000000000000000000',
         nonce: 0,
         openVcs: 0,
-        vcRootHash: Connext.generateVcRootHash({ vc0s: [] }),
+        vcRootHash: Connext.generateThreadRootHash({ threadInitialStates: [] }),
         partyA,
         partyI: ingridAddress,
         balanceA: {
@@ -94,7 +94,7 @@ describe('createChannelStateUpdate()', function () {
         channelId: '0x3000000000000000000000000000000000000000000000000000000000000000',
         nonce: 0,
         openVcs: 0,
-        vcRootHash: Connext.generateVcRootHash({ vc0s: [] }),
+        vcRootHash: Connext.generateThreadRootHash({ threadInitialStates: [] }),
         partyA: partyC,
         partyI: ingridAddress,
         balanceA: {
@@ -130,7 +130,7 @@ describe('createChannelStateUpdate()', function () {
         channelId: '0x4000000000000000000000000000000000000000000000000000000000000000',
         nonce: 0,
         openVcs: 0,
-        vcRootHash: Connext.generateVcRootHash({ vc0s: [] }),
+        vcRootHash: Connext.generateThreadRootHash({ threadInitialStates: [] }),
         partyA: partyD,
         partyI: ingridAddress,
         balanceA: {

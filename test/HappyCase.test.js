@@ -82,18 +82,18 @@ describe('Connext happy case testing flow', () => {
     })
   })
 
-  describe('Registering with the hub', () => {
-    describe('registering partyA with hub', () => {
+  describe('openChanneling with the hub', () => {
+    describe('openChanneling partyA with hub', () => {
       it(
         'should create a ledger channel with the hub and partyA and wait for chainsaw',
         async () => {
-          subchanAI = await client.register(
+          subchanAI = await client.openChannel(
             Web3.utils.toBN(Web3.utils.toWei('6', 'ether')),
             partyA
           )
           // ensure lc is in the database
           await interval(async (iterationNumber, stop) => {
-            lcA = await client.getLcById(subchanAI)
+            lcA = await client.getChannelById(subchanAI)
             if (lcA != null) {
               stop()
             }
@@ -105,7 +105,7 @@ describe('Connext happy case testing flow', () => {
       it('ingrid should have autojoined lcA', async () => {
         // ensure lc is in the database
         await interval(async (iterationNumber, stop) => {
-          lcA = await client.getLcById(subchanAI)
+          lcA = await client.getChannelById(subchanAI)
           if (lcA.state != 0) {
             stop()
           }
@@ -119,12 +119,12 @@ describe('Connext happy case testing flow', () => {
       })
     })
 
-    describe('registering partyB with hub', () => {
+    describe('openChanneling partyB with hub', () => {
       it('should create a ledger channel with the hub and partyB', async () => {
-        subchanBI = await client.register(initialDeposit, partyB)
+        subchanBI = await client.openChannel(initialDeposit, partyB)
         // ensure lc is in the database
         await interval(async (iterationNumber, stop) => {
-          lcB = await client.getLcById(subchanBI)
+          lcB = await client.getChannelById(subchanBI)
           if (lcB != null) {
             stop()
           }
@@ -134,7 +134,7 @@ describe('Connext happy case testing flow', () => {
 
       it('ingrid should have autojoined channel', async () => {
         await interval(async (iterationNumber, stop) => {
-          lcB = await client.getLcById(subchanBI)
+          lcB = await client.getChannelById(subchanBI)
           if (lcB.state != 0) {
             stop()
           }
@@ -148,12 +148,12 @@ describe('Connext happy case testing flow', () => {
       })
     })
 
-    describe('registering partyC with hub', () => {
+    describe('openChanneling partyC with hub', () => {
       it('should create a ledger channel with the hub and partyC', async () => {
-        subchanCI = await client.register(initialDeposit, partyC)
+        subchanCI = await client.openChannel(initialDeposit, partyC)
         // ensure lc is in the database
         await interval(async (iterationNumber, stop) => {
-          lcC = await client.getLcById(subchanCI)
+          lcC = await client.getChannelById(subchanCI)
           if (lcC != null) {
             stop()
           }
@@ -163,7 +163,7 @@ describe('Connext happy case testing flow', () => {
 
       it('ingrid should have autojoined channel', async () => {
         await interval(async (iterationNumber, stop) => {
-          lcC = await client.getLcById(subchanCI)
+          lcC = await client.getChannelById(subchanCI)
           if (lcC.state != 0) {
             stop()
           }
@@ -177,12 +177,12 @@ describe('Connext happy case testing flow', () => {
       })
     })
 
-    describe('registering partyD with hub', () => {
+    describe('openChanneling partyD with hub', () => {
       it('should create a ledger channel with the hub and partyD', async () => {
-        subchanDI = await client.register(initialDeposit, partyD)
+        subchanDI = await client.openChannel(initialDeposit, partyD)
         // ensure lc is in the database
         await interval(async (iterationNumber, stop) => {
-          lcD = await client.getLcById(subchanDI)
+          lcD = await client.getChannelById(subchanDI)
           if (lcD != null) {
             stop()
           }
@@ -192,7 +192,7 @@ describe('Connext happy case testing flow', () => {
 
       it('ingrid should have autojoined channel', async () => {
         await interval(async (iterationNumber, stop) => {
-          lcD = await client.getLcById(subchanDI)
+          lcD = await client.getChannelById(subchanDI)
           if (lcD.state != 0) {
             stop()
           }
@@ -201,12 +201,12 @@ describe('Connext happy case testing flow', () => {
       }).timeout(45000)
     })
 
-    describe('registering partyE with hub', () => {
+    describe('openChanneling partyE with hub', () => {
       it('should create a ledger channel with the hub and partyE', async () => {
-        subchanEI = await client.register(initialDeposit, partyE)
+        subchanEI = await client.openChannel(initialDeposit, partyE)
         // ensure lc is in the database
         await interval(async (iterationNumber, stop) => {
-          lcE = await client.getLcById(subchanEI)
+          lcE = await client.getChannelById(subchanEI)
           if (lcE != null) {
             stop()
           }
@@ -216,7 +216,7 @@ describe('Connext happy case testing flow', () => {
 
       it('ingrid should have autojoined channel', async () => {
         await interval(async (iterationNumber, stop) => {
-          lcE = await client.getLcById(subchanEI)
+          lcE = await client.getChannelById(subchanEI)
           if (lcE.state != 0) {
             stop()
           }
@@ -228,11 +228,11 @@ describe('Connext happy case testing flow', () => {
     describe('registration error cases', async () => {
       it('should throw an error if you have open and active LC', async () => {
         try {
-          await client.register(initialDeposit, partyA)
+          await client.openChannel(initialDeposit, partyA)
         } catch (e) {
           expect(e.statusCode).to.equal(401)
           expect(e.name).to.equal('ChannelOpenError')
-          expect(e.methodName).to.equal('register')
+          expect(e.methodName).to.equal('openChannel')
         }
       })
     })
@@ -242,22 +242,22 @@ describe('Connext happy case testing flow', () => {
     it(
       'request ingrid deposits into lcB for all viewer lc.balanceA',
       async () => {
-        lcA = await client.getLcByPartyA(partyA)
-        lcC = await client.getLcByPartyA(partyC)
-        lcD = await client.getLcByPartyA(partyD)
-        lcE = await client.getLcByPartyA(partyE)
+        lcA = await client.getChannelByPartyA(partyA)
+        lcC = await client.getChannelByPartyA(partyC)
+        lcD = await client.getChannelByPartyA(partyD)
+        lcE = await client.getChannelByPartyA(partyE)
 
         const deposit = Web3.utils
           .toBN(lcA.balanceA)
           .add(Web3.utils.toBN(lcC.balanceA))
           .add(Web3.utils.toBN(lcD.balanceA))
           .add(Web3.utils.toBN(lcE.balanceA))
-        await client.requestIngridDeposit({
+        await client.requestHubDeposit({
           lcId: subchanBI,
           deposit
         })
         await interval(async (iterationNumber, stop) => {
-          lcB = await client.getLcById(subchanBI)
+          lcB = await client.getChannelById(subchanBI)
           if (
             lcB != null && // exists
             lcB.state === 1 && // joined
@@ -276,7 +276,7 @@ describe('Connext happy case testing flow', () => {
         .toBN(balance)
         .add(Web3.utils.toBN(Web3.utils.toWei('1000', 'ether')))
       try {
-        await client.requestIngridDeposit({
+        await client.requestHubDeposit({
           lcId: subchanBI,
           deposit
         })
@@ -287,19 +287,19 @@ describe('Connext happy case testing flow', () => {
   })
 
   describe('Creating a virtual channel', () => {
-    describe('openChannel between partyA and partyB', () => {
+    describe('openThread between partyA and partyB', () => {
       it('should create a new virtual channel between partyA and partyB', async () => {
-        vcIdA = await client.openChannel({
+        vcIdA = await client.openThread({
           to: partyB,
           sender: partyA,
           deposit: initialDeposit
         })
-        vcA = await client.getChannelById(vcIdA)
+        vcA = await client.getThreadById(vcIdA)
         expect(vcA.channelId).to.equal(vcIdA)
       })
 
       it('balanceA in lcA should be 1', async () => {
-        lcA = await client.getLcById(subchanAI)
+        lcA = await client.getChannelById(subchanAI)
         expect(
           Web3.utils
             .toBN(Web3.utils.toWei('1', 'ether'))
@@ -308,7 +308,7 @@ describe('Connext happy case testing flow', () => {
       })
 
       it('hub should countersign proposed LC update', async () => {
-        let state = await client.getLatestLedgerStateUpdate(subchanAI)
+        let state = await client.getLatestChannelState(subchanAI)
         // recover signer from sigI
         const signer = Connext.recoverSignerFromLCStateUpdate({
           sig: state.sigI,
@@ -326,8 +326,8 @@ describe('Connext happy case testing flow', () => {
       })
 
       it('hub should create update for lcB', async () => {
-        vcA = await client.getChannelById(vcIdA)
-        let state = await client.getLatestLedgerStateUpdate(subchanBI, ['sigI'])
+        vcA = await client.getThreadById(vcIdA)
+        let state = await client.getLatestChannelState(subchanBI, ['sigI'])
         const signer = Connext.recoverSignerFromLCStateUpdate({
           sig: state.sigI,
           isClose: false,
@@ -346,16 +346,16 @@ describe('Connext happy case testing flow', () => {
       // error cases
     })
 
-    describe('partyB should be able to recieve multiple openChannel updates', () => {
+    describe('partyB should be able to recieve multiple openThread updates', () => {
       it('should create a new virtual channel between partyC and partyB', async () => {
-        vcIdC = await client.openChannel({ to: partyB, sender: partyC })
-        vcC = await client.getChannelById(vcIdC)
+        vcIdC = await client.openThread({ to: partyB, sender: partyC })
+        vcC = await client.getThreadById(vcIdC)
         expect(vcC.channelId).to.equal(vcIdC)
       })
 
       it('should create a new virtual channel between partyD and partyB', async () => {
-        vcIdD = await client.openChannel({ to: partyB, sender: partyD })
-        vcD = await client.getChannelById(vcIdD)
+        vcIdD = await client.openThread({ to: partyB, sender: partyD })
+        vcD = await client.getThreadById(vcIdD)
         expect(vcD.channelId).to.equal(vcIdD)
       })
     })
@@ -387,7 +387,7 @@ describe('Connext happy case testing flow', () => {
         ],
         partyA
       )
-      vcA = await client.getChannelById(vcIdA)
+      vcA = await client.getThreadById(vcIdA)
       console.log('vcA:', vcA)
       console.log('balanceA:', balanceA.toString())
       console.log('balanceB:', balanceB.toString())
@@ -410,7 +410,7 @@ describe('Connext happy case testing flow', () => {
     })
 
     it('partyA should be able to send multiple state updates in a row', async () => {
-      vcA = await client.getChannelById(vcIdA)
+      vcA = await client.getThreadById(vcIdA)
       balanceA = Web3.utils.toBN(vcA.balanceA)
       balanceB = Web3.utils.toBN(vcA.balanceB)
       for (let i = 0; i < 10; i++) {
@@ -443,14 +443,14 @@ describe('Connext happy case testing flow', () => {
           partyA
         )
       }
-      vcA = await client.getChannelById(vcIdA)
+      vcA = await client.getThreadById(vcIdA)
       expect(balanceA.eq(Web3.utils.toBN(vcA.balanceA))).to.equal(true)
       expect(balanceB.eq(Web3.utils.toBN(vcA.balanceB))).to.equal(true)
     })
 
     it('should be able to send ledger and virtual channel updates', async () => {
-      vcA = await client.getChannelById(vcIdA)
-      lcA = await client.getLcById(subchanAI)
+      vcA = await client.getThreadById(vcIdA)
+      lcA = await client.getChannelById(subchanAI)
       const balDiff = Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
       const vcA1 = Web3.utils.toBN(vcA.balanceA).sub(balDiff)
       const vcA2 = vcA1.sub(balDiff)
@@ -534,8 +534,8 @@ describe('Connext happy case testing flow', () => {
       console.log(response)
       expect(response.status).to.equal(200)
       // verify new balances
-      vcA = await client.getChannelById(vcIdA)
-      lcA = await client.getLcById(subchanAI)
+      vcA = await client.getThreadById(vcIdA)
+      lcA = await client.getChannelById(subchanAI)
       // vc
       expect(vcA.balanceA).to.equal(vcA2.toString())
       expect(vcA.balanceB).to.equal(vcB2.toString())
@@ -545,14 +545,14 @@ describe('Connext happy case testing flow', () => {
     })
 
     it('should not prohibit the creation of a virtual channel', async () => {
-      vcIdE = await client.openChannel({ to: partyB, sender: partyE })
-      vcE = await client.getChannelById(vcIdE)
+      vcIdE = await client.openThread({ to: partyB, sender: partyE })
+      vcE = await client.getThreadById(vcIdE)
       expect(vcE.channelId).to.equal(vcIdE)
     })
 
     it('partyB should be able to recieve state updates across multiple vcs', async () => {
-      vcC = await client.getChannelByParties({ partyA: partyC, partyB })
-      vcD = await client.getChannelByParties({ partyA: partyD, partyB })
+      vcC = await client.getThreadByParties({ partyA: partyC, partyB })
+      vcD = await client.getThreadByParties({ partyA: partyD, partyB })
       balanceA = Web3.utils.toBN(Web3.utils.toWei('4', 'ether'))
       balanceB = Web3.utils.toBN(Web3.utils.toWei('1', 'ether'))
       await client.updateBalances(
@@ -631,7 +631,7 @@ describe('Connext happy case testing flow', () => {
           sender
         )
       }
-      vcD = await client.getChannelById(vcD.channelId)
+      vcD = await client.getThreadById(vcD.channelId)
       expect(Web3.utils.toBN(vcD.balanceA).eq(balanceA)).to.equal(true)
       expect(Web3.utils.toBN(vcD.balanceB).eq(balanceB)).to.equal(true)
     })
@@ -670,18 +670,18 @@ describe('Connext happy case testing flow', () => {
 
   describe('Closing a virtual channel', () => {
     it('should change vcA status to settled', async () => {
-      vcA = await client.getChannelByParties({ partyA, partyB })
+      vcA = await client.getThreadByParties({ partyA, partyB })
       const response = await client.closeChannel(vcA.channelId, partyA)
       // get vcA
-      vcA = await client.getChannelById(vcA.channelId)
+      vcA = await client.getThreadById(vcA.channelId)
       expect(vcA.state).to.equal(3)
     })
 
     it('should increase lcA balanceA by vcA.balanceA remainder', async () => {
       // get objs
-      lcA = await client.getLcByPartyA(partyA)
+      lcA = await client.getChannelByPartyA(partyA)
       // calculate expected balance
-      let prevState = await client.getLcStateByNonce({
+      let prevState = await client.getChannelStateByNonce({
         lcId: lcA.channelId,
         nonce: lcA.nonce - 1
       })
@@ -693,7 +693,7 @@ describe('Connext happy case testing flow', () => {
 
     it('should increase lcA balanceI by vcA.balanceB', async () => {
       // calculate expected balance
-      let prevState = await client.getLcStateByNonce({
+      let prevState = await client.getChannelStateByNonce({
         lcId: lcA.channelId,
         nonce: lcA.nonce - 1
       })
@@ -705,9 +705,9 @@ describe('Connext happy case testing flow', () => {
 
     it('should increase lcB balanceA by vcA.balanceB', async () => {
       // get objs
-      lcB = await client.getLcByPartyA(partyB)
+      lcB = await client.getChannelByPartyA(partyB)
       // calculate expected balance
-      let prevState = await client.getLcStateByNonce({
+      let prevState = await client.getChannelStateByNonce({
         lcId: subchanBI,
         nonce: lcB.nonce - 1
       })
@@ -719,7 +719,7 @@ describe('Connext happy case testing flow', () => {
 
     it('should decrease lcB balanceI by vcA.balanceA', async () => {
       // calculate expected balance
-      let prevState = await client.getLcStateByNonce({
+      let prevState = await client.getChannelStateByNonce({
         lcId: subchanBI,
         nonce: lcB.nonce - 1
       })
@@ -730,7 +730,7 @@ describe('Connext happy case testing flow', () => {
     })
 
     it('should not interrupt the flow of other vcs', async () => {
-      vcC = await client.getChannelByParties({ partyA: partyC, partyB })
+      vcC = await client.getThreadByParties({ partyA: partyC, partyB })
       balanceA = Web3.utils
         .toBN(vcC.balanceA)
         .sub(Web3.utils.toBN(Web3.utils.toWei('1', 'ether')))
@@ -759,24 +759,24 @@ describe('Connext happy case testing flow', () => {
         ],
         partyC
       )
-      vcC = await client.getChannelById(vcC.channelId)
+      vcC = await client.getThreadById(vcC.channelId)
       expect(balanceA.eq(Web3.utils.toBN(vcC.balanceA))).to.equal(true)
     })
 
     it('partyB should be able to close a channel', async () => {
-      vcC = await client.getChannelByParties({ partyA: partyC, partyB })
+      vcC = await client.getThreadByParties({ partyA: partyC, partyB })
       const response = await client.closeChannel(vcC.channelId, partyB)
       // get vc
-      vcC = await client.getChannelById(vcC.channelId)
+      vcC = await client.getThreadById(vcC.channelId)
       expect(vcC.state).to.equal(3)
     })
 
     // ensure math stays the same
     it('should increase lcC balanceA by vcC.balanceA remainder', async () => {
       // get objs
-      lcC = await client.getLcByPartyA(partyC)
+      lcC = await client.getChannelByPartyA(partyC)
       // calculate expected balance
-      let prevState = await client.getLcStateByNonce({
+      let prevState = await client.getChannelStateByNonce({
         lcId: lcC.channelId,
         nonce: lcC.nonce - 1
       })
@@ -788,7 +788,7 @@ describe('Connext happy case testing flow', () => {
 
     it('should increase lcC balanceI by vcC.balanceB', async () => {
       // calculate expected balance
-      let prevState = await client.getLcStateByNonce({
+      let prevState = await client.getChannelStateByNonce({
         lcId: lcC.channelId,
         nonce: lcC.nonce - 1
       })
@@ -800,9 +800,9 @@ describe('Connext happy case testing flow', () => {
 
     it('should increase lcB balanceA by vcC.balanceB', async () => {
       // get objs
-      lcB = await client.getLcByPartyA(partyB)
+      lcB = await client.getChannelByPartyA(partyB)
       // calculate expected balance
-      let prevState = await client.getLcStateByNonce({
+      let prevState = await client.getChannelStateByNonce({
         lcId: subchanBI,
         nonce: lcB.nonce - 1
       })
@@ -814,7 +814,7 @@ describe('Connext happy case testing flow', () => {
 
     it('should decrease lcB balanceI by vcA.balanceA', async () => {
       // calculate expected balance
-      let prevState = await client.getLcStateByNonce({
+      let prevState = await client.getChannelStateByNonce({
         lcId: subchanBI,
         nonce: lcB.nonce - 1
       })
@@ -825,15 +825,15 @@ describe('Connext happy case testing flow', () => {
     })
 
     it('partyB should be able to close multiple channels', async () => {
-      vcD = await client.getChannelByParties({ partyA: partyD, partyB })
-      vcE = await client.getChannelByParties({ partyA: partyE, partyB })
+      vcD = await client.getThreadByParties({ partyA: partyD, partyB })
+      vcE = await client.getThreadByParties({ partyA: partyE, partyB })
       const channelIds = [vcD.channelId, vcE.channelId]
       for (const channelId of channelIds) {
         await client.closeChannel(channelId, partyB)
       }
       // refetch channels
-      vcD = await client.getChannelById(vcD.channelId)
-      vcE = await client.getChannelById(vcE.channelId)
+      vcD = await client.getThreadById(vcD.channelId)
+      vcE = await client.getThreadById(vcE.channelId)
 
       expect(vcD.state).to.equal(3)
       expect(vcE.state).to.equal(3)
@@ -844,8 +844,8 @@ describe('Connext happy case testing flow', () => {
     let prevBalA, finalBalA, prevBalI, finalBalI
 
     before('Create a virtual channel that has not been closed', async () => {
-      vcIdC = await client.openChannel({ to: partyB, sender: partyC })
-      vcC = await client.getChannelById(vcIdC)
+      vcIdC = await client.openThread({ to: partyB, sender: partyC })
+      vcC = await client.getThreadById(vcIdC)
     })
 
     it(`should close partyA's LC with the fast close flag`, async () => {
@@ -859,7 +859,7 @@ describe('Connext happy case testing flow', () => {
     }).timeout(8000)
 
     it(`should transfer balanceA of partyA's lc into wallet`, async () => {
-      lcA = await client.getLcByPartyA(partyA)
+      lcA = await client.getChannelByPartyA(partyA)
       const expected = Web3.utils.fromWei(
         Web3.utils.toBN(lcA.balanceA).add(Web3.utils.toBN(prevBalA)),
         'ether'
@@ -892,7 +892,7 @@ describe('Connext happy case testing flow', () => {
     }).timeout(9000)
 
     it('should not interrupt the flow of open VCs', async () => {
-      vcC = await client.getChannelByParties({ partyA: partyC, partyB })
+      vcC = await client.getThreadByParties({ partyA: partyC, partyB })
       balanceA = Web3.utils
         .toBN(vcC.balanceA)
         .sub(Web3.utils.toBN(Web3.utils.toWei('1', 'ether')))
@@ -915,7 +915,7 @@ describe('Connext happy case testing flow', () => {
           }
         }
       })
-      vcC = await client.getChannelById(vcC.channelId)
+      vcC = await client.getThreadById(vcC.channelId)
       expect(balanceA.eq(Web3.utils.toBN(vcC.balanceA))).to.equal(true)
     })
 
@@ -954,7 +954,7 @@ describe('Connext happy case testing flow', () => {
     }).timeout(5000)
 
     it(`should transfer balanceA partyB's into wallet`, async () => {
-      lcB = await client.getLcByPartyA(partyB)
+      lcB = await client.getChannelByPartyA(partyB)
       const expected = Web3.utils.fromWei(
         Web3.utils.toBN(lcB.balanceA).add(Web3.utils.toBN(prevBalA)),
         'ether'
