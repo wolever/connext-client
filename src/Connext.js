@@ -3521,14 +3521,14 @@ class Connext {
     return response.data
   }
 
-  async getVcStateByNonce ({ vcId, nonce }) {
-    const methodName = 'getVcStateByNonce'
+  async getThreadStateByNonce ({ threadId, nonce }) {
+    const methodName = 'getThreadStateByNonce'
     const isHexStrict = { presence: true, isHexStrict: true }
     const isPositiveInt = { presence: true, isPositiveInt: true }
     Connext.validatorsResponseToError(
-      validate.single(vcId, isHexStrict),
+      validate.single(threadId, isHexStrict),
       methodName,
-      'vcId'
+      'threadId'
     )
     Connext.validatorsResponseToError(
       validate.single(nonce, isPositiveInt),
@@ -3536,7 +3536,7 @@ class Connext {
       'nonce'
     )
     const response = await this.networking.get(
-      `virtualchannel/${vcId}/update/nonce/${nonce}`
+      `virtualchannel/${threadId}/update/nonce/${nonce}`
     )
     return response.data
   }
