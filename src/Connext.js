@@ -3927,59 +3927,6 @@ class Connext {
     return response.data.txHash
   }
 
-  /**
-   * Requests Ingrid joins the ledger channel after it has been created on chain. This function should be called after the openChannel() returns the ledger channel ID of the created contract.
-   *
-   * May have to be called after a timeout period to ensure the transaction performed in openChannel to create the channel on chain is properly mined.
-   *
-   * @example
-   * // use openChannel to create channel on chain
-   * const deposit = Web3.utils.toBN(1000)
-   * const lcId = await connext.openChannel(deposit)
-   * const response = await connext.requestJoinLc(lcId)
-   *
-   * @param {String} lcId - ID of the ledger channel you want the Hub to join
-   * @returns {Promise} resolves to the transaction hash of Ingrid joining the channel
-   */
-  async requestJoinLc (lcId) {
-    // validate params
-    const methodName = 'requestJoinLc'
-    const isHexStrict = { presence: true, isHexStrict: true }
-    Connext.validatorsResponseToError(
-      validate.single(lcId, isHexStrict),
-      methodName,
-      'lcId'
-    )
-
-    // verify the channel exists on chain
-    const lc = await this.channelManagerInstance.methods.Channels(lcId).call()
-    // no partyA, channel not on chain
-    if (lc.partyA === '0x0000000000000000000000000000000000000000') {
-      throw new LCOpenError(methodName, 'Channel does not exist on chain.')
-    }
-    if (lc.partyI.toLowerCase() !== this.ingridAddress.toLowerCase()) {
-      throw new LCOpenError(
-        methodName,
-        'Ingrid is not the counterparty of this channel.'
-      )
-    }
-    if (Date.now() > lc.LCOpenTimeout) {
-      throw new LCOpenError(
-        methodName,
-        'Ledger Channel open has timed out, call ChannelOpenTimeoutContractHandler'
-      )
-    }
-
-    try {
-      const response = await this.networking.post(
-        `ledgerchannel/${lcId}/request`
-      )
-      return response.data.txHash
-    } catch (e) {
-      return null
-    }
-  }
-
   // ingrid verifies the threadInitialStates and sets up vc and countersigns lc updates
   async joinThreadHandler ({ subchanSig, threadSig, channelId }) {
     // validate params
