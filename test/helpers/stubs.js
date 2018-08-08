@@ -16,7 +16,7 @@ export function createStubbedContract () {
     joinChannel: sinon.stub().returns(sendTxStub),
     deposit: sinon.stub().returns(sendTxStub),
     consensusCloseChannel: sinon.stub().returns(sendTxStub),
-    updateLCState: sinon.stub().returns(sendTxStub),
+    updateLCstate: sinon.stub().returns(sendTxStub),
     initVCstate: sinon.stub().returns(sendTxStub),
     settleVC: sinon.stub().returns(sendTxStub),
     closeVirtualChannel: sinon.stub().returns(sendTxStub),

@@ -1812,7 +1812,6 @@ class Connext {
     tokenBalanceB = Web3.utils.toBN(tokenBalanceB)
     // validate
     const isHexStrict = { presence: true, isHexStrict: true }
-    const isBN = { presence: true, isBN: true }
     const isAddress = { presence: true, isAddress: true }
     const isPositiveInt = { presence: true, isPositiveInt: true }
     Connext.validatorsResponseToError(
@@ -3048,8 +3047,8 @@ class Connext {
     return result
   }
 
-  async updateLcStateContractHandler ({
-    lcId,
+  async updateChannelStateContractHandler ({
+    channelId,
     nonce,
     openVcs,
     balanceA,
@@ -3059,17 +3058,17 @@ class Connext {
     sigI,
     sender = null
   }) {
-    const methodName = 'updateLcStateContractHandler'
+    const methodName = 'updateChannelStateContractHandler'
     // validate
     const isHexStrict = { presence: true, isHexStrict: true }
     const isPositiveInt = { presence: true, isPositiveInt: true }
-    const isBN = { presence: true, isBN: true }
+    const isValidDepositObject = { presence: true, isValidDepositObject: true }
     const isHex = { presence: true, isHex: true }
     const isAddress = { presence: true, isAddress: true }
     Connext.validatorsResponseToError(
-      validate.single(lcId, isHexStrict),
+      validate.single(channelId, isHexStrict),
       methodName,
-      'lcId'
+      'channelId'
     )
     Connext.validatorsResponseToError(
       validate.single(nonce, isPositiveInt),
@@ -3082,12 +3081,12 @@ class Connext {
       'openVcs'
     )
     Connext.validatorsResponseToError(
-      validate.single(balanceA, isBN),
+      validate.single(balanceA, isValidDepositObject),
       methodName,
       'balanceA'
     )
     Connext.validatorsResponseToError(
-      validate.single(balanceI, isBN),
+      validate.single(balanceI, isValidDepositObject),
       methodName,
       'balanceI'
     )
@@ -3117,10 +3116,16 @@ class Connext {
       sender = accounts[0].toLowerCase()
     }
 
+    const ethBalanceA = balanceA.ethDeposit ? balanceA.ethDeposit : Web3.utils.toBN('0')
+    const ethBalanceI = balanceI.ethDeposit ? balanceI.ethDeposit : Web3.utils.toBN('0')
+
+    const tokenBalanceA = balanceA.tokenDeposit ? balanceA.tokenDeposit : Web3.utils.toBN('0')
+    const tokenBalanceI = balanceI.tokenDeposit ? balanceI.tokenDeposit : Web3.utils.toBN('0')
+
     const result = await this.channelManagerInstance.methods
       .updateLCstate(
-        lcId,
-        [nonce, openVcs, balanceA, balanceI],
+        channelId,
+        [nonce, openVcs, ethBalanceA, ethBalanceI, tokenBalanceA, tokenBalanceI],
         Web3.utils.padRight(vcRootHash, 64),
         sigA,
         sigI
@@ -3275,9 +3280,9 @@ class Connext {
     return results
   }
 
-  async settleVcContractHandler ({
+  async settleThreadContractHandler ({
     subchanId,
-    vcId,
+    threadId,
     nonce,
     partyA,
     partyB,
@@ -3286,12 +3291,12 @@ class Connext {
     sigA,
     sender = null
   }) {
-    const methodName = 'settleVcContractHandler'
+    const methodName = 'settleThreadContractHandler'
     // validate
     const isAddress = { presence: true, isAddress: true }
     const isPositiveInt = { presence: true, isPositiveInt: true }
     const isHexStrict = { presence: true, isHexStrict: true }
-    const isBN = { presence: true, isBN: true }
+    const isValidDepositObject = { presence: true, isValidDepositObject: true }
     const isHex = { presence: true, isHex: true }
     Connext.validatorsResponseToError(
       validate.single(subchanId, isHexStrict),
@@ -3299,9 +3304,9 @@ class Connext {
       'subchanId'
     )
     Connext.validatorsResponseToError(
-      validate.single(vcId, isHexStrict),
+      validate.single(threadId, isHexStrict),
       methodName,
-      'vcId'
+      'threadId'
     )
     Connext.validatorsResponseToError(
       validate.single(nonce, isPositiveInt),
@@ -3319,12 +3324,12 @@ class Connext {
       'partyB'
     )
     Connext.validatorsResponseToError(
-      validate.single(balanceA, isBN),
+      validate.single(balanceA, isValidDepositObject),
       methodName,
       'balanceA'
     )
     Connext.validatorsResponseToError(
-      validate.single(balanceB, isBN),
+      validate.single(balanceB, isValidDepositObject),
       methodName,
       'balanceB'
     )
@@ -3344,14 +3349,20 @@ class Connext {
       sender = accounts[0].toLowerCase()
     }
 
+    const ethBalanceA = balanceA.ethDeposit ? balanceA.ethDeposit : Web3.utils.toBN('0')
+    const ethBalanceB = balanceB.ethDeposit ? balanceB.ethDeposit : Web3.utils.toBN('0')
+
+    const tokenBalanceA = balanceA.tokenDeposit ? balanceA.tokenDeposit : Web3.utils.toBN('0')
+    const tokenBalanceB = balanceB.tokenDeposit ? balanceB.tokenDeposit : Web3.utils.toBN('0')
+
     const results = await this.channelManagerInstance.methods
       .settleVC(
         subchanId,
-        vcId,
+        threadId,
         nonce,
         partyA,
         partyB,
-        [balanceA, balanceB],
+        [ethBalanceA, ethBalanceB, tokenBalanceA, tokenBalanceB],
         sigA
       )
       .send({
