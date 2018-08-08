@@ -174,7 +174,7 @@ describe('Connext dispute cases', function () {
     // ***** TEMPLATE ******
     // it('should call LCOpenTimeout if channel never joined', async () => {
     //   if (lcA.timeout < Date.now()) {
-    //     await client.LCOpenTimeoutContractHandler(subchanAI, partyA)
+    //     await client.ChannelOpenTimeoutContractHandler(subchanAI, partyA)
     //   }
     // })
   })

@@ -303,10 +303,10 @@
 
                             <li class="chapter " data-level="2.2.11" data-path="api.html">
 
-                                <a href="api.html#connextlcopentimeoutcontracthandlerlcid-sender-⇒-promise">
+                                <a href="api.html#connextChannelOpenTimeoutContractHandlerlcid-sender-⇒-promise">
 
 
-                                    LCOpenTimeoutContractHandler
+                                    ChannelOpenTimeoutContractHandler
 
                                 </a>
 
@@ -662,7 +662,7 @@
                                         request that the hub joins the channel. This function should be called on a timeout
                                         sufficient for the hub to detect the channel and add it to its database.</p>
                                     <p>If Ingrid is unresponsive, or does not join the channel within the challenge period,
-                                        the client function &quot;LCOpenTimeoutContractHandler&quot; can be called by the
+                                        the client function &quot;ChannelOpenTimeoutContractHandler&quot; can be called by the
                                         client to recover the funds.</p>
                                     <p>
                                         <strong>Kind</strong>: instance method of
@@ -1330,10 +1330,10 @@ const lcId = await connext.register(deposit)
                                         <br>
                                     </p>
                                     <p>
-                                        <a id="Connext+LCOpenTimeoutContractHandler"></a>
+                                        <a id="Connext+ChannelOpenTimeoutContractHandler"></a>
                                     </p>
                                     <p></p>
-                                    <h2 id="connextlcopentimeoutcontracthandlerlcid-sender-&#x21D2;-promise">connext.LCOpenTimeoutContractHandler(lcId, sender) &#x21D2;
+                                    <h2 id="connextChannelOpenTimeoutContractHandlerlcid-sender-&#x21D2;-promise">connext.ChannelOpenTimeoutContractHandler(lcId, sender) &#x21D2;
                                         <code>Promise</code>
                                     </h2>Watchers or users should call this to recover bonded funds if Ingrid fails to join the
                                     ledger channel within the challenge window.

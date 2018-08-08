@@ -20,7 +20,7 @@
   * [withdraw](connext-client/withdraw.md)
   * [withdrawFinal](connext-client/withdrawfinal.md)
   * [cosignThreadUpdate](connext-client/cosignlcupdate.md)
-  * [ChannelOpenTimeoutContractHandler](connext-client/lcopentimeoutcontracthandler.md)
+  * [ChannelOpenTimeoutContractHandler](connext-client/ChannelOpenTimeoutContractHandler.md)
   * [getThreadStatesByChannelId](connext-client/getchannelstatesbylcid.md)
   * [getThreadById](connext-client/getThreadById.md)
   * [getThreadByParties](connext-client/getThreadByParties.md)

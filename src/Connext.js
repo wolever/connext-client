@@ -325,7 +325,7 @@ class Connext {
    *
    * Once the channel is created on chain, users should call the requestJoinLc function to request that the hub joins the channel. This function should be called on a timeout sufficient for the hub to detect the channel and add it to its database.
    *
-   * If Ingrid is unresponsive, or does not join the channel within the challenge period, the client function "LCOpenTimeoutContractHandler" can be called by the client to recover the funds.
+   * If Ingrid is unresponsive, or does not join the channel within the challenge period, the client function "ChannelOpenTimeoutContractHandler" can be called by the client to recover the funds.
    *
    * @example
    * const deposit = Web3.utils.toBN(Web3.utils.toWei('1', 'ether))
@@ -2641,15 +2641,15 @@ class Connext {
    * @param {String} sender - (optional) who is calling the transaction (defaults to accounts[0])
    * @returns {Promise} resolves to the result of sending the transaction
    */
-  async LCOpenTimeoutContractHandler (lcId, sender = null) {
-    const methodName = 'LCOpenTimeoutContractHandler'
+  async ChannelOpenTimeoutContractHandler (channelId, sender = null) {
+    const methodName = 'ChannelOpenTimeoutContractHandler'
     // validate
     const isAddress = { presence: true, isAddress: true }
     const isHexStrict = { presence: true, isHexStrict: true }
     Connext.validatorsResponseToError(
-      validate.single(lcId, isHexStrict),
+      validate.single(channelId, isHexStrict),
       methodName,
-      'lcId'
+      'channelId'
     )
     if (sender) {
       Connext.validatorsResponseToError(
@@ -2662,12 +2662,12 @@ class Connext {
       sender = accounts[0].toLowerCase()
     }
     // verify requires
-    const lc = await this.getChannelById(lcId)
-    if (CHANNEL_STATES[lc.state] !== 0) {
+    const channel = await this.getChannelById(channelId)
+    if (CHANNEL_STATES[channel.state] !== CHANNEL_STATES.LCS_OPENING) {
       throw new LCOpenError(methodName, 'Channel is in incorrect state')
     }
 
-    if (lc.partyA !== sender) {
+    if (channel.partyA.toLowerCase() !== sender.toLowerCase()) {
       throw new ContractError(
         methodName,
         'Caller must be partyA in ledger channel'
@@ -2681,7 +2681,7 @@ class Connext {
     // }
 
     const result = await this.channelManagerInstance.methods
-      .LCOpenTimeout(lcId)
+      .LCOpenTimeout(channelId)
       .send({
         from: sender,
         gas: 470000
@@ -3966,7 +3966,7 @@ class Connext {
     if (Date.now() > lc.LCOpenTimeout) {
       throw new LCOpenError(
         methodName,
-        'Ledger Channel open has timed out, call LCOpenTimeoutContractHandler'
+        'Ledger Channel open has timed out, call ChannelOpenTimeoutContractHandler'
       )
     }
 
