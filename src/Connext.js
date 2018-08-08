@@ -1221,7 +1221,7 @@ class Connext {
     }
 
     // get latest i-signed lc state update
-    let channelState = await this.getLatestLedgerStateUpdate(channel.channelId, ['sigI'])
+    let channelState = await this.getLatestChannelState(channel.channelId, ['sigI'])
     if (channelState) {
       // openVcs?
       if (Number(channelState.openVcs) !== 0) {
@@ -1396,7 +1396,7 @@ class Connext {
       throw new LCUpdateError(methodName, 'Channel is in invalid state')
     }
     // TO DO
-    let latestState = await this.getLatestLedgerStateUpdate(lcId, ['sigI'])
+    let latestState = await this.getLatestChannelState(lcId, ['sigI'])
     const result = await this.cosignChannelUpdate({
       channelId,
       nonce: latestState.nonce,
@@ -3561,21 +3561,21 @@ class Connext {
     return response.data
   }
 
-  async getLatestLedgerStateUpdate (ledgerChannelId, sigs = null) {
+  async getLatestChannelState (channelId, sigs = null) {
     // lcState == latest ingrid signed state
-    const methodName = 'getLatestLedgerStateUpdate'
+    const methodName = 'getLatestChannelState'
     const isHexStrict = { presence: true, isHexStrict: true }
     Connext.validatorsResponseToError(
-      validate.single(ledgerChannelId, isHexStrict),
+      validate.single(channelId, isHexStrict),
       methodName,
-      'ledgerChannelId'
+      'channelId'
     )
     if (!sigs) {
       sigs = ['sigI', 'sigA']
     }
 
     const response = await this.networking.get(
-      `ledgerchannel/${ledgerChannelId}/update/latest?sig[]=sigI`
+      `ledgerchannel/${channelId}/update/latest?sig[]=sigI`
     )
     return response.data
   }

@@ -289,7 +289,7 @@ describe('Connext dispute cases', function () {
     })
 
     it('should call withdraw without i-countersiging closing update', async () => {
-      const latestState = await client.getLatestLedgerStateUpdate(subchanAI, [
+      const latestState = await client.getLatestChannelState(subchanAI, [
         'sigI'
       ])
       // mock response from hub for client.fastCloseLCHandler

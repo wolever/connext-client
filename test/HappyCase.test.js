@@ -308,7 +308,7 @@ describe('Connext happy case testing flow', () => {
       })
 
       it('hub should countersign proposed LC update', async () => {
-        let state = await client.getLatestLedgerStateUpdate(subchanAI)
+        let state = await client.getLatestChannelState(subchanAI)
         // recover signer from sigI
         const signer = Connext.recoverSignerFromLCStateUpdate({
           sig: state.sigI,
@@ -327,7 +327,7 @@ describe('Connext happy case testing flow', () => {
 
       it('hub should create update for lcB', async () => {
         vcA = await client.getThreadById(vcIdA)
-        let state = await client.getLatestLedgerStateUpdate(subchanBI, ['sigI'])
+        let state = await client.getLatestChannelState(subchanBI, ['sigI'])
         const signer = Connext.recoverSignerFromLCStateUpdate({
           sig: state.sigI,
           isClose: false,
