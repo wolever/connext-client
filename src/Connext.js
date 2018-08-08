@@ -820,7 +820,7 @@ class Connext {
       methodName,
       'increment'
     )
-    const channel = await this.getLcById(channelId)
+    const channel = await this.getChannelById(channelId)
     // must exist
     if (!channel) {
       throw new LCUpdateError(methodName, 'Channel not found')
@@ -1385,7 +1385,7 @@ class Connext {
       const accounts = await this.web3.eth.getAccounts()
       sender = accounts[0].toLowerCase()
     }
-    const channel = await this.getLcById(channelId)
+    const channel = await this.getChannelById(channelId)
     if (channel == null) {
       throw new LCUpdateError(methodName, 'Channel not found')
     }
@@ -1441,7 +1441,7 @@ class Connext {
       const accounts = await this.web3.eth.getAccounts()
       sender = accounts[0].toLowerCase()
     }
-    const channel = await this.getLcById(channelId)
+    const channel = await this.getChannelById(channelId)
     if (channel == null) {
       throw new LCUpdateError(methodName, 'Channel not found')
     }
@@ -2114,7 +2114,7 @@ class Connext {
 
     // validate update
     const emptyRootHash = Connext.generateThreadRootHash({ threadInitialStates: [] })
-    const channel = await this.getLcById(channelId)
+    const channel = await this.getChannelById(channelId)
     let proposedEthBalance, proposedTokenBalance
     if (channel == null) {
       // set initial balances to 0 if thread does not exist
@@ -2658,7 +2658,7 @@ class Connext {
       sender = accounts[0].toLowerCase()
     }
     // verify requires
-    const lc = await this.getLcById(lcId)
+    const lc = await this.getChannelById(lcId)
     if (CHANNEL_STATES[lc.state] !== 0) {
       throw new LCOpenError(methodName, 'Channel is in incorrect state')
     }
@@ -2747,7 +2747,7 @@ class Connext {
     }
 
     // verify requires --> already checked in deposit() fn, necessary?
-    const channel = await this.getLcById(channelId)
+    const channel = await this.getChannelById(channelId)
     if (CHANNEL_STATES[channel.state] !== CHANNEL_STATES.LCS_OPENED) {
       throw new ContractError(methodName, 'Channel is not open')
     }
@@ -3006,7 +3006,7 @@ class Connext {
         'sender'
       )
     }
-    const lc = await this.getLcById(lcId)
+    const lc = await this.getChannelById(lcId)
     if (!lc) {
       // hub does not have lc, may be chainsaw issues
       throw new LCOpenError(methodName, 'Channel is not registered with hub')
@@ -3751,16 +3751,16 @@ class Connext {
    * @param {String} lcId - the ledger channel id
    * @returns {Promise} resolves to the ledger channel object
    */
-  async getLcById (lcId) {
-    const methodName = 'getLcById'
+  async getChannelById (channelId) {
+    const methodName = 'getChannelById'
     const isHexStrict = { presence: true, isHexStrict: true }
     Connext.validatorsResponseToError(
-      validate.single(lcId, isHexStrict),
+      validate.single(channelId, isHexStrict),
       methodName,
-      'lcId'
+      'lcchannelIdId'
     )
     try {
-      const res = await this.networking.get(`ledgerchannel/${lcId}`)
+      const res = await this.networking.get(`ledgerchannel/${channelId}`)
 
       return res.data
     } catch (e) {

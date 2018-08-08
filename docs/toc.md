@@ -25,7 +25,7 @@
   * [getThreadById](connext-client/getThreadById.md)
   * [getThreadByParties](connext-client/getThreadByParties.md)
   * [getThreadsByChannelId](connext-client/getThreadsByChannelId.md)
-  * [getThreadById](connext-client/getlcbyid.md)
+  * [getThreadById](connext-client/getChannelById.md)
   * [getChannelByPartyA](connext-client/getlcbypartya.md)
   * [requestHubDeposit](connext-client/requestingriddeposit.md)
   * [requestJoinChannel](connext-client/requestjoinlc.md)

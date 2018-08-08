@@ -319,7 +319,7 @@ describe('Connext dispute cases', function () {
       expect(tx.to.toLowerCase()).to.equal(contractAddress)
 
       await timeout(20000) // wait for chainsaw to pick up settled state change
-      lcA = await client.getLcById(subchanAI)
+      lcA = await client.getChannelById(subchanAI)
       expect(lcA.state).to.equal(2) // settling
     })
 
@@ -329,7 +329,7 @@ describe('Connext dispute cases', function () {
       // already awaited, should not have to again
       // while (lcA.challengeTimeout < Date.now()) {
       //   await timeout(3000)
-      //   lcA = await client.getLcById(subchanAI)
+      //   lcA = await client.getChannelById(subchanAI)
       // }
       // get previous balances
       const prevBalA = await client.web3.eth.getBalance(partyA)

@@ -93,7 +93,7 @@ describe('Connext happy case testing flow', () => {
           )
           // ensure lc is in the database
           await interval(async (iterationNumber, stop) => {
-            lcA = await client.getLcById(subchanAI)
+            lcA = await client.getChannelById(subchanAI)
             if (lcA != null) {
               stop()
             }
@@ -105,7 +105,7 @@ describe('Connext happy case testing flow', () => {
       it('ingrid should have autojoined lcA', async () => {
         // ensure lc is in the database
         await interval(async (iterationNumber, stop) => {
-          lcA = await client.getLcById(subchanAI)
+          lcA = await client.getChannelById(subchanAI)
           if (lcA.state != 0) {
             stop()
           }
@@ -124,7 +124,7 @@ describe('Connext happy case testing flow', () => {
         subchanBI = await client.register(initialDeposit, partyB)
         // ensure lc is in the database
         await interval(async (iterationNumber, stop) => {
-          lcB = await client.getLcById(subchanBI)
+          lcB = await client.getChannelById(subchanBI)
           if (lcB != null) {
             stop()
           }
@@ -134,7 +134,7 @@ describe('Connext happy case testing flow', () => {
 
       it('ingrid should have autojoined channel', async () => {
         await interval(async (iterationNumber, stop) => {
-          lcB = await client.getLcById(subchanBI)
+          lcB = await client.getChannelById(subchanBI)
           if (lcB.state != 0) {
             stop()
           }
@@ -153,7 +153,7 @@ describe('Connext happy case testing flow', () => {
         subchanCI = await client.register(initialDeposit, partyC)
         // ensure lc is in the database
         await interval(async (iterationNumber, stop) => {
-          lcC = await client.getLcById(subchanCI)
+          lcC = await client.getChannelById(subchanCI)
           if (lcC != null) {
             stop()
           }
@@ -163,7 +163,7 @@ describe('Connext happy case testing flow', () => {
 
       it('ingrid should have autojoined channel', async () => {
         await interval(async (iterationNumber, stop) => {
-          lcC = await client.getLcById(subchanCI)
+          lcC = await client.getChannelById(subchanCI)
           if (lcC.state != 0) {
             stop()
           }
@@ -182,7 +182,7 @@ describe('Connext happy case testing flow', () => {
         subchanDI = await client.register(initialDeposit, partyD)
         // ensure lc is in the database
         await interval(async (iterationNumber, stop) => {
-          lcD = await client.getLcById(subchanDI)
+          lcD = await client.getChannelById(subchanDI)
           if (lcD != null) {
             stop()
           }
@@ -192,7 +192,7 @@ describe('Connext happy case testing flow', () => {
 
       it('ingrid should have autojoined channel', async () => {
         await interval(async (iterationNumber, stop) => {
-          lcD = await client.getLcById(subchanDI)
+          lcD = await client.getChannelById(subchanDI)
           if (lcD.state != 0) {
             stop()
           }
@@ -206,7 +206,7 @@ describe('Connext happy case testing flow', () => {
         subchanEI = await client.register(initialDeposit, partyE)
         // ensure lc is in the database
         await interval(async (iterationNumber, stop) => {
-          lcE = await client.getLcById(subchanEI)
+          lcE = await client.getChannelById(subchanEI)
           if (lcE != null) {
             stop()
           }
@@ -216,7 +216,7 @@ describe('Connext happy case testing flow', () => {
 
       it('ingrid should have autojoined channel', async () => {
         await interval(async (iterationNumber, stop) => {
-          lcE = await client.getLcById(subchanEI)
+          lcE = await client.getChannelById(subchanEI)
           if (lcE.state != 0) {
             stop()
           }
@@ -257,7 +257,7 @@ describe('Connext happy case testing flow', () => {
           deposit
         })
         await interval(async (iterationNumber, stop) => {
-          lcB = await client.getLcById(subchanBI)
+          lcB = await client.getChannelById(subchanBI)
           if (
             lcB != null && // exists
             lcB.state === 1 && // joined
@@ -299,7 +299,7 @@ describe('Connext happy case testing flow', () => {
       })
 
       it('balanceA in lcA should be 1', async () => {
-        lcA = await client.getLcById(subchanAI)
+        lcA = await client.getChannelById(subchanAI)
         expect(
           Web3.utils
             .toBN(Web3.utils.toWei('1', 'ether'))
@@ -450,7 +450,7 @@ describe('Connext happy case testing flow', () => {
 
     it('should be able to send ledger and virtual channel updates', async () => {
       vcA = await client.getThreadById(vcIdA)
-      lcA = await client.getLcById(subchanAI)
+      lcA = await client.getChannelById(subchanAI)
       const balDiff = Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
       const vcA1 = Web3.utils.toBN(vcA.balanceA).sub(balDiff)
       const vcA2 = vcA1.sub(balDiff)
@@ -535,7 +535,7 @@ describe('Connext happy case testing flow', () => {
       expect(response.status).to.equal(200)
       // verify new balances
       vcA = await client.getThreadById(vcIdA)
-      lcA = await client.getLcById(subchanAI)
+      lcA = await client.getChannelById(subchanAI)
       // vc
       expect(vcA.balanceA).to.equal(vcA2.toString())
       expect(vcA.balanceB).to.equal(vcB2.toString())
