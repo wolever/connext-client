@@ -23,7 +23,7 @@
   * [ChannelOpenTimeoutContractHandler](connext-client/lcopentimeoutcontracthandler.md)
   * [getThreadStatesByChannelId](connext-client/getchannelstatesbylcid.md)
   * [getThreadById](connext-client/getThreadById.md)
-  * [getThreadByParties](connext-client/getchannelbyparties.md)
+  * [getThreadByParties](connext-client/getThreadByParties.md)
   * [getThreadsByChannelId](connext-client/getchannelsbylcid.md)
   * [getThreadById](connext-client/getlcbyid.md)
   * [getChannelByPartyA](connext-client/getlcbypartya.md)

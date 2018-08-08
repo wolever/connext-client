@@ -136,7 +136,7 @@ describe('Connext dispute cases', function () {
 
       // create/update VC between partyA and partyB if doesnt exist
       console.log('Creating/Updating or Fetching thread between A and B..')
-      vc = await client.getChannelByParties({ partyA, partyB })
+      vc = await client.getThreadByParties({ partyA, partyB })
       if (vc == null) {
         vcId = await client.openChannel({
           to: partyB,

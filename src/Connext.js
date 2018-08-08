@@ -591,7 +591,7 @@ class Connext {
     }
 
     // vc does not already exist
-    let channel = await this.getChannelByParties({ partyA: sender, partyB: to })
+    let channel = await this.getThreadByParties({ partyA: sender, partyB: to })
     if (channel) {
       throw new VCOpenError(
         methodName,
@@ -3681,8 +3681,8 @@ class Connext {
    * @param {String} params.partyB - ETH address of partyB in virtual channel
    * @returns {Promise} resolves to the virtual channel
    */
-  async getChannelByParties ({ partyA, partyB }) {
-    const methodName = 'getChannelByParties'
+  async getThreadByParties ({ partyA, partyB }) {
+    const methodName = 'getThreadByParties'
     const isAddress = { presence: true, isAddress: true }
     Connext.validatorsResponseToError(
       validate.single(partyA, isAddress),

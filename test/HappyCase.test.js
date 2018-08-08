@@ -551,8 +551,8 @@ describe('Connext happy case testing flow', () => {
     })
 
     it('partyB should be able to recieve state updates across multiple vcs', async () => {
-      vcC = await client.getChannelByParties({ partyA: partyC, partyB })
-      vcD = await client.getChannelByParties({ partyA: partyD, partyB })
+      vcC = await client.getThreadByParties({ partyA: partyC, partyB })
+      vcD = await client.getThreadByParties({ partyA: partyD, partyB })
       balanceA = Web3.utils.toBN(Web3.utils.toWei('4', 'ether'))
       balanceB = Web3.utils.toBN(Web3.utils.toWei('1', 'ether'))
       await client.updateBalances(
@@ -670,7 +670,7 @@ describe('Connext happy case testing flow', () => {
 
   describe('Closing a virtual channel', () => {
     it('should change vcA status to settled', async () => {
-      vcA = await client.getChannelByParties({ partyA, partyB })
+      vcA = await client.getThreadByParties({ partyA, partyB })
       const response = await client.closeChannel(vcA.channelId, partyA)
       // get vcA
       vcA = await client.getThreadById(vcA.channelId)
@@ -730,7 +730,7 @@ describe('Connext happy case testing flow', () => {
     })
 
     it('should not interrupt the flow of other vcs', async () => {
-      vcC = await client.getChannelByParties({ partyA: partyC, partyB })
+      vcC = await client.getThreadByParties({ partyA: partyC, partyB })
       balanceA = Web3.utils
         .toBN(vcC.balanceA)
         .sub(Web3.utils.toBN(Web3.utils.toWei('1', 'ether')))
@@ -764,7 +764,7 @@ describe('Connext happy case testing flow', () => {
     })
 
     it('partyB should be able to close a channel', async () => {
-      vcC = await client.getChannelByParties({ partyA: partyC, partyB })
+      vcC = await client.getThreadByParties({ partyA: partyC, partyB })
       const response = await client.closeChannel(vcC.channelId, partyB)
       // get vc
       vcC = await client.getThreadById(vcC.channelId)
@@ -825,8 +825,8 @@ describe('Connext happy case testing flow', () => {
     })
 
     it('partyB should be able to close multiple channels', async () => {
-      vcD = await client.getChannelByParties({ partyA: partyD, partyB })
-      vcE = await client.getChannelByParties({ partyA: partyE, partyB })
+      vcD = await client.getThreadByParties({ partyA: partyD, partyB })
+      vcE = await client.getThreadByParties({ partyA: partyE, partyB })
       const channelIds = [vcD.channelId, vcE.channelId]
       for (const channelId of channelIds) {
         await client.closeChannel(channelId, partyB)
@@ -892,7 +892,7 @@ describe('Connext happy case testing flow', () => {
     }).timeout(9000)
 
     it('should not interrupt the flow of open VCs', async () => {
-      vcC = await client.getChannelByParties({ partyA: partyC, partyB })
+      vcC = await client.getThreadByParties({ partyA: partyC, partyB })
       balanceA = Web3.utils
         .toBN(vcC.balanceA)
         .sub(Web3.utils.toBN(Web3.utils.toWei('1', 'ether')))
