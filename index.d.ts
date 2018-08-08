@@ -15,7 +15,7 @@ declare class Connext {
 
   checkpoint(): Promise<any>;
 
-  openThread(opts: Connext.openThreadOptions): Promise<any>;
+  openThread(opts: Connext.OpenThreadOptions): Promise<any>;
 
   joinThread(channelId: string): Promise<any>;
 
@@ -31,17 +31,17 @@ declare class Connext {
 
   closeChannels(channels: Connext.Channel[]): Promise<any>;
 
-  static createLCStateUpdateFingerprint(opts: Connext.LcUpdate): string;
+  static createChannelStateUpdateFingerprint(opts: Connext.ChannelUpdate): string;
 
-  static recoverSignerFromLCStateUpdate(opts: Connext.RecoverLcUpdate): string;
+  static recoverSignerFromChannelStateUpdate(opts: Connext.RecoverChannelUpdate): string;
 
-  static createVCStateUpdateFingerprint(opts: Connext.VcUpdate): string;
+  static createThreadStateUpdateFingerprint(opts: Connext.ThreadUpdate): string;
 
-  static recoverSignerFromVCStateUpdate(opts: Connext.RecoverVcUpdate): string;
+  static recoverSignerFromThreadStateUpdate(opts: Connext.RecoverThreadUpdate): string;
 
   static generateThreadRootHash(threadInitialStates: any): string;
 
-  static generateMerkleTree(threadInitialStates: Connext.VcUpdate[]): string;
+  static generateMerkleTree(threadInitialStates: Connext.ThreadUpdate[]): string;
 }
 
 declare namespace Connext {
@@ -53,9 +53,14 @@ declare namespace Connext {
     contractAddress: string;
   }
 
-  export interface openThreadOptions {
+  export interface OpenThreadOptions {
     to: string;
     deposit: BigNumber;
+  }
+
+  export interface BalanceOptions {
+    tokenDeposit: BigNumber;
+    ethDeposit: BigNumber;
   }
 
   export interface UpdateBalanceOptions {
@@ -70,7 +75,7 @@ declare namespace Connext {
     sig: string;
   }
 
-  export interface LcUpdate {
+  export interface ChannelUpdate {
     isClose: boolean;
     channelId: string;
     nonce: number;
@@ -78,29 +83,49 @@ declare namespace Connext {
     vcRootHash: string;
     partyA: string;
     partyI: string;
-    balanceA: BigNumber;
-    balanceI: BigNumber;
+    balanceA: BalanceOptions;
+    balanceI: BalanceOptions;
   }
 
-  export interface RecoverLcUpdate extends LcUpdate {
+  export interface RecoverChannelUpdate {
     sig: string;
+    isClose: boolean;
+    channelId: string;
+    nonce: number;
+    openVcs: number;
+    vcRootHash: string;
+    partyA: string;
+    partyI: string;
+    ethBalanceA: BigNumber;
+    ethBalanceI: BigNumber;
+    tokenBalanceA: BigNumber;
+    tokenBalanceI: BigNumber;
   }
 
-  export interface VcUpdate {
+  export interface ThreadUpdate {
     channelId: string;
     nonce: number;
     partyA: string;
     partyB: string;
-    balanceA: BigNumber;
-    balanceB: BigNumber;
+    balanceA: BalanceOptions;
+    balanceB: BalanceOptions;
+
   }
 
-  export interface RecoverVcUpdate extends VcUpdate {
+  export interface RecoverThreadUpdate {
     sig: string;
+    ethBalanceA: BigNumber;
+    ethBalanceI: BigNumber;
+    tokenBalanceA: BigNumber;
+    tokenBalanceI: BigNumber;
+    ethBalanceA: BigNumber;
+    ethBalanceB: BigNumber;
+    tokenBalanceA: BigNumber;
+    tokenBalanceB: BigNumber;
   }
 
   export interface ThreadInitialStates {
-    threadInitialStates: VcUpdate[];
+    threadInitialStates: ThreadUpdate[];
   }
 
   export interface Channel {
