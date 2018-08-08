@@ -675,7 +675,7 @@ class Connext {
       methodName,
       'channelId'
     )
-    const vc = await this.getChannelById(channelId)
+    const vc = await this.getThreadById(channelId)
     if (vc === null) {
       throw new VCOpenError(methodName, 'Channel not found')
     }
@@ -955,7 +955,7 @@ class Connext {
       'increment'
     )
     // get the vc
-    const thread = await this.getChannelById(channelId)
+    const thread = await this.getThreadById(channelId)
     // must exist
     if (!thread) {
       throw new VCUpdateError(methodName, 'Thread not found')
@@ -1084,7 +1084,7 @@ class Connext {
     }
 
     // get latest state in vc
-    const thread = await this.getChannelById(threadId)
+    const thread = await this.getThreadById(threadId)
     if (!thread) {
       throw new VCCloseError(methodName, 'Thread not found')
     }
@@ -2297,7 +2297,7 @@ class Connext {
     const subchanA = await this.getLcByPartyA(partyA)
 
     // verify channel state update
-    let thread = await this.getChannelById(channelId)
+    let thread = await this.getThreadById(channelId)
     let proposedEthBalance, proposedTokenBalance
     if (thread === null) {
       // set initial balances to 0 if thread does not exist
@@ -3650,19 +3650,19 @@ class Connext {
   /**
    * Returns an object representing the virtual channel in the database.
    *
-   * @param {String} channelId - the ID of the virtual channel
+   * @param {String} threadId - the ID of the virtual channel
    * @returns {Promise} resolves to an object representing the virtual channel
    */
-  async getChannelById (channelId) {
-    const methodName = 'getChannelById'
+  async getThreadById (threadId) {
+    const methodName = 'getThreadById'
     const isHexStrict = { presence: true, isHexStrict: true }
     Connext.validatorsResponseToError(
-      validate.single(channelId, isHexStrict),
+      validate.single(threadId, isHexStrict),
       methodName,
-      'channelId'
+      'threadId'
     )
     try {
-      const response = await this.networking.get(`virtualchannel/${channelId}`)
+      const response = await this.networking.get(`virtualchannel/${threadId}`)
       return response.data
     } catch (e) {
       if (e.status === 400) {
@@ -3741,7 +3741,7 @@ class Connext {
       'vcId'
     )
     // get LC for other VC party and ingrid
-    const vc = await this.getChannelById(vcId)
+    const vc = await this.getThreadById(vcId)
     return vc.subchanBI
   }
 
@@ -4109,7 +4109,7 @@ class Connext {
       throw new VCOpenError(methodName, 'Invalid subchannel state')
     }
     // vcId should be unique
-    let thread = await this.getChannelById(threadInitialState.channelId)
+    let thread = await this.getThreadById(threadInitialState.channelId)
     if (thread && THREAD_STATES[thread.state] !== 0) {
       throw new VCOpenError(methodName, 'Invalid channel id in threadInitialState')
     }

@@ -143,7 +143,7 @@ describe('Connext dispute cases', function () {
           deposit: Web3.utils.toBN(Web3.utils.toWei('1', 'ether')),
           sender: partyA
         })
-        vc = await client.getChannelById(vcId)
+        vc = await client.getThreadById(vcId)
         // update VC 3x
         balanceA = Web3.utils.toBN(vc.balanceA)
         balanceB = Web3.utils.toBN(vc.balanceB)
@@ -241,7 +241,7 @@ describe('Connext dispute cases', function () {
       expect(tx.to.toLowerCase()).to.equal(contractAddress)
       // // assert vc status chained
       // await timeout(15000) // wait for chainsaw to change channel status
-      // vc = await client.getChannelById(vcId)
+      // vc = await client.getThreadById(vcId)
       // expect(vc.state).to.equal(2) // settling
     })
 
@@ -250,7 +250,7 @@ describe('Connext dispute cases', function () {
       // right now there is no way to get the challenge timeout info, but well add it like this:
       // while (vc.challengeTimeout < Date.now()) {
       //   await timeout(3000)
-      //   vc = await client.getChannelById(vcId)
+      //   vc = await client.getThreadById(vcId)
       // }
 
       await timeout(16000)
@@ -284,7 +284,7 @@ describe('Connext dispute cases', function () {
     it('should close virtual channels', async () => {
       await client.closeChannel(vcId)
       // get vcA
-      vc = await client.getChannelById(vcId)
+      vc = await client.getThreadById(vcId)
       assert.equal(vc.state, 3)
     })
 

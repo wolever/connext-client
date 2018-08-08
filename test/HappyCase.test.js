@@ -294,7 +294,7 @@ describe('Connext happy case testing flow', () => {
           sender: partyA,
           deposit: initialDeposit
         })
-        vcA = await client.getChannelById(vcIdA)
+        vcA = await client.getThreadById(vcIdA)
         expect(vcA.channelId).to.equal(vcIdA)
       })
 
@@ -326,7 +326,7 @@ describe('Connext happy case testing flow', () => {
       })
 
       it('hub should create update for lcB', async () => {
-        vcA = await client.getChannelById(vcIdA)
+        vcA = await client.getThreadById(vcIdA)
         let state = await client.getLatestLedgerStateUpdate(subchanBI, ['sigI'])
         const signer = Connext.recoverSignerFromLCStateUpdate({
           sig: state.sigI,
@@ -349,13 +349,13 @@ describe('Connext happy case testing flow', () => {
     describe('partyB should be able to recieve multiple openChannel updates', () => {
       it('should create a new virtual channel between partyC and partyB', async () => {
         vcIdC = await client.openChannel({ to: partyB, sender: partyC })
-        vcC = await client.getChannelById(vcIdC)
+        vcC = await client.getThreadById(vcIdC)
         expect(vcC.channelId).to.equal(vcIdC)
       })
 
       it('should create a new virtual channel between partyD and partyB', async () => {
         vcIdD = await client.openChannel({ to: partyB, sender: partyD })
-        vcD = await client.getChannelById(vcIdD)
+        vcD = await client.getThreadById(vcIdD)
         expect(vcD.channelId).to.equal(vcIdD)
       })
     })
@@ -387,7 +387,7 @@ describe('Connext happy case testing flow', () => {
         ],
         partyA
       )
-      vcA = await client.getChannelById(vcIdA)
+      vcA = await client.getThreadById(vcIdA)
       console.log('vcA:', vcA)
       console.log('balanceA:', balanceA.toString())
       console.log('balanceB:', balanceB.toString())
@@ -410,7 +410,7 @@ describe('Connext happy case testing flow', () => {
     })
 
     it('partyA should be able to send multiple state updates in a row', async () => {
-      vcA = await client.getChannelById(vcIdA)
+      vcA = await client.getThreadById(vcIdA)
       balanceA = Web3.utils.toBN(vcA.balanceA)
       balanceB = Web3.utils.toBN(vcA.balanceB)
       for (let i = 0; i < 10; i++) {
@@ -443,13 +443,13 @@ describe('Connext happy case testing flow', () => {
           partyA
         )
       }
-      vcA = await client.getChannelById(vcIdA)
+      vcA = await client.getThreadById(vcIdA)
       expect(balanceA.eq(Web3.utils.toBN(vcA.balanceA))).to.equal(true)
       expect(balanceB.eq(Web3.utils.toBN(vcA.balanceB))).to.equal(true)
     })
 
     it('should be able to send ledger and virtual channel updates', async () => {
-      vcA = await client.getChannelById(vcIdA)
+      vcA = await client.getThreadById(vcIdA)
       lcA = await client.getLcById(subchanAI)
       const balDiff = Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
       const vcA1 = Web3.utils.toBN(vcA.balanceA).sub(balDiff)
@@ -534,7 +534,7 @@ describe('Connext happy case testing flow', () => {
       console.log(response)
       expect(response.status).to.equal(200)
       // verify new balances
-      vcA = await client.getChannelById(vcIdA)
+      vcA = await client.getThreadById(vcIdA)
       lcA = await client.getLcById(subchanAI)
       // vc
       expect(vcA.balanceA).to.equal(vcA2.toString())
@@ -546,7 +546,7 @@ describe('Connext happy case testing flow', () => {
 
     it('should not prohibit the creation of a virtual channel', async () => {
       vcIdE = await client.openChannel({ to: partyB, sender: partyE })
-      vcE = await client.getChannelById(vcIdE)
+      vcE = await client.getThreadById(vcIdE)
       expect(vcE.channelId).to.equal(vcIdE)
     })
 
@@ -631,7 +631,7 @@ describe('Connext happy case testing flow', () => {
           sender
         )
       }
-      vcD = await client.getChannelById(vcD.channelId)
+      vcD = await client.getThreadById(vcD.channelId)
       expect(Web3.utils.toBN(vcD.balanceA).eq(balanceA)).to.equal(true)
       expect(Web3.utils.toBN(vcD.balanceB).eq(balanceB)).to.equal(true)
     })
@@ -673,7 +673,7 @@ describe('Connext happy case testing flow', () => {
       vcA = await client.getChannelByParties({ partyA, partyB })
       const response = await client.closeChannel(vcA.channelId, partyA)
       // get vcA
-      vcA = await client.getChannelById(vcA.channelId)
+      vcA = await client.getThreadById(vcA.channelId)
       expect(vcA.state).to.equal(3)
     })
 
@@ -759,7 +759,7 @@ describe('Connext happy case testing flow', () => {
         ],
         partyC
       )
-      vcC = await client.getChannelById(vcC.channelId)
+      vcC = await client.getThreadById(vcC.channelId)
       expect(balanceA.eq(Web3.utils.toBN(vcC.balanceA))).to.equal(true)
     })
 
@@ -767,7 +767,7 @@ describe('Connext happy case testing flow', () => {
       vcC = await client.getChannelByParties({ partyA: partyC, partyB })
       const response = await client.closeChannel(vcC.channelId, partyB)
       // get vc
-      vcC = await client.getChannelById(vcC.channelId)
+      vcC = await client.getThreadById(vcC.channelId)
       expect(vcC.state).to.equal(3)
     })
 
@@ -832,8 +832,8 @@ describe('Connext happy case testing flow', () => {
         await client.closeChannel(channelId, partyB)
       }
       // refetch channels
-      vcD = await client.getChannelById(vcD.channelId)
-      vcE = await client.getChannelById(vcE.channelId)
+      vcD = await client.getThreadById(vcD.channelId)
+      vcE = await client.getThreadById(vcE.channelId)
 
       expect(vcD.state).to.equal(3)
       expect(vcE.state).to.equal(3)
@@ -845,7 +845,7 @@ describe('Connext happy case testing flow', () => {
 
     before('Create a virtual channel that has not been closed', async () => {
       vcIdC = await client.openChannel({ to: partyB, sender: partyC })
-      vcC = await client.getChannelById(vcIdC)
+      vcC = await client.getThreadById(vcIdC)
     })
 
     it(`should close partyA's LC with the fast close flag`, async () => {
@@ -915,7 +915,7 @@ describe('Connext happy case testing flow', () => {
           }
         }
       })
-      vcC = await client.getChannelById(vcC.channelId)
+      vcC = await client.getThreadById(vcC.channelId)
       expect(balanceA.eq(Web3.utils.toBN(vcC.balanceA))).to.equal(true)
     })
 
