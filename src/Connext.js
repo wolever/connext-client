@@ -3833,17 +3833,17 @@ class Connext {
     return response.data
   }
 
-  async getThreadInitialStates (lcId) {
+  async getThreadInitialStates (channelId) {
     // validate params
     const methodName = 'getThreadInitialStates'
     const isHexStrict = { presence: true, isHexStrict: true }
     Connext.validatorsResponseToError(
-      validate.single(lcId, isHexStrict),
+      validate.single(channelId, isHexStrict),
       methodName,
-      'lcId'
+      'channelId'
     )
     const response = await this.networking.get(
-      `ledgerchannel/${lcId}/vcinitialstates`
+      `ledgerchannel/${channelId}/vcinitialstates`
     )
     return response.data
   }
