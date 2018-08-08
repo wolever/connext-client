@@ -1360,7 +1360,7 @@ class Connext {
    * Verifies and cosigns the latest ledger state update.
    *
    * @example
-   * const lcId = await connext.getChannelId() // get ID by accounts[0] and open status by default
+   * const lcId = await connext.getChannelIdByPartyA() // get ID by accounts[0] and open status by default
    * await connext.cosignLatestChannelUpdate(channelId)
    *
    * @param {String} lcId - ledger channel id
@@ -1409,7 +1409,7 @@ class Connext {
    * Verifies and cosigns the ledger state update indicated by the provided nonce.
    *
    * @example
-   * const lcId = await connext.getChannelId() // get ID by accounts[0] and open status by default
+   * const lcId = await connext.getChannelIdByPartyA() // get ID by accounts[0] and open status by default
    * await connext.cosignLatestChannelUpdate(lcId)
    *
    * @param {Object} params - the method object
@@ -3611,8 +3611,8 @@ class Connext {
    * @param {Number} status - (optional) state of virtual channel, can be 0 (opening), 1 (opened), 2 (settling), or 3 (settled). Defaults to open channel.
    * @returns {Promise} resolves to either the ledger channel id between hub and supplied partyA, or an Array of the channel IDs between hub and partyA.
    */
-  async getChannelId (partyA = null, status = null) {
-    const methodName = 'getChannelId'
+  async getChannelIdByPartyA (partyA = null, status = null) {
+    const methodName = 'getChannelIdByPartyA'
     const isAddress = { presence: true, isAddress: true }
     if (partyA) {
       Connext.validatorsResponseToError(

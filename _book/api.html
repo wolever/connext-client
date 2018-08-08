@@ -1262,7 +1262,7 @@ const lcId = await connext.register(deposit)
                                     <p>
                                         <strong>Example</strong>
                                     </p>
-                                    <pre><code class="lang-js"><span class="hljs-keyword">const</span> lcId = <span class="hljs-keyword">await</span> connext.getChannelId() <span class="hljs-comment">// get ID by accounts[0] and open status by default</span>
+                                    <pre><code class="lang-js"><span class="hljs-keyword">const</span> lcId = <span class="hljs-keyword">await</span> connext.getChannelIdByPartyA() <span class="hljs-comment">// get ID by accounts[0] and open status by default</span>
 <span class="hljs-keyword">await</span> connext.cosignLatestLcUpdate(lcId)
 </code></pre>
                                     <p>
@@ -1321,7 +1321,7 @@ const lcId = await connext.register(deposit)
                                     <p>
                                         <strong>Example</strong>
                                     </p>
-                                    <pre><code class="lang-js"><span class="hljs-keyword">const</span> lcId = <span class="hljs-keyword">await</span> connext.getChannelId() <span class="hljs-comment">// get ID by accounts[0] and open status by default</span>
+                                    <pre><code class="lang-js"><span class="hljs-keyword">const</span> lcId = <span class="hljs-keyword">await</span> connext.getChannelIdByPartyA() <span class="hljs-comment">// get ID by accounts[0] and open status by default</span>
 <span class="hljs-keyword">await</span> connext.cosignLatestLcUpdate(lcId)
 </code></pre>
                                     <p>
@@ -1421,10 +1421,10 @@ const lcId = await connext.register(deposit)
                                         <br>
                                     </p>
                                     <p>
-                                        <a id="Connext+getChannelId"></a>
+                                        <a id="Connext+getChannelIdByPartyA"></a>
                                     </p>
                                     <p></p>
-                                    <h2 id="connextgetChannelIdpartya-status-&#x21D2;-promise">connext.getChannelId(partyA, status) &#x21D2;
+                                    <h2 id="connextgetChannelIdByPartyApartya-status-&#x21D2;-promise">connext.getChannelIdByPartyA(partyA, status) &#x21D2;
                                         <code>Promise</code>
                                     </h2>Returns the ledger channel id between the supplied address and ingrid.
                                     <p></p>
