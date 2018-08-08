@@ -3227,7 +3227,7 @@ class Connext {
         tokenBalanceA,
         tokenBalanceB: Web3.utils.toBN('0'),
       })
-      const threadInitialStates = await this.getVcInitialStates(subchanId)
+      const threadInitialStates = await this.getThreadInitialStates(subchanId)
       merkle = Connext.generateMerkleTree(threadInitialStates)
       let mproof = merkle.proof(Utils.hexToBuffer(stateHash))
 
@@ -3502,8 +3502,8 @@ class Connext {
    * @param {String} partyB - (optional) ETH address of party who has yet to join virtual channel threads.
    * @returns {Promise} resolves to an array of unjoined virtual channel objects
    */
-  async getUnjoinedChannels (partyB = null) {
-    const methodName = 'getUnjoinedChannels'
+  async getUnjoinedThreads (partyB = null) {
+    const methodName = 'getUnjoinedThreads'
     const isAddress = { presence: true, isAddress: true }
     if (partyB) {
       Connext.validatorsResponseToError(
@@ -3732,17 +3732,17 @@ class Connext {
     return openResponse
   }
 
-  async getOtherLcId (vcId) {
-    const methodName = 'getOtherLcId'
+  async getOtherSubchanId (threadId) {
+    const methodName = 'getOtherSubchanId'
     const isHexStrict = { presence: true, isHexStrict: true }
     Connext.validatorsResponseToError(
-      validate.single(vcId, isHexStrict),
+      validate.single(threadId, isHexStrict),
       methodName,
-      'vcId'
+      'threadId'
     )
     // get LC for other VC party and ingrid
-    const vc = await this.getThreadById(vcId)
-    return vc.subchanBI
+    const thread = await this.getThreadById(threadId)
+    return thread.subchanBI
   }
 
   /**
@@ -3833,9 +3833,9 @@ class Connext {
     return response.data
   }
 
-  async getVcInitialStates (lcId) {
+  async getThreadInitialStates (lcId) {
     // validate params
-    const methodName = 'getVcInitialStates'
+    const methodName = 'getThreadInitialStates'
     const isHexStrict = { presence: true, isHexStrict: true }
     Connext.validatorsResponseToError(
       validate.single(lcId, isHexStrict),
@@ -3848,17 +3848,17 @@ class Connext {
     return response.data
   }
 
-  async getVcInitialState (vcId) {
+  async getThreadInitialState (threadId) {
     // validate params
-    const methodName = 'getVcInitialState'
+    const methodName = 'getThreadInitialState'
     const isHexStrict = { presence: true, isHexStrict: true }
     Connext.validatorsResponseToError(
-      validate.single(vcId, isHexStrict),
+      validate.single(threadId, isHexStrict),
       methodName,
-      'vcId'
+      'threadId'
     )
     const response = await this.networking.get(
-      `virtualchannel/${vcId}/update/nonce/0`
+      `virtualchannel/${threadId}/update/nonce/0`
     )
     return response.data
   }
@@ -4137,7 +4137,7 @@ class Connext {
     threadInitialState.tokenBalanceA = threadInitialState.balanceA.tokenDeposit ? threadInitialState.balanceA.tokenDeposit : Web3.utils.toBN('0')
     threadInitialState.tokenBalanceB = Web3.utils.toBN('0')
 
-    let threadInitialStates = await this.getVcInitialStates(channel.channelId)
+    let threadInitialStates = await this.getThreadInitialStates(channel.channelId)
     threadInitialStates.push(threadInitialState) // add new vc state to hash
     let newRootHash = Connext.generateThreadRootHash({ threadInitialStates: threadInitialStates })
 
@@ -4223,7 +4223,7 @@ class Connext {
       throw new VCCloseError(methodName, 'Channel is in invalid state')
     }
 
-    let threadInitialStates = await this.getVcInitialStates(subchan.channelId)
+    let threadInitialStates = await this.getThreadInitialStates(subchan.channelId)
     // array of state objects, which include the channel id and nonce
     // remove initial state of vcN
     threadInitialStates = threadInitialStates.filter(threadState => {

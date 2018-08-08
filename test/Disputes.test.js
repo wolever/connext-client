@@ -197,7 +197,7 @@ describe('Connext dispute cases', function () {
 
     it('should call initVcStateContractHandler', async () => {
       // get initial vc state
-      let vc0 = await client.getVcInitialState(vcId)
+      let vc0 = await client.getThreadInitialState(vcId)
       // init on chain
       const response = await client.initVcStateContractHandler({
         subchanId: subchanAI, // caller subchan
