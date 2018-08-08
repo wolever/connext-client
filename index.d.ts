@@ -5,7 +5,7 @@ export = Connext;
 declare class Connext {
   constructor(opts: Connext.ConnextOptions);
 
-  register(initialDeposit: BigNumber): Promise<any>;
+  openChannel(initialDeposit: BigNumber): Promise<any>;
 
   deposit(amount: BigNumber): Promise<any>;
 

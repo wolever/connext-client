@@ -82,12 +82,12 @@ describe('Connext happy case testing flow', () => {
     })
   })
 
-  describe('Registering with the hub', () => {
-    describe('registering partyA with hub', () => {
+  describe('openChanneling with the hub', () => {
+    describe('openChanneling partyA with hub', () => {
       it(
         'should create a ledger channel with the hub and partyA and wait for chainsaw',
         async () => {
-          subchanAI = await client.register(
+          subchanAI = await client.openChannel(
             Web3.utils.toBN(Web3.utils.toWei('6', 'ether')),
             partyA
           )
@@ -119,9 +119,9 @@ describe('Connext happy case testing flow', () => {
       })
     })
 
-    describe('registering partyB with hub', () => {
+    describe('openChanneling partyB with hub', () => {
       it('should create a ledger channel with the hub and partyB', async () => {
-        subchanBI = await client.register(initialDeposit, partyB)
+        subchanBI = await client.openChannel(initialDeposit, partyB)
         // ensure lc is in the database
         await interval(async (iterationNumber, stop) => {
           lcB = await client.getChannelById(subchanBI)
@@ -148,9 +148,9 @@ describe('Connext happy case testing flow', () => {
       })
     })
 
-    describe('registering partyC with hub', () => {
+    describe('openChanneling partyC with hub', () => {
       it('should create a ledger channel with the hub and partyC', async () => {
-        subchanCI = await client.register(initialDeposit, partyC)
+        subchanCI = await client.openChannel(initialDeposit, partyC)
         // ensure lc is in the database
         await interval(async (iterationNumber, stop) => {
           lcC = await client.getChannelById(subchanCI)
@@ -177,9 +177,9 @@ describe('Connext happy case testing flow', () => {
       })
     })
 
-    describe('registering partyD with hub', () => {
+    describe('openChanneling partyD with hub', () => {
       it('should create a ledger channel with the hub and partyD', async () => {
-        subchanDI = await client.register(initialDeposit, partyD)
+        subchanDI = await client.openChannel(initialDeposit, partyD)
         // ensure lc is in the database
         await interval(async (iterationNumber, stop) => {
           lcD = await client.getChannelById(subchanDI)
@@ -201,9 +201,9 @@ describe('Connext happy case testing flow', () => {
       }).timeout(45000)
     })
 
-    describe('registering partyE with hub', () => {
+    describe('openChanneling partyE with hub', () => {
       it('should create a ledger channel with the hub and partyE', async () => {
-        subchanEI = await client.register(initialDeposit, partyE)
+        subchanEI = await client.openChannel(initialDeposit, partyE)
         // ensure lc is in the database
         await interval(async (iterationNumber, stop) => {
           lcE = await client.getChannelById(subchanEI)
@@ -228,11 +228,11 @@ describe('Connext happy case testing flow', () => {
     describe('registration error cases', async () => {
       it('should throw an error if you have open and active LC', async () => {
         try {
-          await client.register(initialDeposit, partyA)
+          await client.openChannel(initialDeposit, partyA)
         } catch (e) {
           expect(e.statusCode).to.equal(401)
           expect(e.name).to.equal('ChannelOpenError')
-          expect(e.methodName).to.equal('register')
+          expect(e.methodName).to.equal('openChannel')
         }
       })
     })

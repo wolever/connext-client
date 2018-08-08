@@ -317,7 +317,7 @@ class Connext {
   /**
    * Opens a ledger channel with Ingrid (Hub) at the address provided when instantiating the Connext instance with the given initial deposit.
    *
-   * Sender defaults to accounts[0] if not supplied to the register function.
+   * Sender defaults to accounts[0] if not supplied to the openChannel function.
    *
    * Ledger channel challenge timer is determined by Ingrid (Hub) if the parameter is not supplied. Current default value is 3600s (1 hour).
    *
@@ -329,7 +329,7 @@ class Connext {
    *
    * @example
    * const deposit = Web3.utils.toBN(Web3.utils.toWei('1', 'ether))
-   * const lcId = await connext.register(deposit)
+   * const lcId = await connext.openChannel(deposit)
    *
    * @param {Object} initialDeposits - deposits in wei (must have at least one deposit)
    * @param {BN} initialDeposits.ethDeposit - deposit in eth (may be null)
@@ -338,9 +338,9 @@ class Connext {
    * @param {Number} challenge - (optional) challenge period in seconds
    * @returns {Promise} resolves to the ledger channel id of the created channel
    */
-  async register (initialDeposits, tokenAddress = null, sender = null, challenge = null) {
+  async openChannel (initialDeposits, tokenAddress = null, sender = null, challenge = null) {
     // validate params
-    const methodName = 'register'
+    const methodName = 'openChannel'
     const isValidDepositObject = { presence: true, isValidDepositObject: true }
     const isAddress = { presence: true, isAddress: true }
     const isPositiveInt = { presence: true, isPositiveInt: true }
@@ -3013,7 +3013,7 @@ class Connext {
     const lc = await this.getChannelById(lcId)
     if (!lc) {
       // hub does not have lc, may be chainsaw issues
-      throw new LCOpenError(methodName, 'Channel is not registered with hub')
+      throw new LCOpenError(methodName, 'Channel is not openChanneled with hub')
     }
     if (sender && sender.toLowerCase() === lc.partyA) {
       throw new LCOpenError(methodName, 'Cannot create channel with yourself')
@@ -3928,14 +3928,14 @@ class Connext {
   }
 
   /**
-   * Requests Ingrid joins the ledger channel after it has been created on chain. This function should be called after the register() returns the ledger channel ID of the created contract.
+   * Requests Ingrid joins the ledger channel after it has been created on chain. This function should be called after the openChannel() returns the ledger channel ID of the created contract.
    *
-   * May have to be called after a timeout period to ensure the transaction performed in register to create the channel on chain is properly mined.
+   * May have to be called after a timeout period to ensure the transaction performed in openChannel to create the channel on chain is properly mined.
    *
    * @example
-   * // use register to create channel on chain
+   * // use openChannel to create channel on chain
    * const deposit = Web3.utils.toBN(1000)
-   * const lcId = await connext.register(deposit)
+   * const lcId = await connext.openChannel(deposit)
    * const response = await connext.requestJoinLc(lcId)
    *
    * @param {String} lcId - ID of the ledger channel you want the Hub to join

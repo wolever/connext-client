@@ -37,7 +37,7 @@ describe('Connext dispute cases', function () {
 
   // before, should init client with LCs and VC
   before(
-    'Should init client and register partyA and partyB with the hub, and create/update a VC between them',
+    'Should init client and openChannel partyA and partyB with the hub, and create/update a VC between them',
     async () => {
       console.log('Initing client..')
       // init web3
@@ -90,19 +90,19 @@ describe('Connext dispute cases', function () {
       console.log('Client properly initialized')
 
       console.log('Creating/Fetching channels with hub..')
-      // register partyA if lcA doesnt exist
+      // openChannel partyA if lcA doesnt exist
       lcA = await client.getChannelByPartyA(partyA)
       if (lcA == null) {
-        subchanAI = await client.register(initialDeposit, partyA, 15)
+        subchanAI = await client.openChannel(initialDeposit, partyA, 15)
         await timeout(30000) // wait for chainsaw and autojoin
         lcA = await client.getChannelByPartyA(partyA)
       } else {
         subchanAI = lcA.channelId
       }
-      // register partyB if lcB doesnt exist
+      // openChannel partyB if lcB doesnt exist
       lcB = await client.getChannelByPartyA(partyB)
       if (lcB == null) {
-        subchanBI = await client.register(initialDeposit, partyB, 15)
+        subchanBI = await client.openChannel(initialDeposit, partyB, 15)
         await timeout(30000) // wait for chainsaw and autojoin
         lcB = await client.getChannelByPartyA(partyA)
       } else {

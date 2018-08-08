@@ -1,8 +1,8 @@
 # requestjoinThread
 
-**connext.requestjoinThread\(**channelId**\)** ⇒ `Promise`Requests that the Hub joins the channel after it has been created on chain. This function should be called after the register\(\) returns the channel ID of the created contract.
+**connext.requestjoinThread\(**channelId**\)** ⇒ `Promise`Requests that the Hub joins the channel after it has been created on chain. This function should be called after the openChannel\(\) returns the channel ID of the created contract.
 
-May have to be called after a timeout period to ensure the transaction performed in register to create the channel on chain is properly mined.
+May have to be called after a timeout period to ensure the transaction performed in openChannel to create the channel on chain is properly mined.
 
 **Kind**: instance method of [`Connext`](./#Connext)  
 **Returns**: `Promise` - resolves to the transaction hash of Ingrid joining the channel
@@ -14,7 +14,7 @@ May have to be called after a timeout period to ensure the transaction performed
 **Example**
 
 ```javascript
-// use register to create channel on chain
+// use openChannel to create channel on chain
 const deposit = Web3.utils.toBN(1000)
 const channelId = await connext.openThread(deposit)
 const response = await connext.requestjoinThread(channelId)

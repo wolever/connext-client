@@ -10,7 +10,7 @@
 * [Connext Client](connext-client/README.md)
   * [Installation](connext-client/installation.md)
   * [constructor](connext-client/constructor.md)
-  * [openThread](connext-client/register.md)
+  * [openThread](connext-client/openChannel.md)
   * [deposit](connext-client/deposit.md)
   * [openThread](connext-client/openThread.md)
   * [joinThread](connext-client/joinThread.md)
