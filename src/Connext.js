@@ -376,7 +376,7 @@ class Connext {
       )
     } else {
       // get challenge timer from ingrid
-      challenge = await this.getChannelChallengeTimer()
+      challenge = await this.getChallengeTimer()
 
     }
     // determine channel type
@@ -3813,7 +3813,7 @@ class Connext {
     }
   }
 
-  async getChannelChallengeTimer () {
+  async getChallengeTimer () {
     const response = await this.networking.get(`ledgerchannel/challenge`)
     return response.data.challenge
   }

@@ -49,7 +49,7 @@ describe('getChannelTimer()', function () {
     })
 
     it('should return 3600', async () => {
-      const timer = await client.getChannelChallengeTimer()
+      const timer = await client.getChallengeTimer()
       expect(timer).to.equal(3600)
     })
 
