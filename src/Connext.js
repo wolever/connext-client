@@ -476,7 +476,7 @@ class Connext {
 
     const channel = await this.getLcByPartyA(recipient)
     // verify channel is open
-    if (CHANNEL_STATES[channel.state] !== 1) {
+    if (CHANNEL_STATES[channel.state] !== CHANNEL_STATES.LCS_OPENED) {
       throw new LCUpdateError(methodName, 'Channel is not in the right state')
     }
     // verify recipient is in channel
@@ -1228,7 +1228,7 @@ class Connext {
         throw new LCCloseError(methodName, 'Cannot close channel with open VCs')
       }
       // empty root hash?
-      if (channelState.vcRootHash !== Connext.generateVcRootHash({ vc0s: [] })) {
+      if (channelState.vcRootHash !== Connext.generateThreadRootHash({ threadInitialStates: [] })) {
         throw new LCCloseError(methodName, 'Cannot close channel with open VCs')
       }
       // i-signed?
@@ -1257,7 +1257,7 @@ class Connext {
         channelId: channel.channelId,
         nonce: 0,
         openVcs: 0,
-        vcRootHash: Connext.generateVcRootHash({ vc0s: [] }),
+        vcRootHash: Connext.generateThreadRootHash({ threadInitialStates: [] }),
         partyA: channel.partyA,
         partyI: this.ingridAddress,
         ethBalanceA: Web3.utils.toBN(channel.ethBalanceA),
@@ -2113,7 +2113,7 @@ class Connext {
     }
 
     // validate update
-    const emptyRootHash = Connext.generateVcRootHash({ vc0s: [] })
+    const emptyRootHash = Connext.generateThreadRootHash({ threadInitialStates: [] })
     const channel = await this.getLcById(channelId)
     let proposedEthBalance, proposedTokenBalance
     if (channel == null) {
@@ -2424,46 +2424,46 @@ class Connext {
   }
 
   // vc0 is array of all existing vc0 sigs for open vcs
-  static generateVcRootHash ({ vc0s }) {
-    const methodName = 'generateVcRootHash'
+  static generateThreadRootHash ({ threadInitialStates }) {
+    const methodName = 'generateThreadRootHash'
     const isArray = { presence: true, isArray: true }
     Connext.validatorsResponseToError(
-      validate.single(vc0s, isArray),
+      validate.single(threadInitialStates, isArray),
       methodName,
-      'vc0s'
+      'threadInitialStates'
     )
     const emptyRootHash =
       '0x0000000000000000000000000000000000000000000000000000000000000000'
-    let vcRootHash
-    if (vc0s.length === 0) {
+    let threadRootHash
+    if (threadInitialStates.length === 0) {
       // reset to initial value -- no open VCs
-      vcRootHash = emptyRootHash
+      threadRootHash = emptyRootHash
     } else {
-      const merkle = Connext.generateMerkleTree(vc0s)
-      vcRootHash = Utils.bufferToHex(merkle.getRoot())
+      const merkle = Connext.generateMerkleTree(threadInitialStates)
+      threadRootHash = Utils.bufferToHex(merkle.getRoot())
     }
 
-    return vcRootHash
+    return threadRootHash
   }
 
-  static generateMerkleTree (vc0s) {
-    const methodName = 'generateVcRootHash'
+  static generateMerkleTree (threadInitialStates) {
+    const methodName = 'generateMerkleTree'
     const isArray = { presence: true, isArray: true }
     Connext.validatorsResponseToError(
-      validate.single(vc0s, isArray),
+      validate.single(threadInitialStates, isArray),
       methodName,
-      'vc0s'
+      'threadInitialStates'
     )
-    if (vc0s.length === 0) {
+    if (threadInitialStates.length === 0) {
       throw new Error('Cannot create a Merkle tree with 0 leaves.')
     }
     const emptyRootHash =
       '0x0000000000000000000000000000000000000000000000000000000000000000'
     let merkle
-    let elems = vc0s.map(vc0 => {
+    let elems = threadInitialStates.map(threadInitialState => {
       // vc0 is the initial state of each vc
       // hash each initial state and convert hash to buffer
-      const hash = Connext.createThreadStateUpdateFingerprint(vc0)
+      const hash = Connext.createThreadStateUpdateFingerprint(threadInitialState)
       const vcBuf = Utils.hexToBuffer(hash)
       return vcBuf
     })
@@ -2748,7 +2748,7 @@ class Connext {
 
     // verify requires --> already checked in deposit() fn, necessary?
     const channel = await this.getLcById(channelId)
-    if (CHANNEL_STATES[channel.state] !== 1) {
+    if (CHANNEL_STATES[channel.state] !== CHANNEL_STATES.LCS_OPENED) {
       throw new ContractError(methodName, 'Channel is not open')
     }
     if (
@@ -2915,7 +2915,7 @@ class Connext {
       sender = accounts[0].toLowerCase()
     }
     // verify sigs
-    const emptyRootHash = Connext.generateVcRootHash({ vc0s: [] })
+    const emptyRootHash = Connext.generateThreadRootHash({ threadInitialStates: [] })
     let state = {
       sig: sigI,
       isClose: true,
@@ -3227,8 +3227,8 @@ class Connext {
         tokenBalanceA,
         tokenBalanceB: Web3.utils.toBN('0'),
       })
-      const vc0s = await this.getVcInitialStates(subchanId)
-      merkle = Connext.generateMerkleTree(vc0s)
+      const threadInitialStates = await this.getVcInitialStates(subchanId)
+      merkle = Connext.generateMerkleTree(threadInitialStates)
       let mproof = merkle.proof(Utils.hexToBuffer(stateHash))
 
       proof = []
@@ -3976,7 +3976,7 @@ class Connext {
     }
   }
 
-  // ingrid verifies the vc0s and sets up vc and countersigns lc updates
+  // ingrid verifies the threadInitialStates and sets up vc and countersigns lc updates
   async joinVcHandler ({ lcSig, vcSig, channelId }) {
     // validate params
     const methodName = 'joinVcHandler'
@@ -4139,7 +4139,7 @@ class Connext {
 
     let threadInitialStates = await this.getVcInitialStates(channel.channelId)
     threadInitialStates.push(threadInitialState) // add new vc state to hash
-    let newRootHash = Connext.generateVcRootHash({ vc0s: threadInitialStates })
+    let newRootHash = Connext.generateThreadRootHash({ threadInitialStates: threadInitialStates })
 
     // new LC balances should reflect the VC deposits
     // new balanceA = balanceA - (their VC balance)
@@ -4229,7 +4229,7 @@ class Connext {
     threadInitialStates = threadInitialStates.filter(threadState => {
       return threadState.channelId !== latestThreadState.channelId
     })
-    const newRootHash = Connext.generateVcRootHash({ vc0s: threadInitialStates })
+    const newRootHash = Connext.generateThreadRootHash({ threadInitialStates: threadInitialStates })
 
     // add balance from thread to channel balance
     const subchanEthBalanceA = signer.toLowerCase() === latestThreadState.partyA ? Web3.utils.toBN(subchan.ethBalanceA).add(Web3.utils.toBN(latestThreadState.ethBalanceA)) : Web3.utils.toBN(subchan.ethBalanceA).add(Web3.utils.toBN(latestThreadState.ethBalanceB))

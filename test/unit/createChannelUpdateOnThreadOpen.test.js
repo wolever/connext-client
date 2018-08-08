@@ -79,8 +79,8 @@ describe('createChannelUpdateOnThreadOpen()', () => {
         channelId: channel.channelId,
         nonce: 1,
         openVcs: 1,
-        vcRootHash: Connext.generateVcRootHash({
-          vc0s: [threadInitialState]
+        vcRootHash: Connext.generateThreadRootHash({
+          threadInitialStates: [threadInitialState]
         }),
         partyA,
         partyI: ingridAddress,
@@ -122,8 +122,8 @@ describe('createChannelUpdateOnThreadOpen()', () => {
         channelId: channel.channelId,
         nonce: 1,
         openVcs: 1,
-        vcRootHash: Connext.generateVcRootHash({
-          vc0s: [threadInitialState]
+        vcRootHash: Connext.generateThreadRootHash({
+          threadInitialStates: [threadInitialState]
         }),
         partyA,
         partyI: ingridAddress,
@@ -165,8 +165,8 @@ describe('createChannelUpdateOnThreadOpen()', () => {
         channelId: channel.channelId,
         nonce: 1,
         openVcs: 1,
-        vcRootHash: Connext.generateVcRootHash({
-          vc0s: [threadInitialState]
+        vcRootHash: Connext.generateThreadRootHash({
+          threadInitialStates: [threadInitialState]
         }),
         partyA,
         partyI: ingridAddress,

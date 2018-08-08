@@ -68,7 +68,7 @@ describe('fastCloseThreadHandler()', () => {
         channelId: '0x1000000000000000000000000000000000000000000000000000000000000000',
         nonce: 2,
         openVcs: 0,
-        vcRootHash: Connext.generateVcRootHash({ vc0s: [] }),
+        vcRootHash: Connext.generateThreadRootHash({ threadInitialStates: [] }),
         partyA,
         balanceA: {
           tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('4.9', 'ether')),
@@ -103,7 +103,7 @@ describe('fastCloseThreadHandler()', () => {
         channelId: '0x3000000000000000000000000000000000000000000000000000000000000000',
         nonce: 2,
         openVcs: 0,
-        vcRootHash: Connext.generateVcRootHash({ vc0s: [] }),
+        vcRootHash: Connext.generateThreadRootHash({ threadInitialStates: [] }),
         partyA: partyC,
         balanceA: {
           tokenDeposit: Web3.utils.toBN('0'),
@@ -137,7 +137,7 @@ describe('fastCloseThreadHandler()', () => {
         channelId: '0x4000000000000000000000000000000000000000000000000000000000000000',
         nonce: 2,
         openVcs: 0,
-        vcRootHash: Connext.generateVcRootHash({ vc0s: [] }),
+        vcRootHash: Connext.generateThreadRootHash({ threadInitialStates: [] }),
         partyA: partyD,
         balanceA: {
           tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('4.9', 'ether')),

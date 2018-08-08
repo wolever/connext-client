@@ -74,7 +74,7 @@ describe('updateChannelStateContractHandler()', () => {
       }
       const nonce = 2
       const openVcs = 0
-      const vcRootHash = Connext.generateVcRootHash({ vc0s: [] })
+      const vcRootHash = Connext.generateThreadRootHash({ threadInitialStates: [] })
       const hash = Connext.createChannelStateUpdateFingerprint({
         channelId,
         isClose: false,
@@ -116,7 +116,7 @@ describe('updateChannelStateContractHandler()', () => {
       }
       const nonce = 2
       const openVcs = 0
-      const vcRootHash = Connext.generateVcRootHash({ vc0s: [] })
+      const vcRootHash = Connext.generateThreadRootHash({ threadInitialStates: [] })
       const hash = Connext.createChannelStateUpdateFingerprint({
         channelId,
         isClose: false,
@@ -158,7 +158,7 @@ describe('updateChannelStateContractHandler()', () => {
       }
       const nonce = 2
       const openVcs = 0
-      const vcRootHash = Connext.generateVcRootHash({ vc0s: [] })
+      const vcRootHash = Connext.generateThreadRootHash({ threadInitialStates: [] })
       const hash = Connext.createChannelStateUpdateFingerprint({
         channelId,
         isClose: false,
@@ -204,7 +204,9 @@ describe('updateChannelStateContractHandler()', () => {
         }
         const nonce = 2
         const openVcs = 0
-        const vcRootHash = Connext.generateVcRootHash({ vc0s: [] })
+        const vcRootHash = Connext.generateThreadRootHash({
+          threadInitialStates: []
+        })
         const sigA = '0x1000'
         const sigI = '0x1000'
         try {
@@ -234,7 +236,9 @@ describe('updateChannelStateContractHandler()', () => {
         }
         const nonce = 2
         const openVcs = 0
-        const vcRootHash = Connext.generateVcRootHash({ vc0s: [] })
+        const vcRootHash = Connext.generateThreadRootHash({
+          threadInitialStates: []
+        })
         const sigA = '0x1000'
         const sigI = '0x1000'
         try {
@@ -265,7 +269,9 @@ describe('updateChannelStateContractHandler()', () => {
         }
         const nonce = 2
         const openVcs = 0
-        const vcRootHash = Connext.generateVcRootHash({ vc0s: [] })
+        const vcRootHash = Connext.generateThreadRootHash({
+          threadInitialStates: []
+        })
         const sigA = '0x1000'
         const sigI = '0x1000'
         try {
@@ -293,7 +299,9 @@ describe('updateChannelStateContractHandler()', () => {
         }
         const nonce = 2
         const openVcs = 0
-        const vcRootHash = Connext.generateVcRootHash({ vc0s: [] })
+        const vcRootHash = Connext.generateThreadRootHash({
+          threadInitialStates: []
+        })
         const sigA = '0x1000'
         const sigI = '0x1000'
         try {
@@ -321,7 +329,9 @@ describe('updateChannelStateContractHandler()', () => {
         }
         const nonce = 2
         const openVcs = 0
-        const vcRootHash = Connext.generateVcRootHash({ vc0s: [] })
+        const vcRootHash = Connext.generateThreadRootHash({
+          threadInitialStates: []
+        })
         const sigA = '0x1000'
         const sigI = '0x1000'
         try {
@@ -350,7 +360,9 @@ describe('updateChannelStateContractHandler()', () => {
         }
         const nonce = 2
         const openVcs = 0
-        const vcRootHash = Connext.generateVcRootHash({ vc0s: [] })
+        const vcRootHash = Connext.generateThreadRootHash({
+          threadInitialStates: []
+        })
         const sigA = '0x1000'
         const sigI = '0x1000'
         try {
@@ -378,7 +390,9 @@ describe('updateChannelStateContractHandler()', () => {
         }
         const nonce = 2
         const openVcs = 0
-        const vcRootHash = Connext.generateVcRootHash({ vc0s: [] })
+        const vcRootHash = Connext.generateThreadRootHash({
+          threadInitialStates: []
+        })
         const sigA = '0x1000'
         const sigI = '0x1000'
         try {
@@ -406,7 +420,9 @@ describe('updateChannelStateContractHandler()', () => {
         }
         const nonce = 2
         const openVcs = 0
-        const vcRootHash = Connext.generateVcRootHash({ vc0s: [] })
+        const vcRootHash = Connext.generateThreadRootHash({
+          threadInitialStates: []
+        })
         const sigA = '0x1000'
         const sigI = '0x1000'
         try {
@@ -435,7 +451,9 @@ describe('updateChannelStateContractHandler()', () => {
         }
         const nonce = 2
         const openVcs = 0
-        const vcRootHash = Connext.generateVcRootHash({ vc0s: [] })
+        const vcRootHash = Connext.generateThreadRootHash({
+          threadInitialStates: []
+        })
         const sigA = '0x1000'
         const sigI = '0x1000'
         try {
@@ -466,7 +484,9 @@ describe('updateChannelStateContractHandler()', () => {
           ethDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
         }
         const openVcs = 0
-        const vcRootHash = Connext.generateVcRootHash({ vc0s: [] })
+        const vcRootHash = Connext.generateThreadRootHash({
+          threadInitialStates: []
+        })
         const sigA = '0x1000'
         const sigI = '0x1000'
         try {
@@ -497,7 +517,9 @@ describe('updateChannelStateContractHandler()', () => {
         }
         const nonce = null
         const openVcs = 0
-        const vcRootHash = Connext.generateVcRootHash({ vc0s: [] })
+        const vcRootHash = Connext.generateThreadRootHash({
+          threadInitialStates: []
+        })
         const sigA = '0x1000'
         const sigI = '0x1000'
         try {
@@ -529,7 +551,9 @@ describe('updateChannelStateContractHandler()', () => {
         }
         const nonce = 'fail'
         const openVcs = 0
-        const vcRootHash = Connext.generateVcRootHash({ vc0s: [] })
+        const vcRootHash = Connext.generateThreadRootHash({
+          threadInitialStates: []
+        })
         const sigA = '0x1000'
         const sigI = '0x1000'
         try {
@@ -560,7 +584,9 @@ describe('updateChannelStateContractHandler()', () => {
           ethDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
         }
         const nonce = 2
-        const vcRootHash = Connext.generateVcRootHash({ vc0s: [] })
+        const vcRootHash = Connext.generateThreadRootHash({
+          threadInitialStates: []
+        })
         const sigA = '0x1000'
         const sigI = '0x1000'
         try {
@@ -591,7 +617,9 @@ describe('updateChannelStateContractHandler()', () => {
         }
         const nonce = 2
         const openVcs = null
-        const vcRootHash = Connext.generateVcRootHash({ vc0s: [] })
+        const vcRootHash = Connext.generateThreadRootHash({
+          threadInitialStates: []
+        })
         const sigA = '0x1000'
         const sigI = '0x1000'
         try {
@@ -623,7 +651,9 @@ describe('updateChannelStateContractHandler()', () => {
         }
         const nonce = 2
         const openVcs = 'fail'
-        const vcRootHash = Connext.generateVcRootHash({ vc0s: [] })
+        const vcRootHash = Connext.generateThreadRootHash({
+          threadInitialStates: []
+        })
         const sigA = '0x1000'
         const sigI = '0x1000'
         try {
@@ -749,7 +779,9 @@ describe('updateChannelStateContractHandler()', () => {
         }
         const nonce = 2
         const openVcs = 0
-        const vcRootHash = Connext.generateVcRootHash({ vc0s: [] })
+        const vcRootHash = Connext.generateThreadRootHash({
+          threadInitialStates: []
+        })
         const sigI = '0x1000'
         try {
           await client.updateChannelStateContractHandler({
@@ -779,7 +811,9 @@ describe('updateChannelStateContractHandler()', () => {
         }
         const nonce = 2
         const openVcs = 0
-        const vcRootHash = Connext.generateVcRootHash({ vc0s: [] })
+        const vcRootHash = Connext.generateThreadRootHash({
+          threadInitialStates: []
+        })
         const sigA = null
         const sigI = '0x1000'
         try {
@@ -811,7 +845,9 @@ describe('updateChannelStateContractHandler()', () => {
         }
         const nonce = 2
         const openVcs = 0
-        const vcRootHash = Connext.generateVcRootHash({ vc0s: [] })
+        const vcRootHash = Connext.generateThreadRootHash({
+          threadInitialStates: []
+        })
         const sigA = 'fail'
         const sigI = '0x1000'
         try {
@@ -843,7 +879,9 @@ describe('updateChannelStateContractHandler()', () => {
         }
         const nonce = 2
         const openVcs = 0
-        const vcRootHash = Connext.generateVcRootHash({ vc0s: [] })
+        const vcRootHash = Connext.generateThreadRootHash({
+          threadInitialStates: []
+        })
         const sigA = '0x1000'
         try {
           await client.updateChannelStateContractHandler({
@@ -873,7 +911,9 @@ describe('updateChannelStateContractHandler()', () => {
         }
         const nonce = 2
         const openVcs = 0
-        const vcRootHash = Connext.generateVcRootHash({ vc0s: [] })
+        const vcRootHash = Connext.generateThreadRootHash({
+          threadInitialStates: []
+        })
         const sigA = '0x1000'
         const sigI = null
         try {
@@ -905,7 +945,9 @@ describe('updateChannelStateContractHandler()', () => {
         }
         const nonce = 2
         const openVcs = 0
-        const vcRootHash = Connext.generateVcRootHash({ vc0s: [] })
+        const vcRootHash = Connext.generateThreadRootHash({
+          threadInitialStates: []
+        })
         const sigA = '0x1000'
         const sigI = 'fail'
         try {
@@ -937,7 +979,9 @@ describe('updateChannelStateContractHandler()', () => {
         }
         const nonce = 2
         const openVcs = 0
-        const vcRootHash = Connext.generateVcRootHash({ vc0s: [] })
+        const vcRootHash = Connext.generateThreadRootHash({
+          threadInitialStates: []
+        })
         const sigA = '0x1000'
         const sigI = '0x1000'
         const sender = 'fail'

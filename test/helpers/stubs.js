@@ -85,8 +85,8 @@ export async function createStubbedHub (
             tokenBalanceI: '0',
             nonce: 1,
             openVcs: 1,
-            vcRootHash: Connext.generateVcRootHash({
-              vc0s: [
+            vcRootHash: Connext.generateThreadRootHash({
+              threadInitialStates: [
                 {
                   channelId: threadId1,
                   partyA: partyA.toLowerCase(),
@@ -116,8 +116,8 @@ export async function createStubbedHub (
             tokenBalanceI: '0',
             nonce: 1,
             openVcs: 1,
-            vcRootHash: Connext.generateVcRootHash({
-              vc0s: [
+            vcRootHash: Connext.generateThreadRootHash({
+              threadInitialStates: [
                 {
                   channelId: threadId2, // eth only thread
                   partyA: partyC.toLowerCase(),
@@ -147,8 +147,8 @@ export async function createStubbedHub (
             tokenBalanceI: '0',
             nonce: 1,
             openVcs: 1,
-            vcRootHash: Connext.generateVcRootHash({
-              vc0s: [
+            vcRootHash: Connext.generateThreadRootHash({
+              threadInitialStates: [
                 {
                   channelId: threadId3, // eth only thread
                   partyA: partyD.toLowerCase(),
@@ -178,8 +178,8 @@ export async function createStubbedHub (
             tokenBalanceI: Web3.utils.toWei('5', 'ether').toString(),
             nonce: 3,
             openVcs: 3,
-            vcRootHash: Connext.generateVcRootHash({
-              vc0s: [
+            vcRootHash: Connext.generateThreadRootHash({
+              threadInitialStates: [
                 {
                   channelId: threadId1, // eth + token thread
                   partyA: partyA.toLowerCase(),
@@ -230,7 +230,7 @@ export async function createStubbedHub (
             tokenBalanceI: '0',
             nonce: 0,
             openVcs: 0,
-            vcRootHash: Connext.generateVcRootHash({ vc0s: [] })
+            vcRootHash: Connext.generateThreadRootHash({ threadInitialStates: [] })
           }
         ])
       stubHub
@@ -247,7 +247,7 @@ export async function createStubbedHub (
             tokenBalanceI: '0',
             nonce: 0,
             openVcs: 0,
-            vcRootHash: Connext.generateVcRootHash({ vc0s: [] })
+            vcRootHash: Connext.generateThreadRootHash({ threadInitialStates: [] })
           }
         ])
       break
@@ -288,7 +288,7 @@ export async function createStubbedHub (
         tokenBalanceI: Web3.utils.toWei('0.1', 'ether').toString(),
         nonce: 2,
         openVcs: 0,
-        vcRootHash: Connext.generateVcRootHash({ vc0s: [] })
+        vcRootHash: Connext.generateThreadRootHash({ threadInitialStates: [] })
       }])
 
       // channel 2 - receiver
@@ -303,7 +303,7 @@ export async function createStubbedHub (
         tokenBalanceI: '0',
         nonce: 6, // open thread 1-3, close thread 1-3
         openVcs: 0,
-        vcRootHash: Connext.generateVcRootHash({ vc0s: [] })
+        vcRootHash: Connext.generateThreadRootHash({ threadInitialStates: [] })
       }])
 
       // channel 3 - ETH (viewer)
@@ -318,7 +318,7 @@ export async function createStubbedHub (
         tokenBalanceI: '0',
         nonce: 2,
         openVcs: 0,
-        vcRootHash: Connext.generateVcRootHash({ vc0s: [] })
+        vcRootHash: Connext.generateThreadRootHash({ threadInitialStates: [] })
       }])
 
       // channel 4 - TOKEN (viewer)
@@ -333,7 +333,7 @@ export async function createStubbedHub (
         tokenBalanceI: Web3.utils.toWei('0.1', 'ether').toString(),
         nonce: 2,
         openVcs: 0,
-        vcRootHash: Connext.generateVcRootHash({ vc0s: [] })
+        vcRootHash: Connext.generateThreadRootHash({ threadInitialStates: [] })
       }])
       break
 
@@ -427,8 +427,8 @@ export async function createStubbedHub (
         tokenBalanceI: '0',
         nonce: 1,
         openVcs: 1,
-        vcRootHash: Connext.generateVcRootHash({
-          vc0s: [
+        vcRootHash: Connext.generateThreadRootHash({
+          threadInitialStates: [
             {
               channelId: threadId1,
               partyA: partyA.toLowerCase(),
@@ -455,8 +455,8 @@ export async function createStubbedHub (
         tokenBalanceI: Web3.utils.toWei('5', 'ether').toString(),
         nonce: 3,
         openVcs: 3,
-        vcRootHash: Connext.generateVcRootHash({
-          vc0s: [
+        vcRootHash: Connext.generateThreadRootHash({
+          threadInitialStates: [
             {
               channelId: threadId1, // eth + token thread
               partyA: partyA.toLowerCase(),
@@ -503,8 +503,8 @@ export async function createStubbedHub (
         tokenBalanceI: '0',
         nonce: 1,
         openVcs: 1,
-        vcRootHash: Connext.generateVcRootHash({
-          vc0s: [
+        vcRootHash: Connext.generateThreadRootHash({
+          threadInitialStates: [
             {
               channelId: threadId2,
               partyA: partyC.toLowerCase(),
@@ -531,8 +531,8 @@ export async function createStubbedHub (
         tokenBalanceI: '0',
         nonce: 1,
         openVcs: 1,
-        vcRootHash: Connext.generateVcRootHash({
-          vc0s: [
+        vcRootHash: Connext.generateThreadRootHash({
+          threadInitialStates: [
             {
               channelId: threadId3,
               partyA: partyA.toLowerCase(),
@@ -567,7 +567,7 @@ export async function createStubbedHub (
         tokenBalanceI: '0',
         nonce: 0,
         openVcs: 0,
-        vcRootHash: Connext.generateVcRootHash({ vc0s: [] })
+        vcRootHash: Connext.generateThreadRootHash({ threadInitialStates: [] })
       })
 
       // channel 2 - receiver
@@ -582,7 +582,7 @@ export async function createStubbedHub (
         tokenBalanceI: Web3.utils.toWei('5', 'ether').toString(),
         nonce: 0,
         openVcs: 0,
-        vcRootHash: Connext.generateVcRootHash({ vc0s: [] })
+        vcRootHash: Connext.generateThreadRootHash({ threadInitialStates: [] })
       })
 
       // channel 3 - ETH (viewer)
@@ -597,7 +597,7 @@ export async function createStubbedHub (
         tokenBalanceI: '0',
         nonce: 0,
         openVcs: 0,
-        vcRootHash: Connext.generateVcRootHash({ vc0s: [] })
+        vcRootHash: Connext.generateThreadRootHash({ threadInitialStates: [] })
       })
 
       // channel 4 - TOKEN (viewer)
@@ -612,7 +612,7 @@ export async function createStubbedHub (
         tokenBalanceI: '0',
         nonce: 0,
         openVcs: 0,
-        vcRootHash: Connext.generateVcRootHash({ vc0s: [] })
+        vcRootHash: Connext.generateThreadRootHash({ threadInitialStates: [] })
       })
       break
 
@@ -629,7 +629,7 @@ export async function createStubbedHub (
         tokenBalanceI: Web3.utils.toWei('0.1', 'ether').toString(),
         nonce: 2,
         openVcs: 0,
-        vcRootHash: Connext.generateVcRootHash({ vc0s: [] })
+        vcRootHash: Connext.generateThreadRootHash({ threadInitialStates: [] })
       })
 
       // channel 2 - receiver
@@ -644,7 +644,7 @@ export async function createStubbedHub (
         tokenBalanceI: '0',
         nonce: 6, // open thread 1-3, close thread 1-3
         openVcs: 0,
-        vcRootHash: Connext.generateVcRootHash({ vc0s: [] })
+        vcRootHash: Connext.generateThreadRootHash({ threadInitialStates: [] })
       })
 
       // channel 3 - ETH (viewer)
@@ -659,7 +659,7 @@ export async function createStubbedHub (
         tokenBalanceI: '0',
         nonce: 2,
         openVcs: 0,
-        vcRootHash: Connext.generateVcRootHash({ vc0s: [] })
+        vcRootHash: Connext.generateThreadRootHash({ threadInitialStates: [] })
       })
 
       // channel 4 - TOKEN (viewer)
@@ -674,7 +674,7 @@ export async function createStubbedHub (
         tokenBalanceI: Web3.utils.toWei('0.1', 'ether').toString(),
         nonce: 2,
         openVcs: 0,
-        vcRootHash: Connext.generateVcRootHash({ vc0s: [] })
+        vcRootHash: Connext.generateThreadRootHash({ threadInitialStates: [] })
       })
       break
 
@@ -913,7 +913,7 @@ export async function createStubbedHub (
         isClose: false,
         nonce: 2,
         openVcs: 0,
-        vcRootHash: Connext.generateVcRootHash({ vc0s: [] }),
+        vcRootHash: Connext.generateThreadRootHash({ threadInitialStates: [] }),
         partyA: partyA.toLowerCase(),
         partyI: ingridAddress,
         ethBalanceA: Web3.utils.toBN(Web3.utils.toWei('4.9', 'ether')),
@@ -1036,7 +1036,7 @@ export async function createStubbedHub (
     isClose: true,
     nonce: 3,
     openVcs: 0,
-    vcRootHash: Connext.generateVcRootHash({ vc0s: [] }),
+    vcRootHash: Connext.generateThreadRootHash({ threadInitialStates: [] }),
     ethBalanceA: Web3.utils.toBN(Web3.utils.toWei('4.9', 'ether')),
     ethBalanceI: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
     tokenBalanceA: Web3.utils.toBN(Web3.utils.toWei('4.9', 'ether')),
@@ -1048,7 +1048,7 @@ export async function createStubbedHub (
     isClose: true,
     nonce: 3,
     openVcs: 0,
-    vcRootHash: Connext.generateVcRootHash({ vc0s: [] }),
+    vcRootHash: Connext.generateThreadRootHash({ threadInitialStates: [] }),
     ethBalanceA: Web3.utils.toBN(Web3.utils.toWei('4.9', 'ether')).toString(),
     ethBalanceI: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')).toString(),
     tokenBalanceA: Web3.utils.toBN(Web3.utils.toWei('4.9', 'ether')).toString(),
@@ -1065,7 +1065,7 @@ export async function createStubbedHub (
     isClose: true,
     nonce: 7,
     openVcs: 0,
-    vcRootHash: Connext.generateVcRootHash({ vc0s: [] }),
+    vcRootHash: Connext.generateThreadRootHash({ threadInitialStates: [] }),
     ethBalanceA: Web3.utils.toBN(Web3.utils.toWei('0.2', 'ether')),
     ethBalanceI: Web3.utils.toBN(Web3.utils.toWei('0', 'ether')),
     tokenBalanceA: Web3.utils.toBN(Web3.utils.toWei('0.2', 'ether')),
@@ -1077,7 +1077,7 @@ export async function createStubbedHub (
     isClose: true,
     nonce: 7,
     openVcs: 0,
-    vcRootHash: Connext.generateVcRootHash({ vc0s: [] }),
+    vcRootHash: Connext.generateThreadRootHash({ threadInitialStates: [] }),
     ethBalanceA: Web3.utils.toBN(Web3.utils.toWei('0.2', 'ether')).toString(),
     ethBalanceI: '0',
     tokenBalanceA: Web3.utils.toBN(Web3.utils.toWei('0.2', 'ether')).toString(),
@@ -1094,7 +1094,7 @@ export async function createStubbedHub (
     isClose: true,
     nonce: 3,
     openVcs: 0,
-    vcRootHash: Connext.generateVcRootHash({ vc0s: [] }),
+    vcRootHash: Connext.generateThreadRootHash({ threadInitialStates: [] }),
     ethBalanceA: Web3.utils.toBN(Web3.utils.toWei('4.9', 'ether')),
     ethBalanceI: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
     tokenBalanceA: Web3.utils.toBN(Web3.utils.toWei('0', 'ether')),
@@ -1106,7 +1106,7 @@ export async function createStubbedHub (
     isClose: true,
     nonce: 3,
     openVcs: 0,
-    vcRootHash: Connext.generateVcRootHash({ vc0s: [] }),
+    vcRootHash: Connext.generateThreadRootHash({ threadInitialStates: [] }),
     ethBalanceA: Web3.utils.toBN(Web3.utils.toWei('4.9', 'ether')).toString(),
     ethBalanceI: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')).toString(),
     tokenBalanceA: '0',
@@ -1123,7 +1123,7 @@ export async function createStubbedHub (
     isClose: true,
     nonce: 3,
     openVcs: 0,
-    vcRootHash: Connext.generateVcRootHash({ vc0s: [] }),
+    vcRootHash: Connext.generateThreadRootHash({ threadInitialStates: [] }),
     ethBalanceA: Web3.utils.toBN(Web3.utils.toWei('0', 'ether')),
     ethBalanceI: Web3.utils.toBN(Web3.utils.toWei('0', 'ether')),
     tokenBalanceA: Web3.utils.toBN(Web3.utils.toWei('4.9', 'ether')),
@@ -1135,7 +1135,7 @@ export async function createStubbedHub (
     isClose: true,
     nonce: 3,
     openVcs: 0,
-    vcRootHash: Connext.generateVcRootHash({ vc0s: [] }),
+    vcRootHash: Connext.generateThreadRootHash({ threadInitialStates: [] }),
     ethBalanceA: '0',
     ethBalanceI: '0',
     tokenBalanceA: Web3.utils.toBN(Web3.utils.toWei('4.9', 'ether')).toString(),
@@ -1153,7 +1153,7 @@ export async function createStubbedHub (
     isClose: false,
     nonce: 2,
     openVcs: 0,
-    vcRootHash: Connext.generateVcRootHash({ vc0s: [] }),
+    vcRootHash: Connext.generateThreadRootHash({ threadInitialStates: [] }),
     ethBalanceA: Web3.utils.toBN(Web3.utils.toWei('4.9', 'ether')),
     ethBalanceI: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
     tokenBalanceA: Web3.utils.toBN(Web3.utils.toWei('4.9', 'ether')),
@@ -1169,7 +1169,7 @@ export async function createStubbedHub (
       partyI: ingridAddress,
       nonce: 2,
       openVcs: 0,
-      vcRootHash: Connext.generateVcRootHash({ vc0s: [] }),
+      vcRootHash: Connext.generateThreadRootHash({ threadInitialStates: [] }),
       ethBalanceA: Web3.utils.toBN(Web3.utils.toWei('4.9', 'ether')).toString(),
       ethBalanceI: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')).toString(),
       tokenBalanceA: Web3.utils
@@ -1190,7 +1190,7 @@ export async function createStubbedHub (
     isClose: false,
     nonce: 6,
     openVcs: 0,
-    vcRootHash: Connext.generateVcRootHash({ vc0s: [] }),
+    vcRootHash: Connext.generateThreadRootHash({ threadInitialStates: [] }),
     ethBalanceA: Web3.utils.toBN(Web3.utils.toWei('0.2', 'ether')),
     ethBalanceI: Web3.utils.toBN(Web3.utils.toWei('0', 'ether')),
     tokenBalanceA: Web3.utils.toBN(Web3.utils.toWei('0.2', 'ether')),
@@ -1206,7 +1206,7 @@ export async function createStubbedHub (
       partyI: ingridAddress,
       nonce: 6,
       openVcs: 0,
-      vcRootHash: Connext.generateVcRootHash({ vc0s: [] }),
+      vcRootHash: Connext.generateThreadRootHash({ threadInitialStates: [] }),
       ethBalanceA: Web3.utils.toBN(Web3.utils.toWei('0.2', 'ether')).toString(),
       ethBalanceI: '0',
       tokenBalanceA: Web3.utils
@@ -1225,7 +1225,7 @@ export async function createStubbedHub (
     isClose: false,
     nonce: 2,
     openVcs: 0,
-    vcRootHash: Connext.generateVcRootHash({ vc0s: [] }),
+    vcRootHash: Connext.generateThreadRootHash({ threadInitialStates: [] }),
     ethBalanceA: Web3.utils.toBN(Web3.utils.toWei('4.9', 'ether')),
     ethBalanceI: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
     tokenBalanceA: Web3.utils.toBN(Web3.utils.toWei('0', 'ether')),
@@ -1241,7 +1241,7 @@ export async function createStubbedHub (
       partyI: ingridAddress,
       nonce: 2,
       openVcs: 0,
-      vcRootHash: Connext.generateVcRootHash({ vc0s: [] }),
+      vcRootHash: Connext.generateThreadRootHash({ threadInitialStates: [] }),
       ethBalanceA: Web3.utils.toBN(Web3.utils.toWei('4.9', 'ether')).toString(),
       ethBalanceI: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')).toString(),
       tokenBalanceA: '0',
@@ -1258,7 +1258,7 @@ export async function createStubbedHub (
     isClose: false,
     nonce: 2,
     openVcs: 0,
-    vcRootHash: Connext.generateVcRootHash({ vc0s: [] }),
+    vcRootHash: Connext.generateThreadRootHash({ threadInitialStates: [] }),
     tokenBalanceA: Web3.utils.toBN(Web3.utils.toWei('4.9', 'ether')),
     tokenBalanceI: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
     ethBalanceA: Web3.utils.toBN(Web3.utils.toWei('0', 'ether')),
@@ -1274,7 +1274,7 @@ export async function createStubbedHub (
       partyI: ingridAddress,
       nonce: 2,
       openVcs: 0,
-      vcRootHash: Connext.generateVcRootHash({ vc0s: [] }),
+      vcRootHash: Connext.generateThreadRootHash({ threadInitialStates: [] }),
       tokenBalanceA: Web3.utils
         .toBN(Web3.utils.toWei('4.9', 'ether'))
         .toString(),

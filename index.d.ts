@@ -39,9 +39,9 @@ declare class Connext {
 
   static recoverSignerFromVCStateUpdate(opts: Connext.RecoverVcUpdate): string;
 
-  static generateVcRootHash(vc0s: any): string;
+  static generateThreadRootHash(threadInitialStates: any): string;
 
-  static generateMerkleTree(vc0s: Connext.VcUpdate[]): string;
+  static generateMerkleTree(threadInitialStates: Connext.VcUpdate[]): string;
 }
 
 declare namespace Connext {
@@ -99,8 +99,8 @@ declare namespace Connext {
     sig: string;
   }
 
-  export interface Vc0s {
-    vc0s: VcUpdate[];
+  export interface ThreadInitialStates {
+    threadInitialStates: VcUpdate[];
   }
 
   export interface Channel {
