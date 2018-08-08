@@ -3757,7 +3757,7 @@ class Connext {
     Connext.validatorsResponseToError(
       validate.single(channelId, isHexStrict),
       methodName,
-      'lcchannelIdId'
+      'channelId'
     )
     try {
       const res = await this.networking.get(`ledgerchannel/${channelId}`)
