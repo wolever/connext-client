@@ -16,7 +16,7 @@ This function is to be called by the "B" party in a unidirectional scheme.
 
 ```javascript
 const channelId = 10 // pushed to partyB from Hub
-await connext.joinChannel(channelId)
+await connext.joinThread(channelId)
 ```
 
 

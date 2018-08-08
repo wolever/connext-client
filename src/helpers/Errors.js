@@ -1,4 +1,6 @@
-export class VCCloseError extends Error {
+const Web3 = require('web3')
+
+export class ThreadCloseError extends Error {
   constructor (...args) {
     // [methodName, statusCode, message]
     super(args)
@@ -12,11 +14,11 @@ export class VCCloseError extends Error {
       this.statusCode = 650
       this.message = `[${this.statusCode}: ${args[0]}] ${args[1]}`
     }
-    Error.captureStackTrace(this, VCCloseError)
+    Error.captureStackTrace(this, ThreadCloseError)
   }
 }
 
-export class LCCloseError extends Error {
+export class ChannelCloseError extends Error {
   constructor (...args) {
     // [methodName, statusCode, message]
     super(args)
@@ -30,11 +32,11 @@ export class LCCloseError extends Error {
       this.statusCode = 600
       this.message = `[${this.statusCode}: ${args[0]}] ${args[1]}`
     }
-    Error.captureStackTrace(this, LCCloseError)
+    Error.captureStackTrace(this, ChannelCloseError)
   }
 }
 
-export class VCUpdateError extends Error {
+export class ThreadUpdateError extends Error {
   constructor (...args) {
     // [methodName, statusCode, message]
     super(args)
@@ -48,11 +50,11 @@ export class VCUpdateError extends Error {
       this.statusCode = 550
       this.message = `[${this.statusCode}: ${args[0]}] ${args[1]}`
     }
-    Error.captureStackTrace(this, VCUpdateError)
+    Error.captureStackTrace(this, ThreadUpdateError)
   }
 }
 
-export class LCUpdateError extends Error {
+export class ChannelUpdateError extends Error {
   constructor (...args) {
     // [methodName, statusCode, message]
     super(args)
@@ -66,11 +68,11 @@ export class LCUpdateError extends Error {
       this.statusCode = 500
       this.message = `[${this.statusCode}: ${args[0]}] ${args[1]}`
     }
-    Error.captureStackTrace(this, LCUpdateError)
+    Error.captureStackTrace(this, ChannelUpdateError)
   }
 }
 
-export class VCOpenError extends Error {
+export class ThreadOpenError extends Error {
   constructor (...args) {
     // [methodName, statusCode, message]
     super(args)
@@ -83,11 +85,11 @@ export class VCOpenError extends Error {
       this.statusCode = 450
       this.message = `[${this.statusCode}: ${args[0]}] ${args[1]}`
     }
-    Error.captureStackTrace(this, VCOpenError)
+    Error.captureStackTrace(this, ThreadOpenError)
   }
 }
 
-export class LCOpenError extends Error {
+export class ChannelOpenError extends Error {
   constructor (...args) {
     // [methodName, statusCode, message]
     super(args)
@@ -101,7 +103,7 @@ export class LCOpenError extends Error {
       this.statusCode = 400
       this.message = `[${this.statusCode}: ${args[0]}] ${args[1]}`
     }
-    Error.captureStackTrace(this, LCOpenError)
+    Error.captureStackTrace(this, ChannelOpenError)
   }
 }
 
@@ -159,6 +161,17 @@ export function validatePurchasePurchaseMeta (meta) {
   }
   const { productSku, productName } = meta.fields
   if (!productSku || !productName) {
+    return false
+  } else {
+    return true
+  }
+}
+
+export function validateBalance (value) {
+  if (!value) {
+    return false
+  }
+  if (!Web3.utils.isBN(value) || value.isNeg()) {
     return false
   } else {
     return true
