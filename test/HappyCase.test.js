@@ -681,7 +681,7 @@ describe('Connext happy case testing flow', () => {
       // get objs
       lcA = await client.getChannelByPartyA(partyA)
       // calculate expected balance
-      let prevState = await client.getLcStateByNonce({
+      let prevState = await client.getChannelStateByNonce({
         lcId: lcA.channelId,
         nonce: lcA.nonce - 1
       })
@@ -693,7 +693,7 @@ describe('Connext happy case testing flow', () => {
 
     it('should increase lcA balanceI by vcA.balanceB', async () => {
       // calculate expected balance
-      let prevState = await client.getLcStateByNonce({
+      let prevState = await client.getChannelStateByNonce({
         lcId: lcA.channelId,
         nonce: lcA.nonce - 1
       })
@@ -707,7 +707,7 @@ describe('Connext happy case testing flow', () => {
       // get objs
       lcB = await client.getChannelByPartyA(partyB)
       // calculate expected balance
-      let prevState = await client.getLcStateByNonce({
+      let prevState = await client.getChannelStateByNonce({
         lcId: subchanBI,
         nonce: lcB.nonce - 1
       })
@@ -719,7 +719,7 @@ describe('Connext happy case testing flow', () => {
 
     it('should decrease lcB balanceI by vcA.balanceA', async () => {
       // calculate expected balance
-      let prevState = await client.getLcStateByNonce({
+      let prevState = await client.getChannelStateByNonce({
         lcId: subchanBI,
         nonce: lcB.nonce - 1
       })
@@ -776,7 +776,7 @@ describe('Connext happy case testing flow', () => {
       // get objs
       lcC = await client.getChannelByPartyA(partyC)
       // calculate expected balance
-      let prevState = await client.getLcStateByNonce({
+      let prevState = await client.getChannelStateByNonce({
         lcId: lcC.channelId,
         nonce: lcC.nonce - 1
       })
@@ -788,7 +788,7 @@ describe('Connext happy case testing flow', () => {
 
     it('should increase lcC balanceI by vcC.balanceB', async () => {
       // calculate expected balance
-      let prevState = await client.getLcStateByNonce({
+      let prevState = await client.getChannelStateByNonce({
         lcId: lcC.channelId,
         nonce: lcC.nonce - 1
       })
@@ -802,7 +802,7 @@ describe('Connext happy case testing flow', () => {
       // get objs
       lcB = await client.getChannelByPartyA(partyB)
       // calculate expected balance
-      let prevState = await client.getLcStateByNonce({
+      let prevState = await client.getChannelStateByNonce({
         lcId: subchanBI,
         nonce: lcB.nonce - 1
       })
@@ -814,7 +814,7 @@ describe('Connext happy case testing flow', () => {
 
     it('should decrease lcB balanceI by vcA.balanceA', async () => {
       // calculate expected balance
-      let prevState = await client.getLcStateByNonce({
+      let prevState = await client.getChannelStateByNonce({
         lcId: subchanBI,
         nonce: lcB.nonce - 1
       })

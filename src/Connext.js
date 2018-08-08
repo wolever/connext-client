@@ -1456,7 +1456,7 @@ class Connext {
     }
 
     // TO DO: factor out into above section
-    let state = await this.getLcStateByNonce({ channelId, nonce })
+    let state = await this.getChannelStateByNonce({ channelId, nonce })
 
     // verify sigI
     const signer = Connext.recoverSignerFromChannelStateUpdate({
@@ -3541,14 +3541,14 @@ class Connext {
     return response.data
   }
 
-  async getLcStateByNonce ({ lcId, nonce }) {
-    const methodName = 'getLcStateByNonce'
+  async getChannelStateByNonce ({ channelId, nonce }) {
+    const methodName = 'getChannelStateByNonce'
     const isHexStrict = { presence: true, isHexStrict: true }
     const isPositiveInt = { presence: true, isPositiveInt: true }
     Connext.validatorsResponseToError(
-      validate.single(lcId, isHexStrict),
+      validate.single(channelId, isHexStrict),
       methodName,
-      'lcId'
+      'channelId'
     )
     Connext.validatorsResponseToError(
       validate.single(nonce, isPositiveInt),
@@ -3556,7 +3556,7 @@ class Connext {
       'nonce'
     )
     const response = await this.networking.get(
-      `ledgerchannel/${lcId}/update/nonce/${nonce}`
+      `ledgerchannel/${channelId}/update/nonce/${nonce}`
     )
     return response.data
   }
