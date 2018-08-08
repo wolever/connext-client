@@ -65,7 +65,7 @@ describe('createChannelUpdateOnThreadClose()', () => {
       latestThreadState.channelId = threadId
       latestThreadState.partyA = partyA.toLowerCase()
       latestThreadState.partyB = partyB.toLowerCase()
-      const subchan = await client.getLcByPartyA(partyA)
+      const subchan = await client.getChannelByPartyA(partyA)
       const signer = partyA
 
       const sigAtoI = await client.createChannelUpdateOnThreadClose({
@@ -99,7 +99,7 @@ describe('createChannelUpdateOnThreadClose()', () => {
       latestThreadState.channelId = threadId
       latestThreadState.partyA = partyC.toLowerCase()
       latestThreadState.partyB = partyB.toLowerCase()
-      const subchan = await client.getLcByPartyA(partyC)
+      const subchan = await client.getChannelByPartyA(partyC)
       const signer = partyC
 
       const sigAtoI = await client.createChannelUpdateOnThreadClose({
@@ -133,7 +133,7 @@ describe('createChannelUpdateOnThreadClose()', () => {
       latestThreadState.channelId = threadId
       latestThreadState.partyA = partyD.toLowerCase()
       latestThreadState.partyB = partyB.toLowerCase()
-      const subchan = await client.getLcByPartyA(partyD)
+      const subchan = await client.getChannelByPartyA(partyD)
       const signer = partyD
 
       const sigAtoI = await client.createChannelUpdateOnThreadClose({

@@ -116,7 +116,7 @@ validate.validators.isValidMeta = value => {
   }
 }
 
-validate.validators.isLcStatus = value => {
+validate.validators.isChannelStatus = value => {
   if (
     CHANNEL_STATES[value] === -1
   ) {
@@ -393,7 +393,7 @@ class Connext {
       throw new LCOpenError(methodName, `Error determining channel deposit types.`)
     }
     // verify channel does not exist between ingrid and sender
-    let channel = await this.getLcByPartyA(sender)
+    let channel = await this.getChannelByPartyA(sender)
     if (channel != null && CHANNEL_STATES[channel.state] === 1) {
       throw new LCOpenError(
         methodName,
@@ -474,7 +474,7 @@ class Connext {
       recipient = accounts[0].toLowerCase()
     }
 
-    const channel = await this.getLcByPartyA(recipient)
+    const channel = await this.getChannelByPartyA(recipient)
     // verify channel is open
     if (CHANNEL_STATES[channel.state] !== CHANNEL_STATES.LCS_OPENED) {
       throw new LCUpdateError(methodName, 'Channel is not in the right state')
@@ -551,8 +551,8 @@ class Connext {
       throw new VCOpenError(methodName, 'Cannot open a channel with yourself')
     }
 
-    const subchanA = await this.getLcByPartyA(sender)
-    const subchanB = await this.getLcByPartyA(to)
+    const subchanA = await this.getChannelByPartyA(sender)
+    const subchanB = await this.getChannelByPartyA(to)
 
     // validate the subchannels exist
     if (!subchanB || !subchanA) {
@@ -693,8 +693,8 @@ class Connext {
       sender = vc.partyB
     }
     // get channels
-    const lcA = await this.getLcByPartyA(vc.partyA)
-    const lcB = await this.getLcByPartyA(sender)
+    const lcA = await this.getChannelByPartyA(vc.partyA)
+    const lcB = await this.getChannelByPartyA(sender)
     if (lcB === null || lcA === null) {
       throw new VCOpenError(
         methodName,
@@ -1116,7 +1116,7 @@ class Connext {
     latestThreadState.partyA = thread.partyA
     latestThreadState.partyB = thread.partyB
     // get partyA ledger channel
-    const subchan = await this.getLcByPartyA(sender)
+    const subchan = await this.getChannelByPartyA(sender)
     // generate decomposed lc update
     const sigAtoI = await this.createChannelUpdateOnThreadClose({
       latestThreadState,
@@ -1207,7 +1207,7 @@ class Connext {
       const accounts = await this.web3.eth.getAccounts()
       sender = accounts[0].toLowerCase()
     }
-    const channel = await this.getLcByPartyA(sender.toLowerCase())
+    const channel = await this.getChannelByPartyA(sender.toLowerCase())
     // channel must be open
     if (CHANNEL_STATES[channel.state] !== CHANNEL_STATES.LCS_OPENED) {
       throw new LCCloseError(methodName, 'Channel is in invalid state')
@@ -1348,7 +1348,7 @@ class Connext {
       const accounts = await this.web3.eth.getAccounts()
       sender = accounts[0].toLowerCase()
     }
-    const lc = await this.getLcByPartyA(sender)
+    const lc = await this.getChannelByPartyA(sender)
     const results = await this.byzantineCloseChannelContractHandler({
       lcId: lc.channelId,
       sender: sender
@@ -2294,7 +2294,7 @@ class Connext {
       'balanceB'
     )
     // verify subchannel
-    const subchanA = await this.getLcByPartyA(partyA)
+    const subchanA = await this.getChannelByPartyA(partyA)
 
     // verify channel state update
     let thread = await this.getThreadById(channelId)
@@ -3626,7 +3626,7 @@ class Connext {
     }
     if (status !== null) {
       Connext.validatorsResponseToError(
-        validate.single(status, isLcStatus),
+        validate.single(status, isChannelStatus),
         methodName,
         'status'
       )
@@ -3778,9 +3778,9 @@ class Connext {
    * @param {Number} status - (optional) state of virtual channel, can be 0 (opening), 1 (opened), 2 (settling), or 3 (settled). Defaults to open channel.
    * @returns {Promise} resolves to ledger channel object
    */
-  async getLcByPartyA (partyA = null, status = null) {
-    const methodName = 'getLcByPartyA'
-    const isLcStatus = { presence: true, isLcStatus: true }
+  async getChannelByPartyA (partyA = null, status = null) {
+    const methodName = 'getChannelByPartyA'
+    const isChannelStatus = { presence: true, isChannelStatus: true }
     const isAddress = { presence: true, isAddress: true }
     if (partyA !== null) {
       Connext.validatorsResponseToError(
@@ -3794,7 +3794,7 @@ class Connext {
     }
     if (status !== null) {
       Connext.validatorsResponseToError(
-        validate.single(status, isLcStatus),
+        validate.single(status, isChannelStatus),
         methodName,
         'status'
       )

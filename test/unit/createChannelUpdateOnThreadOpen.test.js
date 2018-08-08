@@ -51,7 +51,7 @@ describe('createChannelUpdateOnThreadOpen()', () => {
     })
 
     it('should correctly generate and sign a channel update representing opening a new ETH/TOKEN thread', async () => {
-      const channel = await client.getLcByPartyA(partyA)
+      const channel = await client.getChannelByPartyA(partyA)
       const threadInitialState = {
         channelId: '0x0100000000000000000000000000000000000000000000000000000000000000',
         partyA: partyA.toLowerCase(),
@@ -94,7 +94,7 @@ describe('createChannelUpdateOnThreadOpen()', () => {
     })
 
     it('should correctly generate and sign a channel update representing opening a new ETH thread', async () => {
-      const channel = await client.getLcByPartyA(partyA)
+      const channel = await client.getChannelByPartyA(partyA)
       const threadInitialState = {
         channelId: '0x0100000000000000000000000000000000000000000000000000000000000000',
         partyA: partyA.toLowerCase(),
@@ -137,7 +137,7 @@ describe('createChannelUpdateOnThreadOpen()', () => {
     })
 
     it('should correctly generate and sign a channel update representing opening a new TOKEN thread', async () => {
-      const channel = await client.getLcByPartyA(partyA)
+      const channel = await client.getChannelByPartyA(partyA)
       const threadInitialState = {
         channelId: '0x0100000000000000000000000000000000000000000000000000000000000000',
         partyA: partyA.toLowerCase(),

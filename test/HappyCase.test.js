@@ -242,10 +242,10 @@ describe('Connext happy case testing flow', () => {
     it(
       'request ingrid deposits into lcB for all viewer lc.balanceA',
       async () => {
-        lcA = await client.getLcByPartyA(partyA)
-        lcC = await client.getLcByPartyA(partyC)
-        lcD = await client.getLcByPartyA(partyD)
-        lcE = await client.getLcByPartyA(partyE)
+        lcA = await client.getChannelByPartyA(partyA)
+        lcC = await client.getChannelByPartyA(partyC)
+        lcD = await client.getChannelByPartyA(partyD)
+        lcE = await client.getChannelByPartyA(partyE)
 
         const deposit = Web3.utils
           .toBN(lcA.balanceA)
@@ -679,7 +679,7 @@ describe('Connext happy case testing flow', () => {
 
     it('should increase lcA balanceA by vcA.balanceA remainder', async () => {
       // get objs
-      lcA = await client.getLcByPartyA(partyA)
+      lcA = await client.getChannelByPartyA(partyA)
       // calculate expected balance
       let prevState = await client.getLcStateByNonce({
         lcId: lcA.channelId,
@@ -705,7 +705,7 @@ describe('Connext happy case testing flow', () => {
 
     it('should increase lcB balanceA by vcA.balanceB', async () => {
       // get objs
-      lcB = await client.getLcByPartyA(partyB)
+      lcB = await client.getChannelByPartyA(partyB)
       // calculate expected balance
       let prevState = await client.getLcStateByNonce({
         lcId: subchanBI,
@@ -774,7 +774,7 @@ describe('Connext happy case testing flow', () => {
     // ensure math stays the same
     it('should increase lcC balanceA by vcC.balanceA remainder', async () => {
       // get objs
-      lcC = await client.getLcByPartyA(partyC)
+      lcC = await client.getChannelByPartyA(partyC)
       // calculate expected balance
       let prevState = await client.getLcStateByNonce({
         lcId: lcC.channelId,
@@ -800,7 +800,7 @@ describe('Connext happy case testing flow', () => {
 
     it('should increase lcB balanceA by vcC.balanceB', async () => {
       // get objs
-      lcB = await client.getLcByPartyA(partyB)
+      lcB = await client.getChannelByPartyA(partyB)
       // calculate expected balance
       let prevState = await client.getLcStateByNonce({
         lcId: subchanBI,
@@ -859,7 +859,7 @@ describe('Connext happy case testing flow', () => {
     }).timeout(8000)
 
     it(`should transfer balanceA of partyA's lc into wallet`, async () => {
-      lcA = await client.getLcByPartyA(partyA)
+      lcA = await client.getChannelByPartyA(partyA)
       const expected = Web3.utils.fromWei(
         Web3.utils.toBN(lcA.balanceA).add(Web3.utils.toBN(prevBalA)),
         'ether'
@@ -954,7 +954,7 @@ describe('Connext happy case testing flow', () => {
     }).timeout(5000)
 
     it(`should transfer balanceA partyB's into wallet`, async () => {
-      lcB = await client.getLcByPartyA(partyB)
+      lcB = await client.getChannelByPartyA(partyB)
       const expected = Web3.utils.fromWei(
         Web3.utils.toBN(lcB.balanceA).add(Web3.utils.toBN(prevBalA)),
         'ether'

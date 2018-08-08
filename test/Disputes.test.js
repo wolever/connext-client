@@ -91,28 +91,28 @@ describe('Connext dispute cases', function () {
 
       console.log('Creating/Fetching channels with hub..')
       // register partyA if lcA doesnt exist
-      lcA = await client.getLcByPartyA(partyA)
+      lcA = await client.getChannelByPartyA(partyA)
       if (lcA == null) {
         subchanAI = await client.register(initialDeposit, partyA, 15)
         await timeout(30000) // wait for chainsaw and autojoin
-        lcA = await client.getLcByPartyA(partyA)
+        lcA = await client.getChannelByPartyA(partyA)
       } else {
         subchanAI = lcA.channelId
       }
       // register partyB if lcB doesnt exist
-      lcB = await client.getLcByPartyA(partyB)
+      lcB = await client.getChannelByPartyA(partyB)
       if (lcB == null) {
         subchanBI = await client.register(initialDeposit, partyB, 15)
         await timeout(30000) // wait for chainsaw and autojoin
-        lcB = await client.getLcByPartyA(partyA)
+        lcB = await client.getChannelByPartyA(partyA)
       } else {
         subchanBI = lcB.channelId
       }
       // if insufficient funds, request ingrid deposit into subchanBI
       console.log('Ensuring sufficient balances in hub channels..')
       // refetch channels
-      lcA = await client.getLcByPartyA(partyA)
-      lcB = await client.getLcByPartyA(partyB)
+      lcA = await client.getChannelByPartyA(partyA)
+      lcB = await client.getChannelByPartyA(partyB)
       if (
         Web3.utils
           .toBN(lcB.balanceI)
