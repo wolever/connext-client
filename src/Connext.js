@@ -69,7 +69,7 @@ validate.validators.isValidChannelType = value => {
   if (!value) {
     return `Value vannot be undefined`
   } else if (CHANNEL_TYPES[value] === -1) {
-    return `${value} is not the `
+    return `${value} is not a valid channel type`
   }
 }
 validate.validators.isValidDepositObject = value => {
