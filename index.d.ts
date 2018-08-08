@@ -31,11 +31,11 @@ declare class Connext {
 
   closeChannels(channels: Connext.Channel[]): Promise<any>;
 
-  static createChannelStateUpdateFingerprint(opts: Connext.ChannelUpdate): string;
+  static createChannelStateUpdateFingerprint(opts: Connext.FingerprintChannelUpdate): string;
 
   static recoverSignerFromChannelStateUpdate(opts: Connext.RecoverChannelUpdate): string;
 
-  static createThreadStateUpdateFingerprint(opts: Connext.ThreadUpdate): string;
+  static createThreadStateUpdateFingerprint(opts: Connext.FingerprintThreadUpdate): string;
 
   static recoverSignerFromThreadStateUpdate(opts: Connext.RecoverThreadUpdate): string;
 
@@ -87,8 +87,7 @@ declare namespace Connext {
     balanceI: BalanceOptions;
   }
 
-  export interface RecoverChannelUpdate {
-    sig: string;
+  export interface FingerprintChannelUpdate {
     isClose: boolean;
     channelId: string;
     nonce: number;
@@ -102,6 +101,10 @@ declare namespace Connext {
     tokenBalanceI: BigNumber;
   }
 
+  export interface RecoverChannelUpdate extends FingerprintChannelUpdate {
+    sig: string;
+  }
+
   export interface ThreadUpdate {
     channelId: string;
     nonce: number;
@@ -109,19 +112,21 @@ declare namespace Connext {
     partyB: string;
     balanceA: BalanceOptions;
     balanceB: BalanceOptions;
-
   }
 
-  export interface RecoverThreadUpdate {
-    sig: string;
-    ethBalanceA: BigNumber;
-    ethBalanceI: BigNumber;
-    tokenBalanceA: BigNumber;
-    tokenBalanceI: BigNumber;
+  export interface FingerprintThreadUpdate {
+    channelId: string;
+    nonce: number;
+    partyA: string;
+    partyB: string;
     ethBalanceA: BigNumber;
     ethBalanceB: BigNumber;
     tokenBalanceA: BigNumber;
     tokenBalanceB: BigNumber;
+  }
+
+  export interface RecoverThreadUpdate extends FingerprintThreadUpdate {
+    sig: string;
   }
 
   export interface ThreadInitialStates {
