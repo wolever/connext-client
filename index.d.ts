@@ -41,7 +41,7 @@ declare class Connext {
 
   static generateThreadRootHash(threadInitialStates: any): string;
 
-  static generateMerkleTree(threadInitialStates: Connext.ThreadUpdate[]): string;
+  static generateMerkleTree(threadInitialStates: Connext.FingerprintThreadUpdate[]): string;
 }
 
 declare namespace Connext {
