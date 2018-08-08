@@ -287,9 +287,9 @@ describe('Connext happy case testing flow', () => {
   })
 
   describe('Creating a virtual channel', () => {
-    describe('openChannel between partyA and partyB', () => {
+    describe('openThread between partyA and partyB', () => {
       it('should create a new virtual channel between partyA and partyB', async () => {
-        vcIdA = await client.openChannel({
+        vcIdA = await client.openThread({
           to: partyB,
           sender: partyA,
           deposit: initialDeposit
@@ -346,15 +346,15 @@ describe('Connext happy case testing flow', () => {
       // error cases
     })
 
-    describe('partyB should be able to recieve multiple openChannel updates', () => {
+    describe('partyB should be able to recieve multiple openThread updates', () => {
       it('should create a new virtual channel between partyC and partyB', async () => {
-        vcIdC = await client.openChannel({ to: partyB, sender: partyC })
+        vcIdC = await client.openThread({ to: partyB, sender: partyC })
         vcC = await client.getThreadById(vcIdC)
         expect(vcC.channelId).to.equal(vcIdC)
       })
 
       it('should create a new virtual channel between partyD and partyB', async () => {
-        vcIdD = await client.openChannel({ to: partyB, sender: partyD })
+        vcIdD = await client.openThread({ to: partyB, sender: partyD })
         vcD = await client.getThreadById(vcIdD)
         expect(vcD.channelId).to.equal(vcIdD)
       })
@@ -545,7 +545,7 @@ describe('Connext happy case testing flow', () => {
     })
 
     it('should not prohibit the creation of a virtual channel', async () => {
-      vcIdE = await client.openChannel({ to: partyB, sender: partyE })
+      vcIdE = await client.openThread({ to: partyB, sender: partyE })
       vcE = await client.getThreadById(vcIdE)
       expect(vcE.channelId).to.equal(vcIdE)
     })
@@ -844,7 +844,7 @@ describe('Connext happy case testing flow', () => {
     let prevBalA, finalBalA, prevBalI, finalBalI
 
     before('Create a virtual channel that has not been closed', async () => {
-      vcIdC = await client.openChannel({ to: partyB, sender: partyC })
+      vcIdC = await client.openThread({ to: partyB, sender: partyC })
       vcC = await client.getThreadById(vcIdC)
     })
 

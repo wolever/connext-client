@@ -16,7 +16,7 @@ May have to be called after a timeout period to ensure the transaction performed
 ```javascript
 // use register to create channel on chain
 const deposit = Web3.utils.toBN(1000)
-const channelId = await connext.openChannel(deposit)
+const channelId = await connext.openThread(deposit)
 const response = await connext.requestjoinThread(channelId)
 ```
 

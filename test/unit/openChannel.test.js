@@ -25,7 +25,7 @@ let accounts
 let partyA
 let partyB
 
-describe('openChannel()', function () {
+describe('openThread()', function () {
   before('init client and accounts', async () => {
     accounts = await web3.eth.getAccounts()
     ingridAddress = accounts[0]
@@ -64,7 +64,7 @@ describe('openChannel()', function () {
         tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('1', 'ether')),
         ethDeposit: Web3.utils.toBN(Web3.utils.toWei('1', 'ether'))
       }
-      const channelId = await client.openChannel({
+      const channelId = await client.openThread({
         to,
         deposit,
         sender: partyA
@@ -89,7 +89,7 @@ describe('openChannel()', function () {
         ethDeposit: Web3.utils.toBN(Web3.utils.toWei('1', 'ether'))
       }
       try {
-        await client.openChannel({ deposit, sender: partyA })
+        await client.openThread({ deposit, sender: partyA })
       } catch (e) {
         expect(e.statusCode).to.equal(200)
       }
@@ -102,7 +102,7 @@ describe('openChannel()', function () {
         ethDeposit: Web3.utils.toBN(Web3.utils.toWei('1', 'ether'))
       }
       try {
-        await client.openChannel({ to, deposit, sender: partyA })
+        await client.openThread({ to, deposit, sender: partyA })
       } catch (e) {
         expect(e.statusCode).to.equal(200)
       }
@@ -115,7 +115,7 @@ describe('openChannel()', function () {
         ethDeposit: Web3.utils.toBN(Web3.utils.toWei('1', 'ether'))
       }
       try {
-        await client.openChannel({ to, deposit, sender: partyA })
+        await client.openThread({ to, deposit, sender: partyA })
       } catch (e) {
         expect(e.statusCode).to.equal(200)
       }
@@ -125,7 +125,7 @@ describe('openChannel()', function () {
       const to = partyB
       const deposit = 'fail'
       try {
-        await client.openChannel({ to, deposit, sender: partyA })
+        await client.openThread({ to, deposit, sender: partyA })
       } catch (e) {
         expect(e.statusCode).to.equal(200)
       }
@@ -138,7 +138,7 @@ describe('openChannel()', function () {
         ethDeposit: Web3.utils.toBN(Web3.utils.toWei('1', 'ether'))
       }
       try {
-        await client.openChannel({ to, deposit, sender: partyA })
+        await client.openThread({ to, deposit, sender: partyA })
       } catch (e) {
         expect(e.statusCode).to.equal(200)
       }
@@ -151,7 +151,7 @@ describe('openChannel()', function () {
         ethDeposit: 'fail'
       }
       try {
-        await client.openChannel({ to, deposit, sender: partyA })
+        await client.openThread({ to, deposit, sender: partyA })
       } catch (e) {
         expect(e.statusCode).to.equal(200)
       }
@@ -164,7 +164,7 @@ describe('openChannel()', function () {
         ethDeposit: null
       }
       try {
-        await client.openChannel({ to, deposit, sender: partyA })
+        await client.openThread({ to, deposit, sender: partyA })
       } catch (e) {
         expect(e.statusCode).to.equal(200)
       }
@@ -177,7 +177,7 @@ describe('openChannel()', function () {
         ethDeposit: Web3.utils.toBN('0')
       }
       try {
-        await client.openChannel({ to, deposit, sender: partyA })
+        await client.openThread({ to, deposit, sender: partyA })
       } catch (e) {
         expect(e.statusCode).to.equal(200)
       }
@@ -190,7 +190,7 @@ describe('openChannel()', function () {
         ethDeposit: Web3.utils.toBN(Web3.utils.toWei('1', 'ether'))
       }
       try {
-        await client.openChannel({ to, deposit, sender: 'fail' })
+        await client.openThread({ to, deposit, sender: 'fail' })
       } catch (e) {
         expect(e.statusCode).to.equal(200)
       }

@@ -2,7 +2,7 @@
 
 ## Joining your Connext Hub
 
-After navigating to your application, the user will choose to transact in your ecosystem by opening a channel with your Hub. This can be as simple as a "deposit" button on your frontend which calls the `openChannel()` function in the Connext Client package. We recommend that you convince users to use MetaMask or the Brave browser, as the Client package works natively with these wallets. We plan to add support for other wallets soon. 
+After navigating to your application, the user will choose to transact in your ecosystem by opening a channel with your Hub. This can be as simple as a "deposit" button on your frontend which calls the `openThread()` function in the Connext Client package. We recommend that you convince users to use MetaMask or the Brave browser, as the Client package works natively with these wallets. We plan to add support for other wallets soon. 
 
 After confirming the transaction, the user will have to wait for their deposit to be mined on-chain. This will be the only on-chain transaction that they make until they withdraw from the system.
 

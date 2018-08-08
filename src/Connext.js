@@ -510,7 +510,7 @@ class Connext {
    *
    * @example
    * const myFriendsAddress = "0x627306090abaB3A6e1400e9345bC60c78a8BEf57"
-   * await connext.openChannel({ to: myFriendsAddress })
+   * await connext.openThread({ to: myFriendsAddress })
    *
    * @param {Object} params - the method object
    * @param {String} params.to - ETH address you want to open a virtual channel with
@@ -519,9 +519,9 @@ class Connext {
    * @returns {Promise} resolves to the virtual channel ID recieved by Ingrid
    */
 
-  async openChannel ({ to, deposit = null, sender = null }) {
+  async openThread ({ to, deposit = null, sender = null }) {
     // validate params
-    const methodName = 'openChannel'
+    const methodName = 'openThread'
     const isAddress = { presence: true, isAddress: true }
     const isValidDepositObject = { presence: true, isValidDepositObject: true }
     Connext.validatorsResponseToError(

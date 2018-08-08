@@ -15,7 +15,7 @@ declare class Connext {
 
   checkpoint(): Promise<any>;
 
-  openChannel(opts: Connext.OpenChannelOptions): Promise<any>;
+  openThread(opts: Connext.openThreadOptions): Promise<any>;
 
   joinThread(channelId: string): Promise<any>;
 
@@ -53,7 +53,7 @@ declare namespace Connext {
     contractAddress: string;
   }
 
-  export interface OpenChannelOptions {
+  export interface openThreadOptions {
     to: string;
     deposit: BigNumber;
   }

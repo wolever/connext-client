@@ -138,7 +138,7 @@ describe('Connext dispute cases', function () {
       console.log('Creating/Updating or Fetching thread between A and B..')
       vc = await client.getThreadByParties({ partyA, partyB })
       if (vc == null) {
-        vcId = await client.openChannel({
+        vcId = await client.openThread({
           to: partyB,
           deposit: Web3.utils.toBN(Web3.utils.toWei('1', 'ether')),
           sender: partyA

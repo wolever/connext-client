@@ -1,6 +1,6 @@
-# openChannel
+# openThread
 
-**connext.openChannel\(**initialDeposit, sender, challenge**\)**⇒ `Promise`Opens a channel with the Hub at the address provided when instantiating the Connext instance with the given initial deposit.
+**connext.openThread\(**initialDeposit, sender, challenge**\)**⇒ `Promise`Opens a channel with the Hub at the address provided when instantiating the Connext instance with the given initial deposit.
 
 Sender defaults to accounts\[0\] if not supplied to the register function.
 
@@ -25,6 +25,6 @@ If the Hub is unresponsive, or does not join the channel within the challenge pe
 
 ```javascript
 const deposit = Web3.utils.toBN(Web3.utils.toWei('1', 'ether))
-const ChannelId = await connext.openChannel(deposit)
+const ChannelId = await connext.openThread(deposit)
 ```
 
