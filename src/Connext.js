@@ -2,7 +2,7 @@ const channelManagerAbi = require('../artifacts/LedgerChannel.json')
 const util = require('ethereumjs-util')
 const Web3 = require('web3')
 const validate = require('validate.js')
-const {validateBalance, validateTipPurchaseMeta, validatePurchasePurchaseMeta, LCOpenError, ParameterValidationError, ContractError, VCOpenError, LCUpdateError, VCUpdateError, LCCloseError, VCCloseError} = require('./helpers/Errors')
+const {validateBalance, validateTipPurchaseMeta, validatePurchasePurchaseMeta, ChannelOpenError, ParameterValidationError, ContractError, ThreadOpenError, ChannelUpdateError, ThreadUpdateError, ChannelCloseError, ThreadCloseError} = require('./helpers/Errors')
 const MerkleTree = require('./helpers/MerkleTree')
 const Utils = require('./helpers/utils')
 const crypto = require('crypto')
@@ -390,12 +390,12 @@ class Connext {
     } else if (ethDeposit) {
       channelType = Object.keys(CHANNEL_TYPES)[0]
     } else {
-      throw new LCOpenError(methodName, `Error determining channel deposit types.`)
+      throw new ChannelOpenError(methodName, `Error determining channel deposit types.`)
     }
     // verify channel does not exist between ingrid and sender
     let channel = await this.getChannelByPartyA(sender)
     if (channel != null && CHANNEL_STATES[channel.state] === 1) {
-      throw new LCOpenError(
+      throw new ChannelOpenError(
         methodName,
         401,
         `PartyA has open channel with hub, ID: ${channel.channelId}`
@@ -404,7 +404,7 @@ class Connext {
 
     // verify opening state channel with different account
     if (sender.toLowerCase() === this.ingridAddress.toLowerCase()) {
-      throw new LCOpenError(methodName, 'Cannot open a channel with yourself')
+      throw new ChannelOpenError(methodName, 'Cannot open a channel with yourself')
     }
 
     // generate additional initial lc params
@@ -477,14 +477,14 @@ class Connext {
     const channel = await this.getChannelByPartyA(recipient)
     // verify channel is open
     if (CHANNEL_STATES[channel.state] !== CHANNEL_STATES.LCS_OPENED) {
-      throw new LCUpdateError(methodName, 'Channel is not in the right state')
+      throw new ChannelUpdateError(methodName, 'Channel is not in the right state')
     }
     // verify recipient is in channel
     if (
       channel.partyA.toLowerCase() !== recipient.toLowerCase() &&
       channel.partyI.toLowerCase() !== recipient.toLowerCase()
     ) {
-      throw new LCUpdateError(methodName, 'Recipient is not member of channel')
+      throw new ChannelUpdateError(methodName, 'Recipient is not member of channel')
     }
 
     // call contract handler
@@ -548,7 +548,7 @@ class Connext {
     }
     // not opening channel with yourself
     if (sender.toLowerCase() === to.toLowerCase()) {
-      throw new VCOpenError(methodName, 'Cannot open a channel with yourself')
+      throw new ThreadOpenError(methodName, 'Cannot open a channel with yourself')
     }
 
     const subchanA = await this.getChannelByPartyA(sender)
@@ -556,14 +556,14 @@ class Connext {
 
     // validate the subchannels exist
     if (!subchanB || !subchanA) {
-      throw new VCOpenError(
+      throw new ThreadOpenError(
         methodName,
         'Missing one or more required subchannels'
       )
     }
     // subchannels in right state
     if (CHANNEL_STATES[subchanB.state] !== 1 || CHANNEL_STATES[subchanA.state] !== 1) {
-      throw new VCOpenError(
+      throw new ThreadOpenError(
         methodName,
         'One or more required subchannels are in the incorrect state'
       )
@@ -578,13 +578,13 @@ class Connext {
       }
     }
     if (deposit.tokenDeposit && Web3.utils.toBN(subchanA.tokenBalanceA).lt(deposit.tokenDeposit)) {
-      throw new VCOpenError(
+      throw new ThreadOpenError(
         methodName,
         'Insufficient value to open channel with provided token deposit'
       )
     }
     if (deposit.ethDeposit && Web3.utils.toBN(subchanA.ethBalanceA).lt(deposit.ethDeposit)) {
-      throw new VCOpenError(
+      throw new ThreadOpenError(
         methodName,
         'Insufficient value to open channel with provided ETH deposit'
       )
@@ -593,7 +593,7 @@ class Connext {
     // vc does not already exist
     let channel = await this.getThreadByParties({ partyA: sender, partyB: to })
     if (channel) {
-      throw new VCOpenError(
+      throw new ThreadOpenError(
         methodName,
         451,
         `Parties already have open virtual channel: ${channel.channelId}`
@@ -610,7 +610,7 @@ class Connext {
     } else if (deposit.ethDeposit) {
       updateType = Object.keys(CHANNEL_TYPES)[0]
     } else {
-      throw new VCOpenError(methodName, `Error determining channel deposit types.`)
+      throw new ThreadOpenError(methodName, `Error determining channel deposit types.`)
     }
 
     // generate initial vcstate
@@ -648,7 +648,7 @@ class Connext {
         lcSig: sigAtoI
       })
     } catch (e) {
-      throw new VCOpenError(methodName, e.message)
+      throw new ThreadOpenError(methodName, e.message)
     }
     return response.data.channelId
   }
@@ -677,7 +677,7 @@ class Connext {
     )
     const thread = await this.getThreadById(threadId)
     if (thread === null) {
-      throw new VCOpenError(methodName, 'Channel not found')
+      throw new ThreadOpenError(methodName, 'Channel not found')
     }
     const accounts = await this.web3.eth.getAccounts()
     if (sender) {
@@ -691,14 +691,14 @@ class Connext {
     }
 
     if (sender.toLowerCase() !== thread.partyB) {
-      throw new VCOpenError(methodName, 'Incorrect channel counterparty')
+      throw new ThreadOpenError(methodName, 'Incorrect channel counterparty')
     }
 
     // get channels
     const subchanA = await this.getChannelByPartyA(thread.partyA)
     const subchanB = await this.getChannelByPartyA(sender)
     if (subchanB === null || subchanA === null) {
-      throw new VCOpenError(
+      throw new ThreadOpenError(
         methodName,
         'Missing one or more required subchannels'
       )
@@ -706,7 +706,7 @@ class Connext {
 
     // subchannels in right state
     if (CHANNEL_STATES[subchanB.state] !== CHANNEL_STATES.LCS_OPENED || CHANNEL_STATES[subchanA.state] !== CHANNEL_STATES.LCS_OPENED) {
-      throw new VCOpenError(
+      throw new ThreadOpenError(
         methodName,
         'One or more required subchannels are in the incorrect state'
       )
@@ -766,7 +766,7 @@ class Connext {
           updatedPayment = await this.threadUpdateHandler(payment, index + 1, sender)
           break
         default:
-          throw new LCUpdateError(methodName, 'Incorrect channel type specified. Must be CHANNEL or THREAD.')
+          throw new ChannelUpdateError(methodName, 'Incorrect channel type specified. Must be CHANNEL or THREAD.')
       }
       updatedPayment.type = payment.type
       return updatedPayment
@@ -827,15 +827,15 @@ class Connext {
     const channel = await this.getChannelById(channelId)
     // must exist
     if (!channel) {
-      throw new LCUpdateError(methodName, 'Channel not found')
+      throw new ChannelUpdateError(methodName, 'Channel not found')
     }
     // must be opened or joined
     if (CHANNEL_STATES[channel.state] !== 1 && CHANNEL_STATES[channel.state] !== 2) {
-      throw new LCUpdateError(methodName, 'Channel is in invalid state')
+      throw new ChannelUpdateError(methodName, 'Channel is in invalid state')
     }
     // must be senders channel
     if (channel.partyA.toLowerCase() !== sender.toLowerCase() && channel.partyI.toLowerCase() !== sender.toLowerCase()) {
-      throw new LCUpdateError(methodName, 'Not your channel')
+      throw new ChannelUpdateError(methodName, 'Not your channel')
     }
     // check what type of update
     let updateType
@@ -854,38 +854,38 @@ class Connext {
     switch (CHANNEL_TYPES[updateType]) {
       case CHANNEL_TYPES.ETH:
         if (balanceB.ethDeposit.lte(Web3.utils.toBN(channel.ethBalanceI))) {
-          throw new LCUpdateError(methodName, 'Channel updates can only increase hub ETH balance')
+          throw new ChannelUpdateError(methodName, 'Channel updates can only increase hub ETH balance')
         }
         proposedEthBalance = Web3.utils.toBN(balanceA.ethDeposit).add(balanceB.ethDeposit) // proposed balance
         break
       
       case CHANNEL_TYPES.TOKEN:
         if (balanceB.tokenDeposit.lte(Web3.utils.toBN(channel.tokenBalanceI))) {
-          throw new LCUpdateError(methodName, 'Channel updates can only increase hub balance')
+          throw new ChannelUpdateError(methodName, 'Channel updates can only increase hub balance')
         }
         proposedTokenBalance = Web3.utils.toBN(balanceA.tokenDeposit).add(balanceB.tokenDeposit)
         break
       
       case CHANNEL_TYPES.TOKEN_ETH:
         if (balanceB.ethDeposit.lte(Web3.utils.toBN(channel.ethBalanceI))) {
-          throw new LCUpdateError(methodName, 'Channel updates can only increase hub ETH balance')
+          throw new ChannelUpdateError(methodName, 'Channel updates can only increase hub ETH balance')
         }
         if (balanceB.tokenDeposit.lte(Web3.utils.toBN(channel.tokenBalanceI))) {
-          throw new LCUpdateError(methodName, 'Channel updates can only increase hub balance')
+          throw new ChannelUpdateError(methodName, 'Channel updates can only increase hub balance')
         }
         proposedEthBalance = Web3.utils.toBN(balanceA.ethDeposit).add(balanceB.ethDeposit)
         proposedTokenBalance = Web3.utils.toBN(balanceA.tokenDeposit).add(balanceB.tokenDeposit)
         break
       default:
-        throw new LCUpdateError(methodName, 'Error determining channel deposit types.')
+        throw new ChannelUpdateError(methodName, 'Error determining channel deposit types.')
     }
 
     if (proposedEthBalance && !proposedEthBalance.eq(channelEthBal)) {
-      throw new LCUpdateError(methodName, 'Channel ETH balance cannot change')
+      throw new ChannelUpdateError(methodName, 'Channel ETH balance cannot change')
     }
 
     if (proposedTokenBalance && !proposedTokenBalance.eq(channelTokenBal)) {
-      throw new LCUpdateError(methodName, 'Channel token balance cannot change')
+      throw new ChannelUpdateError(methodName, 'Channel token balance cannot change')
     }
 
     // generate signature
@@ -962,14 +962,14 @@ class Connext {
     const thread = await this.getThreadById(channelId)
     // must exist
     if (!thread) {
-      throw new VCUpdateError(methodName, 'Thread not found')
+      throw new ThreadUpdateError(methodName, 'Thread not found')
     }
     // channel must be opening or opened
     if (THREAD_STATES[thread.state] === 3) {
-      throw new VCUpdateError(methodName, 'Thread is in invalid state')
+      throw new ThreadUpdateError(methodName, 'Thread is in invalid state')
     }
     if (sender.toLowerCase() !== thread.partyA.toLowerCase()) {
-      throw new VCUpdateError(methodName, 'Thread updates can only be made by partyA.')
+      throw new ThreadUpdateError(methodName, 'Thread updates can only be made by partyA.')
     }
 
     // check what type of update
@@ -989,38 +989,38 @@ class Connext {
     switch (CHANNEL_TYPES[updateType]) {
       case CHANNEL_TYPES.ETH:
         if (balanceB.ethDeposit.lte(Web3.utils.toBN(thread.ethBalanceB))) {
-          throw new VCUpdateError(methodName, 'Thread updates can only increase partyB ETH balance')
+          throw new ThreadUpdateError(methodName, 'Thread updates can only increase partyB ETH balance')
         }
         proposedEthBalance = Web3.utils.toBN(balanceA.ethDeposit).add(balanceB.ethDeposit) // proposed balance
         break
       
       case CHANNEL_TYPES.TOKEN:
         if (balanceB.tokenDeposit.lte(Web3.utils.toBN(thread.tokenBalanceB))) {
-          throw new VCUpdateError(methodName, 'Thread updates can only increase partyB token balance')
+          throw new ThreadUpdateError(methodName, 'Thread updates can only increase partyB token balance')
         }
         proposedTokenBalance = Web3.utils.toBN(balanceA.tokenDeposit).add(balanceB.tokenDeposit)
         break
       
       case CHANNEL_TYPES.TOKEN_ETH:
         if (balanceB.ethDeposit.lte(Web3.utils.toBN(thread.ethBalanceB))) {
-          throw new VCUpdateError(methodName, 'Thread updates can only increase partyB ETH balance')
+          throw new ThreadUpdateError(methodName, 'Thread updates can only increase partyB ETH balance')
         }
         if (balanceB.tokenDeposit.lte(Web3.utils.toBN(thread.tokenBalanceB))) {
-          throw new VCUpdateError(methodName, 'Thread updates can only increase partyB token balance')
+          throw new ThreadUpdateError(methodName, 'Thread updates can only increase partyB token balance')
         }
         proposedEthBalance = Web3.utils.toBN(balanceA.ethDeposit).add(balanceB.ethDeposit)
         proposedTokenBalance = Web3.utils.toBN(balanceA.tokenDeposit).add(balanceB.tokenDeposit)
         break
       default:
-        throw new VCUpdateError(methodName, 'Error determining thread deposit types.')
+        throw new ThreadUpdateError(methodName, 'Error determining thread deposit types.')
     }
 
     if (proposedEthBalance && !proposedEthBalance.eq(threadEthBalance)) {
-      throw new VCUpdateError(methodName, 'Thread ETH balance cannot change')
+      throw new ThreadUpdateError(methodName, 'Thread ETH balance cannot change')
     }
 
     if (proposedTokenBalance && !proposedTokenBalance.eq(threadTokenBalance)) {
-      throw new VCUpdateError(methodName, 'Thread token balance cannot change')
+      throw new ThreadUpdateError(methodName, 'Thread token balance cannot change')
     }
 
     // generate new state update
@@ -1090,11 +1090,11 @@ class Connext {
     // get latest state in vc
     const thread = await this.getThreadById(threadId)
     if (!thread) {
-      throw new VCCloseError(methodName, 'Thread not found')
+      throw new ThreadCloseError(methodName, 'Thread not found')
     }
     // must be opened or opening
     if (THREAD_STATES[thread.state] !== THREAD_STATES.VCS_OPENING && THREAD_STATES[thread.state] !== THREAD_STATES.VCS_OPENED) {
-      throw new VCCloseError(methodName, 'Thread is in invalid state')
+      throw new ThreadCloseError(methodName, 'Thread is in invalid state')
     }
     const latestThreadState = await this.getLatestThreadState(threadId)
     // verify latestThreadState was signed by agentA
@@ -1110,7 +1110,7 @@ class Connext {
       tokenBalanceB: Web3.utils.toBN(latestThreadState.tokenBalanceB),
     })
     if (signer.toLowerCase() !== thread.partyA.toLowerCase()) {
-      throw new VCCloseError(
+      throw new ThreadCloseError(
         methodName,
         'Incorrect signer detected on latest thread update'
       )
@@ -1136,7 +1136,7 @@ class Connext {
     })
 
     if (!fastCloseSig) {
-      throw new VCCloseError(
+      throw new ThreadCloseError(
         methodName,
         651,
         'Hub did not cosign proposed channel update, call initThread and settleThread'
@@ -1214,14 +1214,14 @@ class Connext {
     const channel = await this.getChannelByPartyA(sender.toLowerCase())
     // channel must be open
     if (CHANNEL_STATES[channel.state] !== CHANNEL_STATES.LCS_OPENED) {
-      throw new LCCloseError(methodName, 'Channel is in invalid state')
+      throw new ChannelCloseError(methodName, 'Channel is in invalid state')
     }
     // sender must be channel member
     if (
       sender.toLowerCase() !== channel.partyA &&
       sender.toLowerCase() !== channel.partyI
     ) {
-      throw new LCCloseError(methodName, 'Not your channel')
+      throw new ChannelCloseError(methodName, 'Not your channel')
     }
 
     // get latest i-signed lc state update
@@ -1229,11 +1229,11 @@ class Connext {
     if (channelState) {
       // openVcs?
       if (Number(channelState.openVcs) !== 0) {
-        throw new LCCloseError(methodName, 'Cannot close channel with open VCs')
+        throw new ChannelCloseError(methodName, 'Cannot close channel with open VCs')
       }
       // empty root hash?
       if (channelState.vcRootHash !== Connext.generateThreadRootHash({ threadInitialStates: [] })) {
-        throw new LCCloseError(methodName, 'Cannot close channel with open VCs')
+        throw new ChannelCloseError(methodName, 'Cannot close channel with open VCs')
       }
       // i-signed?
       const signer = Connext.recoverSignerFromChannelStateUpdate({
@@ -1251,7 +1251,7 @@ class Connext {
         tokenBalanceI: Web3.utils.toBN(channelState.tokenBalanceI),
       })
       if (signer.toLowerCase() !== this.ingridAddress.toLowerCase()) {
-        throw new LCCloseError(methodName, 'Hub did not sign update')
+        throw new ChannelCloseError(methodName, 'Hub did not sign update')
       }
     } else {
       // no state updates made in LC
@@ -1293,7 +1293,7 @@ class Connext {
     const sig = await this.createChannelStateUpdate(sigParams)
     const finalState = await this.fastCloseChannelHandler({ sig, channelId: channel.channelId })
     if (!finalState.sigI) {
-      throw new LCCloseError(
+      throw new ChannelCloseError(
         methodName,
         601,
         'Hub did not countersign proposed update, channel could not be fast closed.'
@@ -1391,13 +1391,13 @@ class Connext {
     }
     const channel = await this.getChannelById(channelId)
     if (channel == null) {
-      throw new LCUpdateError(methodName, 'Channel not found')
+      throw new ChannelUpdateError(methodName, 'Channel not found')
     }
     if (channel.partyA !== sender.toLowerCase()) {
-      throw new LCUpdateError(methodName, 'Incorrect signer detected')
+      throw new ChannelUpdateError(methodName, 'Incorrect signer detected')
     }
     if (CHANNEL_STATES[channel.state] !== CHANNEL_STATES.LCS_OPENED) {
-      throw new LCUpdateError(methodName, 'Channel is in invalid state')
+      throw new ChannelUpdateError(methodName, 'Channel is in invalid state')
     }
     // TO DO
     let latestState = await this.getLatestChannelState(lcId, ['sigI'])
@@ -1447,16 +1447,16 @@ class Connext {
     }
     const channel = await this.getChannelById(channelId)
     if (channel == null) {
-      throw new LCUpdateError(methodName, 'Channel not found')
+      throw new ChannelUpdateError(methodName, 'Channel not found')
     }
     if (channel.partyA !== sender.toLowerCase()) {
-      throw new LCUpdateError(methodName, 'Incorrect signer detected')
+      throw new ChannelUpdateError(methodName, 'Incorrect signer detected')
     }
     if (CHANNEL_STATES[channel.state] !== CHANNEL_STATES.LCS_OPENED) {
-      throw new LCUpdateError(methodName, 'Channel is in invalid state')
+      throw new ChannelUpdateError(methodName, 'Channel is in invalid state')
     }
     if (nonce > channel.nonce) {
-      throw new LCUpdateError(methodName, 'Invalid nonce detected')
+      throw new ChannelUpdateError(methodName, 'Invalid nonce detected')
     }
 
     // TO DO: factor out into above section
@@ -1478,7 +1478,7 @@ class Connext {
       tokenBalanceI: Web3.utils.toBN(state.tokenBalanceI),
     })
     if (signer.toLowerCase() !== this.ingridAddress.toLowerCase()) {
-      throw new LCUpdateError(methodName, 'Invalid signature detected')
+      throw new ChannelUpdateError(methodName, 'Invalid signature detected')
     }
 
     state.signer = state.partyA
@@ -2113,7 +2113,7 @@ class Connext {
       signer.toLowerCase() !== partyA.toLowerCase() &&
       signer.toLowerCase() !== partyI.toLowerCase()
     ) {
-      throw new LCUpdateError(methodName, 'Invalid signer detected')
+      throw new ChannelUpdateError(methodName, 'Invalid signer detected')
     }
 
     // validate update
@@ -2128,16 +2128,16 @@ class Connext {
       channel.tokenBalanceB = '0'
       // generating opening cert
       if (nonce !== 0) {
-        throw new LCOpenError(methodName, 'Invalid nonce detected')
+        throw new ChannelOpenError(methodName, 'Invalid nonce detected')
       }
       if (openVcs !== 0) {
-        throw new LCOpenError(methodName, 'Invalid openVcs detected')
+        throw new ChannelOpenError(methodName, 'Invalid openVcs detected')
       }
       if (vcRootHash !== emptyRootHash) {
-        throw new LCOpenError(methodName, 'Invalid vcRootHash detected')
+        throw new ChannelOpenError(methodName, 'Invalid vcRootHash detected')
       }
       if (partyA === partyI) {
-        throw new LCOpenError(methodName, 'Cannot open channel with yourself')
+        throw new ChannelOpenError(methodName, 'Cannot open channel with yourself')
       }
       if (balanceA.ethDeposit && balanceI.ethDeposit) {
         // channel includes ETH
@@ -2151,28 +2151,28 @@ class Connext {
       // updating existing lc
       // must be open
       if (CHANNEL_STATES[channel.state] === 3) {
-        throw new LCUpdateError(
+        throw new ChannelUpdateError(
           methodName,
           'Channel is in invalid state to accept updates'
         )
       }
       // nonce always increasing
       if (nonce < channel.nonce) {
-        throw new LCUpdateError(methodName, 'Invalid nonce')
+        throw new ChannelUpdateError(methodName, 'Invalid nonce')
       }
       // only open/close 1 vc per update, or dont open any
       if (
         Math.abs(Number(openVcs) - Number(channel.openVcs)) !== 1 &&
         Math.abs(Number(openVcs) - Number(channel.openVcs)) !== 0
       ) {
-        throw new LCUpdateError(
+        throw new ChannelUpdateError(
           methodName,
           'Invalid number of openVcs proposed'
         )
       }
       // parties cant change
       if (partyA.toLowerCase() !== channel.partyA.toLowerCase() || partyI.toLowerCase() !== channel.partyI.toLowerCase()) {
-        throw new LCUpdateError(methodName, 'Invalid channel parties')
+        throw new ChannelUpdateError(methodName, 'Invalid channel parties')
       }
       if (balanceA.ethDeposit && balanceI.ethDeposit) {
         // channel includes ETH
@@ -2190,10 +2190,10 @@ class Connext {
       const tokenChannelBalance = isOpeningVc ? Web3.utils.toBN(channel.tokenBalanceA).add(Web3.utils.toBN(channel.tokenBalanceI)).sub(hubTokenBond) : Web3.utils.toBN(channel.tokenBalanceA).add(Web3.utils.toBN(channel.tokenBalanceI)).add(hubTokenBond)
 
       if (proposedEthBalance && !proposedEthBalance.eq(ethChannelBalance)) {
-        throw new LCUpdateError(methodName, 'Invalid ETH balance proposed')
+        throw new ChannelUpdateError(methodName, 'Invalid ETH balance proposed')
       }
       if (proposedTokenBalance && !proposedTokenBalance.eq(tokenChannelBalance)) {
-        throw new LCUpdateError(methodName, 'Invalid token balance proposed')
+        throw new ChannelUpdateError(methodName, 'Invalid token balance proposed')
       }
     }
 
@@ -2311,43 +2311,43 @@ class Connext {
       thread.tokenBalanceB = '0'
       // channel does not exist, generating opening state
       if (nonce !== 0) {
-        throw new VCOpenError(methodName, 'Invalid nonce detected')
+        throw new ThreadOpenError(methodName, 'Invalid nonce detected')
       }
       if (balanceB.ethDeposit && !balanceB.ethDeposit.isZero()) {
-        throw new VCOpenError(methodName, 'Invalid initial ETH balanceB detected')
+        throw new ThreadOpenError(methodName, 'Invalid initial ETH balanceB detected')
       }
       if (balanceB.tokenDeposit && !balanceB.tokenDeposit.isZero()) {
-        throw new VCOpenError(methodName, 'Invalid initial token balanceB detected')
+        throw new ThreadOpenError(methodName, 'Invalid initial token balanceB detected')
       }
       if (partyA.toLowerCase() === partyB.toLowerCase()) {
-        throw new VCOpenError(methodName, 'Cannot open thread with yourself')
+        throw new ThreadOpenError(methodName, 'Cannot open thread with yourself')
       }
       if (balanceA.ethDeposit) { // update includes eth
          if(Web3.utils.toBN(subchanA.ethBalanceA).lt(balanceA.ethDeposit)) {
-          throw new VCOpenError(methodName, 'Insufficient ETH channel balance detected')
+          throw new ThreadOpenError(methodName, 'Insufficient ETH channel balance detected')
         }
         proposedEthBalance = balanceA.ethDeposit        
       }
       if (balanceA.tokenDeposit) {
         if (Web3.utils.toBN(subchanA.tokenBalanceA).lt(balanceA.tokenDeposit)) {
-         throw new VCOpenError(methodName, 'Insufficient ETH channel balance detected')
+         throw new ThreadOpenError(methodName, 'Insufficient ETH channel balance detected')
         }
         proposedTokenBalance = balanceA.tokenDeposit
       }
     } else {
       // thread exists
       if (THREAD_STATES[thread.state] === 3) {
-        throw new VCUpdateError(methodName, 'Thread is in invalid state')
+        throw new ThreadUpdateError(methodName, 'Thread is in invalid state')
       }
       if (nonce < thread.nonce + 1 && nonce !== 0) {
         // could be joining
-        throw new VCUpdateError(methodName, 'Invalid nonce')
+        throw new ThreadUpdateError(methodName, 'Invalid nonce')
       }
       if (
         partyA.toLowerCase() !== thread.partyA ||
         partyB.toLowerCase() !== thread.partyB
       ) {
-        throw new VCUpdateError(methodName, 'Invalid parties detected')
+        throw new ThreadUpdateError(methodName, 'Invalid parties detected')
       }
       // verify updates dont change channel balance
       const threadEthBalance = Web3.utils.toBN(thread.ethBalanceA).add(Web3.utils.toBN(thread.ethBalanceB))
@@ -2355,37 +2355,37 @@ class Connext {
       switch (CHANNEL_TYPES[updateType]) {
         case CHANNEL_TYPES.ETH:
           if (balanceB.ethDeposit.lt(Web3.utils.toBN(thread.ethBalanceB))) {
-            throw new VCUpdateError(methodName, 'Thread updates can only increase partyB ETH balance')
+            throw new ThreadUpdateError(methodName, 'Thread updates can only increase partyB ETH balance')
           }
           proposedEthBalance = Web3.utils.toBN(balanceA.ethDeposit).add(balanceB.ethDeposit) // proposed balance
           break
         
         case CHANNEL_TYPES.TOKEN:
           if (balanceB.tokenDeposit.lt(Web3.utils.toBN(thread.tokenBalanceB))) {
-            throw new VCUpdateError(methodName, 'Thread updates can only increase partyB token balance')
+            throw new ThreadUpdateError(methodName, 'Thread updates can only increase partyB token balance')
           }
           proposedTokenBalance = Web3.utils.toBN(balanceA.tokenDeposit).add(balanceB.tokenDeposit)
           break
         
         case CHANNEL_TYPES.TOKEN_ETH:
           if (balanceB.ethDeposit.lt(Web3.utils.toBN(thread.ethBalanceB))) {
-            throw new VCUpdateError(methodName, 'Thread updates can only increase partyB ETH balance')
+            throw new ThreadUpdateError(methodName, 'Thread updates can only increase partyB ETH balance')
           }
           if (balanceB.tokenDeposit.lt(Web3.utils.toBN(thread.tokenBalanceB))) {
-            throw new VCUpdateError(methodName, 'Thread updates can only increase partyB token balance')
+            throw new ThreadUpdateError(methodName, 'Thread updates can only increase partyB token balance')
           }
           proposedEthBalance = Web3.utils.toBN(balanceA.ethDeposit).add(balanceB.ethDeposit)
           proposedTokenBalance = Web3.utils.toBN(balanceA.tokenDeposit).add(balanceB.tokenDeposit)
           break
         default:
-          throw new VCUpdateError(methodName, 'Invalid thread update type.')
+          throw new ThreadUpdateError(methodName, 'Invalid thread update type.')
       }
       if (proposedEthBalance && !proposedEthBalance.eq(threadEthBalance)) {
-        throw new VCUpdateError(methodName, 'Thread ETH balance cannot change')
+        throw new ThreadUpdateError(methodName, 'Thread ETH balance cannot change')
       }
   
       if (proposedTokenBalance && !proposedTokenBalance.eq(threadTokenBalance)) {
-        throw new VCUpdateError(methodName, 'Thread token balance cannot change')
+        throw new ThreadUpdateError(methodName, 'Thread token balance cannot change')
       }
     }
 
@@ -2541,7 +2541,7 @@ class Connext {
 
     // verify partyA !== partyI
     if (sender === ingridAddress) {
-      throw new LCOpenError(methodName, 'Cannot open a channel with yourself')
+      throw new ChannelOpenError(methodName, 'Cannot open a channel with yourself')
     }
 
     let result, token, tokenApproval
@@ -2583,7 +2583,7 @@ class Connext {
             gas: 750000
           })
         } else {
-          throw new LCOpenError(methodName, 'Token transfer failed.')
+          throw new ChannelOpenError(methodName, 'Token transfer failed.')
         }
         break
       case CHANNEL_TYPES.TOKEN_ETH: // ETH/TOKEN
@@ -2607,11 +2607,11 @@ class Connext {
               gas: 750000
           })
         } else {
-          throw new LCOpenError(methodName, 'Token transfer failed.')
+          throw new ChannelOpenError(methodName, 'Token transfer failed.')
         }
         break
       default:
-        throw new LCOpenError(methodName, 'Invalid channel type')
+        throw new ChannelOpenError(methodName, 'Invalid channel type')
     }
 
     if (!result.transactionHash) {
@@ -2664,7 +2664,7 @@ class Connext {
     // verify requires
     const channel = await this.getChannelById(channelId)
     if (CHANNEL_STATES[channel.state] !== CHANNEL_STATES.LCS_OPENING) {
-      throw new LCOpenError(methodName, 'Channel is in incorrect state')
+      throw new ChannelOpenError(methodName, 'Channel is in incorrect state')
     }
 
     if (channel.partyA.toLowerCase() !== sender.toLowerCase()) {
@@ -2840,7 +2840,7 @@ class Connext {
         }
         break
       default:
-        throw new LCUpdateError(methodName, `Invalid deposit type detected`)
+        throw new ChannelUpdateError(methodName, `Invalid deposit type detected`)
     }
 
     if (!result.transactionHash) {
@@ -2936,12 +2936,12 @@ class Connext {
     }
     let signer = Connext.recoverSignerFromChannelStateUpdate(state)
     if (signer.toLowerCase() !== this.ingridAddress.toLowerCase()) {
-      throw new LCCloseError(methodName, 'Hub did not sign closing update')
+      throw new ChannelCloseError(methodName, 'Hub did not sign closing update')
     }
     state.sig = sigA
     signer = Connext.recoverSignerFromChannelStateUpdate(state)
     if (signer.toLowerCase() !== sender.toLowerCase()) {
-      throw new LCCloseError(methodName, 'PartyA did not sign closing update')
+      throw new ChannelCloseError(methodName, 'PartyA did not sign closing update')
     }
 
     const result = await this.channelManagerInstance.methods
@@ -2998,7 +2998,7 @@ class Connext {
         'deposit'
       )
       if (deposit.isNeg()) {
-        throw new LCOpenError(methodName, 'Invalid deposit provided')
+        throw new ChannelOpenError(methodName, 'Invalid deposit provided')
       }
     } else {
       deposit = Web3.utils.toBN('0')
@@ -3013,18 +3013,18 @@ class Connext {
     const lc = await this.getChannelById(lcId)
     if (!lc) {
       // hub does not have lc, may be chainsaw issues
-      throw new LCOpenError(methodName, 'Channel is not openChanneled with hub')
+      throw new ChannelOpenError(methodName, 'Channel is not openChanneled with hub')
     }
     if (sender && sender.toLowerCase() === lc.partyA) {
-      throw new LCOpenError(methodName, 'Cannot create channel with yourself')
+      throw new ChannelOpenError(methodName, 'Cannot create channel with yourself')
     }
 
     if (sender && sender !== lc.partyI) {
-      throw new LCOpenError(methodName, 'Incorrect channel counterparty')
+      throw new ChannelOpenError(methodName, 'Incorrect channel counterparty')
     }
 
     if (CHANNEL_STATES[lc.state] !== 0) {
-      throw new LCOpenError(methodName, 'Channel is not in correct state')
+      throw new ChannelOpenError(methodName, 'Channel is not in correct state')
     }
     const result = await this.channelManagerInstance.methods
       .joinThread(lcId)
@@ -3913,7 +3913,7 @@ class Connext {
     )
     const accountBalance = await this.web3.eth.getBalance(this.ingridAddress)
     if (deposit.ethBalanceI && deposit.ethBalanceI.gt(Web3.utils.toBN(accountBalance))) {
-      throw new LCUpdateError(
+      throw new ChannelUpdateError(
         methodName,
         'Hub does not have sufficient balance for requested deposit'
       )
@@ -4046,41 +4046,41 @@ class Connext {
     }
     // signer should always be lc partyA
     if (signer.toLowerCase() !== channel.partyA) {
-      throw new VCOpenError(methodName, 'Invalid signer detected')
+      throw new ThreadOpenError(methodName, 'Invalid signer detected')
     }
     // signer should be threadInitialState partyA or threadInitialState partyB
     if (
       signer.toLowerCase() !== threadInitialState.partyA.toLowerCase() &&
       signer.toLowerCase() !== threadInitialState.partyB.toLowerCase()
     ) {
-      throw new VCOpenError(methodName, 'Invalid signer detected')
+      throw new ThreadOpenError(methodName, 'Invalid signer detected')
     }
     // lc must be open
     if (CHANNEL_STATES[channel.state] !== 1) {
-      throw new VCOpenError(methodName, 'Invalid subchannel state')
+      throw new ThreadOpenError(methodName, 'Invalid subchannel state')
     }
     // vcId should be unique
     let thread = await this.getThreadById(threadInitialState.channelId)
     if (thread && THREAD_STATES[thread.state] !== 0) {
-      throw new VCOpenError(methodName, 'Invalid channel id in threadInitialState')
+      throw new ThreadOpenError(methodName, 'Invalid channel id in threadInitialState')
     }
     // vc0 validation
     if (threadInitialState.nonce !== 0) {
-      throw new VCOpenError(methodName, 'Thread nonce is nonzero')
+      throw new ThreadOpenError(methodName, 'Thread nonce is nonzero')
     }
     // check that balanceA of channel is sufficient to create thread
     if (threadInitialState.balanceA.ethDeposit && Web3.utils.toBN(channel.ethBalanceA).lt(threadInitialState.balanceA.ethDeposit)) {
-      throw new VCOpenError(methodName, 'Insufficient ETH deposit detected for balanceA')
+      throw new ThreadOpenError(methodName, 'Insufficient ETH deposit detected for balanceA')
     }
     if (threadInitialState.balanceA.tokenDeposit && Web3.utils.toBN(channel.tokenBalanceA).lt(threadInitialState.balanceA.tokenDeposit)) {
-      throw new VCOpenError(methodName, 'Insufficient token deposit detected for balanceA')
+      throw new ThreadOpenError(methodName, 'Insufficient token deposit detected for balanceA')
     }
     // verify balanceB for both is 0
     if (threadInitialState.balanceB.ethDeposit && !threadInitialState.balanceB.ethDeposit.isZero()) {
-      throw new VCOpenError(methodName, 'The ETH balanceB must be 0 when creating thread.')
+      throw new ThreadOpenError(methodName, 'The ETH balanceB must be 0 when creating thread.')
     }
     if (threadInitialState.balanceB.tokenDeposit && !threadInitialState.balanceB.tokenDeposit.isZero()) {
-      throw new VCOpenError(methodName, 'The token balanceB must be 0 when creating thread.')
+      throw new ThreadOpenError(methodName, 'The token balanceB must be 0 when creating thread.')
     }
     // manipulate threadInitialState to have the right data structure
     threadInitialState.ethBalanceA = threadInitialState.balanceA.ethDeposit ? threadInitialState.balanceA.ethDeposit : Web3.utils.toBN('0')
@@ -4161,17 +4161,17 @@ class Connext {
     }
     // must be partyA in lc
     if (signer.toLowerCase() !== subchan.partyA) {
-      throw new VCCloseError(methodName, 'Incorrect signer detected')
+      throw new ThreadCloseError(methodName, 'Incorrect signer detected')
     }
     // must be party in vc
     if (
       signer.toLowerCase() !== latestThreadState.partyA.toLowerCase() &&
       signer.toLowerCase() !== latestThreadState.partyB.toLowerCase()
     ) {
-      throw new VCCloseError(methodName, 'Not your channel')
+      throw new ThreadCloseError(methodName, 'Not your channel')
     }
     if (CHANNEL_STATES[subchan.state] !== CHANNEL_STATES.LCS_OPENED && CHANNEL_STATES[subchan.state] !== CHANNEL_STATES.LCS_SETTLING) {
-      throw new VCCloseError(methodName, 'Channel is in invalid state')
+      throw new ThreadCloseError(methodName, 'Channel is in invalid state')
     }
 
     let threadInitialStates = await this.getThreadInitialStates(subchan.channelId)
