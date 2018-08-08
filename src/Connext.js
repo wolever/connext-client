@@ -2977,12 +2977,12 @@ class Connext {
   }
 
   // default null means join with 0 deposit
-  async joinLedgerChannelContractHandler ({
+  async joinChannelContractHandler ({
     lcId,
     deposit = null,
     sender = null
   }) {
-    const methodName = 'joinLedgerChannelContractHandler'
+    const methodName = 'joinChannelContractHandler'
     const isAddress = { presence: true, isAddress: true }
     const isHexStrict = { presence: true, isHexStrict: true }
     const isBN = { presence: true, isBN: true }
