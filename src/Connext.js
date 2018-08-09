@@ -79,12 +79,14 @@ validate.validators.isValidDepositObject = value => {
     return `${value} does not contain tokenDeposit or ethDeposit fields`
   }
   if (value.tokenDeposit && !validateBalance(value.tokenDeposit)) {
-    return `${value.tokenDeposit} is not a valid deposit`
-  } else if (value.ethDeposit && !validateBalance(value.ethDeposit)) {
-    return `${value.ethDeposit} is not a valid deposit`
-  } else {
-    return null
+    return `${value.tokenDeposit} is not a valid token deposit`
   }
+  
+  if (value.ethDeposit && !validateBalance(value.ethDeposit)) {
+    return `${value.ethDeposit} is not a valid eth deposit`
+  }
+
+  return null
 }
 
 validate.validators.isValidMeta = value => {
