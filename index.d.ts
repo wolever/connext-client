@@ -5,15 +5,13 @@ export = Connext;
 declare class Connext {
   constructor(opts: Connext.ConnextOptions);
 
-  openChannel(initialDeposit: BigNumber): Promise<any>;
+  openChannel(initialDeposit: Connext.BalanceOptions): Promise<any>;
 
-  deposit(amount: BigNumber): Promise<any>;
+  deposit(amount: Connext.BalanceOptions): Promise<any>;
 
   withdraw(): Promise<any>;
 
   withdrawFinal(): Promise<any>;
-
-  checkpoint(): Promise<any>;
 
   openThread(opts: Connext.OpenThreadOptions): Promise<any>;
 
@@ -25,11 +23,9 @@ declare class Connext {
     opts: Connext.CosignBalanceUpdateOptions
   ): Promise<string>;
 
-  fastCloseChannel(channelId: string): Promise<any>;
-
   closeChannel(channelId: string): Promise<any>;
 
-  closeChannels(channels: Connext.Channel[]): Promise<any>;
+  closeChannels(channels: string[]): Promise<any>;
 
   static createChannelStateUpdateFingerprint(opts: Connext.FingerprintChannelUpdate): string;
 
@@ -53,38 +49,25 @@ declare namespace Connext {
     contractAddress: string;
   }
 
-  export interface OpenThreadOptions {
-    to: string;
-    deposit: BigNumber;
-  }
-
   export interface BalanceOptions {
     tokenDeposit: BigNumber;
     ethDeposit: BigNumber;
   }
 
+  export interface OpenThreadOptions {
+    to: string;
+    deposit: BalanceOptions;
+  }
+
   export interface UpdateBalanceOptions {
     channelId: string;
-    balanceA: BigNumber;
-    balanceB: BigNumber;
+    balanceA: BalanceOptions;
+    balanceB: BalanceOptions;
   }
 
   export interface CosignBalanceUpdateOptions {
     channelId: string;
-    balance: BigNumber;
-    sig: string;
-  }
-
-  export interface ChannelUpdate {
-    isClose: boolean;
-    channelId: string;
-    nonce: number;
-    openVcs: number;
-    vcRootHash: string;
-    partyA: string;
-    partyI: string;
-    balanceA: BalanceOptions;
-    balanceI: BalanceOptions;
+    nonce: BalanceOptions;
   }
 
   export interface FingerprintChannelUpdate {
@@ -105,15 +88,6 @@ declare namespace Connext {
     sig: string;
   }
 
-  export interface ThreadUpdate {
-    channelId: string;
-    nonce: number;
-    partyA: string;
-    partyB: string;
-    balanceA: BalanceOptions;
-    balanceB: BalanceOptions;
-  }
-
   export interface FingerprintThreadUpdate {
     channelId: string;
     nonce: number;
@@ -130,11 +104,10 @@ declare namespace Connext {
   }
 
   export interface ThreadInitialStates {
-    threadInitialStates: ThreadUpdate[];
+    threadInitialStates: FingerprintThreadUpdate[];
   }
 
   export interface Channel {
     channelId: string;
-    balance: BigNumber;
   }
 }
