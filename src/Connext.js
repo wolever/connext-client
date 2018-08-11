@@ -523,15 +523,16 @@ class Connext {
         balanceI: {
           ethDeposit: Web3.utils.toBN(channel.ethBalanceI),
           tokenDeposit: Web3.utils.toBN(channel.tokenBalanceI)
-        }
+        },
+        deposit: deposits
       })
      } else {
        throw new ChannelUpdateError(methodName, 'Error with contract transaction')
      }
 
-     const result = await this.networking.post(`ledgerchannel/${channelId}/deposit`, {
+     const result = await this.networking.post(`ledgerchannel/${channel.channelId}/deposit`, {
        sig: sig,
-       deposit: deposits.ethDeposit ? deposits.ethDeposit : '0',
+       deposit: deposits.ethDeposit ? deposits.ethDeposit.toString() : '0',
       //  ethDeposit: deposits.ethDeposit ? deposits.ethDeposit : '0',
       //  tokenDeposit: deposits.tokenDeposit ? deposits.tokenDeposit : '0',
      })
@@ -2078,8 +2079,8 @@ class Connext {
     balanceI,
     unlockedAccountPresent = process.env.DEV ? process.env.DEV : false, // true if hub or ingrid, dev needs unsigned
     signer = null,
-    hubEthBond = null,
-    hubTokenBond = null,
+    hubBond = null,
+    deposit = null
   }) {
     const methodName = 'createChannelStateUpdate'
     // validate
@@ -2137,23 +2138,32 @@ class Connext {
       methodName,
       'balanceI'
     )
-    if (hubEthBond) {
+    if (hubBond) {
       Connext.validatorsResponseToError(
-        validate.single(hubEthBond, isBN),
+        validate.single(hubBond, isValidDepositObject),
         methodName,
-        'hubEthBond'
+        'hubBond'
       )
+      hubBond.tokenDeposit = hubBond.tokenDeposit 
+        ? hubBond.tokenDeposit 
+        : Web3.utils.toBN('0')
+      hubBond.ethDeposit = hubBond.ethDeposit 
+        ? hubBond.ethDeposit 
+        : Web3.utils.toBN('0')
     } else {
-      hubEthBond = Web3.utils.toBN('0')
+      // set to zero
+      hubBond = {
+        ethDeposit: Web3.utils.toBN('0'),
+        tokenDeposit: Web3.utils.toBN('0'),
+      }
     }
-    if (hubTokenBond) {
+
+    if (deposit) {
       Connext.validatorsResponseToError(
-        validate.single(hubTokenBond, isBN),
+        validate.single(deposit, isValidDepositObject),
         methodName,
-        'hubTokenBond'
+        'deposit'
       )
-    } else {
-      hubTokenBond = Web3.utils.toBN('0')
     }
     if (signer) {
       Connext.validatorsResponseToError(
@@ -2243,10 +2253,32 @@ class Connext {
       // add ledger channel balances of both parties from previously, subctract new balance of vc being opened
       let isOpeningVc = openVcs - channel.openVcs === 1
       // verify updates dont change channel balance
-      const ethChannelBalance = isOpeningVc ? Web3.utils.toBN(channel.ethBalanceA).add(Web3.utils.toBN(channel.ethBalanceI)).sub(hubEthBond) : Web3.utils.toBN(channel.ethBalanceA).add(Web3.utils.toBN(channel.ethBalanceI)).add(hubEthBond)
-      const tokenChannelBalance = isOpeningVc ? Web3.utils.toBN(channel.tokenBalanceA).add(Web3.utils.toBN(channel.tokenBalanceI)).sub(hubTokenBond) : Web3.utils.toBN(channel.tokenBalanceA).add(Web3.utils.toBN(channel.tokenBalanceI)).add(hubTokenBond)
+      let ethChannelBalance = isOpeningVc 
+      ? Web3.utils.toBN(channel.ethBalanceA)
+        .add(Web3.utils.toBN(channel.ethBalanceI))
+        .sub(hubBond.ethDeposit) 
+      : Web3.utils.toBN(channel.ethBalanceA)
+        .add(Web3.utils.toBN(channel.ethBalanceI))
+        .add(hubBond.ethDeposit)
+
+      let tokenChannelBalance = isOpeningVc 
+      ? Web3.utils.toBN(channel.tokenBalanceA)
+        .add(Web3.utils.toBN(channel.tokenBalanceI))
+        .sub(hubBond.tokenDeposit)
+      : Web3.utils.toBN(channel.tokenBalanceA)
+        .add(Web3.utils.toBN(channel.tokenBalanceI))
+        .add(hubBond.tokenDeposit)
+      
+      // if deposit update, then add to channel balance
+      ethChannelBalance = deposit && deposit.ethDeposit 
+        ? ethChannelBalance.add(deposit.ethDeposit) : ethChannelBalance
+      tokenChannelBalance = deposit && deposit.tokenDeposit 
+        ? tokenChannelBalance.add(deposit.tokenDeposit) : tokenChannelBalance
 
       if (proposedEthBalance && !proposedEthBalance.eq(ethChannelBalance)) {
+        console.log('deposit:', deposit),
+        console.log('proposedEthBalance:',proposedEthBalance.toString())
+        console.log('ethChannelBalance:', ethChannelBalance.toString())
         throw new ChannelUpdateError(methodName, 'Invalid ETH balance proposed')
       }
       if (proposedTokenBalance && !proposedTokenBalance.eq(tokenChannelBalance)) {
@@ -4222,8 +4254,12 @@ class Connext {
         tokenDeposit: channelTokenBalanceI
       },
       signer: signer,
-      hubEthBond: threadInitialState.ethBalanceA.add(threadInitialState.ethBalanceB),
-      hubTokenBond: threadInitialState.tokenBalanceA.add(threadInitialState.tokenBalanceB),
+      hubBond: {
+        ethDeposit: threadInitialState.ethBalanceA
+          .add(threadInitialState.ethBalanceB),
+        tokenDeposit: threadInitialState.tokenBalanceA
+          .add(threadInitialState.tokenBalanceB)
+      }
     }
     const sigAtoI = await this.createChannelStateUpdate(updateAtoI)
     return sigAtoI
@@ -4301,8 +4337,12 @@ class Connext {
         ethDeposit: subchanEthBalanceI,
         tokenDeposit: subchanTokenBalanceI,
       },
-      hubEthBond: Web3.utils.toBN(latestThreadState.ethBalanceA).add(Web3.utils.toBN(latestThreadState.ethBalanceB)),
-      hubTokenBond: Web3.utils.toBN(latestThreadState.tokenBalanceA).add(Web3.utils.toBN(latestThreadState.tokenBalanceB)),
+      hubBond: {
+        ethDeposit:  Web3.utils.toBN(latestThreadState.ethBalanceA)
+          .add(Web3.utils.toBN(latestThreadState.ethBalanceB)),
+        tokenDeposit: Web3.utils.toBN(latestThreadState.tokenBalanceA)
+          .add(Web3.utils.toBN(latestThreadState.tokenBalanceB)),
+      },
       signer,
     }
     const sigAtoI = await this.createChannelStateUpdate(updateAtoI)
