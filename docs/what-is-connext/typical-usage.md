@@ -4,7 +4,7 @@
 
 After navigating to your application, the user will choose to transact in your ecosystem by opening a channel with your Hub. This can be as simple as a "deposit" button on your frontend which calls the `openThread()` function in the Connext Client package. We recommend that you convince users to use MetaMask or the Brave browser, as the Client package works natively with these wallets. We plan to add support for other wallets soon. 
 
-After confirming the transaction, the user will have to wait for their deposit to be mined on-chain. This will be the only on-chain transaction that they make until they withdraw from the system.
+After confirming the transaction, the user will have to wait for their deposit to be mined on-chain. This will be the only on-chain transaction that they make until they closeChannel from the system.
 
 ## Transacting to Another User
 
@@ -20,9 +20,9 @@ The user can continue to open, transact in and close threads while they have fun
 
 ## Withdrawing from the Hub
 
-When a user wishes to settle their final balance they can close their channel and withdraw from the Hub. This can be done using a "Withdraw Funds" button on your frontend which calls the `closeChannel()` method in the Client.
+When a user wishes to settle their final balance they can close their channel and closeChannel from the Hub. This can be done using a "closeChannel Funds" button on your frontend which calls the `closeThread()` method in the Client.
 
-`closeChannel()` will automatically retrieve the latest available signed state update for the user, which will always contain Merkelized metadata about any currently open threads. The Client will then call the corresponding method in the contract, which will verify that the user has indeed closed all of their threads. Then, the contract will initiate the closing process by starting a timer by which the latest state must be submitted.
+`closeThread()` will automatically retrieve the latest available signed state update for the user, which will always contain Merkelized metadata about any currently open threads. The Client will then call the corresponding method in the contract, which will verify that the user has indeed closed all of their threads. Then, the contract will initiate the closing process by starting a timer by which the latest state must be submitted.
 
 Hub's will also automatically submit their latest available update, and we expect that in the _vast_ majority of cases, their update will match the users'. To improve usability, the contract will skip the timer and do a "fast close" if both the user and the Hub agree on the latest update. In the event that they don't, the user and Hub will be free to submit a higher nonce update until they agree or the timer runs out.
 

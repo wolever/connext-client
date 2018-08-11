@@ -238,10 +238,10 @@
 
                             <li class="chapter " data-level="2.2.6" data-path="api.html">
 
-                                <a href="api.html#connextclosechannelchannelid-⇒-promise">
+                                <a href="api.html#connextcloseThreadchannelid-⇒-promise">
 
 
-                                    closeChannel
+                                    closeThread
 
                                 </a>
 
@@ -251,10 +251,10 @@
 
                             <li class="chapter " data-level="2.2.7" data-path="api.html">
 
-                                <a href="api.html#connextclosechannelschannelids">
+                                <a href="api.html#connextcloseThreadschannelids">
 
 
-                                    closeChannels
+                                    closeThreads
 
                                 </a>
 
@@ -267,7 +267,7 @@
                                 <a href="api.html#connextwithdrawsender-⇒-promise">
 
 
-                                    withdraw
+                                    closeChannel
 
                                 </a>
 
@@ -280,7 +280,7 @@
                                 <a href="api.html#connextwithdrawfinalsender-⇒-promise">
 
 
-                                    withdrawFinal
+                                    withdraw
 
                                 </a>
 
@@ -1001,10 +1001,10 @@ const lcId = await connext.register(deposit)
                                         <br>
                                     </p>
                                     <p>
-                                        <a id="Connext+closeChannel"></a>
+                                        <a id="Connext+closeThread"></a>
                                     </p>
                                     <p></p>
-                                    <h2 id="connextclosechannelchannelid-&#x21D2;-promise">connext.closeChannel(channelId) &#x21D2;
+                                    <h2 id="connextcloseThreadchannelid-&#x21D2;-promise">connext.closeThread(channelId) &#x21D2;
                                         <code>Promise</code>
                                     </h2>Closes a virtual channel.
                                     <p></p>
@@ -1047,7 +1047,7 @@ const lcId = await connext.register(deposit)
                                     <p>
                                         <strong>Example</strong>
                                     </p>
-                                    <pre><code class="lang-js"><span class="hljs-keyword">await</span> connext.closeChannel({
+                                    <pre><code class="lang-js"><span class="hljs-keyword">await</span> connext.closeThread({
   channelId: <span class="hljs-number">0xad</span>sf11..,
   balance: web3.utils.toBN(web3.utils.toWei(<span class="hljs-number">0.5</span>, <span class="hljs-string">&apos;ether&apos;</span>))
 })
@@ -1058,10 +1058,10 @@ const lcId = await connext.register(deposit)
                                         <br>
                                     </p>
                                     <p>
-                                        <a id="Connext+closeChannels"></a>
+                                        <a id="Connext+closeThreads"></a>
                                     </p>
                                     <p></p>
-                                    <h2 id="connextclosechannelschannelids">connext.closeChannels(channelIds)</h2>Closes many virtual channels by calling closeChannel
+                                    <h2 id="connextcloseThreadschannelids">connext.closeThreads(channelIds)</h2>Closes many virtual channels by calling closeThread
                                     on each channel ID in the provided array.
                                     <p></p>
                                     <p>
@@ -1095,7 +1095,7 @@ const lcId = await connext.register(deposit)
     <span class="hljs-number">0xa</span>sd310..,
     <span class="hljs-number">0xad</span>sf11..,
 ]
-<span class="hljs-keyword">await</span> connext.closeChannels(channels)
+<span class="hljs-keyword">await</span> connext.closeThreads(channels)
 </code></pre>
                                     <p>
                                         <br>
@@ -1103,17 +1103,17 @@ const lcId = await connext.register(deposit)
                                         <br>
                                     </p>
                                     <p>
-                                        <a id="Connext+withdraw"></a>
+                                        <a id="Connext+closeChannel"></a>
                                     </p>
                                     <p></p>
-                                    <h2 id="connextwithdrawsender-&#x21D2;-promise">connext.withdraw(sender) &#x21D2;
+                                    <h2 id="connextwithdrawsender-&#x21D2;-promise">connext.closeChannel(sender) &#x21D2;
                                         <code>Promise</code>
                                     </h2>Withdraws bonded funds from an existing ledger channel.
                                     <p></p>
                                     <p>All virtual channels must be closed before a ledger channel can be closed.</p>
                                     <p>Generates the state update from the latest ingrid signed state with fast-close flag.</p>
                                     <p>Ingrid should countersign the closing update if it matches what she has signed previously,
-                                        and the channel will fast close by calling consensusCloseChannel on the contract.</p>
+                                        and the channel will fast close by calling consensuscloseThread on the contract.</p>
                                     <p>If the state update doesn&apos;t match what Ingrid previously signed, then updateLCState
                                         is called with the latest state and a challenge flag.</p>
                                     <p>
@@ -1150,7 +1150,7 @@ const lcId = await connext.register(deposit)
                                     <p>
                                         <strong>Example</strong>
                                     </p>
-                                    <pre><code class="lang-js"><span class="hljs-keyword">const</span> success = <span class="hljs-keyword">await</span> connext.withdraw()
+                                    <pre><code class="lang-js"><span class="hljs-keyword">const</span> success = <span class="hljs-keyword">await</span> connext.closeChannel()
 </code></pre>
                                     <p>
                                         <br>
@@ -1158,17 +1158,17 @@ const lcId = await connext.register(deposit)
                                         <br>
                                     </p>
                                     <p>
-                                        <a id="Connext+withdrawFinal"></a>
+                                        <a id="Connext+withdraw"></a>
                                     </p>
                                     <p></p>
-                                    <h2 id="connextwithdrawfinalsender-&#x21D2;-promise">connext.withdrawFinal(sender) &#x21D2;
+                                    <h2 id="connextwithdrawfinalsender-&#x21D2;-promise">connext.withdraw(sender) &#x21D2;
                                         <code>Promise</code>
-                                    </h2>Withdraw bonded funds from ledger channel after a channel is challenge-closed and the
-                                    challenge period expires by calling withdrawFinal using the internal web3 instance.
+                                    </h2>closeChannel bonded funds from ledger channel after a channel is challenge-closed and the
+                                    challenge period expires by calling withdraw using the internal web3 instance.
                                     <p></p>
                                     <p>Looks up LC by the account address of the client-side user if sender parameter is not
                                         supplied.</p>
-                                    <p>Calls the &quot;byzantineCloseChannel&quot; function on the contract.</p>
+                                    <p>Calls the &quot;byzantinecloseThread&quot; function on the contract.</p>
                                     <p>
                                         <strong>Kind</strong>: instance method of
                                         <a href="#Connext">
@@ -1176,7 +1176,7 @@ const lcId = await connext.register(deposit)
                                         </a>
                                         <br>
                                         <strong>Returns</strong>:
-                                        <code>Promise</code> - resolves to the transaction hash from calling byzantineCloseChannel </p>
+                                        <code>Promise</code> - resolves to the transaction hash from calling byzantinecloseThread </p>
                                     <table>
                                         <thead>
                                             <tr>
@@ -1202,10 +1202,10 @@ const lcId = await connext.register(deposit)
                                     <p>
                                         <strong>Example</strong>
                                     </p>
-                                    <pre><code class="lang-js"><span class="hljs-keyword">const</span> success = <span class="hljs-keyword">await</span> connext.withdraw()
+                                    <pre><code class="lang-js"><span class="hljs-keyword">const</span> success = <span class="hljs-keyword">await</span> connext.closeChannel()
 <span class="hljs-keyword">if</span> (!success) {
   <span class="hljs-comment">// wait out challenge timer</span>
-  <span class="hljs-keyword">await</span> connext.withdrawFinal()
+  <span class="hljs-keyword">await</span> connext.withdraw()
 }
 </code></pre>
                                     <p>

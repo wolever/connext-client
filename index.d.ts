@@ -9,9 +9,9 @@ declare class Connext {
 
   deposit(amount: Connext.BalanceOptions): Promise<any>;
 
-  withdraw(): Promise<any>;
+  closeChannel(): Promise<any>;
 
-  withdrawFinal(): Promise<any>;
+  withdraw(): Promise<any>;
 
   openThread(opts: Connext.OpenThreadOptions): Promise<any>;
 
@@ -23,9 +23,9 @@ declare class Connext {
     opts: Connext.CosignBalanceUpdateOptions
   ): Promise<string>;
 
-  closeChannel(channelId: string): Promise<any>;
+  closeThread(channelId: string): Promise<any>;
 
-  closeChannels(channels: string[]): Promise<any>;
+  closeThreads(channels: string[]): Promise<any>;
 
   static createChannelStateUpdateFingerprint(opts: Connext.FingerprintChannelUpdate): string;
 

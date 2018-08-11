@@ -1,12 +1,12 @@
-# withdraw
+# closeChannel
 
-**connext.withdraw\(**sender**\)** ⇒ `Promise`Withdraws bonded funds from an existing channel.
+**connext.closeChannel\(**sender**\)** ⇒ `Promise`Withdraws bonded funds from an existing channel.
 
 All threads must be closed before a channel can be closed.
 
 Generates the state update from the latest Hub signed state with fast-close flag.
 
-The Hub should countersign the closing update if it matches what she has signed previously, and the channel will fast close by calling consensusCloseChannel on the contract.
+The Hub should countersign the closing update if it matches what she has signed previously, and the channel will fast close by calling consensuscloseThread on the contract.
 
 If the state update doesn't match what the Hub previously signed, then updateThreadState is called with the latest state and a challenge flag.
 
@@ -20,6 +20,6 @@ If the state update doesn't match what the Hub previously signed, then updateThr
 **Example**
 
 ```javascript
-const success = await connext.withdraw()
+const success = await connext.closeChannel()
 ```
 

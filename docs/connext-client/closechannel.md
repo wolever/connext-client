@@ -20,7 +20,7 @@ If the Hub does not return its signature on the proposed thread decomposition, t
 **Example**
 
 ```javascript
-await connext.closeChannel({
+await connext.closeThread({
   channelId: 0xadsf11..,
   balance: web3.utils.toBN(web3.utils.toWei(0.5, 'ether'))
 })

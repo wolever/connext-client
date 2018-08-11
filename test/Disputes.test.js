@@ -182,13 +182,13 @@ describe('Connext dispute cases', function () {
   describe('hub does not countersign closing vc update', function () {
     this.timeout(120000)
 
-    it('should closeChannel without returning fastSig', async () => {
+    it('should closeThread without returning fastSig', async () => {
       // mock response from hub for client.fastCloseVCHandler
       let stub = sinon.stub(client, 'fastCloseVCHandler').returns(false)
 
       // to not return fast close
       try {
-        await client.closeChannel(vcId)
+        await client.closeThread(vcId)
       } catch (e) {
         expect(e.statusCode).to.equal(651)
       }
@@ -282,13 +282,13 @@ describe('Connext dispute cases', function () {
     let response
 
     it('should close virtual channels', async () => {
-      await client.closeChannel(vcId)
+      await client.closeThread(vcId)
       // get vcA
       vc = await client.getThreadById(vcId)
       assert.equal(vc.state, 3)
     })
 
-    it('should call withdraw without i-countersiging closing update', async () => {
+    it('should call closeChannel without i-countersiging closing update', async () => {
       const latestState = await client.getLatestChannelState(subchanAI, [
         'sigI'
       ])
@@ -296,7 +296,7 @@ describe('Connext dispute cases', function () {
       let fastCloseLcStub = sinon.stub(client, 'fastCloseLcHandler').returns({
         sigI: ''
       }) // hub doesnt cosign
-      response = await client.withdraw(partyA)
+      response = await client.closeChannel(partyA)
       console.log(response)
       expect(fastCloseLcStub.calledOnce).to.be.true
       expect(response.fastClosed).to.equal(false)
@@ -323,7 +323,7 @@ describe('Connext dispute cases', function () {
       expect(lcA.state).to.equal(2) // settling
     })
 
-    it('should wait out challenge period and call withdrawFinal', async () => {
+    it('should wait out challenge period and call withdraw', async () => {
       // subchanAI =
       //   '0x6fb0fc92d0ce9a838eae4b902a9e3dca2e2133a6f7ae04a4058cbd22e446cc25'
       // already awaited, should not have to again
@@ -335,7 +335,7 @@ describe('Connext dispute cases', function () {
       const prevBalA = await client.web3.eth.getBalance(partyA)
       const prevBalI = await client.web3.eth.getBalance(ingridAddress)
 
-      const response = await client.withdrawFinal(partyA)
+      const response = await client.withdraw(partyA)
       console.log(response)
       const tx = await client.web3.eth.getTransaction(response.transactionHash)
 
@@ -392,7 +392,7 @@ describe('Connext dispute cases', function () {
 
       it('hub should call updateLCState with latest state', async () => {})
 
-      it('should wait out challenge period and call byzantineCloseChannel on chain', async () => {})
+      it('should wait out challenge period and call byzantinecloseThread on chain', async () => {})
     })
 
     describe('watcher handles the dispute after hub fails to respond', () => {
@@ -400,7 +400,7 @@ describe('Connext dispute cases', function () {
 
       it('hub should call updateLCState with latest state', async () => {})
 
-      it('should wait out challenge period and call byzantineCloseChannel on chain', async () => {})
+      it('should wait out challenge period and call byzantinecloseThread on chain', async () => {})
     })
   })
 

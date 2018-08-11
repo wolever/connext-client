@@ -15,7 +15,7 @@ const channels = [
     0xasd310..,
     0xadsf11..,
 ]
-await connext.closeChannels(channels)
+await connext.closeThreads(channels)
 ```
 
 

@@ -671,7 +671,7 @@ describe('Connext happy case testing flow', () => {
   describe('Closing a virtual channel', () => {
     it('should change vcA status to settled', async () => {
       vcA = await client.getThreadByParties({ partyA, partyB })
-      const response = await client.closeChannel(vcA.channelId, partyA)
+      const response = await client.closeThread(vcA.channelId, partyA)
       // get vcA
       vcA = await client.getThreadById(vcA.channelId)
       expect(vcA.state).to.equal(3)
@@ -765,7 +765,7 @@ describe('Connext happy case testing flow', () => {
 
     it('partyB should be able to close a channel', async () => {
       vcC = await client.getThreadByParties({ partyA: partyC, partyB })
-      const response = await client.closeChannel(vcC.channelId, partyB)
+      const response = await client.closeThread(vcC.channelId, partyB)
       // get vc
       vcC = await client.getThreadById(vcC.channelId)
       expect(vcC.state).to.equal(3)
@@ -829,7 +829,7 @@ describe('Connext happy case testing flow', () => {
       vcE = await client.getThreadByParties({ partyA: partyE, partyB })
       const channelIds = [vcD.channelId, vcE.channelId]
       for (const channelId of channelIds) {
-        await client.closeChannel(channelId, partyB)
+        await client.closeThread(channelId, partyB)
       }
       // refetch channels
       vcD = await client.getThreadById(vcD.channelId)
@@ -852,7 +852,7 @@ describe('Connext happy case testing flow', () => {
       prevBalA = await client.web3.eth.getBalance(partyA)
       prevBalI = await client.web3.eth.getBalance(ingridAddress)
       // send tx
-      const response = await client.withdraw(partyA)
+      const response = await client.closeChannel(partyA)
       const tx = await client.web3.eth.getTransaction(response)
       expect(tx.to.toLowerCase()).to.equal(contractAddress)
       expect(tx.from.toLowerCase()).to.equal(partyA.toLowerCase())
@@ -885,7 +885,7 @@ describe('Connext happy case testing flow', () => {
 
     it(`should not let you close an LC with openVCs`, async () => {
       try {
-        const response = await client.withdraw(partyB) // + 7 ETH
+        const response = await client.closeChannel(partyB) // + 7 ETH
       } catch (e) {
         expect(e.statusCode).to.equal(600)
       }
@@ -921,9 +921,9 @@ describe('Connext happy case testing flow', () => {
 
     it(`should close partyC's LC with the fast close`, async () => {
       // close open vcs
-      await client.closeChannel(vcC.channelId, partyC)
+      await client.closeThread(vcC.channelId, partyC)
       // send tx
-      const response = await client.withdraw(partyC)
+      const response = await client.closeChannel(partyC)
       const tx = await client.web3.eth.getTransaction(response)
       expect(tx.to.toLowerCase()).to.equal(contractAddress)
       expect(tx.from.toLowerCase()).to.equal(partyC.toLowerCase())
@@ -931,7 +931,7 @@ describe('Connext happy case testing flow', () => {
 
     it(`should close partyD's LC with the fast close`, async () => {
       // send tx
-      const response = await client.withdraw(partyD)
+      const response = await client.closeChannel(partyD)
       const tx = await client.web3.eth.getTransaction(response)
       expect(tx.to.toLowerCase()).to.equal(contractAddress)
       expect(tx.from.toLowerCase()).to.equal(partyD.toLowerCase())
@@ -939,7 +939,7 @@ describe('Connext happy case testing flow', () => {
 
     it(`should close partyE's LC with the fast close`, async () => {
       // send tx
-      const response = await client.withdraw(partyE)
+      const response = await client.closeChannel(partyE)
       const tx = await client.web3.eth.getTransaction(response)
       expect(tx.to.toLowerCase()).to.equal(contractAddress)
       expect(tx.from.toLowerCase()).to.equal(partyE.toLowerCase())
@@ -947,7 +947,7 @@ describe('Connext happy case testing flow', () => {
 
     it(`should close partyB's LC with the fast close`, async () => {
       prevBalA = await client.web3.eth.getBalance(partyB) // 95 ETH
-      const response = await client.withdraw(partyB) // + 7 ETH
+      const response = await client.closeChannel(partyB) // + 7 ETH
       const tx = await client.web3.eth.getTransaction(response)
       expect(tx.to.toLowerCase()).to.equal(contractAddress)
       expect(tx.from.toLowerCase()).to.equal(partyB.toLowerCase())
