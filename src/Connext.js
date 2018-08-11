@@ -33,8 +33,8 @@ const META_TYPES = {
 }
 
 const PAYMENT_TYPES = {
-  'CHANNEL': 0,
-  'THREAD': 1
+  'LEDGER': 0,
+  'VIRTUAL': 1
 }
 
 const CHANNEL_TYPES = {
@@ -490,14 +490,53 @@ class Connext {
     }
 
     // call contract handler
-    const result = await this.depositContractHandler({
+    const contractResult = await this.depositContractHandler({
       channelId: channel.channelId,
       deposits,
       recipient,
       sender,
       tokenAddress
     })
-    return result
+
+    let sig
+    // post new sig
+    const newEthBalanceA = deposits.ethDeposit 
+      ? Web3.utils.toBN(channel.ethBalanceA).add(deposits.ethDeposit) 
+      : Web3.utils.toBN(channel.ethBalanceA)
+    const newTokenBalanceA = deposits.tokenDeposit
+      ? Web3.utils.toBN(channel.tokenBalanceA).add(deposits.tokenDeposit)
+      : Web3.utils.toBN(channel.tokenBalanceA)
+
+    if (contractResult) {
+      // generate signed update and post to hub
+      sig = await this.createChannelStateUpdate({
+        channelId: channel.channelId,
+        nonce: channel.nonce + 1,
+        openVcs: channel.openVcs,
+        vcRootHash: channel.vcRootHash,
+        partyA: channel.partyA,
+        partyI: channel.partyI,
+        balanceA: {
+          ethDeposit: newEthBalanceA,
+          tokenDeposit: newTokenBalanceA
+        },
+        balanceI: {
+          ethDeposit: Web3.utils.toBN(channel.ethBalanceI),
+          tokenDeposit: Web3.utils.toBN(channel.tokenBalanceI)
+        }
+      })
+     } else {
+       throw new ChannelUpdateError(methodName, 'Error with contract transaction')
+     }
+
+     const result = await this.networking.post(`ledgerchannel/${channelId}/deposit`, {
+       sig: sig,
+       deposit: deposits.ethDeposit ? deposits.ethDeposit : '0',
+      //  ethDeposit: deposits.ethDeposit ? deposits.ethDeposit : '0',
+      //  tokenDeposit: deposits.tokenDeposit ? deposits.tokenDeposit : '0',
+     })
+
+    return result.data
   }
 
   /**
@@ -644,8 +683,9 @@ class Connext {
         channelId,
         partyA: sender.toLowerCase(),
         partyB: to.toLowerCase(),
-        ethBalanceA: deposit.ethDeposit.toString(),
-        tokenBalanceA: deposit.tokenDeposit.toString(),
+        balanceA: deposit.ethDeposit ? deposit.ethDeposit.toString() : '0',
+        // ethBalanceA: deposit.ethDeposit ? deposit.ethDeposit.toString() : '0',
+        // tokenBalanceA: deposit.tokenDeposit ? deposit.tokenDeposit.toString() : '0',
         vcSig: sigVC0,
         lcSig: sigAtoI
       })
@@ -761,14 +801,14 @@ class Connext {
       // generate payment
       let updatedPayment
       switch(PAYMENT_TYPES[payment.type]) {
-        case PAYMENT_TYPES.CHANNEL: // channel update
+        case PAYMENT_TYPES.LEDGER: // channel update
           updatedPayment = await this.channelUpdateHandler(payment, index + 1, sender)
           break
-        case PAYMENT_TYPES.THREAD: // thread update
+        case PAYMENT_TYPES.VIRTUAL: // thread update
           updatedPayment = await this.threadUpdateHandler(payment, index + 1, sender)
           break
         default:
-          throw new ChannelUpdateError(methodName, 'Incorrect channel type specified. Must be CHANNEL or THREAD.')
+          throw new ChannelUpdateError(methodName, `Incorrect channel type specified. Must be CHANNEL or THREAD. Type: ${payment.type}`)
       }
       updatedPayment.type = payment.type
       return updatedPayment
@@ -904,11 +944,13 @@ class Connext {
     })
     // return sig
     const state = {
-      ethBalanceA: proposedEthBalance ? balanceA.ethDeposit.toString() : Web3.utils.toBN(channel.ethBalanceA).toString(),
-      ethBalanceI: proposedEthBalance ? balanceB.ethDeposit.toString() : Web3.utils.toBN(channel.ethBalanceI).toString(),
-      tokenBalanceA: proposedTokenBalance ? balanceA.tokenDeposit.toString() : Web3.utils.toBN(channel.tokenBalanceA).toString(),
-      tokenBalanceI: proposedTokenBalance ? balanceB.tokenDeposit.toString() : Web3.utils.toBN(channel.tokenBalanceI).toString(),
-      channelId,
+      balanceA: proposedEthBalance ? balanceA.ethDeposit.toString() : Web3.utils.toBN(channel.ethBalanceA).toString(),
+      balanceB: proposedEthBalance ? balanceB.ethDeposit.toString() : Web3.utils.toBN(channel.ethBalanceI).toString(),
+      // ethBalanceA: proposedEthBalance ? balanceA.ethDeposit.toString() : Web3.utils.toBN(channel.ethBalanceA).toString(),
+      // ethBalanceI: proposedEthBalance ? balanceB.ethDeposit.toString() : Web3.utils.toBN(channel.ethBalanceI).toString(),
+      // tokenBalanceA: proposedTokenBalance ? balanceA.tokenDeposit.toString() : Web3.utils.toBN(channel.tokenBalanceA).toString(),
+      // tokenBalanceI: proposedTokenBalance ? balanceB.tokenDeposit.toString() : Web3.utils.toBN(channel.tokenBalanceI).toString(),
+      channelId: channelId,
       nonce: channel.nonce + increment,
       sig,
     }
@@ -1038,11 +1080,14 @@ class Connext {
     })
     // return sig
     const state = {
-      ethBalanceA: proposedEthBalance ? balanceA.ethDeposit.toString() : Web3.utils.toBN(thread.ethBalanceA).toString(),
-      ethBalanceB: proposedEthBalance ? balanceB.ethDeposit.toString() : Web3.utils.toBN(thread.ethBalanceB).toString(),
-      tokenBalanceA: proposedTokenBalance ? balanceA.tokenDeposit.toString() : Web3.utils.toBN(thread.tokenBalanceA).toString(),
-      tokenBalanceB: proposedTokenBalance ? balanceB.tokenDeposit.toString() : Web3.utils.toBN(thread.tokenBalanceB).toString(),
-      channelId,
+      balanceA: proposedEthBalance ? balanceA.ethDeposit.toString() : Web3.utils.toBN(thread.ethBalanceA).toString(),
+      balanceB: proposedEthBalance ? balanceB.ethDeposit.toString() : Web3.utils.toBN(thread.ethBalanceB).toString(),
+      // ethBalanceA: proposedEthBalance ? balanceA.ethDeposit.toString() : Web3.utils.toBN(thread.ethBalanceA).toString(),
+      // ethBalanceB: proposedEthBalance ? balanceB.ethDeposit.toString() : Web3.utils.toBN(thread.ethBalanceB).toString(),
+      // tokenBalanceA: proposedTokenBalance ? balanceA.tokenDeposit.toString() : Web3.utils.toBN(thread.tokenBalanceA).toString(),
+      // tokenBalanceB: proposedTokenBalance ? balanceB.tokenDeposit.toString() : Web3.utils.toBN(thread.tokenBalanceB).toString(),
+      // channelId,
+      channelId: channelId,
       nonce: thread.nonce + increment,
       sig,
     }
@@ -1061,16 +1106,16 @@ class Connext {
    * If Ingrid does not return her signature on the proposed virtual channel decomposition, the caller goes to chain by calling initVC and settleVC.
    *
    * @example
-   * await connext.closeChannel({
+   * await connext.closeThread({
    *   channelId: 0xadsf11..,
    *   balance: web3.utils.toBN(web3.utils.toWei(0.5, 'ether'))
    * })
    * @param {Number} channelId - ID of the virtual channel to close
    * @returns {Promise} resolves to the signature of the hub on the generated update if accepted, or the result of closing the channel on chain if there is a dispute
    */
-  async closeChannel (threadId, sender = null) {
+  async closeThread (threadId, sender = null) {
     // validate params
-    const methodName = 'closeChannel'
+    const methodName = 'closeThread'
     const isHexStrict = { presence: true, isHexStrict: true }
     const isAddress = { presence: true, isAddress: true }
     Connext.validatorsResponseToError(
@@ -1149,18 +1194,18 @@ class Connext {
   }
 
   /**
-   * Closes many virtual channels by calling closeChannel on each channel ID in the provided array.
+   * Closes many virtual channels by calling closeThread on each channel ID in the provided array.
    *
    * @example
    * const channels = [
    *     0xasd310..,
    *     0xadsf11..,
    * ]
-   * await connext.closeChannels(channels)
+   * await connext.closeThreads(channels)
    * @param {String[]} channelIds - array of virtual channel IDs you wish to close
    */
-  async closeChannels (channelIds, sender = null) {
-    const methodName = 'closeChannels'
+  async closeThreads (channelIds, sender = null) {
+    const methodName = 'closeThreads'
     const isArray = { presence: true, isArray: true }
     const isAddress = { presence: true, isAddress: true }
     Connext.validatorsResponseToError(
@@ -1175,12 +1220,19 @@ class Connext {
     Connext.validatorsResponseToError(validate.single(sender, isAddress), methodName, 'sender')
     // should this try to fast close any of the channels?
     // or just immediately force close in dispute many channels
-    const results = await Promise.all(channelIds.map( channelId => {
-      console.log('Closing channel:', channelId)
-      const response = this.closeChannel(channelId, sender)
-      console.log('Channel closed.')
-      return response
-    }))
+    let fnMap = new Map()
+    channelIds.map(channelId => 
+      fnMap.set([channelId, sender], this.closeThread)
+    )
+    let results = []
+    for (const [parameters, fn] of fnMap.entries()) {
+      try {
+        const result = await fn.apply(this, parameters);
+        results.push(result)
+      } catch (e) {
+        results.push(new ThreadCloseError(methodName, e.message))
+      }
+    }
     return results
   }
 
@@ -1191,17 +1243,17 @@ class Connext {
    *
    * Generates the state update from the latest ingrid signed state with fast-close flag.
    *
-   * Ingrid should countersign the closing update if it matches what she has signed previously, and the channel will fast close by calling consensusCloseChannel on the contract.
+   * Ingrid should countersign the closing update if it matches what she has signed previously, and the channel will fast close by calling consensuscloseThread on the contract.
    *
    * If the state update doesn't match what Ingrid previously signed, then updateLCState is called with the latest state and a challenge flag.
    *
    * @example
-   * const success = await connext.withdraw()
+   * const success = await connext.closeChannel()
    * @param {String} - (optional) who the transactions should be sent from, defaults to account[0]
    * @returns {Promise} resolves to an object with the structure: { response: transactionHash, fastClosed: true}
    */
-  async withdraw (sender = null) {
-    const methodName = 'withdraw'
+  async closeChannel (sender = null) {
+    const methodName = 'closeChannel'
     const isAddress = { presence: true, isAddress: true }
     if (sender) {
       Connext.validatorsResponseToError(
@@ -1293,7 +1345,10 @@ class Connext {
       signer: sender
     }
     const sig = await this.createChannelStateUpdate(sigParams)
-    const finalState = await this.fastCloseChannelHandler({ sig, channelId: channel.channelId })
+    const finalState = await this.fastCloseChannelHandler({ 
+      sig, 
+      channelId: channel.channelId 
+    })
     if (!finalState.sigI) {
       throw new ChannelCloseError(
         methodName,
@@ -1326,23 +1381,23 @@ class Connext {
   // ***************************************
 
   /**
-   * Withdraw bonded funds from ledger channel after a channel is challenge-closed and the challenge period expires by calling withdrawFinal using the internal web3 instance.
+   * closeChannel bonded funds from ledger channel after a channel is challenge-closed and the challenge period expires by calling withdraw using the internal web3 instance.
    *
    * Looks up LC by the account address of the client-side user if sender parameter is not supplied.
    *
-   * Calls the "byzantineCloseChannel" function on the contract.
+   * Calls the "byzantinecloseThread" function on the contract.
    *
    * @example
-   * const success = await connext.withdraw()
+   * const success = await connext.closeChannel()
    * if (!success) {
    *   // wait out challenge timer
-   *   await connext.withdrawFinal()
+   *   await connext.withdraw()
    * }
    * @param {String} sender - (optional) the person sending the on chain transaction, defaults to accounts[0]
-   * @returns {Promise} resolves to the transaction hash from calling byzantineCloseChannel
+   * @returns {Promise} resolves to the transaction hash from calling byzantinecloseThread
    */
-  async withdrawFinal (sender = null) {
-    const methodName = 'withdrawFinal'
+  async withdraw (sender = null) {
+    const methodName = 'withdraw'
     const isAddress = { presence: true, isAddress: true }
     if (sender) {
       Connext.validatorsResponseToError(
@@ -1355,7 +1410,7 @@ class Connext {
       sender = accounts[0].toLowerCase()
     }
     const lc = await this.getChannelByPartyA(sender)
-    const results = await this.byzantineCloseChannelContractHandler({
+    const results = await this.byzantinecloseThreadContractHandler({
       lcId: lc.channelId,
       sender: sender
     })
@@ -2207,10 +2262,18 @@ class Connext {
       vcRootHash,
       partyA,
       partyI,
-      ethBalanceA: proposedEthBalance ? balanceA.ethDeposit.toString() : '0',
-      ethBalanceI: proposedEthBalance ? balanceI.ethDeposit.toString() : '0',
-      tokenBalanceA: proposedTokenBalance ? balanceA.tokenDeposit.toString() : '0',
-      tokenBalanceI: proposedTokenBalance ? balanceI.tokenDeposit.toString() : '0',
+      ethBalanceA: proposedEthBalance 
+        ? balanceA.ethDeposit.toString() 
+        : '0',
+      ethBalanceI: proposedEthBalance 
+        ? balanceI.ethDeposit.toString() 
+        : '0',
+      tokenBalanceA: proposedTokenBalance 
+        ? balanceA.tokenDeposit.toString() 
+        : '0',
+      tokenBalanceI: proposedTokenBalance 
+        ? balanceI.tokenDeposit.toString() 
+        : '0',
     }))
     // generate sig
     const hash = Connext.createChannelStateUpdateFingerprint({
@@ -2306,11 +2369,6 @@ class Connext {
     let thread = await this.getThreadById(channelId)
     let proposedEthBalance, proposedTokenBalance
     if (thread === null) {
-      // set initial balances to 0 if thread does not exist
-      thread.ethBalanceA = '0'
-      thread.ethBalanceB = '0'
-      thread.tokenBalanceA = '0'
-      thread.tokenBalanceB = '0'
       // channel does not exist, generating opening state
       if (nonce !== 0) {
         throw new ThreadOpenError(methodName, 'Invalid nonce detected')
@@ -2399,10 +2457,29 @@ class Connext {
       nonce,
       partyA,
       partyB,
-      ethBalanceA: proposedEthBalance ? balanceA.ethDeposit : Web3.utils.toBN(thread.ethBalanceA),
-      ethBalanceB: proposedEthBalance ? balanceB.ethDeposit : Web3.utils.toBN(thread.ethBalanceB),
-      tokenBalanceA: proposedTokenBalance ? balanceA.tokenDeposit : Web3.utils.toBN(thread.tokenBalanceA),
-      tokenBalanceB: proposedTokenBalance ? balanceB.tokenDeposit : Web3.utils.toBN(thread.tokenBalanceB),
+      // if balance change proposed, use balance
+      // else use thread balance if thread exists (will be null on open)
+      // else use 0
+      ethBalanceA: proposedEthBalance 
+        ? balanceA.ethDeposit 
+        : thread 
+        ? Web3.utils.toBN(thread.ethBalanceA) 
+        : Web3.utils.toBN('0'),
+      ethBalanceB: proposedEthBalance 
+        ? balanceB.ethDeposit 
+        : thread 
+        ? Web3.utils.toBN(thread.ethBalanceB) 
+        : Web3.utils.toBN('0'),
+      tokenBalanceA: proposedTokenBalance 
+        ? balanceA.tokenDeposit 
+        : thread 
+        ? Web3.utils.toBN(thread.tokenBalanceA) 
+        : Web3.utils.toBN('0'),
+      tokenBalanceB: proposedTokenBalance 
+        ? balanceB.tokenDeposit 
+        : thread 
+        ? Web3.utils.toBN(thread.tokenBalanceB) 
+        : Web3.utils.toBN('0'),
     }
     const hash = Connext.createThreadStateUpdateFingerprint(state)
     console.log('signing:', JSON.stringify({
@@ -2410,10 +2487,26 @@ class Connext {
       nonce,
       partyA,
       partyB,
-      ethBalanceA: proposedEthBalance ? balanceA.ethDeposit.toString() : Web3.utils.toBN(thread.ethBalanceA).toString(),
-      ethBalanceB: proposedEthBalance ? balanceB.ethDeposit.toString() : Web3.utils.toBN(thread.ethBalanceB).toString(),
-      tokenBalanceA: proposedTokenBalance ? balanceA.tokenDeposit.toString() : Web3.utils.toBN(thread.tokenBalanceA).toString(),
-      tokenBalanceB: proposedTokenBalance ? balanceB.tokenDeposit.toString() : Web3.utils.toBN(thread.tokenBalanceB).toString(),
+      ethBalanceA: proposedEthBalance 
+        ? balanceA.ethDeposit.toString() 
+        : thread 
+        ? Web3.utils.toBN(thread.ethBalanceA).toString() 
+        : Web3.utils.toBN('0').toString(),
+      ethBalanceB: proposedEthBalance 
+        ? balanceB.ethDeposit.toString() 
+        : thread 
+        ? Web3.utils.toBN(thread.ethBalanceB).toString() 
+        : Web3.utils.toBN('0').toString(),
+      tokenBalanceA: proposedTokenBalance 
+        ? balanceA.tokenDeposit.toString() 
+        : thread 
+        ? Web3.utils.toBN(thread.tokenBalanceA).toString() 
+        : Web3.utils.toBN('0').toString(),
+      tokenBalanceB: proposedTokenBalance 
+        ? balanceB.tokenDeposit.toString() 
+        : thread 
+        ? Web3.utils.toBN(thread.tokenBalanceB).toString() 
+        : Web3.utils.toBN('0').toString(),
     }))
     let sig
     if (signer && unlockedAccountPresent) {
@@ -2931,10 +3024,10 @@ class Connext {
       vcRootHash: emptyRootHash,
       partyA: sender,
       partyI: this.ingridAddress,
-      ethBalanceA: balanceA.ethDeposit ? balanceA.ethDeposit : Web3.utils.toBN('0'),
+      ethBalanceA: balanceA.ethDeposit ? balanceA.ethDeposit :      Web3.utils.toBN('0'),
       ethBalanceI: balanceI.ethDeposit ? balanceI.ethDeposit : Web3.utils.toBN('0'),
       tokenBalanceA: balanceA.tokenDeposit ? balanceA.tokenDeposit : Web3.utils.toBN('0'),
-      tokenBalanceI: balanceA.tokenDeposit ? balanceI.tokenDeposit : Web3.utils.toBN('0'),
+      tokenBalanceI: balanceI.tokenDeposit ? balanceI.tokenDeposit : Web3.utils.toBN('0'),
     }
     let signer = Connext.recoverSignerFromChannelStateUpdate(state)
     if (signer.toLowerCase() !== this.ingridAddress.toLowerCase()) {
@@ -2950,9 +3043,10 @@ class Connext {
       .consensusCloseChannel(
         channelId, 
         nonce, 
-        [ state.ethBalanceA, state.ethBalanceI, state.tokenDepositA, state.tokenDepositI ], 
+        [ state.ethBalanceA, state.ethBalanceI, state.tokenBalanceA, state.tokenBalanceI ], 
         sigA, 
-        sigI)
+        sigI
+      )
       .send({
         from: sender,
         gas: 1000000
@@ -3444,8 +3538,8 @@ class Connext {
     return results
   }
 
-  async byzantineCloseChannelContractHandler ({ lcId, sender = null }) {
-    const methodName = 'byzantineCloseChannelContractHandler'
+  async byzantinecloseThreadContractHandler ({ lcId, sender = null }) {
+    const methodName = 'byzantinecloseThreadContractHandler'
     const isHexStrict = { presence: true, isHexStrict: true }
     const isAddress = { presence: true, isAddress: true }
     Connext.validatorsResponseToError(
@@ -3464,7 +3558,7 @@ class Connext {
       sender = accounts[0].toLowerCase()
     }
     const results = await this.channelManagerInstance.methods
-      .byzantineCloseChannel(lcId)
+      .byzantinecloseThread(lcId)
       .send({
         from: sender,
         gas: '470000'
@@ -3527,14 +3621,14 @@ class Connext {
     return response.data
   }
 
-  async getThreadStateByNonce ({ threadId, nonce }) {
+  async getThreadStateByNonce ({ channelId, nonce }) {
     const methodName = 'getThreadStateByNonce'
     const isHexStrict = { presence: true, isHexStrict: true }
     const isPositiveInt = { presence: true, isPositiveInt: true }
     Connext.validatorsResponseToError(
-      validate.single(threadId, isHexStrict),
+      validate.single(channelId, isHexStrict),
       methodName,
-      'threadId'
+      'channelId'
     )
     Connext.validatorsResponseToError(
       validate.single(nonce, isPositiveInt),
@@ -3542,7 +3636,7 @@ class Connext {
       'nonce'
     )
     const response = await this.networking.get(
-      `virtualchannel/${threadId}/update/nonce/${nonce}`
+      `virtualchannel/${channelId}/update/nonce/${nonce}`
     )
     return response.data
   }
@@ -3767,7 +3861,6 @@ class Connext {
     )
     try {
       const res = await this.networking.get(`ledgerchannel/${channelId}`)
-
       return res.data
     } catch (e) {
       if (e.status === 404) {
@@ -3914,7 +4007,7 @@ class Connext {
       'deposit'
     )
     const accountBalance = await this.web3.eth.getBalance(this.ingridAddress)
-    if (deposit.ethBalanceI && deposit.ethBalanceI.gt(Web3.utils.toBN(accountBalance))) {
+    if (deposit.ethDeposit && deposit.ethDeposit.gt(Web3.utils.toBN(accountBalance))) {
       throw new ChannelUpdateError(
         methodName,
         'Hub does not have sufficient balance for requested deposit'
@@ -3923,7 +4016,7 @@ class Connext {
     const response = await this.networking.post(
       `ledgerchannel/${channelId}/requestdeposit`,
       {
-        deposit: deposit.toString()
+        deposit: deposit.ethDeposit.toString()
       }
     )
     return response.data.txHash

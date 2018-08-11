@@ -25,7 +25,7 @@ let partyB
 let partyC
 let partyD
 
-describe('closeChannels()', () => {
+describe('closeThreads()', () => {
   before('init client and accounts', async () => {
     accounts = await web3.eth.getAccounts()
     ingridAddress = accounts[0]
@@ -67,7 +67,7 @@ describe('closeChannels()', () => {
       const threadId3 =
         '0x0300000000000000000000000000000000000000000000000000000000000000'
       const channelIds = [threadId1, threadId2, threadId3]
-      const response = await client.closeChannels(channelIds, partyB)
+      const response = await client.closeThreads(channelIds, partyB)
       expect(response.length).to.equal(3)
     })
 
@@ -79,7 +79,7 @@ describe('closeChannels()', () => {
     describe('parameter validation', async () => {
       it('should fail if no channelIds are provided', async () => {
         try {
-          await client.closeChannels()
+          await client.closeThreads()
         } catch (e) {
           expect(e.statusCode).to.equal(200)
         }
@@ -88,7 +88,7 @@ describe('closeChannels()', () => {
       it('should fail if null channelIds are provided', async () => {
         const channelIds = null
         try {
-          await client.closeChannels(channelIds)
+          await client.closeThreads(channelIds)
         } catch (e) {
           expect(e.statusCode).to.equal(200)
         }
@@ -97,7 +97,7 @@ describe('closeChannels()', () => {
       it('should fail if invalid channelIds are provided', async () => {
         const channelIds = null
         try {
-          await client.closeChannels(channelIds)
+          await client.closeThreads(channelIds)
         } catch (e) {
           expect(e.statusCode).to.equal(200)
         }
@@ -106,7 +106,7 @@ describe('closeChannels()', () => {
       it('should fail if provided channelIds is not an array', async () => {
         const channelIds = {}
         try {
-          await client.closeChannels(channelIds)
+          await client.closeThreads(channelIds)
         } catch (e) {
           expect(e.statusCode).to.equal(200)
         }
@@ -118,7 +118,7 @@ describe('closeChannels()', () => {
         ]
         const sender = 'fail'
         try {
-          await client.closeChannels(channelIds, sender)
+          await client.closeThreads(channelIds, sender)
         } catch (e) {
           expect(e.statusCode).to.equal(200)
         }

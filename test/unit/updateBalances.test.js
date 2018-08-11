@@ -77,7 +77,7 @@ describe('updateBalances()', function () {
       }
       const payments = [
         {
-          type: 'THREAD',
+          type: 'VIRTUAL',
           payment: {
             channelId: threadId,
             balanceA: threadBalanceA,
@@ -94,7 +94,7 @@ describe('updateBalances()', function () {
           }
         },
         {
-          type: 'CHANNEL',
+          type: 'LEDGER',
           payment: {
             channelId: channelId,
             balanceA: channelBalanceA,
@@ -138,7 +138,7 @@ describe('updateBalances()', function () {
       }
       const payments = [
         {
-          type: 'THREAD',
+          type: 'VIRTUAL',
           payment: {
             channelId: threadId,
             balanceA: threadBalanceA,
@@ -155,7 +155,7 @@ describe('updateBalances()', function () {
           }
         },
         {
-          type: 'CHANNEL',
+          type: 'LEDGER',
           payment: {
             channelId: channelId,
             balanceA: channelBalanceA,
@@ -199,7 +199,7 @@ describe('updateBalances()', function () {
       }
       const payments = [
         {
-          type: 'THREAD',
+          type: 'VIRTUAL',
           payment: {
             channelId: threadId,
             balanceA: threadBalanceA,
@@ -216,7 +216,7 @@ describe('updateBalances()', function () {
           }
         },
         {
-          type: 'CHANNEL',
+          type: 'LEDGER',
           payment: {
             channelId: channelId,
             balanceA: channelBalanceA,
@@ -250,7 +250,7 @@ describe('updateBalances()', function () {
       }
       const payments = [
         {
-          type: 'CHANNEL',
+          type: 'LEDGER',
           payment: {
             channelId: channelId,
             balanceA: channelBalanceA,
@@ -284,7 +284,7 @@ describe('updateBalances()', function () {
       }
       const payments = [
         {
-          type: 'CHANNEL',
+          type: 'LEDGER',
           payment: {
             channelId: channelId,
             balanceA: channelBalanceA,
@@ -318,7 +318,7 @@ describe('updateBalances()', function () {
       }
       const payments = [
         {
-          type: 'CHANNEL',
+          type: 'LEDGER',
           payment: {
             channelId: channelId,
             balanceA: channelBalanceA,
@@ -352,7 +352,7 @@ describe('updateBalances()', function () {
       }
       const payments = [
         {
-          type: 'THREAD',
+          type: 'VIRTUAL',
           payment: {
             channelId: threadId,
             balanceA: threadBalanceA,
@@ -387,7 +387,7 @@ describe('updateBalances()', function () {
       }
       const payments = [
         {
-          type: 'THREAD',
+          type: 'VIRTUAL',
           payment: {
             channelId: threadId,
             balanceA: threadBalanceA,
@@ -422,7 +422,7 @@ describe('updateBalances()', function () {
       }
       const payments = [
         {
-          type: 'THREAD',
+          type: 'VIRTUAL',
           payment: {
             channelId: threadId,
             balanceA: threadBalanceA,
@@ -474,7 +474,7 @@ describe('updateBalances()', function () {
       }
       const payments = [
         {
-          type: 'THREAD',
+          type: 'VIRTUAL',
           payment: {
             channelId: threadId,
             balanceA: threadBalanceA,
@@ -491,7 +491,7 @@ describe('updateBalances()', function () {
           }
         },
         {
-          type: 'CHANNEL',
+          type: 'LEDGER',
           payment: {
             channelId: channelId,
             balanceA: channelBalanceA,

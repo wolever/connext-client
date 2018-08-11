@@ -61,7 +61,7 @@ describe('deposit()', function () {
     }
   })
 
-  describe('stubbed hub/contract tests', () => {
+  describe.only('stubbed hub/contract tests', () => {
     let stubHub, stub
     beforeEach('create stubbed hub methods', async () => {
       // activate nock
