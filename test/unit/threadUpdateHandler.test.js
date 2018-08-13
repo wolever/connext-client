@@ -79,11 +79,9 @@ describe('threadUpdateHandler()', function () {
           productName: 'Agent Smith'
         }
       }
-      const increment = 1
       const sender = partyA
       const updatedPayment = await client.threadUpdateHandler(
         { payment, meta },
-        increment,
         sender
       )
       // expect(updatedPayment.payment.ethBalanceA).to.equal(payment.balanceA.ethDeposit.toString())
@@ -119,11 +117,9 @@ describe('threadUpdateHandler()', function () {
           productName: 'Agent Smith'
         }
       }
-      const increment = 1
       const sender = partyC
       const updatedPayment = await client.threadUpdateHandler(
         { payment, meta },
-        increment,
         sender
       )
       // expect(updatedPayment.payment.ethBalanceA).to.equal(payment.balanceA.ethDeposit.toString())
@@ -159,11 +155,9 @@ describe('threadUpdateHandler()', function () {
             productName: 'Agent Smith'
           }
         }
-        const increment = 1
         const sender = partyD
         const updatedPayment = await client.threadUpdateHandler(
           { payment, meta },
-          increment,
           sender
         )
         // expect(updatedPayment.payment.ethBalanceA).to.equal('0')
@@ -189,12 +183,12 @@ describe('threadUpdateHandler()', function () {
           productName: 'Agent Smith'
         }
       }
-      const increment = 1
+      
       const sender = partyA
       try {
         const updatedPayment = await client.threadUpdateHandler(
           { meta },
-          increment,
+          
           sender
         )
       } catch (e) {
@@ -212,12 +206,11 @@ describe('threadUpdateHandler()', function () {
           productName: 'Agent Smith'
         }
       }
-      const increment = 1
       const sender = partyA
       try {
         const updatedPayment = await client.threadUpdateHandler(
           { payment, meta },
-          increment,
+          
           sender
         )
       } catch (e) {
@@ -235,12 +228,12 @@ describe('threadUpdateHandler()', function () {
           productName: 'Agent Smith'
         }
       }
-      const increment = 1
+      
       const sender = partyA
       try {
         const updatedPayment = await client.threadUpdateHandler(
           { payment, meta },
-          increment,
+          
           sender
         )
       } catch (e) {
@@ -260,12 +253,12 @@ describe('threadUpdateHandler()', function () {
           productName: 'Agent Smith'
         }
       }
-      const increment = 1
+      
       const sender = partyA
       try {
         const updatedPayment = await client.threadUpdateHandler(
           { payment, meta },
-          increment,
+          
           sender
         )
       } catch (e) {
@@ -294,12 +287,12 @@ describe('threadUpdateHandler()', function () {
           productName: 'Agent Smith'
         }
       }
-      const increment = 1
+      
       const sender = partyA
       try {
         const updatedPayment = await client.threadUpdateHandler(
           { payment, meta },
-          increment,
+          
           sender
         )
       } catch (e) {
@@ -330,12 +323,12 @@ describe('threadUpdateHandler()', function () {
           productName: 'Agent Smith'
         }
       }
-      const increment = 1
+      
       const sender = partyA
       try {
         const updatedPayment = await client.threadUpdateHandler(
           { payment, meta },
-          increment,
+          
           sender
         )
       } catch (e) {
@@ -366,12 +359,12 @@ describe('threadUpdateHandler()', function () {
           productName: 'Agent Smith'
         }
       }
-      const increment = 1
+      
       const sender = partyA
       try {
         const updatedPayment = await client.threadUpdateHandler(
           { payment, meta },
-          increment,
+          
           sender
         )
       } catch (e) {
@@ -398,12 +391,12 @@ describe('threadUpdateHandler()', function () {
           productName: 'Agent Smith'
         }
       }
-      const increment = 1
+      
       const sender = partyA
       try {
         const updatedPayment = await client.threadUpdateHandler(
           { payment, meta },
-          increment,
+          
           sender
         )
       } catch (e) {
@@ -432,12 +425,12 @@ describe('threadUpdateHandler()', function () {
           productName: 'Agent Smith'
         }
       }
-      const increment = 1
+      
       const sender = partyA
       try {
         const updatedPayment = await client.threadUpdateHandler(
           { payment, meta },
-          increment,
+          
           sender
         )
       } catch (e) {
@@ -466,12 +459,12 @@ describe('threadUpdateHandler()', function () {
           productName: 'Agent Smith'
         }
       }
-      const increment = 1
+      
       const sender = partyA
       try {
         const updatedPayment = await client.threadUpdateHandler(
           { payment, meta },
-          increment,
+          
           sender
         )
       } catch (e) {
@@ -500,12 +493,12 @@ describe('threadUpdateHandler()', function () {
           productName: 'Agent Smith'
         }
       }
-      const increment = 1
+      
       const sender = partyA
       try {
         const updatedPayment = await client.threadUpdateHandler(
           { payment, meta },
-          increment,
+          
           sender
         )
       } catch (e) {
@@ -537,12 +530,12 @@ describe('threadUpdateHandler()', function () {
           productName: 'Agent Smith'
         }
       }
-      const increment = 1
+      
       const sender = partyA
       try {
         const updatedPayment = await client.threadUpdateHandler(
           { payment, meta },
-          increment,
+          
           sender
         )
       } catch (e) {
@@ -574,12 +567,12 @@ describe('threadUpdateHandler()', function () {
           productName: 'Agent Smith'
         }
       }
-      const increment = 1
+      
       const sender = partyA
       try {
         const updatedPayment = await client.threadUpdateHandler(
           { payment, meta },
-          increment,
+          
           sender
         )
       } catch (e) {
@@ -610,12 +603,12 @@ describe('threadUpdateHandler()', function () {
           productName: 'Agent Smith'
         }
       }
-      const increment = 1
+      
       const sender = partyA
       try {
         const updatedPayment = await client.threadUpdateHandler(
           { payment, meta },
-          increment,
+          
           sender
         )
       } catch (e) {
@@ -647,12 +640,12 @@ describe('threadUpdateHandler()', function () {
           productName: 'Agent Smith'
         }
       }
-      const increment = 1
+      
       const sender = partyA
       try {
         const updatedPayment = await client.threadUpdateHandler(
           { payment, meta },
-          increment,
+          
           sender
         )
       } catch (e) {
@@ -684,12 +677,12 @@ describe('threadUpdateHandler()', function () {
           productName: 'Agent Smith'
         }
       }
-      const increment = 1
+      
       const sender = partyA
       try {
         const updatedPayment = await client.threadUpdateHandler(
           { payment, meta },
-          increment,
+          
           sender
         )
       } catch (e) {
@@ -716,12 +709,12 @@ describe('threadUpdateHandler()', function () {
           productName: 'Agent Smith'
         }
       }
-      const increment = 1
+      
       const sender = partyA
       try {
         const updatedPayment = await client.threadUpdateHandler(
           { payment, meta },
-          increment,
+          
           sender
         )
       } catch (e) {
@@ -750,12 +743,12 @@ describe('threadUpdateHandler()', function () {
           productName: 'Agent Smith'
         }
       }
-      const increment = 1
+      
       const sender = partyA
       try {
         const updatedPayment = await client.threadUpdateHandler(
           { payment, meta },
-          increment,
+          
           sender
         )
       } catch (e) {
@@ -784,12 +777,12 @@ describe('threadUpdateHandler()', function () {
           productName: 'Agent Smith'
         }
       }
-      const increment = 1
+      
       const sender = partyA
       try {
         const updatedPayment = await client.threadUpdateHandler(
           { payment, meta },
-          increment,
+          
           sender
         )
       } catch (e) {
@@ -818,12 +811,12 @@ describe('threadUpdateHandler()', function () {
           productName: 'Agent Smith'
         }
       }
-      const increment = 1
+      
       const sender = partyA
       try {
         const updatedPayment = await client.threadUpdateHandler(
           { payment, meta },
-          increment,
+          
           sender
         )
       } catch (e) {
@@ -855,12 +848,12 @@ describe('threadUpdateHandler()', function () {
           productName: 'Agent Smith'
         }
       }
-      const increment = 1
+      
       const sender = partyA
       try {
         const updatedPayment = await client.threadUpdateHandler(
           { payment, meta },
-          increment,
+          
           sender
         )
       } catch (e) {
@@ -892,12 +885,12 @@ describe('threadUpdateHandler()', function () {
           productName: 'Agent Smith'
         }
       }
-      const increment = 1
+      
       const sender = partyA
       try {
         const updatedPayment = await client.threadUpdateHandler(
           { payment, meta },
-          increment,
+          
           sender
         )
       } catch (e) {
@@ -929,12 +922,12 @@ describe('threadUpdateHandler()', function () {
           productName: 'Agent Smith'
         }
       }
-      const increment = 1
+      
       const sender = partyA
       try {
         const updatedPayment = await client.threadUpdateHandler(
           { payment, meta },
-          increment,
+          
           sender
         )
       } catch (e) {
@@ -966,12 +959,12 @@ describe('threadUpdateHandler()', function () {
           productName: 'Agent Smith'
         }
       }
-      const increment = 1
+      
       const sender = partyA
       try {
         const updatedPayment = await client.threadUpdateHandler(
           { payment, meta },
-          increment,
+          
           sender
         )
       } catch (e) {
@@ -1003,12 +996,12 @@ describe('threadUpdateHandler()', function () {
           productName: 'Agent Smith'
         }
       }
-      const increment = 1
+      
       const sender = partyA
       try {
         const updatedPayment = await client.threadUpdateHandler(
           { payment, meta },
-          increment,
+          
           sender
         )
       } catch (e) {
@@ -1032,12 +1025,12 @@ describe('threadUpdateHandler()', function () {
         balanceB,
         channelId
       }
-      const increment = 1
+      
       const sender = partyA
       try {
         const updatedPayment = await client.threadUpdateHandler(
           { payment },
-          increment,
+          
           sender
         )
       } catch (e) {
@@ -1062,12 +1055,12 @@ describe('threadUpdateHandler()', function () {
         channelId
       }
       const meta = null
-      const increment = 1
+      
       const sender = partyA
       try {
         const updatedPayment = await client.threadUpdateHandler(
           { payment, meta },
-          increment,
+          
           sender
         )
       } catch (e) {
@@ -1092,12 +1085,12 @@ describe('threadUpdateHandler()', function () {
         channelId
       }
       const meta = 'fail'
-      const increment = 1
+      
       const sender = partyA
       try {
         const updatedPayment = await client.threadUpdateHandler(
           { payment, meta },
-          increment,
+          
           sender
         )
       } catch (e) {
@@ -1122,12 +1115,12 @@ describe('threadUpdateHandler()', function () {
         channelId
       }
       const meta = {}
-      const increment = 1
+      
       const sender = partyA
       try {
         const updatedPayment = await client.threadUpdateHandler(
           { payment, meta },
-          increment,
+          
           sender
         )
       } catch (e) {
@@ -1158,12 +1151,12 @@ describe('threadUpdateHandler()', function () {
           productName: 'Agent Smith'
         }
       }
-      const increment = 1
+      
       const sender = partyA
       try {
         const updatedPayment = await client.threadUpdateHandler(
           { payment, meta },
-          increment,
+          
           sender
         )
       } catch (e) {
@@ -1195,12 +1188,12 @@ describe('threadUpdateHandler()', function () {
           productName: 'Agent Smith'
         }
       }
-      const increment = 1
+      
       const sender = partyA
       try {
         const updatedPayment = await client.threadUpdateHandler(
           { payment, meta },
-          increment,
+          
           sender
         )
       } catch (e) {
@@ -1232,12 +1225,12 @@ describe('threadUpdateHandler()', function () {
           productName: 'Agent Smith'
         }
       }
-      const increment = 1
+      
       const sender = partyA
       try {
         const updatedPayment = await client.threadUpdateHandler(
           { payment, meta },
-          increment,
+          
           sender
         )
       } catch (e) {
@@ -1268,12 +1261,12 @@ describe('threadUpdateHandler()', function () {
           productName: 'Agent Smith'
         }
       }
-      const increment = 1
+      
       const sender = partyA
       try {
         const updatedPayment = await client.threadUpdateHandler(
           { payment, meta },
-          increment,
+          
           sender
         )
       } catch (e) {
@@ -1305,12 +1298,12 @@ describe('threadUpdateHandler()', function () {
           productName: 'Agent Smith'
         }
       }
-      const increment = 1
+      
       const sender = partyA
       try {
         const updatedPayment = await client.threadUpdateHandler(
           { payment, meta },
-          increment,
+          
           sender
         )
       } catch (e) {
@@ -1342,12 +1335,12 @@ describe('threadUpdateHandler()', function () {
           productName: 'Agent Smith'
         }
       }
-      const increment = 1
+      
       const sender = partyA
       try {
         const updatedPayment = await client.threadUpdateHandler(
           { payment, meta },
-          increment,
+          
           sender
         )
       } catch (e) {
@@ -1375,12 +1368,12 @@ describe('threadUpdateHandler()', function () {
         receiver: '0x5aeda56215b167893e80b4fe645ba6d5bab767de',
         type: 'PURCHASE'
       }
-      const increment = 1
+      
       const sender = partyA
       try {
         const updatedPayment = await client.threadUpdateHandler(
           { payment, meta },
-          increment,
+          
           sender
         )
       } catch (e) {
@@ -1409,12 +1402,12 @@ describe('threadUpdateHandler()', function () {
         type: 'PURCHASE',
         fields: null
       }
-      const increment = 1
+      
       const sender = partyA
       try {
         const updatedPayment = await client.threadUpdateHandler(
           { payment, meta },
-          increment,
+          
           sender
         )
       } catch (e) {
@@ -1443,12 +1436,12 @@ describe('threadUpdateHandler()', function () {
         type: 'PURCHASE',
         fields: 'fail'
       }
-      const increment = 1
+      
       const sender = partyA
       try {
         const updatedPayment = await client.threadUpdateHandler(
           { payment, meta },
-          increment,
+          
           sender
         )
       } catch (e) {
@@ -1479,12 +1472,12 @@ describe('threadUpdateHandler()', function () {
           productName: 'Agent Smith'
         }
       }
-      const increment = 1
+      
       const sender = partyA
       try {
         const updatedPayment = await client.threadUpdateHandler(
           { payment, meta },
-          increment,
+          
           sender
         )
       } catch (e) {
@@ -1516,12 +1509,12 @@ describe('threadUpdateHandler()', function () {
           productSku: null
         }
       }
-      const increment = 1
+      
       const sender = partyA
       try {
         const updatedPayment = await client.threadUpdateHandler(
           { payment, meta },
-          increment,
+          
           sender
         )
       } catch (e) {
@@ -1552,12 +1545,12 @@ describe('threadUpdateHandler()', function () {
           productSku: 6969
         }
       }
-      const increment = 1
+      
       const sender = partyA
       try {
         const updatedPayment = await client.threadUpdateHandler(
           { payment, meta },
-          increment,
+          
           sender
         )
       } catch (e) {
@@ -1589,12 +1582,12 @@ describe('threadUpdateHandler()', function () {
           productName: null
         }
       }
-      const increment = 1
+      
       const sender = partyA
       try {
         const updatedPayment = await client.threadUpdateHandler(
           { payment, meta },
-          increment,
+          
           sender
         )
       } catch (e) {
@@ -1626,12 +1619,12 @@ describe('threadUpdateHandler()', function () {
           performerName: 'Marilyn Monbro'
         }
       }
-      const increment = 1
+      
       const sender = partyA
       try {
         const updatedPayment = await client.threadUpdateHandler(
           { payment, meta },
-          increment,
+          
           sender
         )
       } catch (e) {
@@ -1664,12 +1657,12 @@ describe('threadUpdateHandler()', function () {
           performerName: 'Marilyn Monbro'
         }
       }
-      const increment = 1
+      
       const sender = partyA
       try {
         const updatedPayment = await client.threadUpdateHandler(
           { payment, meta },
-          increment,
+          
           sender
         )
       } catch (e) {
@@ -1701,12 +1694,12 @@ describe('threadUpdateHandler()', function () {
           performerName: 'Marilyn Monbro'
         }
       }
-      const increment = 1
+      
       const sender = partyA
       try {
         const updatedPayment = await client.threadUpdateHandler(
           { payment, meta },
-          increment,
+          
           sender
         )
       } catch (e) {
@@ -1739,12 +1732,12 @@ describe('threadUpdateHandler()', function () {
           performerName: 'Marilyn Monbro'
         }
       }
-      const increment = 1
+      
       const sender = partyA
       try {
         const updatedPayment = await client.threadUpdateHandler(
           { payment, meta },
-          increment,
+          
           sender
         )
       } catch (e) {
@@ -1776,12 +1769,12 @@ describe('threadUpdateHandler()', function () {
           performerId: 6969
         }
       }
-      const increment = 1
+      
       const sender = partyA
       try {
         const updatedPayment = await client.threadUpdateHandler(
           { payment, meta },
-          increment,
+          
           sender
         )
       } catch (e) {
@@ -1814,126 +1807,12 @@ describe('threadUpdateHandler()', function () {
           performerName: null
         }
       }
-      const increment = 1
+      
       const sender = partyA
       try {
         const updatedPayment = await client.threadUpdateHandler(
           { payment, meta },
-          increment,
-          sender
-        )
-      } catch (e) {
-        expect(e.statusCode).to.equal(200)
-      }
-    })
-
-    it('should fail if increment is null', async () => {
-      const channelId =
-        '0x1000000000000000000000000000000000000000000000000000000000000000'
-      const balanceA = {
-        tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether')),
-        ethDeposit: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether'))
-      }
-      const balanceB = {
-        tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
-        ethDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
-      }
-      const payment = {
-        balanceA,
-        balanceB,
-        channelId
-      }
-      const meta = {
-        receiver: '0x5aeda56215b167893e80b4fe645ba6d5bab767de',
-        type: 'TIP',
-        fields: {
-          streamId: 6969,
-          performerId: 6969,
-          performerName: 'performer a'
-        }
-      }
-      const increment = null
-      const sender = partyA
-      try {
-        const updatedPayment = await client.threadUpdateHandler(
-          { payment, meta },
-          increment,
-          sender
-        )
-      } catch (e) {
-        expect(e.statusCode).to.equal(200)
-      }
-    })
-
-    it('should fail if increment is not positive int', async () => {
-      const channelId =
-        '0x1000000000000000000000000000000000000000000000000000000000000000'
-      const balanceA = {
-        tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether')),
-        ethDeposit: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether'))
-      }
-      const balanceB = {
-        tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
-        ethDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
-      }
-      const payment = {
-        balanceA,
-        balanceB,
-        channelId
-      }
-      const meta = {
-        receiver: '0x5aeda56215b167893e80b4fe645ba6d5bab767de',
-        type: 'TIP',
-        fields: {
-          streamId: 6969,
-          performerId: 6969,
-          performerName: 'performer a'
-        }
-      }
-      const increment = -1
-      const sender = partyA
-      try {
-        const updatedPayment = await client.threadUpdateHandler(
-          { payment, meta },
-          increment,
-          sender
-        )
-      } catch (e) {
-        expect(e.statusCode).to.equal(200)
-      }
-    })
-
-    it('should fail if increment is not int', async () => {
-      const channelId =
-        '0x1000000000000000000000000000000000000000000000000000000000000000'
-      const balanceA = {
-        tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether')),
-        ethDeposit: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether'))
-      }
-      const balanceB = {
-        tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
-        ethDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
-      }
-      const payment = {
-        balanceA,
-        balanceB,
-        channelId
-      }
-      const meta = {
-        receiver: '0x5aeda56215b167893e80b4fe645ba6d5bab767de',
-        type: 'TIP',
-        fields: {
-          streamId: 6969,
-          performerId: 6969,
-          performerName: 'performer a'
-        }
-      }
-      const increment = 'fail'
-      const sender = partyA
-      try {
-        const updatedPayment = await client.threadUpdateHandler(
-          { payment, meta },
-          increment,
+          
           sender
         )
       } catch (e) {
@@ -1966,12 +1845,12 @@ describe('threadUpdateHandler()', function () {
           performerName: 'performer a'
         }
       }
-      const increment = 1
+      
       const sender = 'fail'
       try {
         const updatedPayment = await client.threadUpdateHandler(
           { payment, meta },
-          increment,
+          
           sender
         )
       } catch (e) {

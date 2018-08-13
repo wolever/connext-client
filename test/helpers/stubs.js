@@ -1286,5 +1286,19 @@ export async function createStubbedHub (
       sigI: sigIDFinal,
       sigA: sigDFinal
     })
+
+  // add request sign deposits endpoint
+  stubHub
+    .post(`/ledgerchannel/${channelId1}/deposit`)
+    .reply(200, {})
+  stubHub
+    .post(`/ledgerchannel/${channelId2}/deposit`)
+    .reply(200, {})
+  stubHub
+    .post(`/ledgerchannel/${channelId3}/deposit`)
+    .reply(200, {})
+  stubHub
+    .post(`/ledgerchannel/${channelId4}/deposit`)
+    .reply(200, {})
   return stubHub
 }
