@@ -2279,9 +2279,6 @@ class Connext {
         .add(hubBond.tokenDeposit)
 
       if (proposedEthBalance && !proposedEthBalance.eq(ethChannelBalance)) {
-        console.log('deposit:', deposit),
-        console.log('proposedEthBalance:',proposedEthBalance.toString())
-        console.log('ethChannelBalance:', ethChannelBalance.toString())
         throw new ChannelUpdateError(methodName, 'Invalid ETH balance proposed')
       }
       if (proposedTokenBalance && !proposedTokenBalance.eq(tokenChannelBalance)) {
@@ -3961,15 +3958,10 @@ class Connext {
       methodName,
       'channelId'
     )
-    try {
-      const response = await this.networking.get(
-        `virtualchannel/${channelId}/update/latest`
-      )
-      return response.data
-    } catch (e) {
-      const response = await this.getThreadInitialState(channelId)
-      return response
-    }
+    const response = await this.networking.get(
+      `virtualchannel/${channelId}/update/latest`
+    )
+    return response.data
   }
 
   async getThreadInitialStates (channelId) {
