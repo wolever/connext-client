@@ -2914,7 +2914,7 @@ class Connext {
         .deposit(
           channelId, // PARAM NOT IN CONTRACT YET, SHOULD BE
           recipient,
-          [deposits.ethDeposit, 0],
+          deposits.ethDeposit,
           false
         )
         .send({
@@ -2924,47 +2924,19 @@ class Connext {
         })
         break
       case CHANNEL_TYPES.TOKEN:
-        // approve transfer
-        token = new this.web3.eth.Contract(tokenAbi, tokenAddress)
-        tokenApproval = await token.methods.approve(this.ingridAddress, deposits.tokenDeposit).send({
-          from: sender,
-          gas: 750000
-        })
-        if (tokenApproval) {
-          result = await this.channelManagerInstance.methods
-            .deposit(
-              channelId, // PARAM NOT IN CONTRACT YET, SHOULD BE
-              recipient,
-              [0, deposits.tokenDeposit],
-              false
-            )
-            .send({
-              from: sender,
-              gas: 1000000,
-            })
-        }
-        break
-      case CHANNEL_TYPES.TOKEN_ETH:
-        // approve transfer
-        token = new this.web3.eth.Contract(tokenAbi, tokenAddress)
-        tokenApproval = await token.methods.approve(this.ingridAddress, deposits.tokenDeposit).send({
-          from: sender,
-          gas: 750000
-        })
-        if (tokenApproval) {
-          result = await this.channelManagerInstance.methods
-            .deposit(
-              channelId, // PARAM NOT IN CONTRACT YET, SHOULD BE
-              recipient,
-              [deposits.ethDeposit, deposits.tokenDeposit],
-              false
-            )
-            .send({
-              from: sender,
-              value: deposits.ethDeposit,
-              gas: 1000000,
-            })
-        }
+      // must pre-approve transfer
+        result = await this.channelManagerInstance.methods
+          .deposit(
+            channelId, // PARAM NOT IN CONTRACT YET, SHOULD BE
+            recipient,
+            deposits.tokenDeposit,
+            false
+          )
+          .send({
+            from: sender,
+            gas: 1000000,
+          })
+        
         break
       default:
         throw new ChannelUpdateError(methodName, `Invalid deposit type detected`)
