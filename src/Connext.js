@@ -1405,7 +1405,7 @@ class Connext {
       sender = accounts[0].toLowerCase()
     }
     const lc = await this.getChannelByPartyA(sender)
-    const results = await this.byzantinecloseThreadContractHandler({
+    const results = await this.byzantineCloseThreadContractHandler({
       lcId: lc.channelId,
       sender: sender
     })
@@ -3542,14 +3542,14 @@ class Connext {
     return results
   }
 
-  async byzantinecloseThreadContractHandler ({ lcId, sender = null }) {
-    const methodName = 'byzantinecloseThreadContractHandler'
+  async byzantineCloseChannelContractHandler ({ channelId, sender = null }) {
+    const methodName = 'byzantineCloseChannelContractHandler'
     const isHexStrict = { presence: true, isHexStrict: true }
     const isAddress = { presence: true, isAddress: true }
     Connext.validatorsResponseToError(
-      validate.single(lcId, isHexStrict),
+      validate.single(channelId, isHexStrict),
       methodName,
-      'lcId'
+      'channelId'
     )
     if (sender) {
       Connext.validatorsResponseToError(
@@ -3562,7 +3562,7 @@ class Connext {
       sender = accounts[0].toLowerCase()
     }
     const results = await this.channelManagerInstance.methods
-      .byzantinecloseThread(lcId)
+      .byzantineCloseChannel(channelId)
       .send({
         from: sender,
         gas: '470000'
