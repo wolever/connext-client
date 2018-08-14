@@ -532,7 +532,8 @@ class Connext {
 
      const result = await this.networking.post(`ledgerchannel/${channel.channelId}/deposit`, {
        sig: sig,
-       deposit: deposits.ethDeposit ? deposits.ethDeposit.toString() : '0',
+       deposit: deposits.ethDeposit ? deposits.ethDeposit.toString() : deposits.tokenDeposit.toString(),
+       isToken: deposits.ethDeposit ? false : true
       //  ethDeposit: deposits.ethDeposit ? deposits.ethDeposit.toString() : '0',
       //  tokenDeposit: deposits.tokenDeposit ? deposits.tokenDeposit.toString() : '0',
      })
