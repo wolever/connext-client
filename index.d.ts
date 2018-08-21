@@ -1,4 +1,4 @@
-import { BigNumber } from "bignumber.js";
+import { BN } from "bn.js";
 
 export = Connext;
 
@@ -50,8 +50,8 @@ declare namespace Connext {
   }
 
   export interface BalanceOptions {
-    tokenDeposit: BigNumber;
-    ethDeposit: BigNumber;
+    tokenDeposit: BN;
+    ethDeposit: BN;
   }
 
   export interface OpenThreadOptions {
@@ -78,10 +78,10 @@ declare namespace Connext {
     vcRootHash: string;
     partyA: string;
     partyI: string;
-    ethBalanceA: BigNumber;
-    ethBalanceI: BigNumber;
-    tokenBalanceA: BigNumber;
-    tokenBalanceI: BigNumber;
+    ethBalanceA: BN;
+    ethBalanceI: BN;
+    tokenBalanceA: BN;
+    tokenBalanceI: BN;
   }
 
   export interface RecoverChannelUpdate extends FingerprintChannelUpdate {
@@ -93,10 +93,10 @@ declare namespace Connext {
     nonce: number;
     partyA: string;
     partyB: string;
-    ethBalanceA: BigNumber;
-    ethBalanceB: BigNumber;
-    tokenBalanceA: BigNumber;
-    tokenBalanceB: BigNumber;
+    ethBalanceA: BN;
+    ethBalanceB: BN;
+    tokenBalanceA: BN;
+    tokenBalanceB: BN;
   }
 
   export interface RecoverThreadUpdate extends FingerprintThreadUpdate {
