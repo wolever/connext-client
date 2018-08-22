@@ -35,7 +35,7 @@ declare class Connext {
 
   static recoverSignerFromThreadStateUpdate(opts: Connext.RecoverThreadUpdate): string;
 
-  static generateThreadRootHash(threadInitialStates: any): string;
+  static generateThreadRootHash(threadInitialStates: ThreadInitialStates): string;
 
   static generateMerkleTree(threadInitialStates: Connext.FingerprintThreadUpdate[]): string;
 }
