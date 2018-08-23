@@ -1,4 +1,4 @@
-import { BN } from "bn.js";
+import BN from "bn.js";
 
 export = Connext;
 
@@ -27,17 +27,29 @@ declare class Connext {
 
   closeThreads(channels: string[]): Promise<any>;
 
-  static createChannelStateUpdateFingerprint(opts: Connext.FingerprintChannelUpdate): string;
+  static createChannelStateUpdateFingerprint(
+    opts: Connext.FingerprintChannelUpdate
+  ): string;
 
-  static recoverSignerFromChannelStateUpdate(opts: Connext.RecoverChannelUpdate): string;
+  static recoverSignerFromChannelStateUpdate(
+    opts: Connext.RecoverChannelUpdate
+  ): string;
 
-  static createThreadStateUpdateFingerprint(opts: Connext.FingerprintThreadUpdate): string;
+  static createThreadStateUpdateFingerprint(
+    opts: Connext.FingerprintThreadUpdate
+  ): string;
 
-  static recoverSignerFromThreadStateUpdate(opts: Connext.RecoverThreadUpdate): string;
+  static recoverSignerFromThreadStateUpdate(
+    opts: Connext.RecoverThreadUpdate
+  ): string;
 
-  static generateThreadRootHash(threadInitialStates: ThreadInitialStates): string;
+  static generateThreadRootHash(
+    threadInitialStates: Connext.ThreadInitialStates
+  ): string;
 
-  static generateMerkleTree(threadInitialStates: Connext.FingerprintThreadUpdate[]): string;
+  static generateMerkleTree(
+    threadInitialStates: Connext.FingerprintThreadUpdate[]
+  ): string;
 }
 
 declare namespace Connext {
