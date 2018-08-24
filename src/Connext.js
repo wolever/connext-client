@@ -2,7 +2,7 @@ const channelManagerAbi = require('../artifacts/LedgerChannel.json')
 const util = require('ethereumjs-util')
 const Web3 = require('web3')
 const validate = require('validate.js')
-const {validateBalance, validateTipPurchaseMeta, validatePurchasePurchaseMeta, ChannelOpenError, ParameterValidationError, ContractError, ThreadOpenError, ChannelUpdateError, ThreadUpdateError, ChannelCloseError, ThreadCloseError} = require('./helpers/Errors')
+const {validateBalance, validateTipPurchaseMeta, validatePurchasePurchaseMeta, validateWithdrawalPurchaseMeta, ChannelOpenError, ParameterValidationError, ContractError, ThreadOpenError, ChannelUpdateError, ThreadUpdateError, ChannelCloseError, ThreadCloseError} = require('./helpers/Errors')
 const MerkleTree = require('./helpers/MerkleTree')
 const Utils = require('./helpers/utils')
 const crypto = require('crypto')
@@ -29,7 +29,8 @@ const THREAD_STATES = {
 const META_TYPES = {
   'TIP': 0,
   'PURCHASE': 1,
-  'UNCATEGORIZED': 2
+  'UNCATEGORIZED': 2,
+  'WITHDRAWAL': 3
 }
 
 const PAYMENT_TYPES = {
@@ -113,6 +114,10 @@ validate.validators.isValidMeta = value => {
       return ans
     case 2: // UNCATEGORIZED -- no validation 
       return null
+    case 3: // WITHDRAWAL
+      isValid = validateWithdrawalPurchaseMeta(value)
+      ans = isValid ? null : `${JSON.stringify(value)} is not a valid WITHDRAWAL purchase meta.`
+      return ans
     default:
       return `${value.type} is not a valid purchase meta type`
   }
