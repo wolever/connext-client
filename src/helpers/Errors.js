@@ -183,5 +183,5 @@ export function validateWithdrawalPurchaseMeta (meta) {
     return false
   }
   const { recipient: recipient } = meta.fields
-  return !!recipient && isAddress(recipient)
+  return !!recipient && Web3.utils.isAddress(recipient)
 }
