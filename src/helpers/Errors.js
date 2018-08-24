@@ -182,6 +182,6 @@ export function validateWithdrawalPurchaseMeta (meta) {
   if (!meta.fields) {
     return false
   }
-  const { receiver } = meta.fields
-  return !!receiver && isAddress(receiver)
+  const { recipient: recipient } = meta.fields
+  return !!recipient && isAddress(recipient)
 }
