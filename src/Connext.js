@@ -384,7 +384,7 @@ class Connext {
     } else {
       // get challenge timer from ingrid
       challenge = await this.getChallengeTimer()
-
+      
     }
     // determine channel type
     const { ethDeposit, tokenDeposit } = initialDeposits
@@ -529,7 +529,8 @@ class Connext {
           ethDeposit: Web3.utils.toBN(channel.ethBalanceI),
           tokenDeposit: Web3.utils.toBN(channel.tokenBalanceI)
         },
-        deposit: deposits
+        deposit: deposits,
+        signer: sender
       })
      } else {
        throw new ChannelUpdateError(methodName, 'Error with contract transaction')
