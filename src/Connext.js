@@ -11,18 +11,18 @@ const tokenAbi = require('human-standard-token-abi')
 
 // Channel enums
 const CHANNEL_STATES = {
-  'LCS_OPENING': 0,
-  'LCS_OPENED': 1,
-  'LCS_SETTLING': 2,
-  'LCS_SETTLED': 3,
+  'CHANNEL_OPENING': 0,
+  'CHANNEL_OPENED': 1,
+  'CHANNEL_SETTLING': 2,
+  'CHANNEL_SETTLED': 3,
 }
 
 // thread enums
 const THREAD_STATES = {
-  'VCS_OPENING': 0,
-  'VCS_OPENED': 1,
-  'VCS_SETTLING': 2,
-  'VCS_SETTLED': 3,
+  'THREAD_OPENING': 0,
+  'THREAD_OPENED': 1,
+  'THREAD_SETTLING': 2,
+  'THREAD_SETTLED': 3,
 }
 
 // Purchase metadata enum
@@ -2814,7 +2814,7 @@ class Connext {
     // }
 
     const result = await this.channelManagerInstance.methods
-      .LCOpenTimeout(channelId)
+      .channelOpenTimeout(channelId)
       .send({
         from: sender,
         gas: 470000
@@ -3133,7 +3133,7 @@ class Connext {
       throw new ChannelOpenError(methodName, 'Channel is not in correct state')
     }
     const result = await this.channelManagerInstance.methods
-      .joinThread(lcId)
+      .joinChannel(lcId)
       .send({
         from: sender || this.ingridAddress, // can also be accounts[0], easier for testing
         value: deposit,
@@ -3235,7 +3235,7 @@ class Connext {
     const tokenBalanceI = balanceI.tokenDeposit ? balanceI.tokenDeposit : Web3.utils.toBN('0')
 
     const result = await this.channelManagerInstance.methods
-      .updateLCstate(
+      .updateChannelState(
         channelId,
         [nonce, openVcs, ethBalanceA, ethBalanceI, tokenBalanceA, tokenBalanceI],
         Web3.utils.padRight(vcRootHash, 64),
@@ -3352,11 +3352,10 @@ class Connext {
     }
 
     const results = await this.channelManagerInstance.methods
-      .initVCstate(
+      .initThreadState(
         subchanId,
         threadId,
         proof,
-        0,
         partyA,
         partyB,
         [ ethBalanceA, tokenBalanceA ],
@@ -3468,7 +3467,7 @@ class Connext {
     const tokenBalanceB = balanceB.tokenDeposit ? balanceB.tokenDeposit : Web3.utils.toBN('0')
 
     const results = await this.channelManagerInstance.methods
-      .settleVC(
+      .settleThread(
         subchanId,
         threadId,
         nonce,
@@ -3525,7 +3524,7 @@ class Connext {
       sender = accounts[0].toLowerCase()
     }
     const results = await this.channelManagerInstance.methods
-      .closeVirtualChannel(lcId, vcId)
+      .closeThread(lcId, vcId)
       .send({
         from: sender
       })
