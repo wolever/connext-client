@@ -3928,6 +3928,20 @@ class Connext {
     return response.data.challenge
   }
 
+  async getContractAddress (channelId) {
+    const methodName = 'getLatestThreadState'
+    const isHexStrict = { presence: true, isHexStrict: true }
+    Connext.validatorsResponseToError(
+      validate.single(channelId, isHexStrict),
+      methodName,
+      'channelId'
+    )
+    const response = await this.networking.get(
+      `ledgerchannel/${channelId}/contract`
+    )
+    return response.data.address
+  }
+
   async getLatestThreadState (channelId) {
     // validate params
     const methodName = 'getLatestThreadState'
