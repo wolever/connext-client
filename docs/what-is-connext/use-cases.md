@@ -1,10 +1,3 @@
----
-description: >-
-  V1 of the Connext platform focused on the most simple application of state
-  channels: payments. We see it being applicable as core payments infrastructure
-  for the following use cases.
----
-
 # Use Cases
 
 ## Content Payments and Transactions
