@@ -22,7 +22,7 @@ Take a look at our [Frequently Asked Questions](faq.md)!
 
 For more information on state channel hubs and their construction, check out our [Background on State Channel Hubs](background-on-state-channels.md) page.
 
-To dive into the technical details, click through to [Architecture](architecture.md), [Typical Usage](typical-usage.md), and [Use Cases](use-cases.md); see [Connext Client]() for a detailed description of package methods.
+To dive into the technical details, click through to [Architecture](architecture.md), [Typical Usage](), and [Use Cases](use-cases.md); see [Connext Client]() for a detailed description of package methods.
 
 You can also get in touch with us through our [Pilot Program](http://connext.network/) form!
 

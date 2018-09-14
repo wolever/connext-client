@@ -1,15 +1,8 @@
 # State Channel Background
 
-## What are state channels?
+## Background Reading
 
-State channels are a type of "layer two" scaling solution built on top of the Ethereum network. State channels focus specifically on interactions between any two parties. The framework allows individual transactions to take place instantaneously and trustlessly off-chain and then be settled with the blockchain at a later time.  
-
-Here's how it works under the hood:
-
-1. Users lock their operating funds into a multisignature Ethereum smart contract and transact by sending signed state updates \(bits of data representing balance changes\) amongst themselves. 
-2. When finished, they use the latest signed update to unlock the funds they are owed, using the same smart contract.
-
-In the event of a dispute, the contract acts as an arbitrator, validating transaction history and ensuring fair behavior. This also ensures that state channels retain the security of the underlying blockchain.
+For general knowledge, you can read up on state channels at [LearnChannels](https://www.learnchannels.org/), a community effort that has compiled accessible information on state channels. Read on for Connext-specific explanations!
 
 ## What are state channel hubs?
 
@@ -55,18 +48,6 @@ Because our hubs will initially be application-specific and rely on threads rath
 HTLCs are likely more efficient for one-off payments between two unique parties \(e.g., an infrequent transaction like buying clothes\), while threads are better for more dedicated payments around a specific use case \(e.g., payments in a specific application--think paying for your coffee with an app each morning\).
 
 The relative efficiency of our implementation means that it requires less bandwidth; our Hub model offers a simpler, easier, cheaper, and more application-focused solution than other approaches.
-
-## State Channels vs. Plasma
-
-Plasma is a [proposed framework](http://plasma.io/) for scaling Ethereum capacity by using hierarchical sidechains. While the ultimate goal is the same--scale Ethereum capacity--Plasma and state channels have different strengths and weaknesses. Importantly, state channels can be complementary to Plasma-based approaches. 
-
-Plasma is typically better suited to n-party interactions \(think massive multiplayer online games where many parties are simultaneously interacting with many others\) than state channels. However, because Plasma-based approaches like [Loom](https://loomx.io/) rely on consensus algorithms rather then unanimous consent, they don't offer instant finality or free off-chain transactions. Despite faster, more centralized consensus algorithms, sidechains do incur confirmation times and transaction fees.
-
-Connext Hubs boil down to a simple 2-party consensus and thus \(for 2-party or sequential interactions\) offer instant finality and near-zero fees. As noted above, our framework can be used on top of Plasma sidechains as a Layer 2 solution; users can get the best of both worlds.
-
-## State Channels vs. Sharding
-
-\[\[UNDER CONSTRUCTION\]\]
 
 ## Our Contract
 
