@@ -127,8 +127,37 @@ describe('Connext happy case testing on testnet hub', () => {
   })
 
   describe('updateChannel', () => {
-    // DON'T HAVE THESE CLIENT METHODS YET
-    it('should send an ETH balance update from client to hub', async () => {})
+    // DON'T HAVE THESE CLIENT METHODS YET,
+    // THIS SHOULD LOOK ALMOST IDENTICAL TO UPDATE THREAD FOR WRAPPINGs
+    it('should send an ETH balance update from client to hub', async () => {
+      // ideally, would take a payment object of the following form
+      const balanceA = {
+        ethDeposit: Web3.utils.toBN(Web3.utils.toWei('5', 'ether'))
+      }
+      const balanceB = {
+        ethDeposit: Web3.utils.toBN(Web3.utils.toWei('1', 'ether'))
+      }
+      const payment = {
+        channelId: threadIdA,
+        balanceA,
+        balanceB
+      }
+      const meta = {
+        receiver: hubAddress, // not used, just needs to be an ETH address. can remove this validation, see line 99 in src
+        type: META_TYPES.UNCATEGORIZED // no validation on fields
+      }
+
+      // partyA should be optional sender param that is default null
+      const response = await client.updateChannel(payment, meta, partyA)
+      chanA = await client.getChannelById(threadIdA)
+      expect(
+        Web3.utils.toBN(chanA.ethBalanceA).eq(balanceA.ethDeposit)
+      ).to.equal(true)
+      expect(
+        Web3.utils.toBN(chanA.ethBalanceI).eq(balanceB.ethDeposit)
+      ).to.equal(true)
+      expect(chanA.nonce).to.equal(1)
+    })
   })
 
   describe('request hub deposit', () => {
