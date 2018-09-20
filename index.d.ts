@@ -57,7 +57,7 @@ declare namespace Connext {
     web3: any;
     ingridAddress: string;
     watcherUrl: string;
-    ingridUrl: string;
+    hubUrl: string;
     contractAddress: string;
   }
 

@@ -15,7 +15,7 @@ const Connext = require('../../src/Connext')
 const web3 = new Web3('http://localhost:8545')
 let client
 let ingridAddress
-let ingridUrl = 'http://localhost:8080'
+let hubUrl = 'http://localhost:8080'
 let contractAddress = '0xdec16622bfe1f0cdaf6f7f20437d2a040cccb0a1'
 let watcherUrl = ''
 
@@ -37,7 +37,7 @@ describe('createThreadStateUpdateFingerprint()', function () {
       web3,
       ingridAddress,
       watcherUrl,
-      ingridUrl,
+      hubUrl,
       contractAddress
     })
   })

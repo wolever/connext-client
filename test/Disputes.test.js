@@ -17,7 +17,7 @@ let web3
 let client
 let ingridAddress
 let watcherUrl = process.env.WATCHER_URL || ''
-let ingridUrl = process.env.INGRID_URL || 'http://localhost:8080'
+let hubUrl = process.env.INGRID_URL || 'http://localhost:8080'
 let contractAddress = '0x31713144d9ae2501e644a418dd9035ed840b1660'
 
 // for accounts
@@ -51,7 +51,7 @@ describe('Connext dispute cases', function () {
       // generate hub auth
       const origin = 'localhost'
 
-      const challengeRes = await fetch(`${ingridUrl}/auth/challenge`, {
+      const challengeRes = await fetch(`${hubUrl}/auth/challenge`, {
         method: 'POST',
         credentials: 'include'
       })
@@ -61,7 +61,7 @@ describe('Connext dispute cases', function () {
       const hash = genAuthHash(nonce, origin)
       const signature = await web3.eth.sign(hash, ingridAddress)
 
-      const authRes = await fetch(`${ingridUrl}/auth/response`, {
+      const authRes = await fetch(`${hubUrl}/auth/response`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -84,7 +84,7 @@ describe('Connext dispute cases', function () {
         web3,
         ingridAddress,
         watcherUrl,
-        ingridUrl,
+        hubUrl,
         contractAddress
       })
       console.log('Client properly initialized')

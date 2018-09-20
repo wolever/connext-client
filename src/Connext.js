@@ -283,26 +283,23 @@ class Connext {
    * @param {Web3} params.web3 - the web3 instance
    * @param {String} params.ingridAddress - ETH address of intermediary (defaults to Connext hub)
    * @param {String} params.watcherUrl - url of watcher server (defaults to Connext hub)
-   * @param {String} params.ingridUrl - url of intermediary server (defaults to Connext hub)
+   * @param {String} params.hubUrl - url of intermediary server (defaults to Connext hub)
    * @param {String} params.contractAddress - address of deployed contract (defaults to latest deployed contract)
    * @param {String} params.hubAuth - token authorizing client package to make requests to hub
    */
   constructor (
     {
       web3,
-      ingridAddress = '',
-      watcherUrl = '',
-      ingridUrl = '',
+      hubAddress = '',
+      hubUrl = '',
       contractAddress = '',
       hubAuth = '',
-      useAxios = false
     },
     web3Lib = Web3
   ) {
     this.web3 = new web3Lib(web3.currentProvider) // convert legacy web3 0.x to 1.x
-    this.ingridAddress = ingridAddress.toLowerCase()
-    this.watcherUrl = watcherUrl
-    this.ingridUrl = ingridUrl
+    this.hubAddress = hubAddress.toLowerCase()
+    this.hubUrl = hubUrl
     this.channelManagerInstance = new this.web3.eth.Contract(
       channelManagerAbi.abi,
       contractAddress
@@ -314,7 +311,7 @@ class Connext {
       },
       withAuth: true
     }
-    this.networking = networking(ingridUrl, useAxios)
+    this.networking = networking(hubUrl, false)
   }
 
   // ***************************************
@@ -410,7 +407,7 @@ class Connext {
     }
 
     // verify opening state channel with different account
-    if (sender.toLowerCase() === this.ingridAddress.toLowerCase()) {
+    if (sender.toLowerCase() === this.hubAddress.toLowerCase()) {
       throw new ChannelOpenError(methodName, 'Cannot open a channel with yourself')
     }
 
@@ -1299,13 +1296,13 @@ class Connext {
         openVcs: channelState.openVcs,
         vcRootHash: channelState.vcRootHash,
         partyA: channel.partyA,
-        partyI: this.ingridAddress,
+        partyI: this.hubAddress,
         ethBalanceA: Web3.utils.toBN(channelState.ethBalanceA),
         ethBalanceI: Web3.utils.toBN(channelState.ethBalanceI),
         tokenBalanceA: Web3.utils.toBN(channelState.tokenBalanceA),
         tokenBalanceI: Web3.utils.toBN(channelState.tokenBalanceI),
       })
-      if (signer.toLowerCase() !== this.ingridAddress.toLowerCase()) {
+      if (signer.toLowerCase() !== this.hubAddress.toLowerCase()) {
         throw new ChannelCloseError(methodName, 'Hub did not sign update')
       }
     } else {
@@ -1318,7 +1315,7 @@ class Connext {
         openVcs: 0,
         vcRootHash: Connext.generateThreadRootHash({ threadInitialStates: [] }),
         partyA: channel.partyA,
-        partyI: this.ingridAddress,
+        partyI: this.hubAddress,
         ethBalanceA: Web3.utils.toBN(channel.ethBalanceA),
         ethBalanceI: Web3.utils.toBN(channel.ethBalanceI),
         tokenBalanceA: Web3.utils.toBN(channel.tokenBalanceA),
@@ -1334,7 +1331,7 @@ class Connext {
       openVcs: channelState.openVcs,
       vcRootHash: channelState.vcRootHash,
       partyA: channel.partyA,
-      partyI: this.ingridAddress,
+      partyI: this.hubAddress,
       balanceA: {
         tokenDeposit: Web3.utils.toBN(channelState.tokenBalanceA),
         ethDeposit: Web3.utils.toBN(channelState.ethBalanceA),
@@ -1529,13 +1526,13 @@ class Connext {
       openVcs: state.openVcs,
       vcRootHash: state.vcRootHash,
       partyA: sender,
-      partyI: this.ingridAddress,
+      partyI: this.hubAddress,
       ethBalanceA: Web3.utils.toBN(state.ethBalanceA),
       ethBalanceI: Web3.utils.toBN(state.ethBalanceI),
       tokenBalanceA: Web3.utils.toBN(state.tokenBalanceA),
       tokenBalanceI: Web3.utils.toBN(state.tokenBalanceI),
     })
-    if (signer.toLowerCase() !== this.ingridAddress.toLowerCase()) {
+    if (signer.toLowerCase() !== this.hubAddress.toLowerCase()) {
       throw new ChannelUpdateError(methodName, 'Invalid signature detected')
     }
 
@@ -2060,7 +2057,7 @@ class Connext {
   //  * @param {Number} params.openVcs - the number of open virtual channels associated with this ledger channel
   //  * @param {String} params.vcRootHash - the root hash of the Merkle tree containing all initial states of the open virtual channels
   //  * @param {String} params.partyA - ETH address of partyA in the ledgerchannel
-  //  * @param {String} params.partyI - (optional) ETH address of the hub, defaults to this.ingridAddress
+  //  * @param {String} params.partyI - (optional) ETH address of the hub, defaults to this.hubAddress
   //  * @param {Number} params.balanceA - updated balance of partyA
   //  * @param {Number} params.balanceI - updated balance of partyI
   //  * @param {Boolean} params.unlockedAccountPresent - (optional) whether to use sign or personal sign, defaults to false if in prod and true if in dev
@@ -2074,7 +2071,7 @@ class Connext {
     openVcs,
     vcRootHash,
     partyA,
-    partyI = this.ingridAddress, // default to ingrid
+    partyI = this.hubAddress, // default to ingrid
     balanceA,
     balanceI,
     unlockedAccountPresent = process.env.DEV ? process.env.DEV : false, // true if hub or ingrid, dev needs unsigned
@@ -2620,7 +2617,7 @@ class Connext {
   // ***************************************
 
   async createChannelContractHandler ({
-    ingridAddress = this.ingridAddress,
+    ingridAddress = this.hubAddress,
     channelId,
     initialDeposits,
     challenge,
@@ -3033,14 +3030,14 @@ class Connext {
       openVcs: 0,
       vcRootHash: emptyRootHash,
       partyA: sender,
-      partyI: this.ingridAddress,
+      partyI: this.hubAddress,
       ethBalanceA: balanceA.ethDeposit ? balanceA.ethDeposit :      Web3.utils.toBN('0'),
       ethBalanceI: balanceI.ethDeposit ? balanceI.ethDeposit : Web3.utils.toBN('0'),
       tokenBalanceA: balanceA.tokenDeposit ? balanceA.tokenDeposit : Web3.utils.toBN('0'),
       tokenBalanceI: balanceI.tokenDeposit ? balanceI.tokenDeposit : Web3.utils.toBN('0'),
     }
     let signer = Connext.recoverSignerFromChannelStateUpdate(state)
-    if (signer.toLowerCase() !== this.ingridAddress.toLowerCase()) {
+    if (signer.toLowerCase() !== this.hubAddress.toLowerCase()) {
       throw new ChannelCloseError(methodName, 'Hub did not sign closing update')
     }
     state.sig = sigA
@@ -3135,7 +3132,7 @@ class Connext {
     const result = await this.channelManagerInstance.methods
       .joinChannel(lcId)
       .send({
-        from: sender || this.ingridAddress, // can also be accounts[0], easier for testing
+        from: sender || this.hubAddress, // can also be accounts[0], easier for testing
         value: deposit,
         gas: 3000000 // FIX THIS, WHY HAPPEN, TRUFFLE CONFIG???
       })
@@ -4015,7 +4012,7 @@ class Connext {
       methodName,
       'deposit'
     )
-    const accountBalance = await this.web3.eth.getBalance(this.ingridAddress)
+    const accountBalance = await this.web3.eth.getBalance(this.hubAddress)
     if (deposit.ethDeposit && deposit.ethDeposit.gt(Web3.utils.toBN(accountBalance))) {
       throw new ChannelUpdateError(
         methodName,
@@ -4222,7 +4219,7 @@ class Connext {
       openVcs: threadInitialStates.length,
       vcRootHash: newRootHash,
       partyA: channel.partyA,
-      partyI: this.ingridAddress,
+      partyI: this.hubAddress,
       balanceA: {
         ethDeposit: channelEthBalanceA,
         tokenDeposit: channelTokenBalanceA
@@ -4306,7 +4303,7 @@ class Connext {
       openVcs: threadInitialStates.length,
       vcRootHash: newRootHash,
       partyA: signer,
-      partyI: this.ingridAddress,
+      partyI: this.hubAddress,
       balanceA: {
         ethDeposit: subchanEthBalanceA,
         tokenDeposit: subchanTokenBalanceA,

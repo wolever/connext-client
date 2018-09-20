@@ -15,7 +15,7 @@ const Connext = require('../src/Connext')
 const web3 = new Web3('http://localhost:8545')
 let client
 let ingridAddress
-let ingridUrl = 'http://localhost:8080'
+let hubUrl = 'http://localhost:8080'
 let contractAddress = '0xdec16622bfe1f0cdaf6f7f20437d2a040cccb0a1'
 let watcherUrl = ''
 
@@ -43,7 +43,7 @@ describe('Connext happy case testing flow', () => {
 
     const origin = 'localhost'
 
-    const challengeRes = await fetch(`${ingridUrl}/auth/challenge`, {
+    const challengeRes = await fetch(`${hubUrl}/auth/challenge`, {
       method: 'POST',
       credentials: 'include'
     })
@@ -53,7 +53,7 @@ describe('Connext happy case testing flow', () => {
     const hash = genAuthHash(nonce, origin)
     const signature = await web3.eth.sign(hash, ingridAddress)
 
-    const authRes = await fetch(`${ingridUrl}/auth/response`, {
+    const authRes = await fetch(`${hubUrl}/auth/response`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -77,7 +77,7 @@ describe('Connext happy case testing flow', () => {
       web3,
       ingridAddress,
       watcherUrl,
-      ingridUrl,
+      hubUrl,
       contractAddress
     })
   })
