@@ -158,11 +158,41 @@ describe('Connext happy case testing on testnet hub', () => {
   })
 
   describe('openThread', () => {
-    it('should open a thread between partyA and partyB', async () => {})
+    it('should open a thread between partyA and partyB', async () => {
+      const initialDeposit = {
+        ethDeposit: Web3.utils.toBN(Web3.utils.toWei('5', 'ether'))
+      }
+      chanB = await client.getChannelById(subchanBI)
+      chanA = await client.getChannelById(subchanAI)
+      threadIdA = await client.openThread({
+        to: partyB,
+        sender: partyA,
+        deposit: initialDeposit
+      })
+      threadA = await client.getThreadById(threadIdA)
+      expect(threadA.channelId).to.equal(threadIdA)
+      expect(threadA.state).to.equal(THREAD_STATES.THREAD_OPENED)
+      expect(
+        Web3.utils.toBN(threadA.ethBalanceA).eq(initialDeposit.ethDeposit)
+      ).to.equal(true)
+      expect(
+        Web3.utils.toBN(threadA.ethBalanceB).eq(Web3.utils.toBN('0'))
+      ).to.equal(true)
+    })
 
-    it('should decrease partyA channel balance by thread balanceA', async () => {})
+    it('should decrease partyA channel balance by thread balanceA', async () => {
+      const prevBal = Web3.utils.toBN(chanA.ethBalanceA)
+      const expectedBal = prevBal.sub(Web3.utils.toBN(threadA.ethBalanceA))
+      chanA = await client.getChannelById(subchanAI)
+      expect(expectedBal.eq(Web3.utils.toBN(chanA.ethBalanceA))).to.equal(true)
+    })
 
-    it('should decrease partyI channelB balance by thread balanceA', async () => {})
+    it('should decrease partyI channelB balance by thread balanceA', async () => {
+      const prevBal = Web3.utils.toBN(chanB.ethBalanceI)
+      const expectedBal = prevBal.sub(Web3.utils.toBN(threadA.ethBalanceA))
+      chanB = await client.getChannelById(subchanBI)
+      expect(expectedBal.eq(Web3.utils.toBN(chanB.ethBalanceI))).to.equal(true)
+    })
   })
 
   describe('updateThread', () => {
