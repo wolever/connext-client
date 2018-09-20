@@ -264,16 +264,76 @@ describe('Connext happy case testing on testnet hub', () => {
   })
 
   describe('closeChannel', () => {
-    it('should close the channel between partyA and the hub', async () => {})
+    let prevBalA, finalBalA, prevBalI, finalBalI
 
-    it('should increase partyA wallet balance by channel balanceA', async () => {})
+    it('should close the channel between partyA and the hub', async () => {
+      prevBalA = await client.web3.eth.getBalance(partyA)
+      prevBalI = await client.web3.eth.getBalance(ingridAddress)
+      // send tx
+      const response = await client.closeChannel(partyA)
+      const tx = await client.web3.eth.getTransaction(response)
+      expect(tx.to.toLowerCase()).to.equal(contractAddress)
+      expect(tx.from.toLowerCase()).to.equal(partyA.toLowerCase())
+    }).timeout(8000)
 
-    it('should increase hub wallet balance by channel balanceB', async () => {})
+    it('should increase partyA wallet balance by channel balanceA', async () => {
+      chanA = await client.getChannelByPartyA(partyA)
+      const expected = Web3.utils.fromWei(
+        Web3.utils.toBN(chanA.ethBalanceA).add(Web3.utils.toBN(prevBalA)),
+        'ether'
+      )
+      finalBalA = Web3.utils.fromWei(
+        await client.web3.eth.getBalance(partyA),
+        'ether'
+      )
+      expect(Math.round(expected)).to.equal(Math.round(finalBalA))
+    })
 
-    it('should close the channel between partyB and the hub', async () => {})
+    it('should increase hub wallet balance by channel balanceI', async () => {
+      const expected = Web3.utils.fromWei(
+        Web3.utils.toBN(chanA.ethBalanceI).add(Web3.utils.toBN(prevBalI)),
+        'ether'
+      )
+      finalBalI = Web3.utils.fromWei(
+        await client.web3.eth.getBalance(hubAddress),
+        'ether'
+      )
+      expect(Math.round(expected)).to.equal(Math.round(finalBalI))
+    })
 
-    it('should increase partyA wallet balance by channel balanceA', async () => {})
+    it('should close the channel between partyB and the hub', async () => {
+      prevBalA = await client.web3.eth.getBalance(partyA)
+      prevBalI = await client.web3.eth.getBalance(ingridAddress)
+      // send tx
+      const response = await client.closeChannel(partyA)
+      const tx = await client.web3.eth.getTransaction(response)
+      expect(tx.to.toLowerCase()).to.equal(contractAddress)
+      expect(tx.from.toLowerCase()).to.equal(partyA.toLowerCase())
+    })
 
-    it('should increase hub wallet balance by channel balanceB', async () => {})
+    it('should increase partyA wallet balance by channel balanceA', async () => {
+      chanB = await client.getChannelByPartyA(partyB)
+      const expected = Web3.utils.fromWei(
+        Web3.utils.toBN(chanB.ethBalanceA).add(Web3.utils.toBN(prevBalA)),
+        'ether'
+      )
+      finalBalA = Web3.utils.fromWei(
+        await client.web3.eth.getBalance(partyB),
+        'ether'
+      )
+      expect(Math.round(expected)).to.equal(Math.round(finalBalA))
+    })
+
+    it('should increase hub wallet balance by channel balanceB', async () => {
+      const expected = Web3.utils.fromWei(
+        Web3.utils.toBN(chanB.ethBalanceI).add(Web3.utils.toBN(prevBalI)),
+        'ether'
+      )
+      finalBalI = Web3.utils.fromWei(
+        await client.web3.eth.getBalance(hubAddress),
+        'ether'
+      )
+      expect(Math.round(expected)).to.equal(Math.round(finalBalI))
+    })
   })
 })
