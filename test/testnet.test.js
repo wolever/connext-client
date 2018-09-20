@@ -197,9 +197,86 @@ describe('Connext happy case testing on testnet hub', () => {
 
   describe('updateThread', () => {
     // DON'T HAVE THESE CLIENT METHODS YET
-    it('should send a state update from partyA to partyB', async () => {})
+    it('should send a state update from partyA to partyB', async () => {
+      // ideally, would take a payment object of the following form
+      const balanceA = {
+        ethDeposit: Web3.utils.toBN(Web3.utils.toWei('4', 'ether'))
+      }
+      const balanceB = {
+        ethDeposit: Web3.utils.toBN(Web3.utils.toWei('1', 'ether'))
+      }
+      const payment = {
+        channelId: threadIdA,
+        balanceA,
+        balanceB
+      }
+      const meta = {
+        receiver: partyB, // not used, just needs to be an ETH address. can remove this validation, see line 99 in src
+        type: META_TYPES.UNCATEGORIZED // no validation on fields
+      }
 
-    it('should be able to send multiple simultaneous updates from partyA to partyB', async () => {})
+      // partyA should be optional sender param that is default null
+      const response = await client.updateThread(payment, meta, partyA)
+      threadA = await client.getThreadById(threadIdA)
+      expect(
+        Web3.utils.toBN(threadA.ethBalanceA).eq(balanceA.ethDeposit)
+      ).to.equal(true)
+      expect(
+        Web3.utils.toBN(threadA.ethBalanceB).eq(balanceB.ethDeposit)
+      ).to.equal(true)
+      expect(threadA.nonce).to.equal(1)
+    })
+
+    it('partyA should properly sign the proposed update', async () => {
+      const state = await client.getLatestThreadState(threadIdA)
+      const signer = Connext.recoverSignerFromThreadStateUpdate({
+        sig: state.sigA,
+        channelId: threadIdA,
+        nonce: state.nonce,
+        partyA: partyA,
+        partyB: partyB,
+        ethBalanceA: Web3.utils.toBN(state.ethBalanceA),
+        ethBalanceB: Web3.utils.toBN(state.ethBalanceB),
+        tokenBalanceA: Web3.utils.toBN(state.tokenBalanceA),
+        tokenBalanceB: Web3.utils.toBN(state.tokenBalanceB)
+      })
+      expect(signer.toLowerCase()).to.equal(partyA.toLowerCase())
+    })
+
+    it('should be able to send multiple simultaneous updates from partyA to partyB', async () => {
+      const meta = {
+        receiver: partyB, // not used, just needs to be an ETH address. can remove this validation, see line 99 in src
+        type: META_TYPES.UNCATEGORIZED // no validation on fields
+      }
+      threadA = await client.getThreadById(threadIdA)
+      balanceA = {
+        ethDeposit: Web3.utils.toBN(threadA.ethBalanceA)
+      }
+      balanceB = {
+        ethDeposit: Web3.utils.toBN(threadA.ethBalanceB)
+      }
+      for (let i = 0; i < 10; i++) {
+        balanceA.ethDeposit = balanceA.ethDeposit.sub(
+          Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
+        )
+        balanceB.ethDeposit = balanceB.ethDeposit.add(
+          Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
+        )
+        const payment = {
+          balanceA,
+          balanceB,
+          channelId: threadIdA
+        }
+        await client.updateThread(payment, meta, partyA)
+      }
+      threadA = await client.getThreadById(threadIdA)
+      expect(
+        balanceA.ethDeposit.eq(Web3.utils.toBN(threadA.ethBalanceA))
+      ).to.equal(true)
+      expect(
+        balanceB.ethDeposit.eq(Web3.utils.toBN(threadA.ethBalanceB))
+      ).to.equal(true)
+    })
   })
 
   describe('closeThread', () => {
