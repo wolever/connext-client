@@ -127,13 +127,34 @@ describe('Connext happy case testing on testnet hub', () => {
   })
 
   describe('updateChannel', () => {
+    // DON'T HAVE THESE CLIENT METHODS YET
     it('should send an ETH balance update from client to hub', async () => {})
   })
 
   describe('request hub deposit', () => {
-    it('should request that hub capitalize channel B', async () => {})
+    it('should request that hub capitalize channel B', async () => {
+      chanA = await client.getChannelByPartyA(partyA)
 
-    it('should update hub channel B balance by the requested deposit amount', async () => {})
+      const ethDeposit = Web3.utils.toBN(chanA.ethBalanceA)
+      // multiple to avoid autoDeposit on vc creation
+      const response = await client.requestHubDeposit({
+        channelId: subchanBI,
+        deposit: {
+          ethDeposit
+        }
+      })
+      await interval(async (iterationNumber, stop) => {
+        chanB = await client.getChannelById(subchanBI)
+        if (
+          chanB != null && // exists
+          chanB.state === CHANNEL_STATES.CHANNEL_OPENED && // joined
+          !Web3.utils.toBN(chanB.ethBalanceI).isZero()
+        ) {
+          stop()
+        }
+      }, 2000)
+      expect(ethDeposit.eq(Web3.utils.toBN(chanB.ethBalanceI))).to.equal(true)
+    })
   })
 
   describe('openThread', () => {
@@ -145,6 +166,7 @@ describe('Connext happy case testing on testnet hub', () => {
   })
 
   describe('updateThread', () => {
+    // DON'T HAVE THESE CLIENT METHODS YET
     it('should send a state update from partyA to partyB', async () => {})
 
     it('should be able to send multiple simultaneous updates from partyA to partyB', async () => {})
