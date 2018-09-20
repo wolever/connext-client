@@ -4,10 +4,14 @@ const expect = chai.expect
 const Web3 = require('web3')
 const fetch = require('fetch-cookie')(require('node-fetch'))
 const interval = require('interval-promise')
+const {
+  CHANNEL_STATES,
+  THREAD_STATES,
+  META_TYPES,
+  Connext
+} = require('../src/Connext')
 
 global.fetch = fetch
-
-const Connext = require('../src/Connext')
 
 // named variables
 // on init
@@ -43,25 +47,83 @@ describe('Connext happy case testing on testnet hub', () => {
   })
 
   describe('openChannel', () => {
-    it('should open a channel between partyA and the hub', async () => {})
+    const initialDeposit = {
+      ethDeposit: Web3.utils.toBN(Web3.utils.toWei('6', 'ether'))
+    }
 
-    it('should wait for the hub to autojoin the channel', async () => {})
+    it('should open a channel between partyA and the hub', async () => {
+      subchanAI = await client.openChannel(initialDeposit, null, partyA)
+      // ensure lc is in the database
+      await interval(async (iterationNumber, stop) => {
+        chanA = await client.getChannelById(subchanAI)
+        if (chanA != null) {
+          stop()
+        }
+      }, 2000)
+      expect(chanA.channelId).to.be.equal(subchanAI)
+      expect(chanA.state).to.be.equal(CHANNEL_STATES.CHANNEL_OPENING)
+    }).timeout(45000)
 
-    it('partyA should have initialDeposit in channel', async () => {})
+    it('should wait for the hub to autojoin the channel', async () => {
+      // ensure channel is in the database
+      await interval(async (iterationNumber, stop) => {
+        chanA = await client.getChannelById(subchanAI)
+        if (chanA.state != CHANNEL_STATES.CHANNEL_OPENING) {
+          stop()
+        }
+      }, 2000)
+      expect(chanA.state).to.be.equal(CHANNEL_STATES.CHANNEL_OPENED)
+    }).timeout(45000)
 
-    it('hub should have 0 balance in channel', async () => {})
+    it('partyA should have initialDeposit in channel', async () => {
+      const initialDeposit = {
+        ethDeposit: Web3.utils.toBN(Web3.utils.toWei('6', 'ether'))
+      }
+      const ethBalanceA = Web3.utils.toBN(chanA.ethBalanceA)
+      expect(ethBalanceA.eq(initialDeposit.ethDeposit)).to.equal(true)
+    })
 
-    it('should have a status of open', async () => {})
+    it('hub should have 0 balance in channel', async () => {
+      const ethBalanceI = Web3.utils.toBN(chanA.ethBalanceI)
+      expect(ethBalanceI.eq(Web3.utils.toBN('0'))).to.equal(true)
+    })
 
-    it('should open a channel between partyB and the hub', async () => {})
+    it('should open a channel between partyB and the hub', async () => {
+      const initialDeposit = {
+        ethDeposit: Web3.utils.toBN(Web3.utils.toWei('0', 'ether'))
+      }
+      subchanBI = await client.openChannel(initialDeposit, null, partyB)
+      // ensure lc is in the database
+      await interval(async (iterationNumber, stop) => {
+        chanB = await client.getChannelById(subchanBI)
+        if (chanB != null) {
+          stop()
+        }
+      }, 2000)
+      expect(chanB.channelId).to.be.equal(subchanBI)
+      expect(chanB.state).to.be.equal(CHANNEL_STATES.CHANNEL_OPENING)
+    })
 
-    it('should wait for the hub to autojoin the channel', async () => {})
+    it('should wait for the hub to autojoin the channel', async () => {
+      // ensure channel is in the database
+      await interval(async (iterationNumber, stop) => {
+        chanB = await client.getChannelById(subchanAI)
+        if (chanB.state != CHANNEL_STATES.CHANNEL_OPENING) {
+          stop()
+        }
+      }, 2000)
+      expect(chanB.state).to.be.equal(CHANNEL_STATES.CHANNEL_OPENED)
+    })
 
-    it('partyA should have initialDeposit in channel', async () => {})
+    it('partyB should have 0 in channel', async () => {
+      const ethBalanceA = Web3.utils.toBN(chanB.ethBalanceA)
+      expect(ethBalanceA.eq(Web3.utils.toBN('0'))).to.equal(true)
+    })
 
-    it('hub should have 0 balance in channel', async () => {})
-
-    it('should have a status of open', async () => {})
+    it('hub should have 0 balance in channel', async () => {
+      const ethBalanceI = Web3.utils.toBN(chanB.ethBalanceI)
+      expect(ethBalanceI.eq(Web3.utils.toBN('0'))).to.equal(true)
+    })
   })
 
   describe('updateChannel', () => {
