@@ -203,15 +203,64 @@ describe('Connext happy case testing on testnet hub', () => {
   })
 
   describe('closeThread', () => {
-    it('should close the thread between A and B', async () => {})
+    it('should close the thread between A and B', async () => {
+      threadA = await client.getThreadByParties({ partyA, partyB })
+      const response = await client.closeThread(threadA.channelId, partyA)
+      // get threadA
+      threadA = await client.getThreadById(threadA.channelId)
+      expect(threadA.state).to.equal(THREAD_STATES.THREAD_SETTLED)
+    })
 
-    it('should increase partyA channel balance by remainder of thread balanceA', async () => {})
+    it('should increase partyA channel balance by remainder of thread balanceA', async () => {
+      // get objs
+      chanA = await client.getChannelByPartyA(partyA)
+      // calculate expected balance
+      let prevState = await client.getChannelStateByNonce({
+        channelId: chanA.channelId,
+        nonce: chanA.nonce - 1
+      })
+      const expectedBalA = Web3.utils
+        .toBN(prevState.ethBalanceA)
+        .add(Web3.utils.toBN(threadA.ethBalanceA))
+      expect(expectedBalA.eq(Web3.utils.toBN(chanA.ethBalanceA))).to.equal(true)
+    })
 
-    it('should increase partyB channel by remainder of thread balanceB', async () => {})
+    it('should increase partyB channel by remainder of thread balanceB', async () => {
+      // get objs
+      chanB = await client.getChannelByPartyA(partyB)
+      // calculate expected balance
+      let prevState = await client.getChannelStateByNonce({
+        channelId: subchanBI,
+        nonce: chanB.nonce - 1
+      })
+      const expectedBalA = Web3.utils
+        .toBN(prevState.ethBalanceA)
+        .add(Web3.utils.toBN(threadA.ethBalanceB))
+      expect(expectedBalA.eq(Web3.utils.toBN(chanB.ethBalanceA))).to.equal(true)
+    })
 
-    it('should increase hub channelA balance by remainder of thread balanceB', async () => {})
+    it('should increase hub channelA balance by remainder of thread balanceB', async () => {
+      // calculate expected balance
+      let prevState = await client.getChannelStateByNonce({
+        channelId: chanA.channelId,
+        nonce: chanA.nonce - 1
+      })
+      const expectedBalI = Web3.utils
+        .toBN(prevState.ethBalanceI)
+        .add(Web3.utils.toBN(threadA.ethBalanceB))
+      expect(expectedBalI.eq(Web3.utils.toBN(chanA.ethBalanceI))).to.equal(true)
+    })
 
-    it('should increase hub channelB balance by remainder of thread balanceA', async () => {})
+    it('should increase hub channelB balance by remainder of thread balanceA', async () => {
+      let prevState = await client.getChannelStateByNonce({
+        channelId: subchanBI,
+        nonce: chanB.nonce - 1
+      })
+      const expectedBalI = Web3.utils
+        .toBN(prevState.ethBalanceI)
+        .add(Web3.utils.toBN(threadA.ethBalanceA))
+      expect(expectedBalI.eq(Web3.utils.toBN(chanB.ethBalanceI))).to.equal(true)
+    })
   })
 
   describe('closeChannel', () => {
