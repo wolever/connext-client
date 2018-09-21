@@ -245,7 +245,8 @@ describe('Connext happy case testing on testnet hub', () => {
 
   describe('updateThread', () => {
     // DON'T HAVE THESE CLIENT METHODS YET
-    it('should send a state update from partyA to partyB', async () => {
+    it.only('should send a state update from partyA to partyB', async () => {
+
       // ideally, would take a payment object of the following form
       const balanceA = {
         ethDeposit: Web3.utils.toBN(Web3.utils.toWei('4', 'ether'))
