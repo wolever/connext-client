@@ -10,7 +10,7 @@ const networking = require('./helpers/networking')
 const tokenAbi = require('human-standard-token-abi')
 
 // Channel enums
-export const CHANNEL_STATES = {
+const CHANNEL_STATES = {
   'CHANNEL_OPENING': 0,
   'CHANNEL_OPENED': 1,
   'CHANNEL_SETTLING': 2,
@@ -18,7 +18,7 @@ export const CHANNEL_STATES = {
 }
 
 // thread enums
-export const THREAD_STATES = {
+const THREAD_STATES = {
   'THREAD_OPENING': 0,
   'THREAD_OPENED': 1,
   'THREAD_SETTLING': 2,
@@ -26,7 +26,7 @@ export const THREAD_STATES = {
 }
 
 // Purchase metadata enum
-export const META_TYPES = {
+const META_TYPES = {
   'TIP': 0,
   'PURCHASE': 1,
   'UNCATEGORIZED': 2,

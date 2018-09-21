@@ -4,12 +4,31 @@ const expect = chai.expect
 const Web3 = require('web3')
 const fetch = require('fetch-cookie')(require('node-fetch'))
 const interval = require('interval-promise')
-const {
-  CHANNEL_STATES,
-  THREAD_STATES,
-  META_TYPES,
-  Connext
-} = require('../src/Connext')
+const Connext = require('../src/Connext')
+
+// Channel enums
+const CHANNEL_STATES = {
+  CHANNEL_OPENING: 0,
+  CHANNEL_OPENED: 1,
+  CHANNEL_SETTLING: 2,
+  CHANNEL_SETTLED: 3
+}
+
+// thread enums
+const THREAD_STATES = {
+  THREAD_OPENING: 0,
+  THREAD_OPENED: 1,
+  THREAD_SETTLING: 2,
+  THREAD_SETTLED: 3
+}
+
+// Purchase metadata enum
+const META_TYPES = {
+  TIP: 0,
+  PURCHASE: 1,
+  UNCATEGORIZED: 2,
+  WITHDRAWAL: 3
+}
 
 global.fetch = fetch
 
