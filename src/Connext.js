@@ -996,6 +996,10 @@ class Connext {
       methodName,
       'meta'
     )
+    
+    //require payment=ledger, may be redundant
+    require(PAYMENT_TYPES[payment.type] == PAYMENT_TYPES[0])
+    
     const channel = await this.getChannelById(channelId)
     // must exist
     if (!channel) {
