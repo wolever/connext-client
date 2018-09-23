@@ -1168,11 +1168,8 @@ class Connext {
     // get partyA ledger channel
     const subchan = await this.getChannelByPartyA(sender)
     // generate decomposed lc update
-    const sigAtoI = await this.createChannelUpdateOnThreadClose({
-      latestThreadState,
-      subchan,
-      signer: sender.toLowerCase()
-    })
+    const updateAtoI = await this.createChannelStateOnThreadClose({ latestThreadState, subchan, signer: sender.toLowerCase() })
+    const sigAtoI = await this.createChannelStateUpdate(updateAtoI)
 
     // request ingrid closes vc with this update
     const fastCloseSig = await this.fastCloseThreadHandler({
@@ -1268,6 +1265,8 @@ class Connext {
       sender = accounts[0].toLowerCase()
     }
     const channel = await this.getChannelByPartyA(sender.toLowerCase())
+    console.log('%%%%%%%%%%%%%%%%%%%%%%%')
+    console.log('channel:', channel)
     // channel must be open
     if (CHANNEL_STATES[channel.state] !== CHANNEL_STATES.LCS_OPENED) {
       throw new ChannelCloseError(methodName, 'Channel is in invalid state')
@@ -1282,76 +1281,28 @@ class Connext {
 
     // get latest i-signed lc state update
     let channelState = await this.getLatestChannelState(channel.channelId, ['sigI'])
-    if (channelState) {
-      // openVcs?
-      if (Number(channelState.openVcs) !== 0) {
-        throw new ChannelCloseError(methodName, 'Cannot close channel with open VCs')
-      }
-      // empty root hash?
-      if (channelState.vcRootHash !== Connext.generateThreadRootHash({ threadInitialStates: [] })) {
-        throw new ChannelCloseError(methodName, 'Cannot close channel with open VCs')
-      }
-      // i-signed?
-      const signer = Connext.recoverSignerFromChannelStateUpdate({
-        sig: channelState.sigI,
-        isClose: channelState.isClose,
-        channelId: channel.channelId,
-        nonce: channelState.nonce,
-        openVcs: channelState.openVcs,
-        vcRootHash: channelState.vcRootHash,
-        partyA: channel.partyA,
-        partyI: this.ingridAddress,
-        ethBalanceA: Web3.utils.toBN(channelState.ethBalanceA),
-        ethBalanceI: Web3.utils.toBN(channelState.ethBalanceI),
-        tokenBalanceA: Web3.utils.toBN(channelState.tokenBalanceA),
-        tokenBalanceI: Web3.utils.toBN(channelState.tokenBalanceI),
-      })
-      if (signer.toLowerCase() !== this.ingridAddress.toLowerCase()) {
-        throw new ChannelCloseError(methodName, 'Hub did not sign update')
-      }
-    } else {
-      // no state updates made in LC
-      // PROBLEM: ingrid doesnt return lcState, just uses empty
-      channelState = {
-        isClose: false,
-        channelId: channel.channelId,
-        nonce: 0,
-        openVcs: 0,
-        vcRootHash: Connext.generateThreadRootHash({ threadInitialStates: [] }),
-        partyA: channel.partyA,
-        partyI: this.ingridAddress,
-        ethBalanceA: Web3.utils.toBN(channel.ethBalanceA),
-        ethBalanceI: Web3.utils.toBN(channel.ethBalanceI),
-        tokenBalanceA: Web3.utils.toBN(channel.tokenBalanceA),
-        tokenBalanceI: Web3.utils.toBN(channel.tokenBalanceI),
-      }
-    }
-
-    // generate same update with fast close flag and post
-    let sigParams = {
-      isClose: true,
-      channelId: channel.channelId,
-      nonce: channelState.nonce + 1,
-      openVcs: channelState.openVcs,
-      vcRootHash: channelState.vcRootHash,
-      partyA: channel.partyA,
-      partyI: this.ingridAddress,
-      balanceA: {
-        tokenDeposit: Web3.utils.toBN(channelState.tokenBalanceA),
+    console.log('channelState1:', channelState)
+    // transform if needed
+    if (!channelState.balanceA || !channelState.balanceI) {
+      channelState.balanceA = {
         ethDeposit: Web3.utils.toBN(channelState.ethBalanceA),
-      },
-      balanceI: {
-        tokenDeposit: Web3.utils.toBN(channelState.tokenBalanceI),
+        tokenDeposit: Web3.utils.toBN(channelState.tokenBalanceA)
+      }
+      channelState.balanceI = {
         ethDeposit: Web3.utils.toBN(channelState.ethBalanceI),
-      },
-      signer: sender
+        tokenDeposit: Web3.utils.toBN(channelState.tokenBalanceI)
+      }
     }
-    const sig = await this.createChannelStateUpdate(sigParams)
-    const finalState = await this.fastCloseChannelHandler({ 
+    
+    // channelState.channelId = channel.channelId
+    const finalState = await this.createCloseChannelState(channelState, sender)
+    const sig = await this.createChannelStateUpdate(finalState, sender)
+
+    const cosigned = await this.fastCloseChannelHandler({ 
       sig, 
       channelId: channel.channelId 
     })
-    if (!finalState.sigI) {
+    if (!cosigned.sigI) {
       throw new ChannelCloseError(
         methodName,
         601,
@@ -1361,21 +1312,94 @@ class Connext {
 
     const response = await this.consensusCloseChannelContractHandler({
       channelId: channel.channelId,
-      nonce: channelState.nonce + 1,
-      balanceA: {
-        tokenDeposit: Web3.utils.toBN(channelState.tokenBalanceA),
-        ethDeposit: Web3.utils.toBN(channelState.ethBalanceA),
-      },
-      balanceI: {
-        tokenDeposit: Web3.utils.toBN(channelState.tokenBalanceI),
-        ethDeposit: Web3.utils.toBN(channelState.ethBalanceI),
-      },
+      nonce: finalState.nonce,
+      balanceA: finalState.balanceA,
+      balanceI: finalState.balanceI,
       sigA: sig,
-      sigI: finalState.sigI,
+      sigI: cosigned.sigI,
       sender: sender.toLowerCase()
     })
 
     return response.transactionHash
+  }
+
+  // *****************************************
+  // ************* LIQUIDITY FNS *************
+  // *****************************************
+
+  /**
+   * Will be called when tip is sent over a thread.
+   * 
+   * This is a temporary function, and is designed to ensure there is
+   * proper liquidity for the BOOTY stablecoin until in channel 
+   * withdrawals are implemented (~1mo)
+   */
+
+  async potentiallyLiquidate (threadId, sender = null) {
+    const methodName = 'potentiallyLiquidate'
+    const isAddress = { presence: true, isAddress: true }
+    const isHex = { presence: true, isHex: true }
+    Connext.validatorsResponseToError(
+      validate.single(threadId, isHex)
+    )
+    if (sender) {
+      Connext.validatorsResponseToError(
+        validate.single(sender, isAddress),
+        methodName,
+        'sender'
+      )
+    } else {
+      const accounts = await this.web3.eth.getAccounts()
+      sender = accounts[0].toLowerCase()
+    }
+    // generate sig for closing a thread with latest tip
+    const thread = await this.getThreadById(threadId)
+    const subchan = await this.getChannelByPartyA(sender)
+    let latestThreadState = await this.getLatestThreadState(threadId)
+    latestThreadState.channelId = threadId
+    latestThreadState.partyA = thread.partyA
+    latestThreadState.partyB = thread.partyB
+
+    let channelStateOnThreadClose = await this.createChannelStateOnThreadClose({
+      latestThreadState,
+      subchan,
+      signer: sender.toLowerCase()
+    })
+    const threadCloseSig = await this.createChannelStateUpdate(channelStateOnThreadClose)
+    const threadBooty = Web3.utils.toBN(thread.tokenBalanceA).add(Web3.utils.toBN(thread.tokenBalanceB))
+    const channelBooty = Web3.utils.toBN(subchan.tokenBalanceA).add(Web3.utils.toBN(subchan.tokenBalanceI))
+    
+    channelStateOnThreadClose.sigA = threadCloseSig
+    // negative hub bond to reflect thread was closed
+    const ethDeposit = Web3.utils.toBN(thread.ethBalanceA).add(Web3.utils.toBN(thread.ethBalanceB))
+    const tokenDeposit = Web3.utils.toBN(thread.tokenBalanceA).add(Web3.utils.toBN(thread.tokenBalanceB))
+    channelStateOnThreadClose.hubBond = {
+      ethDeposit,
+      tokenDeposit,
+    }
+    // generate sig for closing a channel
+    const closingChannelState = await this.createCloseChannelState(channelStateOnThreadClose, sender)
+
+    const channelCloseSig = await this.createChannelStateUpdate(closingChannelState, sender)
+
+    // // post to hub
+    // const response = await this.networking.post(
+    //   `${subchan.partyA.toLowerCase()}/`,
+    //   {
+    //     vcCloseSig: threadCloseSig,
+    //     lcCloseSig: channelCloseSig,
+    //     vcBooty: threadBooty.toString(),
+    //     lcBooty: channelBooty.toString(),
+    //   }
+    // )
+    const body = {
+      vcCloseSig: threadCloseSig,
+      lcCloseSig: channelCloseSig,
+      vcBooty: threadBooty.toString(),
+      lcBooty: channelBooty.toString(),
+    }
+    console.log('POTENTIALLY LIQUIDATE POSTING:', JSON.stringify(body))
+    return body
   }
 
   // ***************************************
@@ -2286,10 +2310,10 @@ class Connext {
         .add(hubBond.tokenDeposit)
 
       if (proposedEthBalance && !proposedEthBalance.eq(ethChannelBalance)) {
-        throw new ChannelUpdateError(methodName, 'Invalid ETH balance proposed')
+        throw new ChannelUpdateError(methodName, `Invalid ETH balance proposed: ${proposedEthBalance.toString()}. Expected: ${ethChannelBalance.toString()}`)
       }
       if (proposedTokenBalance && !proposedTokenBalance.eq(tokenChannelBalance)) {
-        throw new ChannelUpdateError(methodName, 'Invalid token balance proposed')
+        throw new ChannelUpdateError(methodName, `Invalid ERC20 balance proposed: ${proposedTokenBalance.toString()}. Expected: ${tokenChannelBalance.toString()}`)
       }
     }
 
@@ -4259,8 +4283,8 @@ class Connext {
     return sigAtoI
   }
 
-  async createChannelUpdateOnThreadClose ({ latestThreadState, subchan, signer = null }) {
-    const methodName = 'createChannelUpdateOnThreadClose'
+  async createChannelStateOnThreadClose({ latestThreadState, subchan, signer = null }) {
+    const methodName = 'createChannelStateOnThreadClose'
     const isThreadState = { presence: true, isThreadState: true }
     const isChannelObj = { presence: true, isChannelObj: true }
     const isAddress = { presence: true, isAddress: true }
@@ -4339,8 +4363,89 @@ class Connext {
       },
       signer,
     }
-    const sigAtoI = await this.createChannelStateUpdate(updateAtoI)
-    return sigAtoI
+    return updateAtoI
+  }
+
+  async createCloseChannelState(channelState, sender = null) {
+    const methodName = 'createCloseChannelState'
+    const isAddress = { presence: true, isAddress: true }
+    if (sender) {
+      Connext.validatorsResponseToError(
+        validate.single(sender, isAddress),
+        methodName,
+        'sender'
+      )
+    } else {
+      const accounts = await this.web3.eth.getAccounts()
+      sender = accounts[0].toLowerCase()
+    }
+    const channel = await this.getChannelByPartyA(sender.toLowerCase())
+    if (channelState) {
+      // openVcs?
+      if (Number(channelState.openVcs) !== 0) {
+        throw new ChannelCloseError(methodName, 'Cannot close channel with open VCs')
+      }
+      // empty root hash?
+      if (channelState.vcRootHash !== Connext.generateThreadRootHash({ threadInitialStates: [] })) {
+        throw new ChannelCloseError(methodName, 'Cannot close channel with open VCs')
+      }
+      // member-signed?
+      const signer = Connext.recoverSignerFromChannelStateUpdate({
+        sig: channelState.sigI ? channelState.sigI : channelState.sigA,
+        isClose: false,
+        channelId: channel.channelId,
+        nonce: channelState.nonce,
+        openVcs: channelState.openVcs,
+        vcRootHash: channelState.vcRootHash,
+        partyA: channel.partyA,
+        partyI: this.ingridAddress,
+        ethBalanceA: Web3.utils.toBN(channelState.balanceA.ethDeposit),
+        ethBalanceI: Web3.utils.toBN(channelState.balanceI.ethDeposit),
+        tokenBalanceA: Web3.utils.toBN(channelState.balanceA.tokenDeposit),
+        tokenBalanceI: Web3.utils.toBN(channelState.balanceI.tokenDeposit),
+      })
+      if (signer.toLowerCase() !== channel.partyI && signer.toLowerCase() !== channel.partyA) {
+        throw new ChannelCloseError(methodName, 'Channel member did not sign update')
+      }
+    } else {
+      // no state updates made in LC
+      // PROBLEM: ingrid doesnt return lcState, just uses empty
+      channelState = {
+        isClose: false,
+        channelId: channel.channelId,
+        nonce: 0,
+        openVcs: 0,
+        vcRootHash: Connext.generateThreadRootHash({ threadInitialStates: [] }),
+        partyA: channel.partyA,
+        partyI: this.ingridAddress,
+        balanceA: {
+          tokenDeposit: Web3.utils.toBN(channel.tokenBalanceA),
+          ethDeposit: Web3.utils.toBN(channel.ethBalanceA),
+        },
+        balanceI: {
+          tokenDeposit: Web3.utils.toBN(channel.tokenBalanceI),
+          ethDeposit: Web3.utils.toBN(channel.ethBalanceI),
+        }
+      }
+    }
+
+    // generate same update with fast close flag and post
+    let finalState = {
+      isClose: true,
+      channelId: channel.channelId,
+      nonce: channelState.nonce + 1,
+      openVcs: channelState.openVcs,
+      vcRootHash: channelState.vcRootHash,
+      partyA: channel.partyA,
+      partyI: this.ingridAddress,
+      balanceA: channelState.balanceA,
+      balanceI: channelState.balanceI,
+      signer: sender,
+      hubBond: channelState.hubBond
+    }
+    
+
+    return finalState
   }
 }
 
