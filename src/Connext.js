@@ -2718,14 +2718,8 @@ class Connext {
           })
         break
       case CHANNEL_TYPES.TOKEN: // TOKEN
-        // approve token transfer
-        token = new this.web3.eth.Contract(tokenAbi, tokenAddress)
-        tokenApproval = await token.methods.approve(ingridAddress, initialDeposits.tokenDeposit).send( {
-          from: sender,
-          gas: 750000
-        })
-        if (tokenApproval) {
-          result = await this.channelManagerInstance.methods
+        // wallet must approve contract token transfer
+        result = await this.channelManagerInstance.methods
           .createChannel(
             channelId, 
             ingridAddress, 
@@ -2737,33 +2731,22 @@ class Connext {
             from: sender,
             gas: 750000
           })
-        } else {
-          throw new ChannelOpenError(methodName, 'Token transfer failed.')
-        }
         break
       case CHANNEL_TYPES.TOKEN_ETH: // ETH/TOKEN
-        // approve token transfer
-        token = new this.web3.eth.Contract(tokenAbi, tokenAddress)
-        tokenApproval = await token.approve.call(ingridAddress, initialDeposits.tokenDeposit, {
-          from: sender
-        })
-        if (tokenApproval) {
-          result = await this.channelManagerInstance.methods
-            .createChannel(
-              channelId, 
-              ingridAddress, 
-              challenge, 
-              tokenAddress, 
-              [initialDeposits.ethDeposit, initialDeposits.tokenDeposit]
-            )
-            .send({
-              from: sender,
-              value: initialDeposits.ethDeposit,
-              gas: 750000
+        // wallet must approve contract token transfer
+        result = await this.channelManagerInstance.methods
+          .createChannel(
+            channelId, 
+            ingridAddress, 
+            challenge, 
+            tokenAddress, 
+            [initialDeposits.ethDeposit, initialDeposits.tokenDeposit]
+          )
+          .send({
+            from: sender,
+            value: initialDeposits.ethDeposit,
+            gas: 750000
           })
-        } else {
-          throw new ChannelOpenError(methodName, 'Token transfer failed.')
-        }
         break
       default:
         throw new ChannelOpenError(methodName, 'Invalid channel type')
