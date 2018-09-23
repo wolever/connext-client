@@ -1265,8 +1265,6 @@ class Connext {
       sender = accounts[0].toLowerCase()
     }
     const channel = await this.getChannelByPartyA(sender.toLowerCase())
-    console.log('%%%%%%%%%%%%%%%%%%%%%%%')
-    console.log('channel:', channel)
     // channel must be open
     if (CHANNEL_STATES[channel.state] !== CHANNEL_STATES.LCS_OPENED) {
       throw new ChannelCloseError(methodName, 'Channel is in invalid state')
@@ -1281,7 +1279,6 @@ class Connext {
 
     // get latest i-signed lc state update
     let channelState = await this.getLatestChannelState(channel.channelId, ['sigI'])
-    console.log('channelState1:', channelState)
     // transform if needed
     if (!channelState.balanceA || !channelState.balanceI) {
       channelState.balanceA = {
