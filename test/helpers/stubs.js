@@ -59,14 +59,14 @@ export async function createStubbedHub (
 
   let stubHub = nock(baseUrl).persist(true)
 
-  // get challenge timer
-  stubHub
-    // define the method to be intercepted
-    .get('/ledgerchannel/challenge')
-    // respond with a OK and the specified JSON response
-    .reply(200, {
-      challenge: 3600
-    })
+  // // get challenge timer
+  // stubHub
+  //   // define the method to be intercepted
+  //   .get('/ledgerchannel/challenge')
+  //   // respond with a OK and the specified JSON response
+  //   .reply(200, {
+  //     challenge: 3600
+  //   })
 
   // get open channels by partyA
   switch (channelType) {
@@ -79,17 +79,15 @@ export async function createStubbedHub (
             channelId: channelId1,
             partyA: partyA.toLowerCase(),
             partyI: ingridAddress.toLowerCase(),
-            status: 'OPENED',
             nonce: 1,
-            confirmTime: 0,
-            openTimeout: 0,
-            updateChannelTimeout: 0,
-            numOpenThread: 1,
-            token: '0x0100000000000000000000000000000000000000000000000000000000000000',
             weiBalanceA: Web3.utils.toWei('4', 'ether').toString(),
             weiBalanceI: '0',
+            token: '0x0100000000000000000000000000000000000000000000000000000000000000',
             tokenBalanceA: Web3.utils.toWei('4', 'ether').toString(),
             tokenBalanceI: '0',
+            status: 'JOINED',
+            numOpenThread: 1,
+            updateTimeout: 0,
             threadRootHash: Connext.generateThreadRootHash({
               threadInitialStates: [
                 {
@@ -97,11 +95,12 @@ export async function createStubbedHub (
                   partyA: partyA.toLowerCase(),
                   partyB: partyB.toLowerCase(),
                   nonce: 0,
+                  weiBond: Web3.utils.toWei('1', 'ether').toString(),
+                  tokenBond: Web3.utils.toWei('1', 'ether').toString(),
                   weiBalanceA: Web3.utils.toWei('1', 'ether').toString(),
                   weiBalanceB: '0',
                   tokenBalanceA: Web3.utils.toWei('1', 'ether').toString(),
                   tokenBalanceB: '0',
-                  updateThreadTimeout: 0
                 }
               ]
             })
@@ -115,11 +114,9 @@ export async function createStubbedHub (
             channelId: channelId3,
             partyA: partyC.toLowerCase(),
             partyI: ingridAddress.toLowerCase(),
-            status: 'OPENED',
+            status: 'JOINED',
             nonce: 1,
-            confirmTime: 0,
-            openTimeout: 0,
-            updateChannelTimeout: 0,
+            updateTimeout: 0,
             numOpenThread: 1,
             token: '0x0100000000000000000000000000000000000000000000000000000000000000',
             weiBalanceA: Web3.utils.toWei('4', 'ether').toString(),
@@ -133,11 +130,12 @@ export async function createStubbedHub (
                   partyA: partyC.toLowerCase(),
                   partyB: partyB.toLowerCase(),
                   nonce: 0,
+                  weiBond: Web3.utils.toWei('1', 'ether').toString(),
+                  tokenBond: '0',
                   weiBalanceA: Web3.utils.toWei('1', 'ether').toString(),
                   weiBalanceB: '0',
                   tokenBalanceA: '0',
-                  tokenBalanceB: '0',
-                  updateThreadTimeout: 0
+                  tokenBalanceB: '0'
                 }
               ]
             })
@@ -151,11 +149,9 @@ export async function createStubbedHub (
             channelId: channelId4,
             partyA: partyD.toLowerCase(),
             partyI: ingridAddress.toLowerCase(),
-            status: 'OPENED',
+            status: 'JOINED',
             nonce: 1,
-            confirmTime: 0,
-            openTimeout: 0,
-            updateChannelTimeout: 0,
+            updateTimeout: 0,
             numOpenThread: 1,
             token: '0x0100000000000000000000000000000000000000000000000000000000000000',
             weiBalanceA: '0',
@@ -169,11 +165,12 @@ export async function createStubbedHub (
                   partyA: partyD.toLowerCase(),
                   partyB: partyB.toLowerCase(),
                   nonce: 0,
+                  weiBond: '0',
+                  tokenBond: Web3.utils.toWei('1', 'ether').toString(),
                   weiBalanceA: '0',
                   weiBalanceB: '0',
                   tokenBalanceA: Web3.utils.toWei('1', 'ether').toString(),
-                  tokenBalanceB: '0',
-                  updateThreadTimeout: 0
+                  tokenBalanceB: '0'
                 }
               ]
             })
@@ -187,11 +184,9 @@ export async function createStubbedHub (
             channelId: channelId2,
             partyA: partyB.toLowerCase(),
             partyI: ingridAddress.toLowerCase(),
-            status: 'OPENED',
+            status: 'JOINED',
             nonce: 3,
-            confirmTime: 0,
-            openTimeout: 0,
-            updateChannelTimeout: 0,
+            updateTimeout: 0,
             numOpenThread: 3,
             token: '0x0100000000000000000000000000000000000000000000000000000000000000',
             weiBalanceA: '0',
@@ -205,33 +200,36 @@ export async function createStubbedHub (
                   partyA: partyA.toLowerCase(),
                   partyB: partyB.toLowerCase(),
                   nonce: 0,
+                  weiBond: Web3.utils.toWei('1', 'ether').toString(),
+                  tokenBond: Web3.utils.toWei('1', 'ether').toString(),
                   weiBalanceA: Web3.utils.toWei('1', 'ether').toString(),
                   weiBalanceB: '0',
                   tokenBalanceA: Web3.utils.toWei('1', 'ether').toString(),
-                  tokenBalanceB: '0',
-                  updateThreadTimeout: 0
+                  tokenBalanceB: '0'
                 },
                 {
                   channelId: threadId2, // eth only thread
                   partyA: partyC.toLowerCase(),
                   partyB: partyB.toLowerCase(),
                   nonce: 0,
+                  weiBond: Web3.utils.toWei('1', 'ether').toString(),
+                  tokenBond: '0',
                   weiBalanceA: Web3.utils.toWei('1', 'ether').toString(),
                   weiBalanceB: '0',
                   tokenBalanceA: '0',
-                  tokenBalanceB: '0',
-                  updateThreadTimeout: 0
+                  tokenBalanceB: '0'
                 },
                 {
                   channelId: threadId3, // token only thread
                   partyA: partyD.toLowerCase(),
                   partyB: partyB.toLowerCase(),
                   nonce: 0,
+                  weiBond: '0',
+                  tokenBond: Web3.utils.toWei('1', 'ether').toString(),
                   weiBalanceA: '0',
                   weiBalanceB: '0',
                   tokenBalanceA: Web3.utils.toWei('1', 'ether').toString(),
-                  tokenBalanceB: '0',
-                  updateThreadTimeout: 0
+                  tokenBalanceB: '0'
                 }
               ]
             })
@@ -246,11 +244,9 @@ export async function createStubbedHub (
             channelId: '0x1000000000000000000000000000000000000000000000000000000000000000',
             partyA: partyA.toLowerCase(),
             partyI: ingridAddress.toLowerCase(),
-            status: 'OPENED',
+            status: 'JOINED',
             nonce: 0,
-            confirmTime: 0,
-            openTimeout: 0,
-            updateChannelTimeout: 0,
+            updateTimeout: 0,
             numOpenThread: 0,
             token: '0x0100000000000000000000000000000000000000000000000000000000000000',
             weiBalanceA: Web3.utils.toWei('5', 'ether').toString(),
@@ -267,15 +263,13 @@ export async function createStubbedHub (
             channelId: '0x2000000000000000000000000000000000000000000000000000000000000000',
             partyA: partyB.toLowerCase(),
             partyI: ingridAddress.toLowerCase(),
-            status: 'OPENED',
+            status: 'JOINED',
             weiBalanceA: Web3.utils.toWei('5', 'ether').toString(),
             weiBalanceI: '0',
             tokenBalanceA: Web3.utils.toWei('5', 'ether').toString(),
             tokenBalanceI: '0',
             nonce: 0,
-            confirmTime: 0,
-            openTimeout: 0,
-            updateChannelTimeout: 0,
+            updateTimeout: 0,
             numOpenThread: 0,
             token: '0x0100000000000000000000000000000000000000000000000000000000000000',
             threadRootHash: Connext.generateThreadRootHash({ threadInitialStates: [] })
@@ -312,15 +306,13 @@ export async function createStubbedHub (
         channelId: channelId1,
         partyA: partyA.toLowerCase(),
         partyI: ingridAddress.toLowerCase(),
-        status: 'OPENED',
+        status: 'JOINED',
         weiBalanceA: Web3.utils.toWei('4.9', 'ether').toString(),
         weiBalanceI: Web3.utils.toWei('0.1', 'ether').toString(),
         tokenBalanceA: Web3.utils.toWei('4.9', 'ether').toString(),
         tokenBalanceI: Web3.utils.toWei('0.1', 'ether').toString(),
         nonce: 2,
-        confirmTime: 0,
-        openTimeout: 0,
-        updateChannelTimeout: 0,
+        updateTimeout: 0,
         numOpenThread: 0,
         token: '0x0100000000000000000000000000000000000000000000000000000000000000',
         threadRootHash: Connext.generateThreadRootHash({ threadInitialStates: [] })
@@ -331,15 +323,13 @@ export async function createStubbedHub (
         channelId: channelId2,
         partyA: partyB.toLowerCase(),
         partyI: ingridAddress.toLowerCase(),
-        status: 'OPENED',
+        status: 'JOINED',
         weiBalanceA: Web3.utils.toWei('0.2', 'ether').toString(),
         weiBalanceI: '0',
         tokenBalanceA: Web3.utils.toWei('0.2', 'ether').toString(),
         tokenBalanceI: '0',
         nonce: 6, // open thread 1-3, close thread 1-3
-        confirmTime: 0,
-        openTimeout: 0,
-        updateChannelTimeout: 0,
+        updateTimeout: 0,
         numOpenThread: 0,
         token: '0x0100000000000000000000000000000000000000000000000000000000000000',
         threadRootHash: Connext.generateThreadRootHash({ threadInitialStates: [] })
@@ -350,15 +340,13 @@ export async function createStubbedHub (
         channelId: channelId3,
         partyA: partyC.toLowerCase(),
         partyI: ingridAddress.toLowerCase(),
-        status: 'OPENED',
+        status: 'JOINED',
         weiBalanceA: Web3.utils.toWei('4.9', 'ether').toString(),
         weiBalanceI: Web3.utils.toWei('0.1', 'ether').toString(),
         tokenBalanceA: '0',
         tokenBalanceI: '0',
         nonce: 2,
-        confirmTime: 0,
-        openTimeout: 0,
-        updateChannelTimeout: 0,
+        updateTimeout: 0,
         numOpenThread: 0,
         token: '0x0100000000000000000000000000000000000000000000000000000000000000',
         threadRootHash: Connext.generateThreadRootHash({ threadInitialStates: [] })
@@ -369,15 +357,13 @@ export async function createStubbedHub (
         channelId: channelId4,
         partyA: partyD.toLowerCase(),
         partyI: ingridAddress.toLowerCase(),
-        status: 'OPENED',
+        status: 'JOINED',
         weiBalanceA: '0',
         weiBalanceI: '0',
         tokenBalanceA: Web3.utils.toWei('4.9', 'ether').toString(),
         tokenBalanceI: Web3.utils.toWei('0.1', 'ether').toString(),
         nonce: 2,
-        confirmTime: 0,
-        openTimeout: 0,
-        updateChannelTimeout: 0,
+        updateTimeout: 0,
         numOpenThread: 0,
         token: '0x0100000000000000000000000000000000000000000000000000000000000000',
         threadRootHash: Connext.generateThreadRootHash({ threadInitialStates: [] })
@@ -398,12 +384,15 @@ export async function createStubbedHub (
           channelId: threadId1,
           partyA: partyA.toLowerCase(),
           partyB: partyB.toLowerCase(),
+          partyI: partyI.toLowerCase(),
+          subchanA: channelId1,
+          subchanB: channelId2,
           nonce: 0,
           weiBalanceA: Web3.utils.toWei('1', 'ether').toString(),
           weiBalanceB: '0',
           tokenBalanceA: Web3.utils.toWei('1', 'ether').toString(),
           tokenBalanceB: '0',
-          updateThreadTimeout: 0
+          status: 'JOINED'
         }
       ])
       stubHub.get(`/channel/${channelId2}/threadinitialstates`).reply(200, [
@@ -411,34 +400,43 @@ export async function createStubbedHub (
           channelId: threadId1, // eth + token thread
           partyA: partyA.toLowerCase(),
           partyB: partyB.toLowerCase(),
+          partyI: partyI.toLowerCase(),
+          subchanA: channelId2,
+          subchanB: channelId1,
           nonce: 0,
           weiBalanceA: Web3.utils.toWei('1', 'ether').toString(),
           weiBalanceB: '0',
           tokenBalanceA: Web3.utils.toWei('1', 'ether').toString(),
           tokenBalanceB: '0',
-          updateThreadTimeout: 0
+          status: 'JOINED'
         },
         {
           channelId: threadId2, // eth only thread
           partyA: partyC.toLowerCase(),
           partyB: partyB.toLowerCase(),
+          partyI: partyI.toLowerCase(),
+          subchanA: channelId2,
+          subchanB: channelId3,
           nonce: 0,
           weiBalanceA: Web3.utils.toWei('1', 'ether').toString(),
           weiBalanceB: '0',
           tokenBalanceA: '0',
           tokenBalanceB: '0',
-          updateThreadTimeout: 0
+          status: 'JOINED'
         },
         {
           channelId: threadId3, // token only thread
           partyA: partyD.toLowerCase(),
           partyB: partyB.toLowerCase(),
+          partyI: partyI.toLowerCase(),
+          subchanA: channelId2,
+          subchanB: channelId4,
           nonce: 0,
           weiBalanceA: '0',
           weiBalanceB: '0',
           tokenBalanceA: Web3.utils.toWei('1', 'ether').toString(),
           tokenBalanceB: '0',
-          updateThreadTimeout: 0
+          status: 'JOINED'
         }
       ])
       stubHub.get(`/channel/${channelId3}/threadinitialstates`).reply(200, [
@@ -446,12 +444,15 @@ export async function createStubbedHub (
           channelId: threadId2,
           partyA: partyC.toLowerCase(),
           partyB: partyB.toLowerCase(),
+          partyI: partyI.toLowerCase(),
+          subchanA: channelId3,
+          subchanB: channelId2,
           nonce: 0,
           weiBalanceA: Web3.utils.toWei('1', 'ether').toString(),
           weiBalanceB: '0',
           tokenBalanceA: '0',
           tokenBalanceB: '0',
-          updateThreadTimeout: 0
+          status: 'JOINED'
         }
       ])
       stubHub.get(`/channel/${channelId4}/threadinitialstates`).reply(200, [
@@ -459,12 +460,15 @@ export async function createStubbedHub (
           channelId: threadId3,
           partyA: partyD.toLowerCase(),
           partyB: partyB.toLowerCase(),
+          partyI: partyI.toLowerCase(),
+          subchanA: channelId4,
+          subchanB: channelId2,
           nonce: 0,
           weiBalanceA: '0',
           weiBalanceB: '0',
           tokenBalanceA: Web3.utils.toWei('1', 'ether').toString(),
           tokenBalanceB: '0',
-          updateThreadTimeout: 0
+          status: 'JOINED'
         }
       ])
 
@@ -473,16 +477,14 @@ export async function createStubbedHub (
         channelId: channelId1,
         partyA: partyA.toLowerCase(),
         partyI: ingridAddress.toLowerCase(),
-        status: 'OPENED',
+        status: 'JOINED',
         weiBalanceA: Web3.utils.toWei('4', 'ether').toString(),
         weiBalanceI: '0',
         tokenBalanceA: Web3.utils.toWei('4', 'ether').toString(),
         tokenBalanceI: '0',
         nonce: 1,
         numOpenThread: 1,
-        confirmTime: 0,
-        openTimeout: 0,
-        updateChannelTimeout: 0,
+        updateTimeout: 0,
         token: '0x0100000000000000000000000000000000000000000000000000000000000000',
         threadRootHash: Connext.generateThreadRootHash({
           threadInitialStates: [
@@ -491,11 +493,12 @@ export async function createStubbedHub (
               partyA: partyA.toLowerCase(),
               partyB: partyB.toLowerCase(),
               nonce: 0,
+              weiBond: Web3.utils.toWei('1', 'ether').toString(),
+              tokenBond: Web3.utils.toWei('1', 'ether').toString(),
               weiBalanceA: Web3.utils.toWei('1', 'ether').toString(),
               weiBalanceB: '0',
               tokenBalanceA: Web3.utils.toWei('1', 'ether').toString(),
-              tokenBalanceB: '0',
-              updateThreadTimeout: 0
+              tokenBalanceB: '0'
             }
           ]
         })
@@ -506,16 +509,14 @@ export async function createStubbedHub (
         channelId: channelId2,
         partyA: partyB.toLowerCase(),
         partyI: ingridAddress.toLowerCase(),
-        status: 'OPENED',
+        status: 'JOINED',
         weiBalanceA: '0',
         weiBalanceI: Web3.utils.toWei('5', 'ether').toString(),
         tokenBalanceA: '0',
         tokenBalanceI: Web3.utils.toWei('5', 'ether').toString(),
         nonce: 3,
         numOpenThread: 3,
-        confirmTime: 0,
-        openTimeout: 0,
-        updateChannelTimeout: 0,
+        updateTimeout: 0,
         token: '0x0100000000000000000000000000000000000000000000000000000000000000',
         threadRootHash: Connext.generateThreadRootHash({
           threadInitialStates: [
@@ -524,33 +525,36 @@ export async function createStubbedHub (
               partyA: partyA.toLowerCase(),
               partyB: partyB.toLowerCase(),
               nonce: 0,
+              weiBond: Web3.utils.toWei('1', 'ether').toString(),
+              tokenBond: Web3.utils.toWei('1', 'ether').toString(),
               weiBalanceA: Web3.utils.toWei('1', 'ether').toString(),
               weiBalanceB: '0',
               tokenBalanceA: Web3.utils.toWei('1', 'ether').toString(),
-              tokenBalanceB: '0',
-              updateThreadTimeout: 0
+              tokenBalanceB: '0'
             },
             {
               channelId: threadId2, // eth only thread
               partyA: partyC.toLowerCase(),
               partyB: partyB.toLowerCase(),
               nonce: 0,
+              weiBond: Web3.utils.toWei('1', 'ether').toString(),
+              tokenBond: '0',
               weiBalanceA: Web3.utils.toWei('1', 'ether').toString(),
               weiBalanceB: '0',
               tokenBalanceA: '0',
-              tokenBalanceB: '0',
-              updateThreadTimeout: 0
+              tokenBalanceB: '0'
             },
             {
               channelId: threadId3, // token only thread
               partyA: partyD.toLowerCase(),
               partyB: partyB.toLowerCase(),
               nonce: 0,
+              weiBond: '0',
+              tokenBond: Web3.utils.toWei('1', 'ether').toString(),
               weiBalanceA: '0',
               weiBalanceB: '0',
               tokenBalanceA: Web3.utils.toWei('1', 'ether').toString(),
-              tokenBalanceB: '0',
-              updateThreadTimeout: 0
+              tokenBalanceB: '0'
             }
           ]
         })
@@ -561,16 +565,14 @@ export async function createStubbedHub (
         channelId: channelId3,
         partyA: partyC.toLowerCase(),
         partyI: ingridAddress.toLowerCase(),
-        status: 'OPENED',
+        status: 'JOINED',
         weiBalanceA: Web3.utils.toWei('4', 'ether').toString(),
         weiBalanceI: '0',
         tokenBalanceA: '0',
         tokenBalanceI: '0',
         nonce: 1,
         numOpenThread: 1,
-        confirmTime: 0,
-        openTimeout: 0,
-        updateChannelTimeout: 0,
+        updateTimeout: 0,
         token: '0x0100000000000000000000000000000000000000000000000000000000000000',
         threadRootHash: Connext.generateThreadRootHash({
           threadInitialStates: [
@@ -579,11 +581,12 @@ export async function createStubbedHub (
               partyA: partyC.toLowerCase(),
               partyB: partyB.toLowerCase(),
               nonce: 0,
+              weiBond: Web3.utils.toWei('1', 'ether').toString(),
+              tokenBond: '0',
               weiBalanceA: Web3.utils.toWei('1', 'ether').toString(),
               weiBalanceB: '0',
               tokenBalanceA: '0',
-              tokenBalanceB: '0',
-              updateThreadTimeout: 0
+              tokenBalanceB: '0'
             }
           ]
         })
@@ -594,16 +597,14 @@ export async function createStubbedHub (
         channelId: channelId4,
         partyA: partyD.toLowerCase(),
         partyI: ingridAddress.toLowerCase(),
-        status: 'OPENED',
+        status: 'JOINED',
         weiBalanceA: '0',
         weiBalanceI: '0',
         tokenBalanceA: Web3.utils.toWei('4', 'ether').toString(),
         tokenBalanceI: '0',
         nonce: 1,
         numOpenThread: 1,
-        confirmTime: 0,
-        openTimeout: 0,
-        updateChannelTimeout: 0,
+        updateTimeout: 0,
         token: '0x0100000000000000000000000000000000000000000000000000000000000000',
         threadRootHash: Connext.generateThreadRootHash({
           threadInitialStates: [
@@ -612,11 +613,12 @@ export async function createStubbedHub (
               partyA: partyA.toLowerCase(),
               partyB: partyB.toLowerCase(),
               nonce: 0,
+              weiBond : '0',
+              tokenBond: Web3.utils.toWei('1', 'ether').toString(),
               weiBalanceA: '0',
               weiBalanceB: '0',
               tokenBalanceA: Web3.utils.toWei('1', 'ether').toString(),
-              tokenBalanceB: '0',
-              updateThreadTimeout: 0
+              tokenBalanceB: '0'
             }
           ]
         })
@@ -635,16 +637,14 @@ export async function createStubbedHub (
         channelId: channelId1,
         partyA: partyA.toLowerCase(),
         partyI: ingridAddress.toLowerCase(),
-        status: 'OPENED',
+        status: 'JOINED',
         weiBalanceA: Web3.utils.toWei('5', 'ether').toString(),
         weiBalanceI: '0',
         tokenBalanceA: Web3.utils.toWei('5', 'ether').toString(),
         tokenBalanceI: '0',
         nonce: 0,
         numOpenThread: 0,
-        confirmTime: 0,
-        openTimeout: 0,
-        updateChannelTimeout: 0,
+        updateTimeout: 0,
         token: '0x0100000000000000000000000000000000000000000000000000000000000000',
         threadRootHash: Connext.generateThreadRootHash({ threadInitialStates: [] })
       })
@@ -654,16 +654,14 @@ export async function createStubbedHub (
         channelId: channelId2,
         partyA: partyB.toLowerCase(),
         partyI: ingridAddress.toLowerCase(),
-        status: 'OPENED',
+        status: 'JOINED',
         weiBalanceA: '0',
         weiBalanceI: Web3.utils.toWei('5', 'ether').toString(),
         tokenBalanceA: '0',
         tokenBalanceI: Web3.utils.toWei('5', 'ether').toString(),
         nonce: 0,
         numOpenThread: 0,
-        confirmTime: 0,
-        openTimeout: 0,
-        updateChannelTimeout: 0,
+        updateTimeout: 0,
         token: '0x0100000000000000000000000000000000000000000000000000000000000000',
         threadRootHash: Connext.generateThreadRootHash({ threadInitialStates: [] })
       })
@@ -673,16 +671,14 @@ export async function createStubbedHub (
         channelId: channelId3,
         partyA: partyC.toLowerCase(),
         partyI: ingridAddress.toLowerCase(),
-        status: 'OPENED',
+        status: 'JOINED',
         weiBalanceA: Web3.utils.toWei('5', 'ether').toString(),
         weiBalanceI: '0',
         tokenBalanceA: '0',
         tokenBalanceI: '0',
         nonce: 0,
         numOpenThread: 0,
-        confirmTime: 0,
-        openTimeout: 0,
-        updateChannelTimeout: 0,
+        updateTimeout: 0,
         token: '0x0100000000000000000000000000000000000000000000000000000000000000',
         threadRootHash: Connext.generateThreadRootHash({ threadInitialStates: [] })
       })
@@ -692,16 +688,14 @@ export async function createStubbedHub (
         channelId: channelId4,
         partyA: partyD.toLowerCase(),
         partyI: ingridAddress.toLowerCase(),
-        status: 'OPENED',
+        status: 'JOINED',
         weiBalanceA: '0',
         weiBalanceI: '0',
         tokenBalanceA: Web3.utils.toWei('5', 'ether').toString(),
         tokenBalanceI: '0',
         nonce: 0,
         numOpenThread: 0,
-        confirmTime: 0,
-        openTimeout: 0,
-        updateChannelTimeout: 0,
+        updateTimeout: 0,
         token: '0x0100000000000000000000000000000000000000000000000000000000000000',
         threadRootHash: Connext.generateThreadRootHash({ threadInitialStates: [] })
       })
@@ -713,16 +707,14 @@ export async function createStubbedHub (
         channelId: channelId1,
         partyA: partyA.toLowerCase(),
         partyI: ingridAddress.toLowerCase(),
-        status: 'OPENED',
+        status: 'JOINED',
         weiBalanceA: Web3.utils.toWei('4.9', 'ether').toString(),
         weiBalanceI: Web3.utils.toWei('0.1', 'ether').toString(),
         tokenBalanceA: Web3.utils.toWei('4.9', 'ether').toString(),
         tokenBalanceI: Web3.utils.toWei('0.1', 'ether').toString(),
         nonce: 2,
         numOpenThread: 0,
-        confirmTime: 0,
-        openTimeout: 0,
-        updateChannelTimeout: 0,
+        updateTimeout: 0,
         token: '0x0100000000000000000000000000000000000000000000000000000000000000',
         threadRootHash: Connext.generateThreadRootHash({ threadInitialStates: [] })
       })
@@ -732,16 +724,14 @@ export async function createStubbedHub (
         channelId: channelId2,
         partyA: partyB.toLowerCase(),
         partyI: ingridAddress.toLowerCase(),
-        status: 'OPENED',
+        status: 'JOINED',
         weiBalanceA: Web3.utils.toWei('0.2', 'ether').toString(),
         weiBalanceI: '0',
         tokenBalanceA: Web3.utils.toWei('0.2', 'ether').toString(),
         tokenBalanceI: '0',
         nonce: 6, // open thread 1-3, close thread 1-3
         numOpenThread: 0,
-        confirmTime: 0,
-        openTimeout: 0,
-        updateChannelTimeout: 0,
+        updateTimeout: 0,
         token: '0x0100000000000000000000000000000000000000000000000000000000000000',
         threadRootHash: Connext.generateThreadRootHash({ threadInitialStates: [] })
       })
@@ -751,16 +741,14 @@ export async function createStubbedHub (
         channelId: channelId3,
         partyA: partyC.toLowerCase(),
         partyI: ingridAddress.toLowerCase(),
-        status: 'OPENED',
+        status: 'JOINED',
         weiBalanceA: Web3.utils.toWei('4.9', 'ether').toString(),
         weiBalanceI: Web3.utils.toWei('0.1', 'ether').toString(),
         tokenBalanceA: '0',
         tokenBalanceI: '0',
         nonce: 2,
         numOpenThread: 0,
-        confirmTime: 0,
-        openTimeout: 0,
-        updateChannelTimeout: 0,
+        updateTimeout: 0,
         token: '0x0100000000000000000000000000000000000000000000000000000000000000',
         threadRootHash: Connext.generateThreadRootHash({ threadInitialStates: [] })
       })
@@ -770,16 +758,14 @@ export async function createStubbedHub (
         channelId: channelId4,
         partyA: partyD.toLowerCase(),
         partyI: ingridAddress.toLowerCase(),
-        status: 'OPENED',
+        status: 'JOINED',
         weiBalanceA: '0',
         weiBalanceI: '0',
         tokenBalanceA: Web3.utils.toWei('4.9', 'ether').toString(),
         tokenBalanceI: Web3.utils.toWei('0.1', 'ether').toString(),
         nonce: 2,
         numOpenThread: 0,
-        confirmTime: 0,
-        openTimeout: 0,
-        updateChannelTimeout: 0,
+        updateTimeout: 0,
         token: '0x0100000000000000000000000000000000000000000000000000000000000000',
         threadRootHash: Connext.generateThreadRootHash({ threadInitialStates: [] })
       })
@@ -798,13 +784,15 @@ export async function createStubbedHub (
         channelId: threadId1,
         partyA: partyA.toLowerCase(),
         partyB: partyB.toLowerCase(),
-        status: 'OPENING',
+        partyI: partyI.toLowerCase(),
+        subchanA: channelId1,
+        subchanB: channelId2,
+        status: 'JOINED',
         weiBalanceA: Web3.utils.toWei('1', 'ether').toString(),
         weiBalanceB: '0',
         tokenBalanceA: Web3.utils.toWei('1', 'ether').toString(),
         tokenBalanceB: '0',
-        nonce: 0,
-        updateThreadTimeout: 0
+        nonce: 0
       })
 
       // ETH VC
@@ -812,13 +800,15 @@ export async function createStubbedHub (
         channelId: threadId2,
         partyA: partyC.toLowerCase(),
         partyB: partyB.toLowerCase(),
-        status: 'OPENING',
+        partyI: partyI.toLowerCase(),
+        subchanA: channelId3,
+        subchanB: channelId2,
+        status: 'JOINED',
         weiBalanceA: Web3.utils.toWei('1', 'ether').toString(),
         weiBalanceB: '0',
         tokenBalanceA: '0',
         tokenBalanceB: '0',
-        nonce: 0,
-        updateThreadTimeout: 0
+        nonce: 0
       })
 
       // TOKEN VC
@@ -826,13 +816,15 @@ export async function createStubbedHub (
         channelId: threadId3,
         partyA: partyD.toLowerCase(),
         partyB: partyB.toLowerCase(),
-        status: 'OPENING',
+        partyI: partyI.toLowerCase(),
+        subchanA: channelId4,
+        subchanB: channelId2,
+        status: 'JOINED',
         weiBalanceA: '0',
         weiBalanceB: '0',
         tokenBalanceA: Web3.utils.toWei('1', 'ether').toString(),
         tokenBalanceB: '0',
-        nonce: 0,
-        updateThreadTimeout: 0
+        nonce: 0
       })
 
       // add get latest thread state endpoint
@@ -842,7 +834,9 @@ export async function createStubbedHub (
           channelId: threadId1,
           partyA,
           partyB,
-          weiBalanceA: Web3.utils.toWei('1', 'ether'),
+          weiBond: Web3.utils.toWei('1', 'ether').toString(),
+          tokenBond: Web3.utils.toWei('1', 'ether').toString(),
+          weiBalanceA: Web3.utils.toWei('1', 'ether').toString(),
           weiBalanceB: Web3.utils.toBN('0'),
           tokenBalanceA: Web3.utils.toWei('1', 'ether').toString(),
           tokenBalanceB: Web3.utils.toBN('0'),
@@ -856,7 +850,6 @@ export async function createStubbedHub (
         tokenBalanceA: Web3.utils.toWei('1', 'ether').toString(),
         tokenBalanceB: '0',
         nonce: 0,
-        updateThreadTimeout: 0,
         sigA
       })
 
@@ -866,6 +859,8 @@ export async function createStubbedHub (
           channelId: threadId2,
           partyA: partyC,
           partyB,
+          weiBond: Web3.utils.toWei('1', 'ether').toString(),
+          tokenBond: '0',
           weiBalanceA: Web3.utils.toWei('1', 'ether').toString(),
           weiBalanceB: Web3.utils.toBN('0'),
           tokenBalanceA: Web3.utils.toBN('0'),
@@ -880,7 +875,6 @@ export async function createStubbedHub (
         tokenBalanceA: '0',
         tokenBalanceB: '0',
         nonce: 0,
-        updateThreadTimeout: 0,
         sigA
       })
 
@@ -890,6 +884,8 @@ export async function createStubbedHub (
           channelId: threadId3,
           partyA: partyD,
           partyB,
+          weiBond: '0',
+          tokenBond: Web3.utils.toWei('1', 'ether').toString(),
           weiBalanceA: Web3.utils.toBN('0'),
           weiBalanceB: Web3.utils.toBN('0'),
           tokenBalanceA: Web3.utils.toWei('1', 'ether').toString(),
@@ -904,7 +900,6 @@ export async function createStubbedHub (
         tokenBalanceA: Web3.utils.toWei('1', 'ether').toString(),
         tokenBalanceB: '0',
         nonce: 0,
-        updateThreadTimeout: 0,
         sigA
       })
 
@@ -916,13 +911,15 @@ export async function createStubbedHub (
         channelId: threadId1,
         partyA: partyA.toLowerCase(),
         partyB: partyB.toLowerCase(),
-        state: 'OPENING',
+        partyI: partyI.toLowerCase(),
+        subchanA: channelId1,
+        subchanB: channelId2,
+        state: 'JOINED',
         weiBalanceA: Web3.utils.toWei('0.9', 'ether').toString(),
         weiBalanceB: Web3.utils.toWei('0.1', 'ether').toString(),
         tokenBalanceA: Web3.utils.toWei('0.9', 'ether').toString(),
         tokenBalanceB: Web3.utils.toWei('0.1', 'ether').toString(),
-        nonce: 1,
-        updateThreadTimeout: 0
+        nonce: 1
       })
 
       // ETH VC
@@ -930,13 +927,15 @@ export async function createStubbedHub (
         channelId: threadId2,
         partyA: partyC.toLowerCase(),
         partyB: partyB.toLowerCase(),
-        state: 'OPENING',
+        partyI: partyI.toLowerCase(),
+        subchanA: channelId3,
+        subchanB: channelId2,
+        state: 'JOINED',
         weiBalanceA: Web3.utils.toWei('0.9', 'ether').toString(),
         weiBalanceB: Web3.utils.toWei('0.1', 'ether').toString(),
         tokenBalanceA: '0',
         tokenBalanceB: '0',
-        nonce: 1,
-        updateThreadTimeout: 0
+        nonce: 1
       })
 
       // TOKEN VC
@@ -944,13 +943,15 @@ export async function createStubbedHub (
         channelId: threadId3,
         partyA: partyD.toLowerCase(),
         partyB: partyB.toLowerCase(),
-        state: 'OPENING',
+        partyI: partyI.toLowerCase(),
+        subchanA: channelId4,
+        subchanB: channelId2,
+        state: 'JOINED',
         weiBalanceA: '0',
         weiBalanceB: '0',
         tokenBalanceA: Web3.utils.toWei('0.9', 'ether').toString(),
         tokenBalanceB: Web3.utils.toWei('0.1', 'ether').toString(),
-        nonce: 1,
-        updateThreadTimeout: 0
+        nonce: 1
       })
 
       // add get latest thread state endpoint
@@ -960,6 +961,8 @@ export async function createStubbedHub (
           channelId: threadId1,
           partyA: partyA,
           partyB,
+          weiBond: Web3.utils.toWei('1', 'ether'),
+          tokenBond: Web3.utils.toWei('1', 'ether'),
           weiBalanceA: Web3.utils.toWei('0.9', 'ether'),
           weiBalanceB: Web3.utils.toWei('0.1', 'ether'),
           tokenBalanceA: Web3.utils.toWei('0.9', 'ether'),
@@ -974,7 +977,6 @@ export async function createStubbedHub (
         tokenBalanceA: Web3.utils.toWei('0.9', 'ether').toString(),
         tokenBalanceB: Web3.utils.toWei('0.1', 'ether').toString(),
         nonce: 1,
-        updateThreadTimeout: 0,
         sigA
       })
 
@@ -984,6 +986,8 @@ export async function createStubbedHub (
           channelId: threadId2,
           partyA: partyC,
           partyB,
+          weiBond: Web3.utils.toWei('1', 'ether'),
+          tokenBond: '0',
           weiBalanceA: Web3.utils.toWei('0.9', 'ether'),
           weiBalanceB: Web3.utils.toWei('0.1', 'ether'),
           tokenBalanceA: Web3.utils.toBN('0'),
@@ -1007,6 +1011,8 @@ export async function createStubbedHub (
           channelId: threadId3,
           partyA: partyD,
           partyB,
+          weiBond: '0',
+          tokenBond: Web3.utils.toWei('1', 'ether'),
           weiBalanceA: Web3.utils.toBN('0'),
           weiBalanceB: Web3.utils.toBN('0'),
           tokenBalanceA: Web3.utils.toWei('0.9', 'ether'),
@@ -1021,7 +1027,6 @@ export async function createStubbedHub (
         tokenBalanceA: Web3.utils.toWei('0.9', 'ether').toString(),
         tokenBalanceB: Web3.utils.toWei('0.1', 'ether').toString(),
         nonce: 1,
-        updateThreadTimeout: 0,
         sigA
       })
 
@@ -1085,43 +1090,43 @@ export async function createStubbedHub (
 //What is this for? Is there an equivalent with new hub? - Arjun
   // post to payments endpoint
   // 1 payment, return array of 1
-  stubHub
-    .post(`/payments/`, body => {
-      return body.payments.length === 1
-    })
-    .reply(200, [
-      {
-        id: 2,
-        balanceA: '20000',
-        balanceB: '6000',
-        nonce: 2,
-        sigA: '0x6e4f3d1782440461d72436afb5f087b74db3d034a9623cc0c10e0819dba7d2eb45818f11d2ceaf4e647eae4e946115bcb22cb99d5b1c6e134efbbc7629898e8f01',
-        sigB: null
-      }
-    ])
-  // 1 payment, return array of 2
-  stubHub
-    .post(`/payments/`, body => {
-      return body.payments.length === 2
-    })
-    .reply(200, [
-      {
-        id: 2,
-        balanceA: '20000',
-        balanceB: '6000',
-        nonce: 2,
-        sigA: '0x6e4f3d1782440461d72436afb5f087b74db3d034a9623cc0c10e0819dba7d2eb45818f11d2ceaf4e647eae4e946115bcb22cb99d5b1c6e134efbbc7629898e8f01',
-        sigB: null
-      },
-      {
-        id: 3,
-        balanceA: '20000',
-        balanceB: '6000',
-        nonce: 2,
-        sigA: '0x6e4f3d1782440461d72436afb5f087b74db3d034a9623cc0c10e0819dba7d2eb45818f11d2ceaf4e647eae4e946115bcb22cb99d5b1c6e134efbbc7629898e8f01',
-        sigB: null
-      }
-    ])
+  // stubHub
+  //   .post(`/payments/`, body => {
+  //     return body.payments.length === 1
+  //   })
+  //   .reply(200, [
+  //     {
+  //       id: 2,
+  //       balanceA: '20000',
+  //       balanceB: '6000',
+  //       nonce: 2,
+  //       sigA: '0x6e4f3d1782440461d72436afb5f087b74db3d034a9623cc0c10e0819dba7d2eb45818f11d2ceaf4e647eae4e946115bcb22cb99d5b1c6e134efbbc7629898e8f01',
+  //       sigB: null
+  //     }
+  //   ])
+  // // 1 payment, return array of 2
+  // stubHub
+  //   .post(`/payments/`, body => {
+  //     return body.payments.length === 2
+  //   })
+  //   .reply(200, [
+  //     {
+  //       id: 2,
+  //       balanceA: '20000',
+  //       balanceB: '6000',
+  //       nonce: 2,
+  //       sigA: '0x6e4f3d1782440461d72436afb5f087b74db3d034a9623cc0c10e0819dba7d2eb45818f11d2ceaf4e647eae4e946115bcb22cb99d5b1c6e134efbbc7629898e8f01',
+  //       sigB: null
+  //     },
+  //     {
+  //       id: 3,
+  //       balanceA: '20000',
+  //       balanceB: '6000',
+  //       nonce: 2,
+  //       sigA: '0x6e4f3d1782440461d72436afb5f087b74db3d034a9623cc0c10e0819dba7d2eb45818f11d2ceaf4e647eae4e946115bcb22cb99d5b1c6e134efbbc7629898e8f01',
+  //       sigB: null
+  //     }
+  //   ])
 
   // add post to create vc endpoint
   stubHub
@@ -1164,8 +1169,7 @@ export async function createStubbedHub (
   })
   let sigAFinal = await web3.eth.sign(hash, partyA)
   let sigIAFinal = await web3.eth.sign(hash, ingridAddress)
-  stubHub.post(`/ledgerchannel/${channelId1}/fastclose`).reply(200, {
-    isClose: true,
+  stubHub.post(`/channel/${channelId1}/close`).reply(200, {
     nonce: 3,
     numOpenThread: 0,
     threadRootHash: Connext.generateThreadRootHash({ threadInitialStates: [] }),
@@ -1193,7 +1197,7 @@ export async function createStubbedHub (
   })
   let sigBFinal = await web3.eth.sign(hash, partyB)
   let sigIBFinal = await web3.eth.sign(hash, ingridAddress)
-  stubHub.post(`/ledgerchannel/${channelId2}/fastclose`).reply(200, {
+  stubHub.post(`/channel/${channelId2}/close`).reply(200, {
     isClose: true,
     nonce: 7,
     numOpenThread: 0,
@@ -1222,7 +1226,7 @@ export async function createStubbedHub (
   })
   let sigCFinal = await web3.eth.sign(hash, partyC)
   let sigICFinal = await web3.eth.sign(hash, ingridAddress)
-  stubHub.post(`/ledgerchannel/${channelId3}/fastclose`).reply(200, {
+  stubHub.post(`/channel/${channelId3}/close`).reply(200, {
     isClose: true,
     nonce: 3,
     numOpenThread: 0,
@@ -1251,7 +1255,7 @@ export async function createStubbedHub (
   })
   let sigDFinal = await web3.eth.sign(hash, partyD)
   let sigIDFinal = await web3.eth.sign(hash, ingridAddress)
-  stubHub.post(`/ledgerchannel/${channelId4}/fastclose`).reply(200, {
+  stubHub.post(`/channel/${channelId4}/close`).reply(200, {
     isClose: true,
     nonce: 3,
     numOpenThread: 0,
@@ -1264,161 +1268,213 @@ export async function createStubbedHub (
     sigI: sigIDFinal
   })
 
-  // add get latest i-signed channel state endpoint
-  // ETH/TOKEN (viewer)
-  hash = Connext.createChannelStateUpdateFingerprint({
-    channelId: channelId1,
-    partyA,
-    partyI: ingridAddress,
-    isClose: false,
-    nonce: 2,
-    numOpenThread: 0,
-    threadRootHash: Connext.generateThreadRootHash({ threadInitialStates: [] }),
-    weiBalanceA: Web3.utils.toBN(Web3.utils.toWei('4.9', 'ether')),
-    weiBalanceI: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
-    tokenBalanceA: Web3.utils.toBN(Web3.utils.toWei('4.9', 'ether')),
-    tokenBalanceI: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
-  })
-  sigAFinal = await web3.eth.sign(hash, partyA)
-  sigIAFinal = await web3.eth.sign(hash, ingridAddress)
-  stubHub
-    .get(`/ledgerchannel/${channelId1}/update/latest?sig[]=sigI`)
-    .reply(200, {
-      isClose: false,
-      partyA,
-      partyI: ingridAddress,
-      nonce: 2,
-      numOpenThread: 0,
-      threadRootHash: Connext.generateThreadRootHash({ threadInitialStates: [] }),
-      weiBalanceA: Web3.utils.toBN(Web3.utils.toWei('4.9', 'ether')).toString(),
-      weiBalanceI: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')).toString(),
-      tokenBalanceA: Web3.utils
-        .toBN(Web3.utils.toWei('4.9', 'ether'))
-        .toString(),
-      tokenBalanceI: Web3.utils
-        .toBN(Web3.utils.toWei('0.1', 'ether'))
-        .toString(),
-      sigI: sigIAFinal,
-      sigA: sigAFinal
-    })
+  // // add get latest i-signed channel state endpoint
+  // // ETH/TOKEN (viewer)
+  // hash = Connext.createChannelStateUpdateFingerprint({
+  //   channelId: channelId1,
+  //   partyA,
+  //   partyI: ingridAddress,
+  //   isClose: false,
+  //   nonce: 2,
+  //   numOpenThread: 0,
+  //   threadRootHash: Connext.generateThreadRootHash({ threadInitialStates: [] }),
+  //   weiBalanceA: Web3.utils.toBN(Web3.utils.toWei('4.9', 'ether')),
+  //   weiBalanceI: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
+  //   tokenBalanceA: Web3.utils.toBN(Web3.utils.toWei('4.9', 'ether')),
+  //   tokenBalanceI: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
+  // })
+  // sigAFinal = await web3.eth.sign(hash, partyA)
+  // sigIAFinal = await web3.eth.sign(hash, ingridAddress)
+  // stubHub
+  //   .get(`/channel/${channelId1}/update/latest?sig[]=sigI`)
+  //   .reply(200, {
+  //     isClose: false,
+  //     partyA,
+  //     partyI: ingridAddress,
+  //     nonce: 2,
+  //     numOpenThread: 0,
+  //     threadRootHash: Connext.generateThreadRootHash({ threadInitialStates: [] }),
+  //     weiBalanceA: Web3.utils.toBN(Web3.utils.toWei('4.9', 'ether')).toString(),
+  //     weiBalanceI: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')).toString(),
+  //     tokenBalanceA: Web3.utils
+  //       .toBN(Web3.utils.toWei('4.9', 'ether'))
+  //       .toString(),
+  //     tokenBalanceI: Web3.utils
+  //       .toBN(Web3.utils.toWei('0.1', 'ether'))
+  //       .toString(),
+  //     sigI: sigIAFinal,
+  //     sigA: sigAFinal
+  //   })
 
-  // ETH/TOKEN (recipient)
-  hash = Connext.createChannelStateUpdateFingerprint({
-    channelId: channelId2,
-    partyA: partyB,
-    partyI: ingridAddress,
-    isClose: false,
-    nonce: 6,
-    numOpenThread: 0,
-    threadRootHash: Connext.generateThreadRootHash({ threadInitialStates: [] }),
-    weiBalanceA: Web3.utils.toBN(Web3.utils.toWei('0.2', 'ether')),
-    weiBalanceI: Web3.utils.toBN(Web3.utils.toWei('0', 'ether')),
-    tokenBalanceA: Web3.utils.toBN(Web3.utils.toWei('0.2', 'ether')),
-    tokenBalanceI: Web3.utils.toBN(Web3.utils.toWei('0', 'ether'))
-  })
-  sigBFinal = await web3.eth.sign(hash, partyB)
-  sigIBFinal = await web3.eth.sign(hash, ingridAddress)
+  // // ETH/TOKEN (recipient)
+  // hash = Connext.createChannelStateUpdateFingerprint({
+  //   channelId: channelId2,
+  //   partyA: partyB,
+  //   partyI: ingridAddress,
+  //   isClose: false,
+  //   nonce: 6,
+  //   numOpenThread: 0,
+  //   threadRootHash: Connext.generateThreadRootHash({ threadInitialStates: [] }),
+  //   weiBalanceA: Web3.utils.toBN(Web3.utils.toWei('0.2', 'ether')),
+  //   weiBalanceI: Web3.utils.toBN(Web3.utils.toWei('0', 'ether')),
+  //   tokenBalanceA: Web3.utils.toBN(Web3.utils.toWei('0.2', 'ether')),
+  //   tokenBalanceI: Web3.utils.toBN(Web3.utils.toWei('0', 'ether'))
+  // })
+  // sigBFinal = await web3.eth.sign(hash, partyB)
+  // sigIBFinal = await web3.eth.sign(hash, ingridAddress)
+  // stubHub
+  //   .get(`/ledgerchannel/${channelId2}/update/latest?sig[]=sigI`)
+  //   .reply(200, {
+  //     isClose: false,
+  //     partyA: partyB,
+  //     partyI: ingridAddress,
+  //     nonce: 6,
+  //     numOpenThread: 0,
+  //     threadRootHash: Connext.generateThreadRootHash({ threadInitialStates: [] }),
+  //     weiBalanceA: Web3.utils.toBN(Web3.utils.toWei('0.2', 'ether')).toString(),
+  //     weiBalanceI: '0',
+  //     tokenBalanceA: Web3.utils
+  //       .toBN(Web3.utils.toWei('0.2', 'ether'))
+  //       .toString(),
+  //     tokenBalanceI: '0',
+  //     sigI: sigIBFinal,
+  //     sigA: sigBFinal
+  //   })
+
+  // // ETH (viewer)
+  // hash = Connext.createChannelStateUpdateFingerprint({
+  //   channelId: channelId3,
+  //   partyA: partyC,
+  //   partyI: ingridAddress,
+  //   isClose: false,
+  //   nonce: 2,
+  //   numOpenThread: 0,
+  //   threadRootHash: Connext.generateThreadRootHash({ threadInitialStates: [] }),
+  //   weiBalanceA: Web3.utils.toBN(Web3.utils.toWei('4.9', 'ether')),
+  //   weiBalanceI: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
+  //   tokenBalanceA: Web3.utils.toBN(Web3.utils.toWei('0', 'ether')),
+  //   tokenBalanceI: Web3.utils.toBN(Web3.utils.toWei('0', 'ether'))
+  // })
+  // sigCFinal = await web3.eth.sign(hash, partyC)
+  // sigICFinal = await web3.eth.sign(hash, ingridAddress)
+  // stubHub
+  //   .get(`/ledgerchannel/${channelId3}/update/latest?sig[]=sigI`)
+  //   .reply(200, {
+  //     isClose: false,
+  //     partyA: partyC,
+  //     partyI: ingridAddress,
+  //     nonce: 2,
+  //     numOpenThread: 0,
+  //     threadRootHash: Connext.generateThreadRootHash({ threadInitialStates: [] }),
+  //     weiBalanceA: Web3.utils.toBN(Web3.utils.toWei('4.9', 'ether')).toString(),
+  //     weiBalanceI: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')).toString(),
+  //     tokenBalanceA: '0',
+  //     tokenBalanceI: '0',
+  //     sigI: sigICFinal,
+  //     sigA: sigCFinal
+  //   })
+
+  // // TOKEN (viewer)
+  // hash = Connext.createChannelStateUpdateFingerprint({
+  //   channelId: channelId4,
+  //   partyA: partyD,
+  //   partyI: ingridAddress,
+  //   isClose: false,
+  //   nonce: 2,
+  //   numOpenThread: 0,
+  //   threadRootHash: Connext.generateThreadRootHash({ threadInitialStates: [] }),
+  //   tokenBalanceA: Web3.utils.toBN(Web3.utils.toWei('4.9', 'ether')),
+  //   tokenBalanceI: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
+  //   weiBalanceA: Web3.utils.toBN(Web3.utils.toWei('0', 'ether')),
+  //   weiBalanceI: Web3.utils.toBN(Web3.utils.toWei('0', 'ether'))
+  // })
+  // sigDFinal = await web3.eth.sign(hash, partyD)
+  // sigIDFinal = await web3.eth.sign(hash, ingridAddress)
+  // stubHub
+  //   .get(`/ledgerchannel/${channelId4}/update/latest?sig[]=sigI`)
+  //   .reply(200, {
+  //     isClose: false,
+  //     partyA: partyD,
+  //     partyI: ingridAddress,
+  //     nonce: 2,
+  //     numOpenThread: 0,
+  //     threadRootHash: Connext.generateThreadRootHash({ threadInitialStates: [] }),
+  //     tokenBalanceA: Web3.utils
+  //       .toBN(Web3.utils.toWei('4.9', 'ether'))
+  //       .toString(),
+  //     tokenBalanceI: Web3.utils
+  //       .toBN(Web3.utils.toWei('0.1', 'ether'))
+  //       .toString(),
+  //     weiBalanceA: '0',
+  //     weiBalanceI: '0',
+  //     sigI: sigIDFinal,
+  //     sigA: sigDFinal
+  //   })
+
+  // request hub join
   stubHub
-    .get(`/ledgerchannel/${channelId2}/update/latest?sig[]=sigI`)
+    .post(`/ledgerchannel/${channelId1}/join`)
     .reply(200, {
-      isClose: false,
-      partyA: partyB,
-      partyI: ingridAddress,
-      nonce: 6,
-      numOpenThread: 0,
-      threadRootHash: Connext.generateThreadRootHash({ threadInitialStates: [] }),
-      weiBalanceA: Web3.utils.toBN(Web3.utils.toWei('0.2', 'ether')).toString(),
+      channelId: channelId1,
+      partyA: partyA.toLowerCase(),
+      partyI: partyI.toLowerCase(),
+      nonce: 0,
+      weiBalanceA: Web3.utils.toWei('5', 'ether'),
       weiBalanceI: '0',
-      tokenBalanceA: Web3.utils
-        .toBN(Web3.utils.toWei('0.2', 'ether'))
-        .toString(),
+      token: '0x0100000000000000000000000000000000000000000000000000000000000000',
+      tokenBalanceA: Web3.utils.toWei('5', 'ether'),
       tokenBalanceI: '0',
-      sigI: sigIBFinal,
-      sigA: sigBFinal
+      status: 'JOINED',
+      updateTimeout: 0,
+      numOpenThread: 0
     })
-
-  // ETH (viewer)
-  hash = Connext.createChannelStateUpdateFingerprint({
-    channelId: channelId3,
-    partyA: partyC,
-    partyI: ingridAddress,
-    isClose: false,
-    nonce: 2,
-    numOpenThread: 0,
-    threadRootHash: Connext.generateThreadRootHash({ threadInitialStates: [] }),
-    weiBalanceA: Web3.utils.toBN(Web3.utils.toWei('4.9', 'ether')),
-    weiBalanceI: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
-    tokenBalanceA: Web3.utils.toBN(Web3.utils.toWei('0', 'ether')),
-    tokenBalanceI: Web3.utils.toBN(Web3.utils.toWei('0', 'ether'))
-  })
-  sigCFinal = await web3.eth.sign(hash, partyC)
-  sigICFinal = await web3.eth.sign(hash, ingridAddress)
   stubHub
-    .get(`/ledgerchannel/${channelId3}/update/latest?sig[]=sigI`)
+    .post(`/ledgerchannel/${channelId2}/join`)
     .reply(200, {
-      isClose: false,
-      partyA: partyC,
-      partyI: ingridAddress,
-      nonce: 2,
-      numOpenThread: 0,
-      threadRootHash: Connext.generateThreadRootHash({ threadInitialStates: [] }),
-      weiBalanceA: Web3.utils.toBN(Web3.utils.toWei('4.9', 'ether')).toString(),
-      weiBalanceI: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')).toString(),
+      channelId: channelId2,
+      partyA: partyA.toLowerCase(),
+      partyI: partyI.toLowerCase(),
+      nonce: 0,
+      weiBalanceA: '0',
+      weiBalanceI: Web3.utils.toWei('5', 'ether'),
+      token: '0x0100000000000000000000000000000000000000000000000000000000000000',
+      tokenBalanceA: '0',
+      tokenBalanceI: Web3.utils.toWei('5', 'ether'),
+      status: 'JOINED',
+      updateTimeout: 0,
+      numOpenThread: 0
+    })
+  stubHub
+    .post(`/ledgerchannel/${channelId3}/join`)
+    .reply(200, {
+      channelId: channelId3,
+      partyA: partyA.toLowerCase(),
+      partyI: partyI.toLowerCase(),
+      nonce: 0,
+      weiBalanceA: Web3.utils.toWei('5', 'ether'),
+      weiBalanceI: '0',
+      token: '0x0100000000000000000000000000000000000000000000000000000000000000',
       tokenBalanceA: '0',
       tokenBalanceI: '0',
-      sigI: sigICFinal,
-      sigA: sigCFinal
+      status: 'JOINED',
+      updateTimeout: 0,
+      numOpenThread: 0
     })
-
-  // TOKEN (viewer)
-  hash = Connext.createChannelStateUpdateFingerprint({
-    channelId: channelId4,
-    partyA: partyD,
-    partyI: ingridAddress,
-    isClose: false,
-    nonce: 2,
-    numOpenThread: 0,
-    threadRootHash: Connext.generateThreadRootHash({ threadInitialStates: [] }),
-    tokenBalanceA: Web3.utils.toBN(Web3.utils.toWei('4.9', 'ether')),
-    tokenBalanceI: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
-    weiBalanceA: Web3.utils.toBN(Web3.utils.toWei('0', 'ether')),
-    weiBalanceI: Web3.utils.toBN(Web3.utils.toWei('0', 'ether'))
-  })
-  sigDFinal = await web3.eth.sign(hash, partyD)
-  sigIDFinal = await web3.eth.sign(hash, ingridAddress)
   stubHub
-    .get(`/ledgerchannel/${channelId4}/update/latest?sig[]=sigI`)
+    .post(`/ledgerchannel/${channelId4}/join`)
     .reply(200, {
-      isClose: false,
-      partyA: partyD,
-      partyI: ingridAddress,
-      nonce: 2,
-      numOpenThread: 0,
-      threadRootHash: Connext.generateThreadRootHash({ threadInitialStates: [] }),
-      tokenBalanceA: Web3.utils
-        .toBN(Web3.utils.toWei('4.9', 'ether'))
-        .toString(),
-      tokenBalanceI: Web3.utils
-        .toBN(Web3.utils.toWei('0.1', 'ether'))
-        .toString(),
+      channelId: channelId3,
+      partyA: partyA.toLowerCase(),
+      partyI: partyI.toLowerCase(),
+      nonce: 0,
       weiBalanceA: '0',
       weiBalanceI: '0',
-      sigI: sigIDFinal,
-      sigA: sigDFinal
+      token: '0x0100000000000000000000000000000000000000000000000000000000000000',
+      tokenBalanceA: Web3.utils.toWei('5', 'ether'),
+      tokenBalanceI: '0',
+      status: 'JOINED',
+      updateTimeout: 0,
+      numOpenThread: 0
     })
-
-  // add request sign deposits endpoint
-  stubHub
-    .post(`/ledgerchannel/${channelId1}/deposit`)
-    .reply(200, {})
-  stubHub
-    .post(`/ledgerchannel/${channelId2}/deposit`)
-    .reply(200, {})
-  stubHub
-    .post(`/ledgerchannel/${channelId3}/deposit`)
-    .reply(200, {})
-  stubHub
-    .post(`/ledgerchannel/${channelId4}/deposit`)
-    .reply(200, {})
   return stubHub
 }
