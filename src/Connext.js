@@ -1363,8 +1363,11 @@ class Connext {
       signer: sender.toLowerCase()
     })
     const threadCloseSig = await this.createChannelStateUpdate(channelStateOnThreadClose)
+    
     const threadBooty = Web3.utils.toBN(thread.tokenBalanceA).add(Web3.utils.toBN(thread.tokenBalanceB))
+    const threadEth = Web3.utils.toBN(thread.ethBalanceA).add(Web3.utils.toBN(thread.ethBalanceB))
     const channelBooty = Web3.utils.toBN(subchan.tokenBalanceA).add(Web3.utils.toBN(subchan.tokenBalanceI))
+    const channelEth = Web3.utils.toBN(channel.ethBalanceA).add(Web3.utils.toBN(channel.ethBalanceB))
     
     channelStateOnThreadClose.sigA = threadCloseSig
     // negative hub bond to reflect thread was closed
@@ -1379,21 +1382,33 @@ class Connext {
 
     const channelCloseSig = await this.createChannelStateUpdate(closingChannelState, sender)
 
-    // // post to hub
-    // const response = await this.networking.post(
-    //   `${subchan.partyA.toLowerCase()}/`,
-    //   {
-    //     vcCloseSig: threadCloseSig,
-    //     lcCloseSig: channelCloseSig,
-    //     vcBooty: threadBooty.toString(),
-    //     lcBooty: channelBooty.toString(),
-    //   }
-    // )
+    // post to hub
+    const response = await this.networking.post(
+      `${subchan.partyA.toLowerCase()}/`,
+      {
+        lcId: subchan.channelId,
+        lcBooty: channelBooty.toString(),
+        lcEth: channelEth.toString(),
+        lcOtherParty: subchan.partyI,
+        lcCloseSig: channelCloseSig,
+        vcId: thread.channelId,
+        vcBooty: threadBooty.toString(),
+        vcEth: threadEth.toString(),
+        vcCloseSig: threadCloseSig,
+        vcOtherParty: thread.partyB,
+      }
+    )
     const body = {
-      vcCloseSig: threadCloseSig,
-      lcCloseSig: channelCloseSig,
-      vcBooty: threadBooty.toString(),
+      lcId: subchan.channelId,
       lcBooty: channelBooty.toString(),
+      lcEth: channelEth.toString(),
+      lcOtherParty: subchan.partyI,
+      lcCloseSig: channelCloseSig,
+      vcId: thread.channelId,
+      vcBooty: threadBooty.toString(),
+      vcEth: threadEth.toString(),
+      vcCloseSig: threadCloseSig,
+      vcOtherParty: thread.partyB,
     }
     console.log('POTENTIALLY LIQUIDATE POSTING:', JSON.stringify(body))
     return body
