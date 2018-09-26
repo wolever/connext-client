@@ -1,4 +1,4 @@
-const channelManagerAbi = require('../artifacts/LedgerChannel.json')
+const channelManagerAbi = require('../artifacts/ChannelManager.json')
 const util = require('ethereumjs-util')
 const Web3 = require('web3')
 const validate = require('validate.js')
@@ -11,18 +11,18 @@ const tokenAbi = require('human-standard-token-abi')
 
 // Channel enums
 const CHANNEL_STATES = {
-  'CHANNEL_OPENING': 0,
-  'CHANNEL_OPENED': 1,
-  'CHANNEL_SETTLING': 2,
-  'CHANNEL_SETTLED': 3,
+  'OPENED': 0,
+  'JOINED': 1,
+  'SETTLING': 2,
+  'SETTLED': 3,
 }
 
 // thread enums
 const THREAD_STATES = {
-  'THREAD_OPENING': 0,
-  'THREAD_OPENED': 1,
-  'THREAD_SETTLING': 2,
-  'THREAD_SETTLED': 3,
+  'OPENED': 0,
+  'JOINED': 1,
+  'SETTLING': 2,
+  'SETTLED': 3,
 }
 
 // Purchase metadata enum
@@ -76,15 +76,15 @@ validate.validators.isValidChannelType = value => {
 validate.validators.isValidDepositObject = value => {
   if (!value) {
     return `Value cannot be undefined`
-  } else if (!value.tokenDeposit && !value.ethDeposit) {
-    return `${value} does not contain tokenDeposit or ethDeposit fields`
+  } else if (!value.tokenDeposit && !value.weiDeposit) {
+    return `${value} does not contain tokenDeposit or weiDeposit fields`
   }
   if (value.tokenDeposit && !validateBalance(value.tokenDeposit)) {
     return `${value.tokenDeposit} is not a valid token deposit`
   }
   
-  if (value.ethDeposit && !validateBalance(value.ethDeposit)) {
-    return `${value.ethDeposit} is not a valid eth deposit`
+  if (value.weiDeposit && !validateBalance(value.weiDeposit)) {
+    return `${value.weiDeposit} is not a valid eth deposit`
   }
 
   return null
@@ -211,11 +211,11 @@ validate.validators.isThreadState = value => {
   if (!value.partyB || !Web3.utils.isAddress(value.partyB)) {
     return `Thread state does not contain valid partyB: ${JSON.stringify(value)}`
   }
-  // valid state may have ethBalanceA/tokenBalanceA
+  // valid state may have weiBalanceA/tokenBalanceA
   // or valid states may have balanceA objects
-  if (value.ethBalanceA != null) {
+  if (value.weiBalanceA != null) {
     // must also contain all other fields
-    if (value.ethBalanceB == null || value.tokenBalanceA == null || value.tokenBalanceB == null) {
+    if (value.weiBalanceB == null || value.tokenBalanceA == null || value.tokenBalanceB == null) {
       return `Thread state does not contain valid balances: ${JSON.stringify(value)}`
     }
   } else if (value.balanceA != null) {
@@ -245,17 +245,17 @@ validate.validators.isChannelObj = value => {
   if (!value.partyI || !Web3.utils.isAddress(value.partyI)) {
     return `Channel object does not contain valid partyI: ${JSON.stringify(value)}`
   }
-  if (value.openVcs == null || value.openVcs < 0) {
-    return `Channel object does not contain valid number of openVcs: ${JSON.stringify(value)}`
+  if (value.numOpenThread == null || value.numOpenThread < 0) {
+    return `Channel object does not contain valid number of numOpenThread: ${JSON.stringify(value)}`
   }
-  if (!value.vcRootHash || !Web3.utils.isHexStrict(value.vcRootHash)) {
-    return `Channel object does not contain valid vcRootHash: ${JSON.stringify(value)}`
+  if (!value.threadRootHash || !Web3.utils.isHexStrict(value.threadRootHash)) {
+    return `Channel object does not contain valid threadRootHash: ${JSON.stringify(value)}`
   }
-  if (value.ethBalanceA == null) {
-    return `Channel object does not contain valid ethBalanceA: ${JSON.stringify(value)}`
+  if (value.weiBalanceA == null) {
+    return `Channel object does not contain valid weiBalanceA: ${JSON.stringify(value)}`
   }
-  if (value.ethBalanceI == null) {
-    return `Channel object does not contain valid ethBalanceI: ${JSON.stringify(value)}`
+  if (value.weiBalanceI == null) {
+    return `Channel object does not contain valid weiBalanceI: ${JSON.stringify(value)}`
   }
   if (value.tokenBalanceA == null) {
     return `Channel object does not contain valid tokenBalanceA: ${JSON.stringify(value)}`
@@ -336,7 +336,7 @@ class Connext {
    * const lcId = await connext.openChannel(deposit)
    *
    * @param {Object} initialDeposits - deposits in wei (must have at least one deposit)
-   * @param {BN} initialDeposits.ethDeposit - deposit in eth (may be null)
+   * @param {BN} initialDeposits.weiDeposit - deposit in eth (may be null)
    * @param {BN} initialDeposits.tokenDeposit - deposit in tokens (may be null)
    * @param {String} sender - (optional) counterparty with hub in ledger channel, defaults to accounts[0]
    * @param {Number} challenge - (optional) challenge period in seconds
@@ -384,21 +384,21 @@ class Connext {
 
     }
     // determine channel type
-    const { ethDeposit, tokenDeposit } = initialDeposits
+    const { weiDeposit, tokenDeposit } = initialDeposits
     let channelType
-    if (ethDeposit && tokenDeposit) {
+    if (weiDeposit && tokenDeposit) {
       // token and eth
       channelType = Object.keys(CHANNEL_TYPES)[2]
     } else if (tokenDeposit) {
       channelType = Object.keys(CHANNEL_TYPES)[1]
-    } else if (ethDeposit) {
+    } else if (weiDeposit) {
       channelType = Object.keys(CHANNEL_TYPES)[0]
     } else {
       throw new ChannelOpenError(methodName, `Error determining channel deposit types.`)
     }
     // verify channel does not exist between ingrid and sender
     let channel = await this.getChannelByPartyA(sender)
-    if (channel != null && CHANNEL_STATES[channel.state] === 1) {
+    if (channel != null && CHANNEL_STATES[channel.status] === 1) {
       throw new ChannelOpenError(
         methodName,
         401,
@@ -441,7 +441,7 @@ class Connext {
    * const txHash = await connext.deposit(deposit)
    *
    * @param {Object} deposits - deposit object
-   * @param {BN} deposits.ethDeposit - value of the channel deposit in ETH
+   * @param {BN} deposits.weiDeposit - value of the channel deposit in ETH
    * @param {BN} deposits.tokenDeposit - value of the channel deposit in tokens
    * @param {String} sender - (optional) ETH address sending funds to the ledger channel
    * @param {String} recipient - (optional) ETH address recieving funds in their ledger channel
@@ -480,7 +480,7 @@ class Connext {
 
     const channel = await this.getChannelByPartyA(recipient)
     // verify channel is open
-    if (CHANNEL_STATES[channel.state] !== CHANNEL_STATES.LCS_OPENED) {
+    if (CHANNEL_STATES[channel.status] !== CHANNEL_STATES.LCS_OPENED) {
       throw new ChannelUpdateError(methodName, 'Channel is not in the right state')
     }
     // verify recipient is in channel
@@ -502,9 +502,9 @@ class Connext {
 
     let sig
     // post new sig
-    const newEthBalanceA = deposits.ethDeposit 
-      ? Web3.utils.toBN(channel.ethBalanceA).add(deposits.ethDeposit) 
-      : Web3.utils.toBN(channel.ethBalanceA)
+    const newWeiBalanceA = deposits.weiDeposit 
+      ? Web3.utils.toBN(channel.weiBalanceA).add(deposits.weiDeposit) 
+      : Web3.utils.toBN(channel.weiBalanceA)
     const newTokenBalanceA = deposits.tokenDeposit
       ? Web3.utils.toBN(channel.tokenBalanceA).add(deposits.tokenDeposit)
       : Web3.utils.toBN(channel.tokenBalanceA)
@@ -514,16 +514,16 @@ class Connext {
       sig = await this.createChannelStateUpdate({
         channelId: channel.channelId,
         nonce: channel.nonce + 1,
-        openVcs: channel.openVcs,
-        vcRootHash: channel.vcRootHash,
+        numOpenThread: channel.numOpenThread,
+        threadRootHash: channel.threadRootHash,
         partyA: channel.partyA,
         partyI: channel.partyI,
         balanceA: {
-          ethDeposit: newEthBalanceA,
+          weiDeposit: newWeiBalanceA,
           tokenDeposit: newTokenBalanceA
         },
         balanceI: {
-          ethDeposit: Web3.utils.toBN(channel.ethBalanceI),
+          weiDeposit: Web3.utils.toBN(channel.weiBalanceI),
           tokenDeposit: Web3.utils.toBN(channel.tokenBalanceI)
         },
         deposit: deposits
@@ -532,11 +532,11 @@ class Connext {
        throw new ChannelUpdateError(methodName, 'Error with contract transaction')
      }
 
-     const result = await this.networking.post(`ledgerchannel/${channel.channelId}/deposit`, {
+     const result = await this.networking.post(`channel/${channel.channelId}/deposit`, {
        sig: sig,
-       deposit: deposits.ethDeposit ? deposits.ethDeposit.toString() : deposits.tokenDeposit.toString(),
-       isToken: deposits.ethDeposit ? false : true
-      //  ethDeposit: deposits.ethDeposit ? deposits.ethDeposit.toString() : '0',
+       deposit: deposits.weiDeposit ? deposits.weiDeposit.toString() : deposits.tokenDeposit.toString(),
+       isToken: deposits.weiDeposit ? false : true
+      //  weiDeposit: deposits.weiDeposit ? deposits.weiDeposit.toString() : '0',
       //  tokenDeposit: deposits.tokenDeposit ? deposits.tokenDeposit.toString() : '0',
      })
 
@@ -619,7 +619,7 @@ class Connext {
       // use entire subchanA balance
       deposit = {
         tokenDeposit: Web3.utils.toBN(subchanA.tokenBalanceA),
-        ethDeposit: Web3.utils.toBN(subchanA.ethBalanceA)
+        weiDeposit: Web3.utils.toBN(subchanA.weiBalanceA)
       }
     }
     if (deposit.tokenDeposit && Web3.utils.toBN(subchanA.tokenBalanceA).lt(deposit.tokenDeposit)) {
@@ -628,7 +628,7 @@ class Connext {
         'Insufficient value to open channel with provided token deposit'
       )
     }
-    if (deposit.ethDeposit && Web3.utils.toBN(subchanA.ethBalanceA).lt(deposit.ethDeposit)) {
+    if (deposit.weiDeposit && Web3.utils.toBN(subchanA.weiBalanceA).lt(deposit.weiDeposit)) {
       throw new ThreadOpenError(
         methodName,
         'Insufficient value to open channel with provided ETH deposit'
@@ -647,12 +647,12 @@ class Connext {
 
     // detemine update type
     let updateType
-    if (deposit.ethDeposit && deposit.tokenDeposit) {
+    if (deposit.weiDeposit && deposit.tokenDeposit) {
       // token and eth
       updateType = Object.keys(CHANNEL_TYPES)[2]
     } else if (deposit.tokenDeposit) {
       updateType = Object.keys(CHANNEL_TYPES)[1]
-    } else if (deposit.ethDeposit) {
+    } else if (deposit.weiDeposit) {
       updateType = Object.keys(CHANNEL_TYPES)[0]
     } else {
       throw new ThreadOpenError(methodName, `Error determining channel deposit types.`)
@@ -668,7 +668,7 @@ class Connext {
       balanceA: deposit,
       balanceB: {
         tokenDeposit: Web3.utils.toBN('0'),
-        ethDeposit: Web3.utils.toBN('0')
+        weiDeposit: Web3.utils.toBN('0')
       },
       updateType,
       signer: sender
@@ -687,8 +687,8 @@ class Connext {
         channelId,
         partyA: sender.toLowerCase(),
         partyB: to.toLowerCase(),
-        ethBalance: deposit.ethDeposit 
-          ? deposit.ethDeposit.toString() 
+        ethBalance: deposit.weiDeposit 
+          ? deposit.weiDeposit.toString() 
           : '0',
         tokenBalance: deposit.tokenDeposit 
           ? deposit.tokenDeposit.toString() 
@@ -766,8 +766,8 @@ class Connext {
       nonce: 0,
       partyA: thread.partyA, // depending on ingrid for this value
       partyB: sender,
-      ethBalanceA: Web3.utils.toBN(thread.ethBalanceA), // depending on ingrid for this value
-      ethBalanceB: Web3.utils.toBN(0),
+      weiBalanceA: Web3.utils.toBN(thread.weiBalanceA), // depending on ingrid for this value
+      weiBalanceB: Web3.utils.toBN(0),
       tokenBalanceA: Web3.utils.toBN(thread.tokenBalanceA),
       tokenBalanceB: Web3.utils.toBN(0),
       signer: sender
@@ -873,7 +873,7 @@ class Connext {
       throw new ChannelUpdateError(methodName, 'Channel not found')
     }
     // must be opened or joined
-    if (CHANNEL_STATES[channel.state] !== 1 && CHANNEL_STATES[channel.state] !== 2) {
+    if (CHANNEL_STATES[channel.status] !== 1 && CHANNEL_STATES[channel.status] !== 2) {
       throw new ChannelUpdateError(methodName, 'Channel is in invalid state')
     }
     // must be senders channel
@@ -882,24 +882,24 @@ class Connext {
     }
     // check what type of update
     let updateType
-    if (balanceA.ethDeposit && balanceA.tokenDeposit && balanceB.ethDeposit && balanceB.tokenDeposit) {
+    if (balanceA.weiDeposit && balanceA.tokenDeposit && balanceB.weiDeposit && balanceB.tokenDeposit) {
       // token and eth
       updateType = Object.keys(CHANNEL_TYPES)[2]
     } else if (balanceA.tokenDeposit && balanceB.tokenDeposit) {
       updateType = Object.keys(CHANNEL_TYPES)[1]
-    } else if (balanceA.ethDeposit && balanceB.ethDeposit) {
+    } else if (balanceA.weiDeposit && balanceB.weiDeposit) {
       updateType = Object.keys(CHANNEL_TYPES)[0]
     }
 
-    const channelEthBal = Web3.utils.toBN(channel.ethBalanceA).add(Web3.utils.toBN(channel.ethBalanceI))
+    const channelWeiBal = Web3.utils.toBN(channel.weiBalanceA).add(Web3.utils.toBN(channel.weiBalanceI))
     const channelTokenBal = Web3.utils.toBN(channel.tokenBalanceA).add(Web3.utils.toBN(channel.tokenBalanceI))
-    let proposedEthBalance, proposedTokenBalance
+    let proposedWeiBalance, proposedTokenBalance
     switch (CHANNEL_TYPES[updateType]) {
       case CHANNEL_TYPES.ETH:
-        if (balanceB.ethDeposit.lte(Web3.utils.toBN(channel.ethBalanceI))) {
+        if (balanceB.weiDeposit.lte(Web3.utils.toBN(channel.weiBalanceI))) {
           throw new ChannelUpdateError(methodName, 'Channel updates can only increase hub ETH balance')
         }
-        proposedEthBalance = Web3.utils.toBN(balanceA.ethDeposit).add(balanceB.ethDeposit) // proposed balance
+        proposedWeiBalance = Web3.utils.toBN(balanceA.weiDeposit).add(balanceB.weiDeposit) // proposed balance
         break
       
       case CHANNEL_TYPES.TOKEN:
@@ -910,20 +910,20 @@ class Connext {
         break
       
       case CHANNEL_TYPES.TOKEN_ETH:
-        if (balanceB.ethDeposit.lte(Web3.utils.toBN(channel.ethBalanceI))) {
+        if (balanceB.weiDeposit.lte(Web3.utils.toBN(channel.weiBalanceI))) {
           throw new ChannelUpdateError(methodName, 'Channel updates can only increase hub ETH balance')
         }
         if (balanceB.tokenDeposit.lte(Web3.utils.toBN(channel.tokenBalanceI))) {
           throw new ChannelUpdateError(methodName, 'Channel updates can only increase hub balance')
         }
-        proposedEthBalance = Web3.utils.toBN(balanceA.ethDeposit).add(balanceB.ethDeposit)
+        proposedWeiBalance = Web3.utils.toBN(balanceA.weiDeposit).add(balanceB.weiDeposit)
         proposedTokenBalance = Web3.utils.toBN(balanceA.tokenDeposit).add(balanceB.tokenDeposit)
         break
       default:
         throw new ChannelUpdateError(methodName, 'Error determining channel deposit types.')
     }
 
-    if (proposedEthBalance && !proposedEthBalance.eq(channelEthBal)) {
+    if (proposedWeiBalance && !proposedWeiBalance.eq(channelWeiBal)) {
       throw new ChannelUpdateError(methodName, 'Channel ETH balance cannot change')
     }
 
@@ -935,8 +935,8 @@ class Connext {
     const sig = await this.createChannelStateUpdate({
       channelId,
       nonce: channel.nonce + 1,
-      openVcs: channel.openVcs,
-      vcRootHash: channel.vcRootHash,
+      numOpenThread: channel.numOpenThread,
+      threadRootHash: channel.threadRootHash,
       partyA: channel.partyA,
       partyI: channel.partyI,
       balanceA,
@@ -945,10 +945,10 @@ class Connext {
     })
     // return sig
     const state = {
-      // balanceA: proposedEthBalance ? balanceA.ethDeposit.toString() : Web3.utils.toBN(channel.ethBalanceA).toString(),
-      // balanceB: proposedEthBalance ? balanceB.ethDeposit.toString() : Web3.utils.toBN(channel.ethBalanceI).toString(),
-      ethBalanceA: proposedEthBalance ? balanceA.ethDeposit.toString() : Web3.utils.toBN(channel.ethBalanceA).toString(),
-      ethBalanceB: proposedEthBalance ? balanceB.ethDeposit.toString() : Web3.utils.toBN(channel.ethBalanceI).toString(),
+      // balanceA: proposedWeiBalance ? balanceA.weiDeposit.toString() : Web3.utils.toBN(channel.weiBalanceA).toString(),
+      // balanceB: proposedWeiBalance ? balanceB.weiDeposit.toString() : Web3.utils.toBN(channel.weiBalanceI).toString(),
+      weiBalanceA: proposedWeiBalance ? balanceA.weiDeposit.toString() : Web3.utils.toBN(channel.weiBalanceA).toString(),
+      weiBalanceB: proposedWeiBalance ? balanceB.weiDeposit.toString() : Web3.utils.toBN(channel.weiBalanceI).toString(),
       tokenBalanceA: proposedTokenBalance ? balanceA.tokenDeposit.toString() : Web3.utils.toBN(channel.tokenBalanceA).toString(),
       tokenBalanceB: proposedTokenBalance ? balanceB.tokenDeposit.toString() : Web3.utils.toBN(channel.tokenBalanceI).toString(),
       channelId: channelId,
@@ -1013,24 +1013,24 @@ class Connext {
 
     // check what type of update
     let updateType
-    if (balanceA.ethDeposit && balanceA.tokenDeposit && balanceB.ethDeposit && balanceB.tokenDeposit) {
+    if (balanceA.weiDeposit && balanceA.tokenDeposit && balanceB.weiDeposit && balanceB.tokenDeposit) {
       // token and eth
       updateType = Object.keys(CHANNEL_TYPES)[2]
     } else if (balanceA.tokenDeposit && balanceB.tokenDeposit) {
       updateType = Object.keys(CHANNEL_TYPES)[1]
-    } else if (balanceA.ethDeposit && balanceB.ethDeposit) {
+    } else if (balanceA.weiDeposit && balanceB.weiDeposit) {
       updateType = Object.keys(CHANNEL_TYPES)[0]
     }
 
-    const threadEthBalance = Web3.utils.toBN(thread.ethBalanceA).add(Web3.utils.toBN(thread.ethBalanceB))
+    const threadEthBalance = Web3.utils.toBN(thread.weiBalanceA).add(Web3.utils.toBN(thread.weiBalanceB))
     const threadTokenBalance = Web3.utils.toBN(thread.tokenBalanceA).add(Web3.utils.toBN(thread.tokenBalanceB))
-    let proposedEthBalance, proposedTokenBalance
+    let proposedWeiBalance, proposedTokenBalance
     switch (CHANNEL_TYPES[updateType]) {
       case CHANNEL_TYPES.ETH:
-        if (balanceB.ethDeposit.lte(Web3.utils.toBN(thread.ethBalanceB))) {
+        if (balanceB.weiDeposit.lte(Web3.utils.toBN(thread.weiBalanceB))) {
           throw new ThreadUpdateError(methodName, 'Thread updates can only increase partyB ETH balance')
         }
-        proposedEthBalance = Web3.utils.toBN(balanceA.ethDeposit).add(balanceB.ethDeposit) // proposed balance
+        proposedWeiBalance = Web3.utils.toBN(balanceA.weiDeposit).add(balanceB.weiDeposit) // proposed balance
         break
       
       case CHANNEL_TYPES.TOKEN:
@@ -1041,20 +1041,20 @@ class Connext {
         break
       
       case CHANNEL_TYPES.TOKEN_ETH:
-        if (balanceB.ethDeposit.lte(Web3.utils.toBN(thread.ethBalanceB))) {
+        if (balanceB.weiDeposit.lte(Web3.utils.toBN(thread.weiBalanceB))) {
           throw new ThreadUpdateError(methodName, 'Thread updates can only increase partyB ETH balance')
         }
         if (balanceB.tokenDeposit.lte(Web3.utils.toBN(thread.tokenBalanceB))) {
           throw new ThreadUpdateError(methodName, 'Thread updates can only increase partyB token balance')
         }
-        proposedEthBalance = Web3.utils.toBN(balanceA.ethDeposit).add(balanceB.ethDeposit)
+        proposedWeiBalance = Web3.utils.toBN(balanceA.weiDeposit).add(balanceB.weiDeposit)
         proposedTokenBalance = Web3.utils.toBN(balanceA.tokenDeposit).add(balanceB.tokenDeposit)
         break
       default:
         throw new ThreadUpdateError(methodName, 'Error determining thread deposit types.')
     }
 
-    if (proposedEthBalance && !proposedEthBalance.eq(threadEthBalance)) {
+    if (proposedWeiBalance && !proposedWeiBalance.eq(threadEthBalance)) {
       throw new ThreadUpdateError(methodName, 'Thread ETH balance cannot change')
     }
 
@@ -1075,10 +1075,10 @@ class Connext {
     })
     // return sig
     const state = {
-      // balanceA: proposedEthBalance ? balanceA.ethDeposit.toString() : Web3.utils.toBN(thread.ethBalanceA).toString(),
-      // balanceB: proposedEthBalance ? balanceB.ethDeposit.toString() : Web3.utils.toBN(thread.ethBalanceB).toString(),
-      ethBalanceA: proposedEthBalance ? balanceA.ethDeposit.toString() : Web3.utils.toBN(thread.ethBalanceA).toString(),
-      ethBalanceB: proposedEthBalance ? balanceB.ethDeposit.toString() : Web3.utils.toBN(thread.ethBalanceB).toString(),
+      // balanceA: proposedWeiBalance ? balanceA.weiDeposit.toString() : Web3.utils.toBN(thread.weiBalanceA).toString(),
+      // balanceB: proposedWeiBalance ? balanceB.weiDeposit.toString() : Web3.utils.toBN(thread.weiBalanceB).toString(),
+      weiBalanceA: proposedWeiBalance ? balanceA.weiDeposit.toString() : Web3.utils.toBN(thread.weiBalanceA).toString(),
+      weiBalanceB: proposedWeiBalance ? balanceB.weiDeposit.toString() : Web3.utils.toBN(thread.weiBalanceB).toString(),
       tokenBalanceA: proposedTokenBalance ? balanceA.tokenDeposit.toString() : Web3.utils.toBN(thread.tokenBalanceA).toString(),
       tokenBalanceB: proposedTokenBalance ? balanceB.tokenDeposit.toString() : Web3.utils.toBN(thread.tokenBalanceB).toString(),
       // channelId,
@@ -1146,8 +1146,8 @@ class Connext {
       nonce: latestThreadState.nonce,
       partyA: thread.partyA,
       partyB: thread.partyB,
-      ethBalanceA: Web3.utils.toBN(latestThreadState.ethBalanceA),
-      ethBalanceB: Web3.utils.toBN(latestThreadState.ethBalanceB),
+      weiBalanceA: Web3.utils.toBN(latestThreadState.weiBalanceA),
+      weiBalanceB: Web3.utils.toBN(latestThreadState.weiBalanceB),
       tokenBalanceA: Web3.utils.toBN(latestThreadState.tokenBalanceA),
       tokenBalanceB: Web3.utils.toBN(latestThreadState.tokenBalanceB),
     })
@@ -1265,7 +1265,7 @@ class Connext {
     }
     const channel = await this.getChannelByPartyA(sender.toLowerCase())
     // channel must be open
-    if (CHANNEL_STATES[channel.state] !== CHANNEL_STATES.LCS_OPENED) {
+    if (CHANNEL_STATES[channel.status] !== CHANNEL_STATES.LCS_OPENED) {
       throw new ChannelCloseError(methodName, 'Channel is in invalid state')
     }
     // sender must be channel member
@@ -1279,12 +1279,12 @@ class Connext {
     // get latest i-signed lc state update
     let channelState = await this.getLatestChannelState(channel.channelId, ['sigI'])
     if (channelState) {
-      // openVcs?
-      if (Number(channelState.openVcs) !== 0) {
+      // numOpenThread?
+      if (Number(channelState.numOpenThread) !== 0) {
         throw new ChannelCloseError(methodName, 'Cannot close channel with open VCs')
       }
       // empty root hash?
-      if (channelState.vcRootHash !== Connext.generateThreadRootHash({ threadInitialStates: [] })) {
+      if (channelState.threadRootHash !== Connext.generateThreadRootHash({ threadInitialStates: [] })) {
         throw new ChannelCloseError(methodName, 'Cannot close channel with open VCs')
       }
       // i-signed?
@@ -1293,12 +1293,12 @@ class Connext {
         isClose: channelState.isClose,
         channelId: channel.channelId,
         nonce: channelState.nonce,
-        openVcs: channelState.openVcs,
-        vcRootHash: channelState.vcRootHash,
+        numOpenThread: channelState.numOpenThread,
+        threadRootHash: channelState.threadRootHash,
         partyA: channel.partyA,
         partyI: this.hubAddress,
-        ethBalanceA: Web3.utils.toBN(channelState.ethBalanceA),
-        ethBalanceI: Web3.utils.toBN(channelState.ethBalanceI),
+        weiBalanceA: Web3.utils.toBN(channelState.weiBalanceA),
+        weiBalanceI: Web3.utils.toBN(channelState.weiBalanceI),
         tokenBalanceA: Web3.utils.toBN(channelState.tokenBalanceA),
         tokenBalanceI: Web3.utils.toBN(channelState.tokenBalanceI),
       })
@@ -1312,12 +1312,12 @@ class Connext {
         isClose: false,
         channelId: channel.channelId,
         nonce: 0,
-        openVcs: 0,
-        vcRootHash: Connext.generateThreadRootHash({ threadInitialStates: [] }),
+        numOpenThread: 0,
+        threadRootHash: Connext.generateThreadRootHash({ threadInitialStates: [] }),
         partyA: channel.partyA,
         partyI: this.hubAddress,
-        ethBalanceA: Web3.utils.toBN(channel.ethBalanceA),
-        ethBalanceI: Web3.utils.toBN(channel.ethBalanceI),
+        weiBalanceA: Web3.utils.toBN(channel.weiBalanceA),
+        weiBalanceI: Web3.utils.toBN(channel.weiBalanceI),
         tokenBalanceA: Web3.utils.toBN(channel.tokenBalanceA),
         tokenBalanceI: Web3.utils.toBN(channel.tokenBalanceI),
       }
@@ -1328,17 +1328,17 @@ class Connext {
       isClose: true,
       channelId: channel.channelId,
       nonce: channelState.nonce + 1,
-      openVcs: channelState.openVcs,
-      vcRootHash: channelState.vcRootHash,
+      numOpenThread: channelState.numOpenThread,
+      threadRootHash: channelState.threadRootHash,
       partyA: channel.partyA,
       partyI: this.hubAddress,
       balanceA: {
         tokenDeposit: Web3.utils.toBN(channelState.tokenBalanceA),
-        ethDeposit: Web3.utils.toBN(channelState.ethBalanceA),
+        weiDeposit: Web3.utils.toBN(channelState.weiBalanceA),
       },
       balanceI: {
         tokenDeposit: Web3.utils.toBN(channelState.tokenBalanceI),
-        ethDeposit: Web3.utils.toBN(channelState.ethBalanceI),
+        weiDeposit: Web3.utils.toBN(channelState.weiBalanceI),
       },
       signer: sender
     }
@@ -1360,11 +1360,11 @@ class Connext {
       nonce: channelState.nonce + 1,
       balanceA: {
         tokenDeposit: Web3.utils.toBN(channelState.tokenBalanceA),
-        ethDeposit: Web3.utils.toBN(channelState.ethBalanceA),
+        weiDeposit: Web3.utils.toBN(channelState.weiBalanceA),
       },
       balanceI: {
         tokenDeposit: Web3.utils.toBN(channelState.tokenBalanceI),
-        ethDeposit: Web3.utils.toBN(channelState.ethBalanceI),
+        weiDeposit: Web3.utils.toBN(channelState.weiBalanceI),
       },
       sigA: sig,
       sigI: finalState.sigI,
@@ -1451,7 +1451,7 @@ class Connext {
     if (channel.partyA !== sender.toLowerCase()) {
       throw new ChannelUpdateError(methodName, 'Incorrect signer detected')
     }
-    if (CHANNEL_STATES[channel.state] !== CHANNEL_STATES.LCS_OPENED) {
+    if (CHANNEL_STATES[channel.status] !== CHANNEL_STATES.LCS_OPENED) {
       throw new ChannelUpdateError(methodName, 'Channel is in invalid state')
     }
     // TO DO
@@ -1507,7 +1507,7 @@ class Connext {
     if (channel.partyA !== sender.toLowerCase()) {
       throw new ChannelUpdateError(methodName, 'Incorrect signer detected')
     }
-    if (CHANNEL_STATES[channel.state] !== CHANNEL_STATES.LCS_OPENED) {
+    if (CHANNEL_STATES[channel.status] !== CHANNEL_STATES.LCS_OPENED) {
       throw new ChannelUpdateError(methodName, 'Channel is in invalid state')
     }
     if (nonce > channel.nonce) {
@@ -1523,12 +1523,12 @@ class Connext {
       isClose: state.isClose,
       channelId,
       nonce,
-      openVcs: state.openVcs,
-      vcRootHash: state.vcRootHash,
+      numOpenThread: state.numOpenThread,
+      threadRootHash: state.threadRootHash,
       partyA: sender,
       partyI: this.hubAddress,
-      ethBalanceA: Web3.utils.toBN(state.ethBalanceA),
-      ethBalanceI: Web3.utils.toBN(state.ethBalanceI),
+      weiBalanceA: Web3.utils.toBN(state.weiBalanceA),
+      weiBalanceI: Web3.utils.toBN(state.weiBalanceI),
       tokenBalanceA: Web3.utils.toBN(state.tokenBalanceA),
       tokenBalanceI: Web3.utils.toBN(state.tokenBalanceI),
     })
@@ -1540,7 +1540,7 @@ class Connext {
     state.channelId = channelId
     const sigA = await this.createChannelStateUpdate(state)
     const response = await this.networking.post(
-      `ledgerchannel/${channelId}/update/${nonce}/cosign`,
+      `channel/${channelId}/update/${nonce}/cosign`,
       {
         sig: sigA
       }
@@ -1569,9 +1569,9 @@ class Connext {
    * @param {Object} params - the method object
    * @param {Boolean} params.isClose - flag indicating whether or not this is closing state
    * @param {Number} params.nonce - the sequence of the ledger channel update
-   * @param {Number} params.openVcs - the number of open virtual channels associated with this ledger channel
-   * @param {String} params.vcRootHash - the root hash of the Merkle tree containing all initial states of the open virtual channels
-   * @param {String} params.partyA - ETH address of partyA in the ledgerchannel
+   * @param {Number} params.numOpenThread - the number of open virtual channels associated with this ledger channel
+   * @param {String} params.threadRootHash - the root hash of the Merkle tree containing all initial states of the open virtual channels
+   * @param {String} params.partyA - ETH address of partyA in the channel
    * @param {String} params.partyI - ETH address of the hub (Ingrid)
    * @param {Number} params.balanceA - updated balance of partyA
    * @param {Number} params.balanceI - updated balance of partyI
@@ -1581,12 +1581,12 @@ class Connext {
     channelId,
     isClose,
     nonce,
-    openVcs,
-    vcRootHash,
+    numOpenThread,
+    threadRootHash,
     partyA,
     partyI,
-    ethBalanceA,
-    ethBalanceI,
+    weiBalanceA,
+    weiBalanceI,
     tokenBalanceA,
     tokenBalanceI
   }) {
@@ -1616,14 +1616,14 @@ class Connext {
       'nonce'
     )
     Connext.validatorsResponseToError(
-      validate.single(openVcs, isPositiveInt),
+      validate.single(numOpenThread, isPositiveInt),
       methodName,
-      'openVcs'
+      'numOpenThread'
     )
     Connext.validatorsResponseToError(
-      validate.single(vcRootHash, isHex),
+      validate.single(threadRootHash, isHex),
       methodName,
-      'vcRootHash'
+      'threadRootHash'
     )
     Connext.validatorsResponseToError(
       validate.single(partyA, isAddress),
@@ -1636,14 +1636,14 @@ class Connext {
       'partyI'
     )
     Connext.validatorsResponseToError(
-      validate.single(ethBalanceA, isBN),
+      validate.single(weiBalanceA, isBN),
       methodName,
-      'ethBalanceA'
+      'weiBalanceA'
     )
     Connext.validatorsResponseToError(
-      validate.single(ethBalanceI, isBN),
+      validate.single(weiBalanceI, isBN),
       methodName,
-      'ethBalanceI'
+      'weiBalanceI'
     )
     Connext.validatorsResponseToError(
       validate.single(tokenBalanceA, isBN),
@@ -1660,12 +1660,12 @@ class Connext {
       { type: 'bytes32', value: channelId },
       { type: 'bool', value: isClose },
       { type: 'uint256', value: nonce },
-      { type: 'uint256', value: openVcs },
-      { type: 'bytes32', value: vcRootHash },
+      { type: 'uint256', value: numOpenThread },
+      { type: 'bytes32', value: threadRootHash },
       { type: 'address', value: partyA }, // address will be returned bytepadded
       { type: 'address', value: partyI }, // address is returned bytepadded
-      { type: 'uint256', value: ethBalanceA },
-      { type: 'uint256', value: ethBalanceI },
+      { type: 'uint256', value: weiBalanceA },
+      { type: 'uint256', value: weiBalanceI },
       { type: 'uint256', value: tokenBalanceA },
       { type: 'uint256', value: tokenBalanceI }
     )
@@ -1680,9 +1680,9 @@ class Connext {
    * @param {Boolean} params.isClose - flag indicating whether or not this is closing state
    * @param {String} params.channelId - ID of the ledger channel you are creating a state update for
    * @param {Number} params.nonce - the sequence of the ledger channel update
-   * @param {Number} params.openVcs - the number of open virtual channels associated with this ledger channel
-   * @param {String} params.vcRootHash - the root hash of the Merkle tree containing all initial states of the open virtual channels
-   * @param {String} params.partyA - ETH address of partyA in the ledgerchannel
+   * @param {Number} params.numOpenThread - the number of open virtual channels associated with this ledger channel
+   * @param {String} params.threadRootHash - the root hash of the Merkle tree containing all initial states of the open virtual channels
+   * @param {String} params.partyA - ETH address of partyA in the channel
    * @param {String} params.partyI - ETH address of the hub (Ingrid)
    * @param {Number} params.balanceA - updated balance of partyA
    * @param {Number} params.balanceI - updated balance of partyI
@@ -1693,12 +1693,12 @@ class Connext {
     sig,
     isClose,
     nonce,
-    openVcs,
-    vcRootHash,
+    numOpenThread,
+    threadRootHash,
     partyA,
     partyI,
-    ethBalanceA,
-    ethBalanceI,
+    weiBalanceA,
+    weiBalanceI,
     tokenBalanceA,
     tokenBalanceI
   }) {
@@ -1735,14 +1735,14 @@ class Connext {
       'nonce'
     )
     Connext.validatorsResponseToError(
-      validate.single(openVcs, isPositiveInt),
+      validate.single(numOpenThread, isPositiveInt),
       methodName,
-      'openVcs'
+      'numOpenThread'
     )
     Connext.validatorsResponseToError(
-      validate.single(vcRootHash, isHex),
+      validate.single(threadRootHash, isHex),
       methodName,
-      'vcRootHash'
+      'threadRootHash'
     )
     Connext.validatorsResponseToError(
       validate.single(partyA, isAddress),
@@ -1755,14 +1755,14 @@ class Connext {
       'partyI'
     )
     Connext.validatorsResponseToError(
-      validate.single(ethBalanceA, isBN),
+      validate.single(weiBalanceA, isBN),
       methodName,
-      'ethBalanceA'
+      'weiBalanceA'
     )
     Connext.validatorsResponseToError(
-      validate.single(ethBalanceI, isBN),
+      validate.single(weiBalanceI, isBN),
       methodName,
-      'ethBalanceI'
+      'weiBalanceI'
     )
     Connext.validatorsResponseToError(
       validate.single(tokenBalanceA, isBN),
@@ -1780,12 +1780,12 @@ class Connext {
       channelId,
       isClose,
       nonce,
-      openVcs,
-      vcRootHash,
+      numOpenThread,
+      threadRootHash,
       partyA,
       partyI,
-      ethBalanceA: ethBalanceA.toString(),
-      ethBalanceI: ethBalanceI.toString(),
+      weiBalanceA: weiBalanceA.toString(),
+      weiBalanceI: weiBalanceI.toString(),
       tokenBalanceA: tokenBalanceA.toString(),
       tokenBalanceI: tokenBalanceI.toString(),
     }))
@@ -1794,12 +1794,12 @@ class Connext {
       channelId,
       isClose,
       nonce,
-      openVcs,
-      vcRootHash,
+      numOpenThread,
+      threadRootHash,
       partyA,
       partyI,
-      ethBalanceA,
-      ethBalanceI,
+      weiBalanceA,
+      weiBalanceI,
       tokenBalanceA,
       tokenBalanceI
     })
@@ -1839,8 +1839,8 @@ class Connext {
     nonce,
     partyA,
     partyB,
-    ethBalanceA,
-    ethBalanceB,
+    weiBalanceA,
+    weiBalanceB,
     tokenBalanceA,
     tokenBalanceB
   }) {
@@ -1848,14 +1848,14 @@ class Connext {
     // typecast balances incase chained
     const isPositiveBnString = { presence: true, isPositiveBnString: true }
     Connext.validatorsResponseToError(
-      validate.single(ethBalanceA, isPositiveBnString),
+      validate.single(weiBalanceA, isPositiveBnString),
       methodName,
-      'ethBalanceA'
+      'weiBalanceA'
     )
     Connext.validatorsResponseToError(
-      validate.single(ethBalanceB, isPositiveBnString),
+      validate.single(weiBalanceB, isPositiveBnString),
       methodName,
-      'ethBalanceB'
+      'weiBalanceB'
     )
     Connext.validatorsResponseToError(
       validate.single(tokenBalanceA, isPositiveBnString),
@@ -1867,8 +1867,8 @@ class Connext {
       methodName,
       'tokenBalanceB'
     )
-    ethBalanceA = Web3.utils.toBN(ethBalanceA)
-    ethBalanceB = Web3.utils.toBN(ethBalanceB)
+    weiBalanceA = Web3.utils.toBN(weiBalanceA)
+    weiBalanceB = Web3.utils.toBN(weiBalanceB)
     tokenBalanceA = Web3.utils.toBN(tokenBalanceA)
     tokenBalanceB = Web3.utils.toBN(tokenBalanceB)
     // validate
@@ -1897,7 +1897,7 @@ class Connext {
       'partyB'
     )
 
-    const hubBondEth = ethBalanceA.add(ethBalanceB)
+    const hubBondEth = weiBalanceA.add(weiBalanceB)
     const hubBondToken = tokenBalanceA.add(tokenBalanceB)
 
     // generate state update to sign
@@ -1908,8 +1908,8 @@ class Connext {
       { type: 'address', value: partyB },
       { type: 'uint256', value: hubBondEth },
       { type: 'uint256', value: hubBondToken },
-      { type: 'uint256', value: ethBalanceA },
-      { type: 'uint256', value: ethBalanceB },
+      { type: 'uint256', value: weiBalanceA },
+      { type: 'uint256', value: weiBalanceB },
       { type: 'uint256', value: tokenBalanceA },
       { type: 'uint256', value: tokenBalanceB }
     )
@@ -1935,8 +1935,8 @@ class Connext {
     nonce,
     partyA,
     partyB,
-    ethBalanceA,
-    ethBalanceB,
+    weiBalanceA,
+    weiBalanceB,
     tokenBalanceA,
     tokenBalanceB
   }) {
@@ -1945,14 +1945,14 @@ class Connext {
     // typecast balances incase chained
     const isPositiveBnString = { presence: true, isPositiveBnString: true }
     Connext.validatorsResponseToError(
-      validate.single(ethBalanceA, isPositiveBnString),
+      validate.single(weiBalanceA, isPositiveBnString),
       methodName,
-      'ethBalanceA'
+      'weiBalanceA'
     )
     Connext.validatorsResponseToError(
-      validate.single(ethBalanceB, isPositiveBnString),
+      validate.single(weiBalanceB, isPositiveBnString),
       methodName,
-      'ethBalanceB'
+      'weiBalanceB'
     )
     Connext.validatorsResponseToError(
       validate.single(tokenBalanceA, isPositiveBnString),
@@ -1964,8 +1964,8 @@ class Connext {
       methodName,
       'tokenBalanceB'
     )
-    ethBalanceA = Web3.utils.toBN(ethBalanceA)
-    ethBalanceB = Web3.utils.toBN(ethBalanceB)
+    weiBalanceA = Web3.utils.toBN(weiBalanceA)
+    weiBalanceB = Web3.utils.toBN(weiBalanceB)
     tokenBalanceA = Web3.utils.toBN(tokenBalanceA)
     tokenBalanceB = Web3.utils.toBN(tokenBalanceB)
     // validatorOpts'
@@ -2010,8 +2010,8 @@ class Connext {
       nonce,
       partyA,
       partyB,
-      ethBalanceA: ethBalanceA.toString(),
-      ethBalanceB: ethBalanceB.toString(),
+      weiBalanceA: weiBalanceA.toString(),
+      weiBalanceB: weiBalanceB.toString(),
       tokenBalanceA: tokenBalanceA.toString(),
       tokenBalanceB: tokenBalanceB.toString()
     }))
@@ -2020,8 +2020,8 @@ class Connext {
       nonce,
       partyA,
       partyB,
-      ethBalanceA,
-      ethBalanceB,
+      weiBalanceA,
+      weiBalanceB,
       tokenBalanceA,
       tokenBalanceB
     })
@@ -2054,9 +2054,9 @@ class Connext {
   //  * @param {Boolean} params.isClose - (optional) flag indicating whether or not this is closing state, defaults to false
   //  * @param {String} params.channelId - ID of the ledger channel you are creating a state update for
   //  * @param {Number} params.nonce - the sequence of the ledger channel update
-  //  * @param {Number} params.openVcs - the number of open virtual channels associated with this ledger channel
-  //  * @param {String} params.vcRootHash - the root hash of the Merkle tree containing all initial states of the open virtual channels
-  //  * @param {String} params.partyA - ETH address of partyA in the ledgerchannel
+  //  * @param {Number} params.numOpenThread - the number of open virtual channels associated with this ledger channel
+  //  * @param {String} params.threadRootHash - the root hash of the Merkle tree containing all initial states of the open virtual channels
+  //  * @param {String} params.partyA - ETH address of partyA in the channel
   //  * @param {String} params.partyI - (optional) ETH address of the hub, defaults to this.hubAddress
   //  * @param {Number} params.balanceA - updated balance of partyA
   //  * @param {Number} params.balanceI - updated balance of partyI
@@ -2068,8 +2068,8 @@ class Connext {
     isClose = false, // default isnt close LC
     channelId,
     nonce,
-    openVcs,
-    vcRootHash,
+    numOpenThread,
+    threadRootHash,
     partyA,
     partyI = this.hubAddress, // default to ingrid
     balanceA,
@@ -2106,14 +2106,14 @@ class Connext {
       'nonce'
     )
     Connext.validatorsResponseToError(
-      validate.single(openVcs, isPositiveInt),
+      validate.single(numOpenThread, isPositiveInt),
       methodName,
-      'openVcs'
+      'numOpenThread'
     )
     Connext.validatorsResponseToError(
-      validate.single(vcRootHash, isHex),
+      validate.single(threadRootHash, isHex),
       methodName,
-      'vcRootHash'
+      'threadRootHash'
     )
     Connext.validatorsResponseToError(
       validate.single(partyA, isAddress),
@@ -2144,13 +2144,13 @@ class Connext {
       hubBond.tokenDeposit = hubBond.tokenDeposit 
         ? hubBond.tokenDeposit 
         : Web3.utils.toBN('0')
-      hubBond.ethDeposit = hubBond.ethDeposit 
-        ? hubBond.ethDeposit 
+      hubBond.weiDeposit = hubBond.weiDeposit 
+        ? hubBond.weiDeposit 
         : Web3.utils.toBN('0')
     } else {
       // set to zero
       hubBond = {
-        ethDeposit: Web3.utils.toBN('0'),
+        weiDeposit: Web3.utils.toBN('0'),
         tokenDeposit: Web3.utils.toBN('0'),
       }
     }
@@ -2161,15 +2161,15 @@ class Connext {
         methodName,
         'deposit'
       )
-      deposit.ethDeposit = deposit.ethDeposit 
-        ? deposit.ethDeposit 
+      deposit.weiDeposit = deposit.weiDeposit 
+        ? deposit.weiDeposit 
         : Web3.utils.toBN('0')
       deposit.tokenDeposit = deposit.tokenDeposit 
         ? deposit.tokenDeposit 
         : Web3.utils.toBN('0')      
     } else {
       deposit = {
-        ethDeposit: Web3.utils.toBN('0'),
+        weiDeposit: Web3.utils.toBN('0'),
         tokenDeposit: Web3.utils.toBN('0')
       }
     }
@@ -2194,29 +2194,29 @@ class Connext {
     // validate update
     const emptyRootHash = Connext.generateThreadRootHash({ threadInitialStates: [] })
     const channel = await this.getChannelById(channelId)
-    let proposedEthBalance, proposedTokenBalance
+    let proposedWeiBalance, proposedTokenBalance
     if (channel == null) {
       // set initial balances to 0 if thread does not exist
-      channel.ethBalanceA = '0'
-      channel.ethBalanceB = '0'
+      channel.weiBalanceA = '0'
+      channel.weiBalanceB = '0'
       channel.tokenBalanceA = '0'
       channel.tokenBalanceB = '0'
       // generating opening cert
       if (nonce !== 0) {
         throw new ChannelOpenError(methodName, 'Invalid nonce detected')
       }
-      if (openVcs !== 0) {
-        throw new ChannelOpenError(methodName, 'Invalid openVcs detected')
+      if (numOpenThread !== 0) {
+        throw new ChannelOpenError(methodName, 'Invalid numOpenThread detected')
       }
-      if (vcRootHash !== emptyRootHash) {
-        throw new ChannelOpenError(methodName, 'Invalid vcRootHash detected')
+      if (threadRootHash !== emptyRootHash) {
+        throw new ChannelOpenError(methodName, 'Invalid threadRootHash detected')
       }
       if (partyA === partyI) {
         throw new ChannelOpenError(methodName, 'Cannot open channel with yourself')
       }
-      if (balanceA.ethDeposit && balanceI.ethDeposit) {
+      if (balanceA.weiDeposit && balanceI.weiDeposit) {
         // channel includes ETH
-        proposedEthBalance = balanceA.ethDeposit.add(balanceI.ethDeposit)
+        proposedWeiBalance = balanceA.weiDeposit.add(balanceI.weiDeposit)
       }
       if (balanceA.tokenDeposit && balanceI.tokenDeposit) {
         // channel includes token
@@ -2225,7 +2225,7 @@ class Connext {
     } else {
       // updating existing lc
       // must be open
-      if (CHANNEL_STATES[channel.state] === 3) {
+      if (CHANNEL_STATES[channel.status] === 3) {
         throw new ChannelUpdateError(
           methodName,
           'Channel is in invalid state to accept updates'
@@ -2237,21 +2237,21 @@ class Connext {
       }
       // only open/close 1 vc per update, or dont open any
       if (
-        Math.abs(Number(openVcs) - Number(channel.openVcs)) !== 1 &&
-        Math.abs(Number(openVcs) - Number(channel.openVcs)) !== 0
+        Math.abs(Number(numOpenThread) - Number(channel.numOpenThread)) !== 1 &&
+        Math.abs(Number(numOpenThread) - Number(channel.numOpenThread)) !== 0
       ) {
         throw new ChannelUpdateError(
           methodName,
-          'Invalid number of openVcs proposed'
+          'Invalid number of numOpenThread proposed'
         )
       }
       // parties cant change
       if (partyA.toLowerCase() !== channel.partyA.toLowerCase() || partyI.toLowerCase() !== channel.partyI.toLowerCase()) {
         throw new ChannelUpdateError(methodName, 'Invalid channel parties')
       }
-      if (balanceA.ethDeposit && balanceI.ethDeposit) {
+      if (balanceA.weiDeposit && balanceI.weiDeposit) {
         // channel includes ETH
-        proposedEthBalance = balanceA.ethDeposit.add(balanceI.ethDeposit)
+        proposedWeiBalance = balanceA.weiDeposit.add(balanceI.weiDeposit)
       }
       if (balanceA.tokenDeposit && balanceI.tokenDeposit) {
         // channel includes token
@@ -2259,17 +2259,17 @@ class Connext {
       }
       // no change in total balance
       // add ledger channel balances of both parties from previously, subctract new balance of vc being opened
-      let isOpeningVc = openVcs - channel.openVcs === 1
+      let isOpeningVc = numOpenThread - channel.numOpenThread === 1
       // verify updates dont change channel balance
       let ethChannelBalance = isOpeningVc 
-      ? Web3.utils.toBN(channel.ethBalanceA)
-        .add(Web3.utils.toBN(channel.ethBalanceI))
-        .add(deposit.ethDeposit)
-        .sub(hubBond.ethDeposit) 
-      : Web3.utils.toBN(channel.ethBalanceA)
-        .add(Web3.utils.toBN(channel.ethBalanceI))
-        .add(deposit.ethDeposit)
-        .add(hubBond.ethDeposit)
+      ? Web3.utils.toBN(channel.weiBalanceA)
+        .add(Web3.utils.toBN(channel.weiBalanceI))
+        .add(deposit.weiDeposit)
+        .sub(hubBond.weiDeposit) 
+      : Web3.utils.toBN(channel.weiBalanceA)
+        .add(Web3.utils.toBN(channel.weiBalanceI))
+        .add(deposit.weiDeposit)
+        .add(hubBond.weiDeposit)
 
       let tokenChannelBalance = isOpeningVc 
       ? Web3.utils.toBN(channel.tokenBalanceA)
@@ -2281,7 +2281,7 @@ class Connext {
         .add(deposit.tokenDeposit)
         .add(hubBond.tokenDeposit)
 
-      if (proposedEthBalance && !proposedEthBalance.eq(ethChannelBalance)) {
+      if (proposedWeiBalance && !proposedWeiBalance.eq(ethChannelBalance)) {
         throw new ChannelUpdateError(methodName, 'Invalid ETH balance proposed')
       }
       if (proposedTokenBalance && !proposedTokenBalance.eq(tokenChannelBalance)) {
@@ -2293,15 +2293,15 @@ class Connext {
       isClose,
       channelId,
       nonce,
-      openVcs,
-      vcRootHash,
+      numOpenThread,
+      threadRootHash,
       partyA,
       partyI,
-      ethBalanceA: proposedEthBalance 
-        ? balanceA.ethDeposit.toString() 
+      weiBalanceA: proposedWeiBalance 
+        ? balanceA.weiDeposit.toString() 
         : '0',
-      ethBalanceI: proposedEthBalance 
-        ? balanceI.ethDeposit.toString() 
+      weiBalanceI: proposedWeiBalance 
+        ? balanceI.weiDeposit.toString() 
         : '0',
       tokenBalanceA: proposedTokenBalance 
         ? balanceA.tokenDeposit.toString() 
@@ -2315,12 +2315,12 @@ class Connext {
       channelId,
       isClose,
       nonce,
-      openVcs,
-      vcRootHash,
+      numOpenThread,
+      threadRootHash,
       partyA,
       partyI,
-      ethBalanceA: proposedEthBalance ? balanceA.ethDeposit : Web3.utils.toBN('0'),
-      ethBalanceI: proposedEthBalance ? balanceI.ethDeposit : Web3.utils.toBN('0'),
+      weiBalanceA: proposedWeiBalance ? balanceA.weiDeposit : Web3.utils.toBN('0'),
+      weiBalanceI: proposedWeiBalance ? balanceI.weiDeposit : Web3.utils.toBN('0'),
       tokenBalanceA: proposedTokenBalance ? balanceA.tokenDeposit : Web3.utils.toBN('0'),
       tokenBalanceI: proposedTokenBalance ? balanceI.tokenDeposit : Web3.utils.toBN('0'),
     })
@@ -2402,13 +2402,13 @@ class Connext {
 
     // verify channel state update
     let thread = await this.getThreadById(channelId)
-    let proposedEthBalance, proposedTokenBalance
+    let proposedWeiBalance, proposedTokenBalance
     if (thread === null) {
       // channel does not exist, generating opening state
       if (nonce !== 0) {
         throw new ThreadOpenError(methodName, 'Invalid nonce detected')
       }
-      if (balanceB.ethDeposit && !balanceB.ethDeposit.isZero()) {
+      if (balanceB.weiDeposit && !balanceB.weiDeposit.isZero()) {
         throw new ThreadOpenError(methodName, 'Invalid initial ETH balanceB detected')
       }
       if (balanceB.tokenDeposit && !balanceB.tokenDeposit.isZero()) {
@@ -2417,11 +2417,11 @@ class Connext {
       if (partyA.toLowerCase() === partyB.toLowerCase()) {
         throw new ThreadOpenError(methodName, 'Cannot open thread with yourself')
       }
-      if (balanceA.ethDeposit) { // update includes eth
-         if(Web3.utils.toBN(subchanA.ethBalanceA).lt(balanceA.ethDeposit)) {
+      if (balanceA.weiDeposit) { // update includes eth
+         if(Web3.utils.toBN(subchanA.weiBalanceA).lt(balanceA.weiDeposit)) {
           throw new ThreadOpenError(methodName, 'Insufficient ETH channel balance detected')
         }
-        proposedEthBalance = balanceA.ethDeposit        
+        proposedWeiBalance = balanceA.weiDeposit        
       }
       if (balanceA.tokenDeposit) {
         if (Web3.utils.toBN(subchanA.tokenBalanceA).lt(balanceA.tokenDeposit)) {
@@ -2445,14 +2445,14 @@ class Connext {
         throw new ThreadUpdateError(methodName, 'Invalid parties detected')
       }
       // verify updates dont change channel balance
-      const threadEthBalance = Web3.utils.toBN(thread.ethBalanceA).add(Web3.utils.toBN(thread.ethBalanceB))
+      const threadEthBalance = Web3.utils.toBN(thread.weiBalanceA).add(Web3.utils.toBN(thread.weiBalanceB))
       const threadTokenBalance = Web3.utils.toBN(thread.tokenBalanceA).add(Web3.utils.toBN(thread.tokenBalanceB))
       switch (CHANNEL_TYPES[updateType]) {
         case CHANNEL_TYPES.ETH:
-          if (balanceB.ethDeposit.lt(Web3.utils.toBN(thread.ethBalanceB))) {
+          if (balanceB.weiDeposit.lt(Web3.utils.toBN(thread.weiBalanceB))) {
             throw new ThreadUpdateError(methodName, 'Thread updates can only increase partyB ETH balance')
           }
-          proposedEthBalance = Web3.utils.toBN(balanceA.ethDeposit).add(balanceB.ethDeposit) // proposed balance
+          proposedWeiBalance = Web3.utils.toBN(balanceA.weiDeposit).add(balanceB.weiDeposit) // proposed balance
           break
         
         case CHANNEL_TYPES.TOKEN:
@@ -2463,19 +2463,19 @@ class Connext {
           break
         
         case CHANNEL_TYPES.TOKEN_ETH:
-          if (balanceB.ethDeposit.lt(Web3.utils.toBN(thread.ethBalanceB))) {
+          if (balanceB.weiDeposit.lt(Web3.utils.toBN(thread.weiBalanceB))) {
             throw new ThreadUpdateError(methodName, 'Thread updates can only increase partyB ETH balance')
           }
           if (balanceB.tokenDeposit.lt(Web3.utils.toBN(thread.tokenBalanceB))) {
             throw new ThreadUpdateError(methodName, 'Thread updates can only increase partyB token balance')
           }
-          proposedEthBalance = Web3.utils.toBN(balanceA.ethDeposit).add(balanceB.ethDeposit)
+          proposedWeiBalance = Web3.utils.toBN(balanceA.weiDeposit).add(balanceB.weiDeposit)
           proposedTokenBalance = Web3.utils.toBN(balanceA.tokenDeposit).add(balanceB.tokenDeposit)
           break
         default:
           throw new ThreadUpdateError(methodName, 'Invalid thread update type.')
       }
-      if (proposedEthBalance && !proposedEthBalance.eq(threadEthBalance)) {
+      if (proposedWeiBalance && !proposedWeiBalance.eq(threadEthBalance)) {
         throw new ThreadUpdateError(methodName, 'Thread ETH balance cannot change')
       }
   
@@ -2495,15 +2495,15 @@ class Connext {
       // if balance change proposed, use balance
       // else use thread balance if thread exists (will be null on open)
       // else use 0
-      ethBalanceA: proposedEthBalance 
-        ? balanceA.ethDeposit 
+      weiBalanceA: proposedWeiBalance 
+        ? balanceA.weiDeposit 
         : thread 
-        ? Web3.utils.toBN(thread.ethBalanceA) 
+        ? Web3.utils.toBN(thread.weiBalanceA) 
         : Web3.utils.toBN('0'),
-      ethBalanceB: proposedEthBalance 
-        ? balanceB.ethDeposit 
+      weiBalanceB: proposedWeiBalance 
+        ? balanceB.weiDeposit 
         : thread 
-        ? Web3.utils.toBN(thread.ethBalanceB) 
+        ? Web3.utils.toBN(thread.weiBalanceB) 
         : Web3.utils.toBN('0'),
       tokenBalanceA: proposedTokenBalance 
         ? balanceA.tokenDeposit 
@@ -2522,15 +2522,15 @@ class Connext {
       nonce,
       partyA,
       partyB,
-      ethBalanceA: proposedEthBalance 
-        ? balanceA.ethDeposit.toString() 
+      weiBalanceA: proposedWeiBalance 
+        ? balanceA.weiDeposit.toString() 
         : thread 
-        ? Web3.utils.toBN(thread.ethBalanceA).toString() 
+        ? Web3.utils.toBN(thread.weiBalanceA).toString() 
         : Web3.utils.toBN('0').toString(),
-      ethBalanceB: proposedEthBalance 
-        ? balanceB.ethDeposit.toString() 
+      weiBalanceB: proposedWeiBalance 
+        ? balanceB.weiDeposit.toString() 
         : thread 
-        ? Web3.utils.toBN(thread.ethBalanceB).toString() 
+        ? Web3.utils.toBN(thread.weiBalanceB).toString() 
         : Web3.utils.toBN('0').toString(),
       tokenBalanceA: proposedTokenBalance 
         ? balanceA.tokenDeposit.toString() 
@@ -2684,11 +2684,11 @@ class Connext {
             ingridAddress, 
             challenge, 
             tokenAddress, 
-            [initialDeposits.ethDeposit, Web3.utils.toBN('0')]
+            [initialDeposits.weiDeposit, Web3.utils.toBN('0')]
           )
           .send({
             from: sender,
-            value: initialDeposits.ethDeposit,
+            value: initialDeposits.weiDeposit,
             gas: 750000
           })
         break
@@ -2729,11 +2729,11 @@ class Connext {
               ingridAddress, 
               challenge, 
               tokenAddress, 
-              [initialDeposits.ethDeposit, initialDeposits.tokenDeposit]
+              [initialDeposits.weiDeposit, initialDeposits.tokenDeposit]
             )
             .send({
               from: sender,
-              value: initialDeposits.ethDeposit,
+              value: initialDeposits.weiDeposit,
               gas: 750000
           })
         } else {
@@ -2793,7 +2793,7 @@ class Connext {
     }
     // verify requires
     const channel = await this.getChannelById(channelId)
-    if (CHANNEL_STATES[channel.state] !== CHANNEL_STATES.LCS_OPENING) {
+    if (CHANNEL_STATES[channel.status] !== CHANNEL_STATES.LCS_OPENING) {
       throw new ChannelOpenError(methodName, 'Channel is in incorrect state')
     }
 
@@ -2882,7 +2882,7 @@ class Connext {
 
     // verify requires --> already checked in deposit() fn, necessary?
     const channel = await this.getChannelById(channelId)
-    if (CHANNEL_STATES[channel.state] !== CHANNEL_STATES.LCS_OPENED) {
+    if (CHANNEL_STATES[channel.status] !== CHANNEL_STATES.LCS_OPENED) {
       throw new ContractError(methodName, 'Channel is not open')
     }
     if (
@@ -2896,16 +2896,16 @@ class Connext {
     }
 
     // determine deposit type
-    const { ethDeposit, tokenDeposit } = deposits
+    const { weiDeposit, tokenDeposit } = deposits
     let depositType
-    if (ethDeposit && tokenDeposit) {
+    if (weiDeposit && tokenDeposit) {
       // token and eth
       tokenAddress = tokenAddress ? tokenAddress : channel.tokenAddress
       depositType = Object.keys(CHANNEL_TYPES)[2]
     } else if (tokenDeposit) {
       tokenAddress = tokenAddress ? tokenAddress : channel.tokenAddress
       depositType = Object.keys(CHANNEL_TYPES)[1]
-    } else if (ethDeposit) {
+    } else if (weiDeposit) {
       depositType = Object.keys(CHANNEL_TYPES)[0]
     }
 
@@ -2917,12 +2917,12 @@ class Connext {
         .deposit(
           channelId, // PARAM NOT IN CONTRACT YET, SHOULD BE
           recipient,
-          deposits.ethDeposit,
+          deposits.weiDeposit,
           false
         )
         .send({
           from: sender,
-          value: deposits.ethDeposit,
+          value: deposits.weiDeposit,
           gas: 1000000,
         })
         break
@@ -3027,12 +3027,12 @@ class Connext {
       isClose: true,
       channelId,
       nonce,
-      openVcs: 0,
-      vcRootHash: emptyRootHash,
+      numOpenThread: 0,
+      threadRootHash: emptyRootHash,
       partyA: sender,
       partyI: this.hubAddress,
-      ethBalanceA: balanceA.ethDeposit ? balanceA.ethDeposit :      Web3.utils.toBN('0'),
-      ethBalanceI: balanceI.ethDeposit ? balanceI.ethDeposit : Web3.utils.toBN('0'),
+      weiBalanceA: balanceA.weiDeposit ? balanceA.weiDeposit :      Web3.utils.toBN('0'),
+      weiBalanceI: balanceI.weiDeposit ? balanceI.weiDeposit : Web3.utils.toBN('0'),
       tokenBalanceA: balanceA.tokenDeposit ? balanceA.tokenDeposit : Web3.utils.toBN('0'),
       tokenBalanceI: balanceI.tokenDeposit ? balanceI.tokenDeposit : Web3.utils.toBN('0'),
     }
@@ -3050,7 +3050,7 @@ class Connext {
       .consensusCloseChannel(
         channelId, 
         nonce, 
-        [ state.ethBalanceA, state.ethBalanceI, state.tokenBalanceA, state.tokenBalanceI ], 
+        [ state.weiBalanceA, state.weiBalanceI, state.tokenBalanceA, state.tokenBalanceI ], 
         sigA, 
         sigI
       )
@@ -3159,10 +3159,10 @@ class Connext {
   async updateChannelStateContractHandler ({
     channelId,
     nonce,
-    openVcs,
+    numOpenThread,
     balanceA,
     balanceI,
-    vcRootHash,
+    threadRootHash,
     sigA,
     sigI,
     sender = null
@@ -3185,9 +3185,9 @@ class Connext {
       'nonce'
     )
     Connext.validatorsResponseToError(
-      validate.single(openVcs, isPositiveInt),
+      validate.single(numOpenThread, isPositiveInt),
       methodName,
-      'openVcs'
+      'numOpenThread'
     )
     Connext.validatorsResponseToError(
       validate.single(balanceA, isValidDepositObject),
@@ -3200,9 +3200,9 @@ class Connext {
       'balanceI'
     )
     Connext.validatorsResponseToError(
-      validate.single(vcRootHash, isHex),
+      validate.single(threadRootHash, isHex),
       methodName,
-      'vcRootHash'
+      'threadRootHash'
     )
     Connext.validatorsResponseToError(
       validate.single(sigA, isHex),
@@ -3225,8 +3225,8 @@ class Connext {
       sender = accounts[0].toLowerCase()
     }
 
-    const ethBalanceA = balanceA.ethDeposit ? balanceA.ethDeposit : Web3.utils.toBN('0')
-    const ethBalanceI = balanceI.ethDeposit ? balanceI.ethDeposit : Web3.utils.toBN('0')
+    const weiBalanceA = balanceA.weiDeposit ? balanceA.weiDeposit : Web3.utils.toBN('0')
+    const weiBalanceI = balanceI.weiDeposit ? balanceI.weiDeposit : Web3.utils.toBN('0')
 
     const tokenBalanceA = balanceA.tokenDeposit ? balanceA.tokenDeposit : Web3.utils.toBN('0')
     const tokenBalanceI = balanceI.tokenDeposit ? balanceI.tokenDeposit : Web3.utils.toBN('0')
@@ -3234,8 +3234,8 @@ class Connext {
     const result = await this.channelManagerInstance.methods
       .updateChannelState(
         channelId,
-        [nonce, openVcs, ethBalanceA, ethBalanceI, tokenBalanceA, tokenBalanceI],
-        Web3.utils.padRight(vcRootHash, 64),
+        [nonce, numOpenThread, weiBalanceA, weiBalanceI, tokenBalanceA, tokenBalanceI],
+        Web3.utils.padRight(threadRootHash, 64),
         sigA,
         sigI
       )
@@ -3318,7 +3318,7 @@ class Connext {
       const accounts = await this.web3.eth.getAccounts()
       sender = accounts[0].toLowerCase()
     }
-    const ethBalanceA = balanceA.ethDeposit ? balanceA.ethDeposit : Web3.utils.toBN('0')
+    const weiBalanceA = balanceA.weiDeposit ? balanceA.weiDeposit : Web3.utils.toBN('0')
     const tokenBalanceA = balanceA.tokenDeposit ? balanceA.tokenDeposit : Web3.utils.toBN('0')
     
     let merkle, stateHash
@@ -3329,8 +3329,8 @@ class Connext {
         nonce: 0,
         partyA,
         partyB,
-        ethBalanceA,
-        ethBalanceB: Web3.utils.toBN('0'),
+        weiBalanceA,
+        weiBalanceB: Web3.utils.toBN('0'),
         tokenBalanceA,
         tokenBalanceB: Web3.utils.toBN('0'),
       })
@@ -3355,8 +3355,8 @@ class Connext {
         proof,
         partyA,
         partyB,
-        [ ethBalanceA, tokenBalanceA ],
-        [ ethBalanceA, Web3.utils.toBN('0'), tokenBalanceA, Web3.utils.toBN('0')],
+        [ weiBalanceA, tokenBalanceA ],
+        [ weiBalanceA, Web3.utils.toBN('0'), tokenBalanceA, Web3.utils.toBN('0')],
         sigA
       )
       // .estimateGas({
@@ -3457,8 +3457,8 @@ class Connext {
       sender = accounts[0].toLowerCase()
     }
 
-    const ethBalanceA = balanceA.ethDeposit ? balanceA.ethDeposit : Web3.utils.toBN('0')
-    const ethBalanceB = balanceB.ethDeposit ? balanceB.ethDeposit : Web3.utils.toBN('0')
+    const weiBalanceA = balanceA.weiDeposit ? balanceA.weiDeposit : Web3.utils.toBN('0')
+    const weiBalanceB = balanceB.weiDeposit ? balanceB.weiDeposit : Web3.utils.toBN('0')
 
     const tokenBalanceA = balanceA.tokenDeposit ? balanceA.tokenDeposit : Web3.utils.toBN('0')
     const tokenBalanceB = balanceB.tokenDeposit ? balanceB.tokenDeposit : Web3.utils.toBN('0')
@@ -3470,7 +3470,7 @@ class Connext {
         nonce,
         partyA,
         partyB,
-        [ethBalanceA, ethBalanceB, tokenBalanceA, tokenBalanceB],
+        [weiBalanceA, weiBalanceB, tokenBalanceA, tokenBalanceB],
         sigA
       )
       .send({
@@ -3662,7 +3662,7 @@ class Connext {
       'nonce'
     )
     const response = await this.networking.get(
-      `ledgerchannel/${channelId}/update/nonce/${nonce}`
+      `channel/${channelId}/update/nonce/${nonce}`
     )
     return response.data
   }
@@ -3681,7 +3681,7 @@ class Connext {
     }
 
     const response = await this.networking.get(
-      `ledgerchannel/${channelId}/update/latest?sig[]=sigI`
+      `channel/${channelId}/update/latest?sig[]=sigI`
     )
     return response.data
   }
@@ -3703,7 +3703,7 @@ class Connext {
     )
 
     const response = await this.networking.get(
-      `ledgerchannel/${channelId}/vcs`
+      `channel/${channelId}/vcs`
     )
     return response.data
   }
@@ -3741,7 +3741,7 @@ class Connext {
     }
     // get my LC with ingrid
     const response = await this.networking.get(
-      `ledgerchannel/a/${partyA}?status=${status}`
+      `channel/a/${partyA}?status=${status}`
     )
     if (status === Object.keys(CHANNEL_STATES)[1]) {
       // has list length of 1, return obj
@@ -3866,7 +3866,7 @@ class Connext {
       'channelId'
     )
     try {
-      const res = await this.networking.get(`ledgerchannel/${channelId}`)
+      const res = await this.networking.get(`channel/${channelId}`)
       return res.data
     } catch (e) {
       if (e.status === 404) {
@@ -3908,7 +3908,7 @@ class Connext {
     }
 
     const response = await this.networking.get(
-      `ledgerchannel/a/${partyA.toLowerCase()}?status=${status}`
+      `channel/a/${partyA.toLowerCase()}?status=${status}`
     )
     if (status === Object.keys(CHANNEL_STATES)[1]) {
       // has list length of 1, return obj
@@ -3919,7 +3919,7 @@ class Connext {
   }
 
   async getChallengeTimer () {
-    const response = await this.networking.get(`ledgerchannel/challenge`)
+    const response = await this.networking.get(`channel/challenge`)
     return response.data.challenge
   }
 
@@ -3948,7 +3948,7 @@ class Connext {
       'channelId'
     )
     const response = await this.networking.get(
-      `ledgerchannel/${channelId}/vcinitialstates`
+      `channel/${channelId}/vcinitialstates`
     )
     return response.data
   }
@@ -4013,16 +4013,16 @@ class Connext {
       'deposit'
     )
     const accountBalance = await this.web3.eth.getBalance(this.hubAddress)
-    if (deposit.ethDeposit && deposit.ethDeposit.gt(Web3.utils.toBN(accountBalance))) {
+    if (deposit.weiDeposit && deposit.weiDeposit.gt(Web3.utils.toBN(accountBalance))) {
       throw new ChannelUpdateError(
         methodName,
         'Hub does not have sufficient ETH balance for requested deposit'
       )
     }
     const response = await this.networking.post(
-      `ledgerchannel/${channelId}/requestdeposit`,
+      `channel/${channelId}/requestdeposit`,
       {
-        ethDeposit: deposit.ethDeposit ? deposit.ethDeposit.toString() : '0',
+        weiDeposit: deposit.weiDeposit ? deposit.weiDeposit.toString() : '0',
         tokenDeposit: deposit.tokenDeposit ? deposit.tokenDeposit.toString(): '0'
       }
     )
@@ -4113,7 +4113,7 @@ class Connext {
       'channelId'
     )
     const response = await this.networking.post(
-      `ledgerchannel/${channelId}/fastclose`,
+      `channel/${channelId}/fastclose`,
       {
         sig
       }
@@ -4158,7 +4158,7 @@ class Connext {
       throw new ThreadOpenError(methodName, 'Invalid signer detected')
     }
     // lc must be open
-    if (CHANNEL_STATES[channel.state] !== 1) {
+    if (CHANNEL_STATES[channel.status] !== 1) {
       throw new ThreadOpenError(methodName, 'Invalid subchannel state')
     }
     // vcId should be unique
@@ -4171,22 +4171,22 @@ class Connext {
       throw new ThreadOpenError(methodName, 'Thread nonce is nonzero')
     }
     // check that balanceA of channel is sufficient to create thread
-    if (threadInitialState.balanceA.ethDeposit && Web3.utils.toBN(channel.ethBalanceA).lt(threadInitialState.balanceA.ethDeposit)) {
+    if (threadInitialState.balanceA.weiDeposit && Web3.utils.toBN(channel.weiBalanceA).lt(threadInitialState.balanceA.weiDeposit)) {
       throw new ThreadOpenError(methodName, 'Insufficient ETH deposit detected for balanceA')
     }
     if (threadInitialState.balanceA.tokenDeposit && Web3.utils.toBN(channel.tokenBalanceA).lt(threadInitialState.balanceA.tokenDeposit)) {
       throw new ThreadOpenError(methodName, 'Insufficient token deposit detected for balanceA')
     }
     // verify balanceB for both is 0
-    if (threadInitialState.balanceB.ethDeposit && !threadInitialState.balanceB.ethDeposit.isZero()) {
+    if (threadInitialState.balanceB.weiDeposit && !threadInitialState.balanceB.weiDeposit.isZero()) {
       throw new ThreadOpenError(methodName, 'The ETH balanceB must be 0 when creating thread.')
     }
     if (threadInitialState.balanceB.tokenDeposit && !threadInitialState.balanceB.tokenDeposit.isZero()) {
       throw new ThreadOpenError(methodName, 'The token balanceB must be 0 when creating thread.')
     }
     // manipulate threadInitialState to have the right data structure
-    threadInitialState.ethBalanceA = threadInitialState.balanceA.ethDeposit ? threadInitialState.balanceA.ethDeposit : Web3.utils.toBN('0')
-    threadInitialState.ethBalanceB = Web3.utils.toBN('0')
+    threadInitialState.weiBalanceA = threadInitialState.balanceA.weiDeposit ? threadInitialState.balanceA.weiDeposit : Web3.utils.toBN('0')
+    threadInitialState.weiBalanceB = Web3.utils.toBN('0')
     threadInitialState.tokenBalanceA = threadInitialState.balanceA.tokenDeposit ? threadInitialState.balanceA.tokenDeposit : Web3.utils.toBN('0')
     threadInitialState.tokenBalanceB = Web3.utils.toBN('0')
 
@@ -4196,9 +4196,9 @@ class Connext {
 
     // new LC balances should reflect the VC deposits
     // new balanceA = balanceA - (their VC balance)
-    const channelEthBalanceA = signer.toLowerCase() === threadInitialState.partyA.toLowerCase() 
-      ? Web3.utils.toBN(channel.ethBalanceA).sub(threadInitialState.ethBalanceA) // viewer is signing LC update
-      : Web3.utils.toBN(channel.ethBalanceA).sub(threadInitialState.ethBalanceB) // performer is signing LC update
+    const channelweiBalanceA = signer.toLowerCase() === threadInitialState.partyA.toLowerCase() 
+      ? Web3.utils.toBN(channel.weiBalanceA).sub(threadInitialState.weiBalanceA) // viewer is signing LC update
+      : Web3.utils.toBN(channel.weiBalanceA).sub(threadInitialState.weiBalanceB) // performer is signing LC update
     
     const channelTokenBalanceA = signer.toLowerCase() === threadInitialState.partyA.toLowerCase() 
       ? Web3.utils.toBN(channel.tokenBalanceA).sub(threadInitialState.tokenBalanceA) 
@@ -4209,29 +4209,29 @@ class Connext {
       ? Web3.utils.toBN(channel.tokenBalanceI).sub(threadInitialState.tokenBalanceB) 
       : Web3.utils.toBN(channel.tokenBalanceI).sub(threadInitialState.tokenBalanceA)
 
-    const channelEthBalanceI = signer.toLowerCase() === threadInitialState.partyA.toLowerCase() 
-      ? Web3.utils.toBN(channel.ethBalanceI).sub(threadInitialState.ethBalanceB)
-      : Web3.utils.toBN(channel.ethBalanceI).sub(threadInitialState.ethBalanceA) //
+    const channelweiBalanceI = signer.toLowerCase() === threadInitialState.partyA.toLowerCase() 
+      ? Web3.utils.toBN(channel.weiBalanceI).sub(threadInitialState.weiBalanceB)
+      : Web3.utils.toBN(channel.weiBalanceI).sub(threadInitialState.weiBalanceA) //
 
     const updateAtoI = {
       channelId: channel.channelId,
       nonce: channel.nonce + 1,
-      openVcs: threadInitialStates.length,
-      vcRootHash: newRootHash,
+      numOpenThread: threadInitialStates.length,
+      threadRootHash: newRootHash,
       partyA: channel.partyA,
       partyI: this.hubAddress,
       balanceA: {
-        ethDeposit: channelEthBalanceA,
+        weiDeposit: channelweiBalanceA,
         tokenDeposit: channelTokenBalanceA
       },
       balanceI: {
-        ethDeposit: channelEthBalanceI,
+        weiDeposit: channelweiBalanceI,
         tokenDeposit: channelTokenBalanceI
       },
       signer: signer,
       hubBond: {
-        ethDeposit: threadInitialState.ethBalanceA
-          .add(threadInitialState.ethBalanceB),
+        weiDeposit: threadInitialState.weiBalanceA
+          .add(threadInitialState.weiBalanceB),
         tokenDeposit: threadInitialState.tokenBalanceA
           .add(threadInitialState.tokenBalanceB)
       }
@@ -4289,9 +4289,9 @@ class Connext {
     const newRootHash = Connext.generateThreadRootHash({ threadInitialStates: threadInitialStates })
 
     // add balance from thread to channel balance
-    const subchanEthBalanceA = signer.toLowerCase() === latestThreadState.partyA ? Web3.utils.toBN(subchan.ethBalanceA).add(Web3.utils.toBN(latestThreadState.ethBalanceA)) : Web3.utils.toBN(subchan.ethBalanceA).add(Web3.utils.toBN(latestThreadState.ethBalanceB))
+    const subchanweiBalanceA = signer.toLowerCase() === latestThreadState.partyA ? Web3.utils.toBN(subchan.weiBalanceA).add(Web3.utils.toBN(latestThreadState.weiBalanceA)) : Web3.utils.toBN(subchan.weiBalanceA).add(Web3.utils.toBN(latestThreadState.weiBalanceB))
     // add counterparty balance from thread to channel balance
-    const subchanEthBalanceI = signer.toLowerCase() === latestThreadState.partyA ? Web3.utils.toBN(subchan.ethBalanceI).add(Web3.utils.toBN(latestThreadState.ethBalanceB)) : Web3.utils.toBN(subchan.ethBalanceI).add(Web3.utils.toBN(latestThreadState.ethBalanceA))
+    const subchanweiBalanceI = signer.toLowerCase() === latestThreadState.partyA ? Web3.utils.toBN(subchan.weiBalanceI).add(Web3.utils.toBN(latestThreadState.weiBalanceB)) : Web3.utils.toBN(subchan.weiBalanceI).add(Web3.utils.toBN(latestThreadState.weiBalanceA))
     
     const subchanTokenBalanceA = signer.toLowerCase() === latestThreadState.partyA ? Web3.utils.toBN(subchan.tokenBalanceA).add(Web3.utils.toBN(latestThreadState.tokenBalanceA)) : Web3.utils.toBN(subchan.tokenBalanceA).add(Web3.utils.toBN(latestThreadState.tokenBalanceB))
     
@@ -4300,21 +4300,21 @@ class Connext {
     const updateAtoI = {
       channelId: subchan.channelId,
       nonce: subchan.nonce + 1,
-      openVcs: threadInitialStates.length,
-      vcRootHash: newRootHash,
+      numOpenThread: threadInitialStates.length,
+      threadRootHash: newRootHash,
       partyA: signer,
       partyI: this.hubAddress,
       balanceA: {
-        ethDeposit: subchanEthBalanceA,
+        weiDeposit: subchanweiBalanceA,
         tokenDeposit: subchanTokenBalanceA,
       },
       balanceI: {
-        ethDeposit: subchanEthBalanceI,
+        weiDeposit: subchanweiBalanceI,
         tokenDeposit: subchanTokenBalanceI,
       },
       hubBond: {
-        ethDeposit:  Web3.utils.toBN(latestThreadState.ethBalanceA)
-          .add(Web3.utils.toBN(latestThreadState.ethBalanceB)),
+        weiDeposit:  Web3.utils.toBN(latestThreadState.weiBalanceA)
+          .add(Web3.utils.toBN(latestThreadState.weiBalanceB)),
         tokenDeposit: Web3.utils.toBN(latestThreadState.tokenBalanceA)
           .add(Web3.utils.toBN(latestThreadState.tokenBalanceB)),
       },

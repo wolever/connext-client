@@ -14,7 +14,7 @@ const Connext = require('../../src/Connext')
 // on init
 const web3 = new Web3('http://localhost:8545')
 let client
-let ingridAddress
+let partyI
 let hubUrl = 'http://localhost:8080'
 let contractAddress = '0xdec16622bfe1f0cdaf6f7f20437d2a040cccb0a1'
 let watcherUrl = ''
@@ -26,7 +26,7 @@ let partyA, partyB, partyC, partyD
 describe('channelUpdateHandler()', function () {
   beforeEach('init client and accounts', async () => {
     accounts = await web3.eth.getAccounts()
-    ingridAddress = accounts[0]
+    partyI = accounts[0]
     partyA = accounts[1]
     partyB = accounts[2]
     partyC = accounts[3]
@@ -36,7 +36,7 @@ describe('channelUpdateHandler()', function () {
     // init client instance
     client = new Connext({
       web3,
-      ingridAddress,
+      partyI,
       watcherUrl,
       hubUrl,
       contractAddress
@@ -52,7 +52,7 @@ describe('channelUpdateHandler()', function () {
       client.channelManagerInstance.methods = createStubbedContract()
 
       // stub hub methods
-      stubHub = await createStubbedHub(`${client.hubUrl}`, 'OPEN_LC_OPEN_VC')
+      stubHub = await createStubbedHub(`${client.hubUrl}`, 'OPEN_CHANNEL_OPEN_THREAD')
     })
 
     it('should create an ETH/TOKEN channel update', async () => {
@@ -60,11 +60,11 @@ describe('channelUpdateHandler()', function () {
         '0x1000000000000000000000000000000000000000000000000000000000000000'
       const balanceA = {
         tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('3', 'ether')),
-        ethDeposit: Web3.utils.toBN(Web3.utils.toWei('3', 'ether'))
+        weiDeposit: Web3.utils.toBN(Web3.utils.toWei('3', 'ether'))
       }
       const balanceB = {
         tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('1', 'ether')),
-        ethDeposit: Web3.utils.toBN(Web3.utils.toWei('1', 'ether'))
+        weiDeposit: Web3.utils.toBN(Web3.utils.toWei('1', 'ether'))
       }
       const payment = {
         balanceA,
@@ -86,11 +86,11 @@ describe('channelUpdateHandler()', function () {
       )
       // expect(updatedPayment.payment.tokenBalanceA).to.equal(payment.balanceA.tokenDeposit.toString())
       // expect(updatedPayment.payment.tokenBalanceI).to.equal(payment.balanceB.tokenDeposit.toString())
-      // expect(updatedPayment.payment.ethBalanceA).to.equal(payment.balanceA.ethDeposit.toString())
-      // expect(updatedPayment.payment.ethBalanceI).to.equal(payment.balanceB.ethDeposit.toString())
+      // expect(updatedPayment.payment.ethBalanceA).to.equal(payment.balanceA.weiDeposit.toString())
+      // expect(updatedPayment.payment.ethBalanceI).to.equal(payment.balanceB.weiDeposit.toString())
 
-      expect(updatedPayment.payment.balanceA).to.equal(payment.balanceA.ethDeposit.toString())
-      expect(updatedPayment.payment.balanceB).to.equal(payment.balanceB.ethDeposit.toString())
+      expect(updatedPayment.payment.weiBalanceA).to.equal(payment.balanceA.weiDeposit.toString())
+      expect(updatedPayment.payment.weiBalanceB).to.equal(payment.balanceB.weiDeposit.toString())
     })
 
     it('should create an ETH channel update', async () => {
@@ -98,11 +98,11 @@ describe('channelUpdateHandler()', function () {
           '0x3000000000000000000000000000000000000000000000000000000000000000'
         const balanceA = {
           tokenDeposit: null,
-          ethDeposit: Web3.utils.toBN(Web3.utils.toWei('3', 'ether'))
+          weiDeposit: Web3.utils.toBN(Web3.utils.toWei('3', 'ether'))
         }
         const balanceB = {
           tokenDeposit: null,
-          ethDeposit: Web3.utils.toBN(Web3.utils.toWei('1', 'ether'))
+          weiDeposit: Web3.utils.toBN(Web3.utils.toWei('1', 'ether'))
         }
         const payment = {
           balanceA,
@@ -122,13 +122,13 @@ describe('channelUpdateHandler()', function () {
           { payment, meta },
           sender
         )
-        // expect(updatedPayment.payment.ethBalanceA).to.equal(payment.balanceA.ethDeposit.toString())
-        // expect(updatedPayment.payment.ethBalanceI).to.equal(payment.balanceB.ethDeposit.toString())
+        // expect(updatedPayment.payment.ethBalanceA).to.equal(payment.balanceA.weiDeposit.toString())
+        // expect(updatedPayment.payment.ethBalanceI).to.equal(payment.balanceB.weiDeposit.toString())
         // expect(updatedPayment.payment.tokenBalanceA).to.equal('0')
         // expect(updatedPayment.payment.tokenBalanceI).to.equal('0')
 
-        expect(updatedPayment.payment.balanceA).to.equal(payment.balanceA.ethDeposit.toString())
-        expect(updatedPayment.payment.balanceB).to.equal(payment.balanceB.ethDeposit.toString())
+        expect(updatedPayment.payment.weiBalanceA).to.equal(payment.balanceA.weiDeposit.toString())
+        expect(updatedPayment.payment.weiBalanceB).to.equal(payment.balanceB.weiDeposit.toString())
       })
 
     it('should create an TOKEN channel update', async () => {
@@ -136,11 +136,11 @@ describe('channelUpdateHandler()', function () {
           '0x4000000000000000000000000000000000000000000000000000000000000000'
         const balanceA = {
           tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('3', 'ether')),
-          ethDeposit: null
+          weiDeposit: null
         }
         const balanceB = {
           tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('1', 'ether')),
-          ethDeposit: null
+          weiDeposit: null
         }
         const payment = {
           balanceA,
@@ -269,11 +269,11 @@ describe('channelUpdateHandler()', function () {
     it('should fail if payment.channelId doesnt exist', async () => {
       const balanceA = {
         tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether')),
-        ethDeposit: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether'))
+        weiDeposit: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether'))
       }
       const balanceB = {
         tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
-        ethDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
+        weiDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
       }
       const payment = {
         balanceA,
@@ -304,11 +304,11 @@ describe('channelUpdateHandler()', function () {
       const channelId = null
       const balanceA = {
         tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether')),
-        ethDeposit: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether'))
+        weiDeposit: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether'))
       }
       const balanceB = {
         tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
-        ethDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
+        weiDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
       }
       const payment = {
         balanceA,
@@ -340,11 +340,11 @@ describe('channelUpdateHandler()', function () {
       const channelId = 'fail'
       const balanceA = {
         tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether')),
-        ethDeposit: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether'))
+        weiDeposit: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether'))
       }
       const balanceB = {
         tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
-        ethDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
+        weiDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
       }
       const payment = {
         balanceA,
@@ -377,7 +377,7 @@ describe('channelUpdateHandler()', function () {
         '0x1000000000000000000000000000000000000000000000000000000000000000'
       const balanceB = {
         tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
-        ethDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
+        weiDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
       }
       const payment = {
         balanceB,
@@ -410,7 +410,7 @@ describe('channelUpdateHandler()', function () {
       const balanceA = null
       const balanceB = {
         tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
-        ethDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
+        weiDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
       }
       const payment = {
         balanceA,
@@ -444,7 +444,7 @@ describe('channelUpdateHandler()', function () {
       const balanceA = 'fail'
       const balanceB = {
         tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
-        ethDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
+        weiDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
       }
       const payment = {
         balanceA,
@@ -478,7 +478,7 @@ describe('channelUpdateHandler()', function () {
       const balanceA = {}
       const balanceB = {
         tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
-        ethDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
+        weiDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
       }
       const payment = {
         balanceA,
@@ -506,16 +506,16 @@ describe('channelUpdateHandler()', function () {
       }
     })
 
-    it('should fail if payment.balanceA.tokenDeposit and payment.balanceA.ethDeposit are null', async () => {
+    it('should fail if payment.balanceA.tokenDeposit and payment.balanceA.weiDeposit are null', async () => {
       const channelId =
         '0x1000000000000000000000000000000000000000000000000000000000000000'
       const balanceA = {
         tokenDeposit: null,
-        ethDeposit: null
+        weiDeposit: null
       }
       const balanceB = {
         tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
-        ethDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
+        weiDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
       }
       const payment = {
         balanceA,
@@ -548,11 +548,11 @@ describe('channelUpdateHandler()', function () {
         '0x1000000000000000000000000000000000000000000000000000000000000000'
       const balanceA = {
         tokenDeposit: 'fail',
-        ethDeposit: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether'))
+        weiDeposit: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether'))
       }
       const balanceB = {
         tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
-        ethDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
+        weiDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
       }
       const payment = {
         balanceA,
@@ -584,11 +584,11 @@ describe('channelUpdateHandler()', function () {
         '0x1000000000000000000000000000000000000000000000000000000000000000'
       const balanceA = {
         tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('-0.9', 'ether')),
-        ethDeposit: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether'))
+        weiDeposit: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether'))
       }
       const balanceB = {
         tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
-        ethDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
+        weiDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
       }
       const payment = {
         balanceA,
@@ -616,16 +616,16 @@ describe('channelUpdateHandler()', function () {
       }
     })
 
-    it('should fail if payment.balanceA.ethDeposit is an invalid type', async () => {
+    it('should fail if payment.balanceA.weiDeposit is an invalid type', async () => {
       const channelId =
         '0x1000000000000000000000000000000000000000000000000000000000000000'
       const balanceA = {
         tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether')),
-        ethDeposit: 'fail'
+        weiDeposit: 'fail'
       }
       const balanceB = {
         tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
-        ethDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
+        weiDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
       }
       const payment = {
         balanceA,
@@ -653,16 +653,16 @@ describe('channelUpdateHandler()', function () {
       }
     })
 
-    it('should fail if payment.balanceA.ethDeposit is negative', async () => {
+    it('should fail if payment.balanceA.weiDeposit is negative', async () => {
       const channelId =
         '0x1000000000000000000000000000000000000000000000000000000000000000'
       const balanceA = {
         tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether')),
-        ethDeposit: Web3.utils.toBN(Web3.utils.toWei('-0.9', 'ether'))
+        weiDeposit: Web3.utils.toBN(Web3.utils.toWei('-0.9', 'ether'))
       }
       const balanceB = {
         tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
-        ethDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
+        weiDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
       }
       const payment = {
         balanceA,
@@ -695,7 +695,7 @@ describe('channelUpdateHandler()', function () {
         '0x1000000000000000000000000000000000000000000000000000000000000000'
       const balanceA = {
         tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
-        ethDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
+        weiDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
       }
       const payment = {
         balanceA,
@@ -728,7 +728,7 @@ describe('channelUpdateHandler()', function () {
       const balanceB = null
       const balanceA = {
         tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
-        ethDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
+        weiDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
       }
       const payment = {
         balanceA,
@@ -762,7 +762,7 @@ describe('channelUpdateHandler()', function () {
       const balanceB = 'fail'
       const balanceA = {
         tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
-        ethDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
+        weiDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
       }
       const payment = {
         balanceA,
@@ -796,7 +796,7 @@ describe('channelUpdateHandler()', function () {
       const balanceB = {}
       const balanceA = {
         tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
-        ethDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
+        weiDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
       }
       const payment = {
         balanceA,
@@ -824,16 +824,16 @@ describe('channelUpdateHandler()', function () {
       }
     })
 
-    it('should fail if payment.balanceB.tokenDeposit and payment.balanceB.ethDeposit are null', async () => {
+    it('should fail if payment.balanceB.tokenDeposit and payment.balanceB.weiDeposit are null', async () => {
       const channelId =
         '0x1000000000000000000000000000000000000000000000000000000000000000'
       const balanceB = {
         tokenDeposit: null,
-        ethDeposit: null
+        weiDeposit: null
       }
       const balanceA = {
         tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
-        ethDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
+        weiDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
       }
       const payment = {
         balanceA,
@@ -866,11 +866,11 @@ describe('channelUpdateHandler()', function () {
         '0x1000000000000000000000000000000000000000000000000000000000000000'
       const balanceB = {
         tokenDeposit: 'fail',
-        ethDeposit: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether'))
+        weiDeposit: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether'))
       }
       const balanceA = {
         tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
-        ethDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
+        weiDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
       }
       const payment = {
         balanceA,
@@ -903,11 +903,11 @@ describe('channelUpdateHandler()', function () {
         '0x1000000000000000000000000000000000000000000000000000000000000000'
       const balanceB = {
         tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('-0.9', 'ether')),
-        ethDeposit: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether'))
+        weiDeposit: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether'))
       }
       const balanceA = {
         tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
-        ethDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
+        weiDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
       }
       const payment = {
         balanceA,
@@ -935,16 +935,16 @@ describe('channelUpdateHandler()', function () {
       }
     })
 
-    it('should fail if payment.balanceB.ethDeposit is an invalid type', async () => {
+    it('should fail if payment.balanceB.weiDeposit is an invalid type', async () => {
       const channelId =
         '0x1000000000000000000000000000000000000000000000000000000000000000'
       const balanceB = {
         tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether')),
-        ethDeposit: 'fail'
+        weiDeposit: 'fail'
       }
       const balanceA = {
         tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
-        ethDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
+        weiDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
       }
       const payment = {
         balanceA,
@@ -972,16 +972,16 @@ describe('channelUpdateHandler()', function () {
       }
     })
 
-    it('should fail if payment.balanceB.ethDeposit is negative', async () => {
+    it('should fail if payment.balanceB.weiDeposit is negative', async () => {
       const channelId =
         '0x1000000000000000000000000000000000000000000000000000000000000000'
       const balanceB = {
         tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether')),
-        ethDeposit: Web3.utils.toBN(Web3.utils.toWei('-0.9', 'ether'))
+        weiDeposit: Web3.utils.toBN(Web3.utils.toWei('-0.9', 'ether'))
       }
       const balanceA = {
         tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
-        ethDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
+        weiDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
       }
       const payment = {
         balanceA,
@@ -1014,11 +1014,11 @@ describe('channelUpdateHandler()', function () {
         '0x1000000000000000000000000000000000000000000000000000000000000000'
       const balanceA = {
         tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether')),
-        ethDeposit: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether'))
+        weiDeposit: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether'))
       }
       const balanceB = {
         tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
-        ethDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
+        weiDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
       }
       const payment = {
         balanceA,
@@ -1043,11 +1043,11 @@ describe('channelUpdateHandler()', function () {
         '0x1000000000000000000000000000000000000000000000000000000000000000'
       const balanceA = {
         tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether')),
-        ethDeposit: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether'))
+        weiDeposit: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether'))
       }
       const balanceB = {
         tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
-        ethDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
+        weiDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
       }
       const payment = {
         balanceA,
@@ -1073,11 +1073,11 @@ describe('channelUpdateHandler()', function () {
         '0x1000000000000000000000000000000000000000000000000000000000000000'
       const balanceA = {
         tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether')),
-        ethDeposit: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether'))
+        weiDeposit: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether'))
       }
       const balanceB = {
         tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
-        ethDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
+        weiDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
       }
       const payment = {
         balanceA,
@@ -1103,11 +1103,11 @@ describe('channelUpdateHandler()', function () {
         '0x1000000000000000000000000000000000000000000000000000000000000000'
       const balanceA = {
         tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether')),
-        ethDeposit: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether'))
+        weiDeposit: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether'))
       }
       const balanceB = {
         tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
-        ethDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
+        weiDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
       }
       const payment = {
         balanceA,
@@ -1133,11 +1133,11 @@ describe('channelUpdateHandler()', function () {
         '0x1000000000000000000000000000000000000000000000000000000000000000'
       const balanceA = {
         tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether')),
-        ethDeposit: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether'))
+        weiDeposit: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether'))
       }
       const balanceB = {
         tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
-        ethDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
+        weiDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
       }
       const payment = {
         balanceA,
@@ -1169,11 +1169,11 @@ describe('channelUpdateHandler()', function () {
         '0x1000000000000000000000000000000000000000000000000000000000000000'
       const balanceA = {
         tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether')),
-        ethDeposit: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether'))
+        weiDeposit: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether'))
       }
       const balanceB = {
         tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
-        ethDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
+        weiDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
       }
       const payment = {
         balanceA,
@@ -1206,11 +1206,11 @@ describe('channelUpdateHandler()', function () {
         '0x1000000000000000000000000000000000000000000000000000000000000000'
       const balanceA = {
         tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether')),
-        ethDeposit: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether'))
+        weiDeposit: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether'))
       }
       const balanceB = {
         tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
-        ethDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
+        weiDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
       }
       const payment = {
         balanceA,
@@ -1243,11 +1243,11 @@ describe('channelUpdateHandler()', function () {
         '0x1000000000000000000000000000000000000000000000000000000000000000'
       const balanceA = {
         tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether')),
-        ethDeposit: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether'))
+        weiDeposit: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether'))
       }
       const balanceB = {
         tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
-        ethDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
+        weiDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
       }
       const payment = {
         balanceA,
@@ -1279,11 +1279,11 @@ describe('channelUpdateHandler()', function () {
         '0x1000000000000000000000000000000000000000000000000000000000000000'
       const balanceA = {
         tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether')),
-        ethDeposit: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether'))
+        weiDeposit: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether'))
       }
       const balanceB = {
         tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
-        ethDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
+        weiDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
       }
       const payment = {
         balanceA,
@@ -1316,11 +1316,11 @@ describe('channelUpdateHandler()', function () {
         '0x1000000000000000000000000000000000000000000000000000000000000000'
       const balanceA = {
         tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether')),
-        ethDeposit: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether'))
+        weiDeposit: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether'))
       }
       const balanceB = {
         tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
-        ethDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
+        weiDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
       }
       const payment = {
         balanceA,
@@ -1353,11 +1353,11 @@ describe('channelUpdateHandler()', function () {
         '0x1000000000000000000000000000000000000000000000000000000000000000'
       const balanceA = {
         tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether')),
-        ethDeposit: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether'))
+        weiDeposit: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether'))
       }
       const balanceB = {
         tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
-        ethDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
+        weiDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
       }
       const payment = {
         balanceA,
@@ -1386,11 +1386,11 @@ describe('channelUpdateHandler()', function () {
         '0x1000000000000000000000000000000000000000000000000000000000000000'
       const balanceA = {
         tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether')),
-        ethDeposit: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether'))
+        weiDeposit: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether'))
       }
       const balanceB = {
         tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
-        ethDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
+        weiDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
       }
       const payment = {
         balanceA,
@@ -1420,11 +1420,11 @@ describe('channelUpdateHandler()', function () {
         '0x1000000000000000000000000000000000000000000000000000000000000000'
       const balanceA = {
         tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether')),
-        ethDeposit: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether'))
+        weiDeposit: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether'))
       }
       const balanceB = {
         tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
-        ethDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
+        weiDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
       }
       const payment = {
         balanceA,
@@ -1454,11 +1454,11 @@ describe('channelUpdateHandler()', function () {
         '0x1000000000000000000000000000000000000000000000000000000000000000'
       const balanceA = {
         tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether')),
-        ethDeposit: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether'))
+        weiDeposit: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether'))
       }
       const balanceB = {
         tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
-        ethDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
+        weiDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
       }
       const payment = {
         balanceA,
@@ -1490,11 +1490,11 @@ describe('channelUpdateHandler()', function () {
         '0x1000000000000000000000000000000000000000000000000000000000000000'
       const balanceA = {
         tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether')),
-        ethDeposit: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether'))
+        weiDeposit: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether'))
       }
       const balanceB = {
         tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
-        ethDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
+        weiDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
       }
       const payment = {
         balanceA,
@@ -1527,11 +1527,11 @@ describe('channelUpdateHandler()', function () {
         '0x1000000000000000000000000000000000000000000000000000000000000000'
       const balanceA = {
         tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether')),
-        ethDeposit: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether'))
+        weiDeposit: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether'))
       }
       const balanceB = {
         tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
-        ethDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
+        weiDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
       }
       const payment = {
         balanceA,
@@ -1563,11 +1563,11 @@ describe('channelUpdateHandler()', function () {
         '0x1000000000000000000000000000000000000000000000000000000000000000'
       const balanceA = {
         tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether')),
-        ethDeposit: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether'))
+        weiDeposit: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether'))
       }
       const balanceB = {
         tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
-        ethDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
+        weiDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
       }
       const payment = {
         balanceA,
@@ -1600,11 +1600,11 @@ describe('channelUpdateHandler()', function () {
         '0x1000000000000000000000000000000000000000000000000000000000000000'
       const balanceA = {
         tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether')),
-        ethDeposit: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether'))
+        weiDeposit: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether'))
       }
       const balanceB = {
         tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
-        ethDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
+        weiDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
       }
       const payment = {
         balanceA,
@@ -1637,11 +1637,11 @@ describe('channelUpdateHandler()', function () {
         '0x1000000000000000000000000000000000000000000000000000000000000000'
       const balanceA = {
         tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether')),
-        ethDeposit: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether'))
+        weiDeposit: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether'))
       }
       const balanceB = {
         tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
-        ethDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
+        weiDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
       }
       const payment = {
         balanceA,
@@ -1675,11 +1675,11 @@ describe('channelUpdateHandler()', function () {
         '0x1000000000000000000000000000000000000000000000000000000000000000'
       const balanceA = {
         tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether')),
-        ethDeposit: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether'))
+        weiDeposit: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether'))
       }
       const balanceB = {
         tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
-        ethDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
+        weiDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
       }
       const payment = {
         balanceA,
@@ -1712,11 +1712,11 @@ describe('channelUpdateHandler()', function () {
         '0x1000000000000000000000000000000000000000000000000000000000000000'
       const balanceA = {
         tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether')),
-        ethDeposit: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether'))
+        weiDeposit: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether'))
       }
       const balanceB = {
         tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
-        ethDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
+        weiDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
       }
       const payment = {
         balanceA,
@@ -1750,11 +1750,11 @@ describe('channelUpdateHandler()', function () {
         '0x1000000000000000000000000000000000000000000000000000000000000000'
       const balanceA = {
         tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether')),
-        ethDeposit: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether'))
+        weiDeposit: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether'))
       }
       const balanceB = {
         tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
-        ethDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
+        weiDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
       }
       const payment = {
         balanceA,
@@ -1787,11 +1787,11 @@ describe('channelUpdateHandler()', function () {
         '0x1000000000000000000000000000000000000000000000000000000000000000'
       const balanceA = {
         tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether')),
-        ethDeposit: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether'))
+        weiDeposit: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether'))
       }
       const balanceB = {
         tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
-        ethDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
+        weiDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
       }
       const payment = {
         balanceA,
@@ -1825,11 +1825,11 @@ describe('channelUpdateHandler()', function () {
         '0x1000000000000000000000000000000000000000000000000000000000000000'
       const balanceA = {
         tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether')),
-        ethDeposit: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether'))
+        weiDeposit: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether'))
       }
       const balanceB = {
         tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
-        ethDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
+        weiDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
       }
       const payment = {
         balanceA,

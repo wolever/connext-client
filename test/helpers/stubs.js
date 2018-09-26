@@ -34,7 +34,7 @@ export async function createStubbedHub (
 ) {
   const web3 = new Web3('http://localhost:8545')
   const accounts = await web3.eth.getAccounts()
-  const ingridAddress = accounts[0]
+  const partyI = accounts[0]
   const partyA = accounts[1]
   const partyB = accounts[2]
   const partyC = accounts[3]
@@ -57,7 +57,7 @@ export async function createStubbedHub (
   const threadId3 =
     '0x0300000000000000000000000000000000000000000000000000000000000000'
 
-  let stubHub = nock(baseUrl).persist(true)
+  let stubHub = nock(baseUrl).persist()
 
   // // get challenge timer
   // stubHub
@@ -71,14 +71,14 @@ export async function createStubbedHub (
   // get open channels by partyA
   switch (channelType) {
     case 'OPEN_CHANNEL_OPEN_THREAD':
-      // partyA LC has ETH/TOKEN
+      // partyA channel has ETH/TOKEN
       stubHub
         .get(`/channel/a/${partyA.toLowerCase()}`)
         .reply(200, [
           {
             channelId: channelId1,
             partyA: partyA.toLowerCase(),
-            partyI: ingridAddress.toLowerCase(),
+            partyI: partyI.toLowerCase(),
             nonce: 1,
             weiBalanceA: Web3.utils.toWei('4', 'ether').toString(),
             weiBalanceI: '0',
@@ -106,14 +106,14 @@ export async function createStubbedHub (
             })
           }
         ])
-      // partyC LC has ETH only
+      // partyC channel has ETH only
       stubHub
         .get(`/channel/a/${partyC.toLowerCase()}`)
         .reply(200, [
           {
             channelId: channelId3,
             partyA: partyC.toLowerCase(),
-            partyI: ingridAddress.toLowerCase(),
+            partyI: partyI.toLowerCase(),
             status: 'JOINED',
             nonce: 1,
             updateTimeout: 0,
@@ -141,14 +141,14 @@ export async function createStubbedHub (
             })
           }
         ])
-      // partyD LC has TOKEN only
+      // partyD channel has TOKEN only
       stubHub
         .get(`/channel/a/${partyD.toLowerCase()}`)
         .reply(200, [
           {
             channelId: channelId4,
             partyA: partyD.toLowerCase(),
-            partyI: ingridAddress.toLowerCase(),
+            partyI: partyI.toLowerCase(),
             status: 'JOINED',
             nonce: 1,
             updateTimeout: 0,
@@ -176,14 +176,14 @@ export async function createStubbedHub (
             })
           }
         ])
-      // partyB LC is recieving all threads
+      // partyB channel is recieving all threads
       stubHub
         .get(`/channel/a/${partyB.toLowerCase()}`)
         .reply(200, [
           {
             channelId: channelId2,
             partyA: partyB.toLowerCase(),
-            partyI: ingridAddress.toLowerCase(),
+            partyI: partyI.toLowerCase(),
             status: 'JOINED',
             nonce: 3,
             updateTimeout: 0,
@@ -243,7 +243,7 @@ export async function createStubbedHub (
           {
             channelId: '0x1000000000000000000000000000000000000000000000000000000000000000',
             partyA: partyA.toLowerCase(),
-            partyI: ingridAddress.toLowerCase(),
+            partyI: partyI.toLowerCase(),
             status: 'JOINED',
             nonce: 0,
             updateTimeout: 0,
@@ -262,7 +262,7 @@ export async function createStubbedHub (
           {
             channelId: '0x2000000000000000000000000000000000000000000000000000000000000000',
             partyA: partyB.toLowerCase(),
-            partyI: ingridAddress.toLowerCase(),
+            partyI: partyI.toLowerCase(),
             status: 'JOINED',
             weiBalanceA: Web3.utils.toWei('5', 'ether').toString(),
             weiBalanceI: '0',
@@ -305,7 +305,7 @@ export async function createStubbedHub (
       stubHub.get(`/channel/a/${partyA.toLowerCase()}`).reply(200, [{
         channelId: channelId1,
         partyA: partyA.toLowerCase(),
-        partyI: ingridAddress.toLowerCase(),
+        partyI: partyI.toLowerCase(),
         status: 'JOINED',
         weiBalanceA: Web3.utils.toWei('4.9', 'ether').toString(),
         weiBalanceI: Web3.utils.toWei('0.1', 'ether').toString(),
@@ -322,7 +322,7 @@ export async function createStubbedHub (
       stubHub.get(`/channel/a/${partyB.toLowerCase()}`).reply(200, [{
         channelId: channelId2,
         partyA: partyB.toLowerCase(),
-        partyI: ingridAddress.toLowerCase(),
+        partyI: partyI.toLowerCase(),
         status: 'JOINED',
         weiBalanceA: Web3.utils.toWei('0.2', 'ether').toString(),
         weiBalanceI: '0',
@@ -339,7 +339,7 @@ export async function createStubbedHub (
       stubHub.get(`/channel/a/${partyC.toLowerCase()}`).reply(200, [{
         channelId: channelId3,
         partyA: partyC.toLowerCase(),
-        partyI: ingridAddress.toLowerCase(),
+        partyI: partyI.toLowerCase(),
         status: 'JOINED',
         weiBalanceA: Web3.utils.toWei('4.9', 'ether').toString(),
         weiBalanceI: Web3.utils.toWei('0.1', 'ether').toString(),
@@ -356,7 +356,7 @@ export async function createStubbedHub (
       stubHub.get(`/channel/a/${partyD.toLowerCase()}`).reply(200, [{
         channelId: channelId4,
         partyA: partyD.toLowerCase(),
-        partyI: ingridAddress.toLowerCase(),
+        partyI: partyI.toLowerCase(),
         status: 'JOINED',
         weiBalanceA: '0',
         weiBalanceI: '0',
@@ -374,7 +374,7 @@ export async function createStubbedHub (
       break
   }
 
-  // get thread initial states by lc id
+  // get thread initial states by channel id
   // get ledger channels by id
   switch (channelType) {
     case 'OPEN_CHANNEL_OPEN_THREAD':
@@ -476,7 +476,7 @@ export async function createStubbedHub (
       stubHub.get(`/channel/${channelId1}`).reply(200, {
         channelId: channelId1,
         partyA: partyA.toLowerCase(),
-        partyI: ingridAddress.toLowerCase(),
+        partyI: partyI.toLowerCase(),
         status: 'JOINED',
         weiBalanceA: Web3.utils.toWei('4', 'ether').toString(),
         weiBalanceI: '0',
@@ -508,7 +508,7 @@ export async function createStubbedHub (
       stubHub.get(`/channel/${channelId2}`).reply(200, {
         channelId: channelId2,
         partyA: partyB.toLowerCase(),
-        partyI: ingridAddress.toLowerCase(),
+        partyI: partyI.toLowerCase(),
         status: 'JOINED',
         weiBalanceA: '0',
         weiBalanceI: Web3.utils.toWei('5', 'ether').toString(),
@@ -564,7 +564,7 @@ export async function createStubbedHub (
       stubHub.get(`/channel/${channelId3}`).reply(200, {
         channelId: channelId3,
         partyA: partyC.toLowerCase(),
-        partyI: ingridAddress.toLowerCase(),
+        partyI: partyI.toLowerCase(),
         status: 'JOINED',
         weiBalanceA: Web3.utils.toWei('4', 'ether').toString(),
         weiBalanceI: '0',
@@ -596,7 +596,7 @@ export async function createStubbedHub (
       stubHub.get(`/channel/${channelId4}`).reply(200, {
         channelId: channelId4,
         partyA: partyD.toLowerCase(),
-        partyI: ingridAddress.toLowerCase(),
+        partyI: partyI.toLowerCase(),
         status: 'JOINED',
         weiBalanceA: '0',
         weiBalanceI: '0',
@@ -636,7 +636,7 @@ export async function createStubbedHub (
       stubHub.get(`/channel/${channelId1}`).reply(200, {
         channelId: channelId1,
         partyA: partyA.toLowerCase(),
-        partyI: ingridAddress.toLowerCase(),
+        partyI: partyI.toLowerCase(),
         status: 'JOINED',
         weiBalanceA: Web3.utils.toWei('5', 'ether').toString(),
         weiBalanceI: '0',
@@ -653,7 +653,7 @@ export async function createStubbedHub (
       stubHub.get(`/channel/${channelId2}`).reply(200, {
         channelId: channelId2,
         partyA: partyB.toLowerCase(),
-        partyI: ingridAddress.toLowerCase(),
+        partyI: partyI.toLowerCase(),
         status: 'JOINED',
         weiBalanceA: '0',
         weiBalanceI: Web3.utils.toWei('5', 'ether').toString(),
@@ -670,7 +670,7 @@ export async function createStubbedHub (
       stubHub.get(`/channel/${channelId3}`).reply(200, {
         channelId: channelId3,
         partyA: partyC.toLowerCase(),
-        partyI: ingridAddress.toLowerCase(),
+        partyI: partyI.toLowerCase(),
         status: 'JOINED',
         weiBalanceA: Web3.utils.toWei('5', 'ether').toString(),
         weiBalanceI: '0',
@@ -687,7 +687,7 @@ export async function createStubbedHub (
       stubHub.get(`/channel/${channelId4}`).reply(200, {
         channelId: channelId4,
         partyA: partyD.toLowerCase(),
-        partyI: ingridAddress.toLowerCase(),
+        partyI: partyI.toLowerCase(),
         status: 'JOINED',
         weiBalanceA: '0',
         weiBalanceI: '0',
@@ -701,12 +701,12 @@ export async function createStubbedHub (
       })
       break
 
-    case 'OPEN_LC_CLOSED_VC':
+    case 'OPEN_CHANNEL_CLOSED_THREAD':
       // channel 1 - ETH/TOKEN (viewer)
       stubHub.get(`/channel/${channelId1}`).reply(200, {
         channelId: channelId1,
         partyA: partyA.toLowerCase(),
-        partyI: ingridAddress.toLowerCase(),
+        partyI: partyI.toLowerCase(),
         status: 'JOINED',
         weiBalanceA: Web3.utils.toWei('4.9', 'ether').toString(),
         weiBalanceI: Web3.utils.toWei('0.1', 'ether').toString(),
@@ -723,7 +723,7 @@ export async function createStubbedHub (
       stubHub.get(`/channel/${channelId2}`).reply(200, {
         channelId: channelId2,
         partyA: partyB.toLowerCase(),
-        partyI: ingridAddress.toLowerCase(),
+        partyI: partyI.toLowerCase(),
         status: 'JOINED',
         weiBalanceA: Web3.utils.toWei('0.2', 'ether').toString(),
         weiBalanceI: '0',
@@ -740,7 +740,7 @@ export async function createStubbedHub (
       stubHub.get(`/channel/${channelId3}`).reply(200, {
         channelId: channelId3,
         partyA: partyC.toLowerCase(),
-        partyI: ingridAddress.toLowerCase(),
+        partyI: partyI.toLowerCase(),
         status: 'JOINED',
         weiBalanceA: Web3.utils.toWei('4.9', 'ether').toString(),
         weiBalanceI: Web3.utils.toWei('0.1', 'ether').toString(),
@@ -757,7 +757,7 @@ export async function createStubbedHub (
       stubHub.get(`/channel/${channelId4}`).reply(200, {
         channelId: channelId4,
         partyA: partyD.toLowerCase(),
-        partyI: ingridAddress.toLowerCase(),
+        partyI: partyI.toLowerCase(),
         status: 'JOINED',
         weiBalanceA: '0',
         weiBalanceI: '0',
@@ -779,7 +779,7 @@ export async function createStubbedHub (
   switch (threadType) {
     case 'NOT_UPDATED':
       // get thread 1 by ID (nonce = 0)
-      // ETH_TOKEN vc
+      // ETH_TOKEN thread
       stubHub.get(`/thread/${threadId1}`).reply(200, {
         channelId: threadId1,
         partyA: partyA.toLowerCase(),
@@ -795,7 +795,7 @@ export async function createStubbedHub (
         nonce: 0
       })
 
-      // ETH VC
+      // ETH thread
       stubHub.get(`/thread/${threadId2}`).reply(200, {
         channelId: threadId2,
         partyA: partyC.toLowerCase(),
@@ -811,7 +811,7 @@ export async function createStubbedHub (
         nonce: 0
       })
 
-      // TOKEN VC
+      // TOKEN thread
       stubHub.get(`/thread/${threadId3}`).reply(200, {
         channelId: threadId3,
         partyA: partyD.toLowerCase(),
@@ -906,7 +906,7 @@ export async function createStubbedHub (
       break
 
     case 'UPDATED':
-      // ETH_TOKEN vc
+      // ETH_TOKEN thread
       stubHub.get(`/thread/${threadId1}`).reply(200, {
         channelId: threadId1,
         partyA: partyA.toLowerCase(),
@@ -922,7 +922,7 @@ export async function createStubbedHub (
         nonce: 1
       })
 
-      // ETH VC
+      // ETH thread
       stubHub.get(`/thread/${threadId2}`).reply(200, {
         channelId: threadId2,
         partyA: partyC.toLowerCase(),
@@ -938,7 +938,7 @@ export async function createStubbedHub (
         nonce: 1
       })
 
-      // TOKEN VC
+      // TOKEN thread
       stubHub.get(`/thread/${threadId3}`).reply(200, {
         channelId: threadId3,
         partyA: partyD.toLowerCase(),
@@ -1030,7 +1030,7 @@ export async function createStubbedHub (
         sigA
       })
 
-      // post to close VC endpoint
+      // post to close thread endpoint
       let sigParams = {
         channelId: channelId1,
         isClose: false,
@@ -1038,7 +1038,7 @@ export async function createStubbedHub (
         numOpenThread: 0,
         threadRootHash: Connext.generateThreadRootHash({ threadInitialStates: [] }),
         partyA: partyA.toLowerCase(),
-        partyI: ingridAddress,
+        partyI: partyI,
         weiBalanceA: Web3.utils.toBN(Web3.utils.toWei('4.9', 'ether')),
         weiBalanceI: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
         tokenBalanceA: Web3.utils.toBN(Web3.utils.toWei('4.9', 'ether')),
@@ -1046,7 +1046,7 @@ export async function createStubbedHub (
       }
       const sigItoAThread1 = await web3.eth.sign(
         Connext.createChannelStateUpdateFingerprint(sigParams),
-        ingridAddress
+        partyI
       )
       // update for eth only thread
       sigParams.partyA = partyC.toLowerCase()
@@ -1054,7 +1054,7 @@ export async function createStubbedHub (
       sigParams.tokenBalanceA = sigParams.tokenBalanceI = Web3.utils.toBN('0')
       const sigItoAThread2 = await web3.eth.sign(
         Connext.createChannelStateUpdateFingerprint(sigParams),
-        ingridAddress
+        partyI
       )
       // update for token only thread
       sigParams.partyA = partyD.toLowerCase()
@@ -1068,7 +1068,7 @@ export async function createStubbedHub (
       sigParams.weiBalanceA = sigParams.weiBalanceI = Web3.utils.toBN('0')
       const sigItoAThread3 = await web3.eth.sign(
         Connext.createChannelStateUpdateFingerprint(sigParams),
-        ingridAddress
+        partyI
       )
       stubHub
         .post(`/thread/${threadId1}/close`)
@@ -1128,7 +1128,7 @@ export async function createStubbedHub (
   //     }
   //   ])
 
-  // add post to create vc endpoint
+  // add post to create thread endpoint
   stubHub
     .post(`/thread/`, body => {
       return body.channelId === threadId1
@@ -1151,13 +1151,13 @@ export async function createStubbedHub (
       channelId: threadId3
     })
 
-  // add post to fastclose lc endpoint
+  // add post to fastclose channel endpoint
   // ETH/TOKEN channel (viewer)
   // generate hash
   let hash = Connext.createChannelStateUpdateFingerprint({
     channelId: channelId1,
     partyA,
-    partyI: ingridAddress,
+    partyI: partyI,
     isClose: true,
     nonce: 3,
     numOpenThread: 0,
@@ -1168,7 +1168,7 @@ export async function createStubbedHub (
     tokenBalanceI: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
   })
   let sigAFinal = await web3.eth.sign(hash, partyA)
-  let sigIAFinal = await web3.eth.sign(hash, ingridAddress)
+  let sigIAFinal = await web3.eth.sign(hash, partyI)
   stubHub.post(`/channel/${channelId1}/close`).reply(200, {
     nonce: 3,
     numOpenThread: 0,
@@ -1185,7 +1185,7 @@ export async function createStubbedHub (
   hash = Connext.createChannelStateUpdateFingerprint({
     channelId: channelId2,
     partyA: partyB,
-    partyI: ingridAddress,
+    partyI: partyI,
     isClose: true,
     nonce: 7,
     numOpenThread: 0,
@@ -1196,7 +1196,7 @@ export async function createStubbedHub (
     tokenBalanceI: Web3.utils.toBN(Web3.utils.toWei('0', 'ether'))
   })
   let sigBFinal = await web3.eth.sign(hash, partyB)
-  let sigIBFinal = await web3.eth.sign(hash, ingridAddress)
+  let sigIBFinal = await web3.eth.sign(hash, partyI)
   stubHub.post(`/channel/${channelId2}/close`).reply(200, {
     isClose: true,
     nonce: 7,
@@ -1214,7 +1214,7 @@ export async function createStubbedHub (
   hash = Connext.createChannelStateUpdateFingerprint({
     channelId: channelId3,
     partyA: partyC,
-    partyI: ingridAddress,
+    partyI: partyI,
     isClose: true,
     nonce: 3,
     numOpenThread: 0,
@@ -1225,7 +1225,7 @@ export async function createStubbedHub (
     tokenBalanceI: Web3.utils.toBN(Web3.utils.toWei('0', 'ether'))
   })
   let sigCFinal = await web3.eth.sign(hash, partyC)
-  let sigICFinal = await web3.eth.sign(hash, ingridAddress)
+  let sigICFinal = await web3.eth.sign(hash, partyI)
   stubHub.post(`/channel/${channelId3}/close`).reply(200, {
     isClose: true,
     nonce: 3,
@@ -1243,7 +1243,7 @@ export async function createStubbedHub (
   hash = Connext.createChannelStateUpdateFingerprint({
     channelId: channelId4,
     partyA: partyD,
-    partyI: ingridAddress,
+    partyI: partyI,
     isClose: true,
     nonce: 3,
     numOpenThread: 0,
@@ -1254,7 +1254,7 @@ export async function createStubbedHub (
     tokenBalanceI: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
   })
   let sigDFinal = await web3.eth.sign(hash, partyD)
-  let sigIDFinal = await web3.eth.sign(hash, ingridAddress)
+  let sigIDFinal = await web3.eth.sign(hash, partyI)
   stubHub.post(`/channel/${channelId4}/close`).reply(200, {
     isClose: true,
     nonce: 3,
@@ -1273,7 +1273,7 @@ export async function createStubbedHub (
   // hash = Connext.createChannelStateUpdateFingerprint({
   //   channelId: channelId1,
   //   partyA,
-  //   partyI: ingridAddress,
+  //   partyI: partyI,
   //   isClose: false,
   //   nonce: 2,
   //   numOpenThread: 0,
@@ -1284,13 +1284,13 @@ export async function createStubbedHub (
   //   tokenBalanceI: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
   // })
   // sigAFinal = await web3.eth.sign(hash, partyA)
-  // sigIAFinal = await web3.eth.sign(hash, ingridAddress)
+  // sigIAFinal = await web3.eth.sign(hash, partyI)
   // stubHub
   //   .get(`/channel/${channelId1}/update/latest?sig[]=sigI`)
   //   .reply(200, {
   //     isClose: false,
   //     partyA,
-  //     partyI: ingridAddress,
+  //     partyI: partyI,
   //     nonce: 2,
   //     numOpenThread: 0,
   //     threadRootHash: Connext.generateThreadRootHash({ threadInitialStates: [] }),
@@ -1310,7 +1310,7 @@ export async function createStubbedHub (
   // hash = Connext.createChannelStateUpdateFingerprint({
   //   channelId: channelId2,
   //   partyA: partyB,
-  //   partyI: ingridAddress,
+  //   partyI: partyI,
   //   isClose: false,
   //   nonce: 6,
   //   numOpenThread: 0,
@@ -1321,13 +1321,13 @@ export async function createStubbedHub (
   //   tokenBalanceI: Web3.utils.toBN(Web3.utils.toWei('0', 'ether'))
   // })
   // sigBFinal = await web3.eth.sign(hash, partyB)
-  // sigIBFinal = await web3.eth.sign(hash, ingridAddress)
+  // sigIBFinal = await web3.eth.sign(hash, partyI)
   // stubHub
   //   .get(`/ledgerchannel/${channelId2}/update/latest?sig[]=sigI`)
   //   .reply(200, {
   //     isClose: false,
   //     partyA: partyB,
-  //     partyI: ingridAddress,
+  //     partyI: partyI,
   //     nonce: 6,
   //     numOpenThread: 0,
   //     threadRootHash: Connext.generateThreadRootHash({ threadInitialStates: [] }),
@@ -1345,7 +1345,7 @@ export async function createStubbedHub (
   // hash = Connext.createChannelStateUpdateFingerprint({
   //   channelId: channelId3,
   //   partyA: partyC,
-  //   partyI: ingridAddress,
+  //   partyI: partyI,
   //   isClose: false,
   //   nonce: 2,
   //   numOpenThread: 0,
@@ -1356,13 +1356,13 @@ export async function createStubbedHub (
   //   tokenBalanceI: Web3.utils.toBN(Web3.utils.toWei('0', 'ether'))
   // })
   // sigCFinal = await web3.eth.sign(hash, partyC)
-  // sigICFinal = await web3.eth.sign(hash, ingridAddress)
+  // sigICFinal = await web3.eth.sign(hash, partyI)
   // stubHub
   //   .get(`/ledgerchannel/${channelId3}/update/latest?sig[]=sigI`)
   //   .reply(200, {
   //     isClose: false,
   //     partyA: partyC,
-  //     partyI: ingridAddress,
+  //     partyI: partyI,
   //     nonce: 2,
   //     numOpenThread: 0,
   //     threadRootHash: Connext.generateThreadRootHash({ threadInitialStates: [] }),
@@ -1378,7 +1378,7 @@ export async function createStubbedHub (
   // hash = Connext.createChannelStateUpdateFingerprint({
   //   channelId: channelId4,
   //   partyA: partyD,
-  //   partyI: ingridAddress,
+  //   partyI: partyI,
   //   isClose: false,
   //   nonce: 2,
   //   numOpenThread: 0,
@@ -1389,13 +1389,13 @@ export async function createStubbedHub (
   //   weiBalanceI: Web3.utils.toBN(Web3.utils.toWei('0', 'ether'))
   // })
   // sigDFinal = await web3.eth.sign(hash, partyD)
-  // sigIDFinal = await web3.eth.sign(hash, ingridAddress)
+  // sigIDFinal = await web3.eth.sign(hash, partyI)
   // stubHub
   //   .get(`/ledgerchannel/${channelId4}/update/latest?sig[]=sigI`)
   //   .reply(200, {
   //     isClose: false,
   //     partyA: partyD,
-  //     partyI: ingridAddress,
+  //     partyI: partyI,
   //     nonce: 2,
   //     numOpenThread: 0,
   //     threadRootHash: Connext.generateThreadRootHash({ threadInitialStates: [] }),
