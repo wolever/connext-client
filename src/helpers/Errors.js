@@ -76,7 +76,7 @@ export class ThreadOpenError extends Error {
   constructor (...args) {
     // [methodName, statusCode, message]
     super(args)
-    this.name = 'ChannelOpenError'
+    this.name = 'ThreadOpenError'
     this.methodName = args[0]
     if (args.length === 3) {
       this.statusCode = args[1]
