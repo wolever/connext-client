@@ -91,36 +91,36 @@ validate.validators.isValidDepositObject = value => {
 }
 
 validate.validators.isValidMeta = value => {
-  if (!value) {
-    return `Value cannot be undefined.`
-  } else if (!value.receiver) {
-    return `${value} does not contain a receiver field`
-  } else if (!Web3.utils.isAddress(value.receiver)) {
-    return `${value.receiver} is not a valid ETH address`
-  } else if (!value.type) {
-    return `${value} does not contain a type field`
-  }
+  // if (!value) {
+  //   return `Value cannot be undefined.`
+  // } else if (!value.receiver) {
+  //   return `${value} does not contain a receiver field`
+  // } else if (!Web3.utils.isAddress(value.receiver)) {
+  //   return `${value.receiver} is not a valid ETH address`
+  // } else if (!value.type) {
+  //   return `${value} does not contain a type field`
+  // }
 
-  let isValid, ans
+  // let isValid, ans
 
-  switch (META_TYPES[value.type]) {
-    case 0: // TIP
-      isValid = validateTipPurchaseMeta(value)
-      ans = isValid ? null : `${JSON.stringify(value)} is not a valid TIP purchase meta, missing one or more fields: streamId, performerId, performerName`
-      return ans
-    case 1: // PURCHASE
-      isValid = validatePurchasePurchaseMeta(value)
-      ans = isValid ? null : `${JSON.stringify(value)} is not a valid PURCHASE purchase meta, missing one or more fields: productSku, productName`
-      return ans
-    case 2: // UNCATEGORIZED -- no validation 
-      return null
-    case 3: // WITHDRAWAL
-      isValid = validateWithdrawalPurchaseMeta(value)
-      ans = isValid ? null : `${JSON.stringify(value)} is not a valid WITHDRAWAL purchase meta.`
-      return ans
-    default:
-      return `${value.type} is not a valid purchase meta type`
-  }
+  // switch (META_TYPES[value.type]) {
+  //   case 0: // TIP
+  //     isValid = validateTipPurchaseMeta(value)
+  //     ans = isValid ? null : `${JSON.stringify(value)} is not a valid TIP purchase meta, missing one or more fields: streamId, performerId, performerName`
+  //     return ans
+  //   case 1: // PURCHASE
+  //     isValid = validatePurchasePurchaseMeta(value)
+  //     ans = isValid ? null : `${JSON.stringify(value)} is not a valid PURCHASE purchase meta, missing one or more fields: productSku, productName`
+  //     return ans
+  //   case 2: // UNCATEGORIZED -- no validation 
+  //     return null
+  //   case 3: // WITHDRAWAL
+  //     isValid = validateWithdrawalPurchaseMeta(value)
+  //     ans = isValid ? null : `${JSON.stringify(value)} is not a valid WITHDRAWAL purchase meta.`
+  //     return ans
+  //   default:
+  //     return `${value.type} is not a valid purchase meta type`
+  // }
 }
 
 validate.validators.isChannelStatus = value => {
@@ -389,16 +389,18 @@ class Connext {
     // determine channel type
     const { ethDeposit, tokenDeposit } = initialDeposits
     let channelType
-    if (ethDeposit && tokenDeposit) {
-      // token and eth
+    if (tokenAddress && ethDeposit) {
       channelType = Object.keys(CHANNEL_TYPES)[2]
-    } else if (tokenDeposit) {
-      channelType = Object.keys(CHANNEL_TYPES)[1]
-    } else if (ethDeposit) {
+    } else if (!tokenAddress) {
       channelType = Object.keys(CHANNEL_TYPES)[0]
+    } else if (tokenAddress && tokenDeposit && !ethDeposit) {
+      channelType = Object.keys(CHANNEL_TYPES)[1]
     } else {
       throw new ChannelOpenError(methodName, `Error determining channel deposit types.`)
     }
+
+    console.log('channelType:', channelType)
+  
     // verify channel does not exist between ingrid and sender
     let channel = await this.getChannelByPartyA(sender)
     if (channel != null && CHANNEL_STATES[channel.state] === 1) {
@@ -818,20 +820,178 @@ class Connext {
         case PAYMENT_TYPES.VIRTUAL: // thread update
           updatedPayment = await this.threadUpdateHandler(payment, sender)
           break
+        case PAYMENT_TYPES.EXCHANGE:
+          updatedPayment = await this.exchangeUpdateHandler(payment, sender)
+          break
         default:
-          throw new ChannelUpdateError(methodName, `Incorrect channel type specified. Must be CHANNEL or THREAD. Type: ${payment.type}`)
+          throw new ChannelUpdateError(methodName, `Incorrect channel type specified. Must be CHANNEL, THREAD, or EXCHANGE. Type: ${payment.type}`)
       }
       updatedPayment.type = payment.type
       return updatedPayment
     }))
 
-    const response = await this.networking.post(
-      `payments/`,
-      {
-        payments: updatedPayments
-      }
+    return updatedPayments
+
+    // const response = await this.networking.post(
+    //   `payments/`,
+    //   {
+    //     payments: updatedPayments
+    //   }
+    // )
+    // return response.data
+  }
+
+  async exchangeUpdateHandler ({ payment, meta }, sender = null) {
+    const methodName = 'exchangeUpdateHandler'
+    const isAddress= { presence: true, isAddress: true }
+    const isHexStrict = { presence: true, isHexStrict: true }
+    const isValidDepositObject = { presence: true, isValidDepositObject: true }
+    const isObj = { presence: true, isObj: true }
+    const isBN = { presence: true, isBN: true }
+
+    if (!sender) {
+      const accounts = await this.web3.eth.getAccounts()
+      sender = accounts[0]
+    }
+    Connext.validatorsResponseToError(validate.single(payment, isObj), methodName, 'payment')
+    Connext.validatorsResponseToError(validate.single(meta, isObj), methodName, 'meta')
+    const { balanceA, balanceB, channelId } = payment
+    const { exchangeRate } = meta
+    // validate inputs
+    Connext.validatorsResponseToError(validate.single(sender, isAddress), methodName, 'sender')
+    Connext.validatorsResponseToError(
+      validate.single(exchangeRate, isBN),
+      methodName,
+      'exchangeRate'
     )
-    return response.data
+    Connext.validatorsResponseToError(
+      validate.single(channelId, isHexStrict),
+      methodName,
+      'channelId'
+    )
+    Connext.validatorsResponseToError(
+      validate.single(balanceA, isValidDepositObject),
+      methodName,
+      'balanceA'
+    )
+    Connext.validatorsResponseToError(
+      validate.single(balanceB, isValidDepositObject),
+      methodName,
+      'balanceB'
+    )
+
+    // validate meta
+    const channel = await this.getChannelById(channelId)
+
+    const oldEthA = Web3.utils.toBN(channel.ethBalanceA)
+    const oldTokenA = Web3.utils.toBN(channel.tokenBalanceA)
+    const oldEthI = Web3.utils.toBN(channel.ethBalanceI)
+    const oldTokenI = Web3.utils.toBN(channel.tokenBalanceI)
+
+    // true if previous wei balance greater than proposed
+    // false if previous wei balance less than proposed
+    const eth2erc = oldEthA.gt(balanceA.ethDeposit)
+
+    let exchangedWei, exchangedTokens
+    eth2erc 
+      ? ( exchangedWei = oldEthA.sub(balanceA.ethDeposit) )
+      : ( exchangedTokens = oldTokenA.sub(balanceA.tokenDeposit) )
+    
+    // calculate corr. value with exchange rate
+    eth2erc
+      ? ( exchangedTokens = exchangedWei.div(exchangeRate) )
+      : ( exchangedWei = exchangedTokens.mul(exchangeRate) )
+
+    const newChannelTokenA = eth2erc 
+      ? oldTokenA.add(exchangedTokens) 
+      : oldTokenA.sub(exchangedTokens)
+    const newChannelEthA = eth2erc 
+      ? oldEthA.sub(exchangedWei) 
+      : oldEthA.add(exchangedWei)
+    
+    // validate proposed balanceA
+    // should handle both exchanging to or from
+    if (!(newChannelTokenA).eq(balanceA.tokenDeposit)) {
+      throw new ChannelUpdateError(methodName, 'Error in proposed tokenDeposit value for balanceA')
+    }
+
+    if (!(newChannelEthA).eq(balanceA.ethDeposit)) {
+      throw new ChannelUpdateError(methodName, 'Error in proposed ethDeposit value for balanceA')
+    }
+
+    // check the hub old balance to see if it needs to deposit
+    const needsHubDeposit = eth2erc 
+      ? exchangedTokens.gt(oldTokenI) 
+      : exchangedWei.gt(oldEthI)
+
+    // generate depositSig if needed
+    let depositSig, hubDeposit
+    if (needsHubDeposit) {
+      console.log(`Signing deposit of ${eth2erc ? exchangedTokens.toString() : exchangedWei.toString()} ${eth2erc ? 'tokens' : 'wei'} from hub into LC`) 
+      
+      hubDeposit = {
+        tokenDeposit: eth2erc ? exchangedTokens : Web3.utils.toBN('0'),
+        ethDeposit: eth2erc ? Web3.utils.toBN('0') : exchangedWei,
+      }
+
+      // sign update reflecting deposit of I into channel
+      depositSig = await this.createChannelStateUpdate({
+        isClose: false,
+        channelId,
+        nonce: channel.nonce + 1,
+        openVcs: channel.openVcs,
+        vcRootHash: channel.vcRootHash,
+        partyA: channel.partyA,
+        partyI: channel.partyI,
+        balanceA: {
+          ethDeposit: oldEthA,
+          tokenDeposit: oldTokenA
+        },
+        balanceI: {
+          tokenDeposit: eth2erc 
+            ? exchangedTokens.add(oldTokenI)
+            : oldTokenI,
+          ethDeposit: eth2erc 
+            ? oldEthI
+            : exchangedWei.add(oldEthI)
+        },
+        deposit: hubDeposit,
+        signer: sender,
+      })
+    }
+
+    // generate sig for exchange
+    const exchangeSig = await this.createChannelStateUpdate({
+      isClose: false,
+      channelId,
+      nonce: needsHubDeposit ? channel.nonce + 2 : channel.nonce + 1,
+      openVcs: channel.openVcs,
+      vcRootHash: channel.vcRootHash,
+      partyA: channel.partyA,
+      partyI: channel.partyI,
+      balanceA,
+      balanceI: balanceB,
+      deposit: needsHubDeposit ? hubDeposit : null,
+      signer: sender,
+    })
+
+    const exchangeMeta = {
+      exchangeRate: exchangeRate.toString(),
+      depositSig: depositSig ? depositSig : '',
+      exchangeSig
+    }
+
+    const finalState = {
+      ethBalanceA: balanceA.ethDeposit, // final eth in partyA
+      ethBalanceB: balanceB.ethDeposit, // final eth in hub
+      tokenBalanceA: balanceA.tokenDeposit, // final token in partyA
+      tokenBalanceB: balanceB.tokenDeposit, // final token in hub
+      channelId,
+      nonce: needsHubDeposit ? channel.nonce + 2 : channel.nonce + 1,
+      sig: exchangeSig
+    }
+
+    return { payment: finalState, meta: exchangeMeta }
   }
 
   async channelUpdateHandler ({ payment, meta }, sender = null) {
@@ -1367,7 +1527,7 @@ class Connext {
     const threadBooty = Web3.utils.toBN(thread.tokenBalanceA).add(Web3.utils.toBN(thread.tokenBalanceB))
     const threadEth = Web3.utils.toBN(thread.ethBalanceA).add(Web3.utils.toBN(thread.ethBalanceB))
     const channelBooty = Web3.utils.toBN(subchan.tokenBalanceA).add(Web3.utils.toBN(subchan.tokenBalanceI))
-    const channelEth = Web3.utils.toBN(channel.ethBalanceA).add(Web3.utils.toBN(channel.ethBalanceB))
+    const channelEth = Web3.utils.toBN(subchan.ethBalanceA).add(Web3.utils.toBN(subchan.ethBalanceI))
     
     channelStateOnThreadClose.sigA = threadCloseSig
     // negative hub bond to reflect thread was closed
@@ -1383,21 +1543,6 @@ class Connext {
     const channelCloseSig = await this.createChannelStateUpdate(closingChannelState, sender)
 
     // post to hub
-    const response = await this.networking.post(
-      `${subchan.partyA.toLowerCase()}/`,
-      {
-        lcId: subchan.channelId,
-        lcBooty: channelBooty.toString(),
-        lcEth: channelEth.toString(),
-        lcOtherParty: subchan.partyI,
-        lcCloseSig: channelCloseSig,
-        vcId: thread.channelId,
-        vcBooty: threadBooty.toString(),
-        vcEth: threadEth.toString(),
-        vcCloseSig: threadCloseSig,
-        vcOtherParty: thread.partyB,
-      }
-    )
     const body = {
       lcId: subchan.channelId,
       lcBooty: channelBooty.toString(),
@@ -1411,7 +1556,24 @@ class Connext {
       vcOtherParty: thread.partyB,
     }
     console.log('POTENTIALLY LIQUIDATE POSTING:', JSON.stringify(body))
-    return body
+    console.log(`POSTING TO URL: decolatoralization/temp-unsafe-half-close/${subchan.partyA.toLowerCase()}/`)
+
+    const response = await this.networking.post(
+      `decolatoralization/temp-unsafe-half-close/${subchan.partyA.toLowerCase()}/`,
+      {
+        lcId: subchan.channelId,
+        lcBooty: channelBooty.toString(),
+        lcEth: channelEth.toString(),
+        lcOtherParty: subchan.partyI,
+        lcCloseSig: channelCloseSig,
+        vcId: thread.channelId,
+        vcBooty: threadBooty.toString(),
+        vcEth: threadEth.toString(),
+        vcCloseSig: threadCloseSig,
+        vcOtherParty: thread.partyB,
+      }
+    )
+    return response.data
   }
 
   // ***************************************
@@ -2749,17 +2911,19 @@ class Connext {
         break
       case CHANNEL_TYPES.TOKEN_ETH: // ETH/TOKEN
         // wallet must approve contract token transfer
+        const contractEth = initialDeposits.ethDeposit ? initialDeposits.ethDeposit : Web3.utils.toBN('0')
+        const contractToken = initialDeposits.tokenDeposit ? initialDeposits.tokenDeposit : Web3.utils.toBN('0')
         result = await this.channelManagerInstance.methods
           .createChannel(
             channelId, 
             ingridAddress, 
             challenge, 
             tokenAddress, 
-            [initialDeposits.ethDeposit, initialDeposits.tokenDeposit]
+            [contractEth, contractToken]
           )
           .send({
             from: sender,
-            value: initialDeposits.ethDeposit,
+            value: contractEth,
             gas: 750000
           })
         break
