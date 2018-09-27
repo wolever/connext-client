@@ -1683,7 +1683,7 @@ describe.only('ETH/ERC20 exchanging in channels', () => {
     })
   })
 
-  describe('exchanging ETH for ERC20', async () => {
+  describe('exchanging ETH and ERC20', async () => {
     const exchangeRate = Web3.utils.toBN('2') // units: WEI / ERC20
     const token = new web3.eth.Contract(tokenAbi, tokenAddress)
     it('request hub deposit right amount of tokens while endpoint down in chanA ETH --> ERC', async () => {
