@@ -30,7 +30,9 @@ const META_TYPES = {
   'TIP': 0,
   'PURCHASE': 1,
   'UNCATEGORIZED': 2,
-  'WITHDRAWAL': 3
+  'WITHDRAWAL': 3,
+  'EXCHANGE': 4,
+  'FEE': 5
 }
 
 const PAYMENT_TYPES = {
@@ -91,36 +93,42 @@ validate.validators.isValidDepositObject = value => {
 }
 
 validate.validators.isValidMeta = value => {
-  // if (!value) {
-  //   return `Value cannot be undefined.`
-  // } else if (!value.receiver) {
-  //   return `${value} does not contain a receiver field`
-  // } else if (!Web3.utils.isAddress(value.receiver)) {
-  //   return `${value.receiver} is not a valid ETH address`
-  // } else if (!value.type) {
-  //   return `${value} does not contain a type field`
-  // }
+  if (!value) {
+    return `Value cannot be undefined.`
+  } else if (!value.receiver) {
+    return `${value} does not contain a receiver field`
+  } else if (!Web3.utils.isAddress(value.receiver)) {
+    return `${value.receiver} is not a valid ETH address`
+  } else if (!value.type) {
+    return `${value} does not contain a type field`
+  }
 
-  // let isValid, ans
+  let isValid, ans
 
-  // switch (META_TYPES[value.type]) {
-  //   case 0: // TIP
-  //     isValid = validateTipPurchaseMeta(value)
-  //     ans = isValid ? null : `${JSON.stringify(value)} is not a valid TIP purchase meta, missing one or more fields: streamId, performerId, performerName`
-  //     return ans
-  //   case 1: // PURCHASE
-  //     isValid = validatePurchasePurchaseMeta(value)
-  //     ans = isValid ? null : `${JSON.stringify(value)} is not a valid PURCHASE purchase meta, missing one or more fields: productSku, productName`
-  //     return ans
-  //   case 2: // UNCATEGORIZED -- no validation 
-  //     return null
-  //   case 3: // WITHDRAWAL
-  //     isValid = validateWithdrawalPurchaseMeta(value)
-  //     ans = isValid ? null : `${JSON.stringify(value)} is not a valid WITHDRAWAL purchase meta.`
-  //     return ans
-  //   default:
-  //     return `${value.type} is not a valid purchase meta type`
-  // }
+  switch (META_TYPES[value.type]) {
+    case 0: // TIP
+      isValid = validateTipPurchaseMeta(value)
+      ans = isValid ? null : `${JSON.stringify(value)} is not a valid TIP purchase meta, missing one or more fields: streamId, performerId, performerName`
+      return ans
+    case 1: // PURCHASE
+      isValid = validatePurchasePurchaseMeta(value)
+      ans = isValid ? null : `${JSON.stringify(value)} is not a valid PURCHASE purchase meta, missing one or more fields: productSku, productName`
+      return ans
+    case 2: // UNCATEGORIZED -- no validation 
+      return null
+    case 3: // WITHDRAWAL
+      isValid = validateWithdrawalPurchaseMeta(value)
+      ans = isValid ? null : `${JSON.stringify(value)} is not a valid WITHDRAWAL purchase meta.`
+      return ans
+    case 4: // EXCHANGE
+      const { exchangeRate } = value
+      ans = exchangeRate ? null : `Invalid meta. ${JSON.stringify(value)} does not contain exchangeRate field.`
+      return ans
+    case 5: // FEE
+      return null
+    default:
+      return `${value.type} is not a valid purchase meta type`
+  }
 }
 
 validate.validators.isChannelStatus = value => {
