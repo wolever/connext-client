@@ -557,6 +557,24 @@ class Connext {
     return result.data
   }
 
+  async getUntrackedDeposits(channelId) {
+    const methodName = 'getUntrackedDeposits'
+    const isHex = { presence: true, isHex: true }
+    Connext.validatorsResponseToError(
+      validate.single(channelId, isHex),
+      methodName,
+      'channelId'
+    )
+    const response = await this.networking.get(
+      `ledgerchannel/${channelId}/untrackeddeposits`
+    )
+    return response.data
+  }
+
+  async signUntrackedDeposits(channelId, sender = null) {
+    const deposit = await this.getUntrackedDeposits(channelId)
+  }
+
   /**
    * Opens a virtual channel between "to" and sender with Ingrid as the hub. Both users must have a ledger channel open with ingrid.
    *
