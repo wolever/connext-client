@@ -7,6 +7,7 @@ const MerkleTree = require('./helpers/MerkleTree')
 const Utils = require('./helpers/utils')
 const crypto = require('crypto')
 const networking = require('./helpers/networking')
+const interval = require('interval-promise')
 const tokenAbi = require('human-standard-token-abi')
 
 // Channel enums
@@ -504,6 +505,10 @@ class Connext {
       throw new ChannelUpdateError(methodName, 'Recipient is not member of channel')
     }
 
+    if (sender.toLowerCase() !== channel.partyA) {
+      throw new ChannelUpdateError(methodName, 'Cannot sign for deposit state update unless it is your channel.')
+    }
+
     // call contract handler
     const contractResult = await this.depositContractHandler({
       channelId: channel.channelId,
@@ -513,48 +518,30 @@ class Connext {
       tokenAddress
     })
 
-    let sig
-    // post new sig
-    const newEthBalanceA = deposits.ethDeposit 
-      ? Web3.utils.toBN(channel.ethBalanceA).add(deposits.ethDeposit) 
-      : Web3.utils.toBN(channel.ethBalanceA)
-    const newTokenBalanceA = deposits.tokenDeposit
-      ? Web3.utils.toBN(channel.tokenBalanceA).add(deposits.tokenDeposit)
-      : Web3.utils.toBN(channel.tokenBalanceA)
+    if (!contractResult) {
+      throw new ChannelUpdateError(methodName, 'Error with on chain deposit')
+    }
 
-    if (contractResult) {
-      // generate signed update and post to hub
-      sig = await this.createChannelStateUpdate({
-        channelId: channel.channelId,
-        nonce: channel.nonce + 1,
-        openVcs: channel.openVcs,
-        vcRootHash: channel.vcRootHash,
-        partyA: channel.partyA,
-        partyI: channel.partyI,
-        balanceA: {
-          ethDeposit: newEthBalanceA,
-          tokenDeposit: newTokenBalanceA
-        },
-        balanceI: {
-          ethDeposit: Web3.utils.toBN(channel.ethBalanceI),
-          tokenDeposit: Web3.utils.toBN(channel.tokenBalanceI)
-        },
-        deposit: deposits,
-        signer: sender
-      })
-     } else {
-       throw new ChannelUpdateError(methodName, 'Error with contract transaction')
-     }
+    // poll until untracked deposit appears
+    let untrackedDeposits
+    await interval(async (iterationNumber, stop) => {
+      untrackedDeposits = await this.getUntrackedDeposits(channel.channelId)
+      if (untrackedDeposits !== [] && untrackedDeposits.length === 1) {
+        stop()
+      }
+    }, 2000)
 
-     const result = await this.networking.post(`ledgerchannel/${channel.channelId}/deposit`, {
-       sig: sig,
-       deposit: deposits.ethDeposit ? deposits.ethDeposit.toString() : deposits.tokenDeposit.toString(),
-       isToken: deposits.ethDeposit ? false : true
-      //  ethDeposit: deposits.ethDeposit ? deposits.ethDeposit.toString() : '0',
-      //  tokenDeposit: deposits.tokenDeposit ? deposits.tokenDeposit.toString() : '0',
-     })
+    const results = await this.signUntrackedDeposits({
+      untrackedDeposits,
+      channelId: channel.channelId,
+      sender
+    })
 
-    return result.data
+    if (results.length === 0) {
+      return results[0]
+    } else {
+      return results
+    }
   }
 
   async getUntrackedDeposits(channelId) {
@@ -571,8 +558,121 @@ class Connext {
     return response.data
   }
 
-  async signUntrackedDeposits(channelId, sender = null) {
-    const deposit = await this.getUntrackedDeposits(channelId)
+  async signUntrackedDeposits({
+    untrackedDeposits, 
+    channelId,
+    sender = null
+  }) {
+    const methodName = 'signUntrackedDeposits'
+    const isHex = { presence: true, isHex: true }
+    const isAddress = { presence: true, isAddress: true }
+    Connext.validatorsResponseToError(
+      validate.single(channelId, isHex),
+      methodName,
+      'channelId'
+    )
+    // add deposit object validation
+    if (sender) {
+      Connext.validatorsResponseToError(
+        validate.single(sender, isAddress),
+        methodName,
+        'sender'
+      )
+    } else {
+      const accounts = await this.web3.eth.getAccounts()
+      sender = accounts[0]
+    }
+    
+    // sign each of the deposit updates
+    const channel = await this.getChannelById(channelId)
+    
+    const depositedWithoutUpdates = channel.nonce === 0
+    let channelEthBalance = Web3.utils.toBN(channel.ethBalanceA)
+    let channelTokenBalance = Web3.utils.toBN(channel.tokenBalanceA)
+    let nonce = channel.nonce
+    let signedDeposits = []
+    let totalTokenDeposit = Web3.utils.toBN('0')
+    let totalEthDeposit = Web3.utils.toBN('0')
+    for (const untrackedDeposit of untrackedDeposits) {
+      nonce = nonce + 1
+      const amountDeposited = Web3.utils.toBN(untrackedDeposit.deposit)
+      
+      untrackedDeposit.isToken 
+        ? (
+            depositedWithoutUpdates 
+              ? totalTokenDeposit = totalTokenDeposit
+              : totalTokenDeposit = totalTokenDeposit
+                  .add(amountDeposited)
+          )
+        : (
+            depositedWithoutUpdates 
+              ? totalEthDeposit = totalEthDeposit
+              : totalEthDeposit = totalEthDeposit
+                  .add(amountDeposited)
+          )
+
+      untrackedDeposit.isToken 
+        ? (
+            depositedWithoutUpdates 
+              ? channelTokenBalance = channelTokenBalance
+              : channelTokenBalance = channelTokenBalance
+                  .add(amountDeposited)
+          )
+        : (
+            depositedWithoutUpdates 
+            ? channelEthBalance = channelEthBalance
+            : channelEthBalance = channelEthBalance.add(amountDeposited)
+          )
+
+      const sig = await this.createChannelStateUpdate({
+        channelId: channel.channelId,
+        nonce,
+        openVcs: channel.openVcs,
+        vcRootHash: channel.vcRootHash,
+        partyA: channel.partyA,
+        partyI: channel.partyI,
+        balanceA: {
+          ethDeposit: channelEthBalance,
+          tokenDeposit: channelTokenBalance
+        },
+        balanceI: {
+          ethDeposit: Web3.utils.toBN(channel.ethBalanceI),
+          tokenDeposit: Web3.utils.toBN(channel.tokenBalanceI),
+        },
+        deposit: {
+          tokenDeposit: totalTokenDeposit,
+          ethDeposit: totalEthDeposit
+        },
+        signer: sender
+      })
+      
+      const obj = {
+        sig,
+        depositId: untrackedDeposit.depositId,
+        isToken: untrackedDeposit.isToken,
+        deposit: untrackedDeposit.deposit
+      }
+      signedDeposits.push(obj)
+    }
+    
+    // post to hub
+    let results = []
+    for (const signedDeposit of signedDeposits) {
+      console.log(`Posting signed ${signedDeposit.isToken ? 'ERC20' : 'ETH'} deposit of ${signedDeposit.deposit} to hub`)
+      let result
+      try {
+        result = (await this.networking.post(
+          `ledgerchannel/${channel.channelId}/deposit`, 
+          signedDeposit
+        )).data
+        console.log(`Successfully posted.`)
+      } catch (e) {
+        console.log(`Error posting update.`)
+        result = e
+      }
+      results.push(result)
+    }
+    return results
   }
 
   /**
@@ -3026,7 +3126,7 @@ class Connext {
       depositType = Object.keys(CHANNEL_TYPES)[0]
     }
 
-    let result, token, tokenApproval
+    let result
     switch (CHANNEL_TYPES[depositType]) {
       case CHANNEL_TYPES.ETH:
         // call contract method
@@ -3047,10 +3147,10 @@ class Connext {
       // must pre-approve transfer
         result = await this.channelManagerInstance.methods
           .deposit(
-            channelId, // PARAM NOT IN CONTRACT YET, SHOULD BE
+            channelId,
             recipient,
             deposits.tokenDeposit,
-            false
+            true
           )
           .send({
             from: sender,

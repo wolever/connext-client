@@ -20,6 +20,8 @@ let contractAddress = process.env.CONTRACT_ADDRESS
 let tokenAddress = process.env.TOKEN_CONTRACT_ADDRESS
 let watcherUrl = ''
 
+const token = new web3.eth.Contract(tokenAbi, tokenAddress)
+
 // for accounts
 let accounts
 let partyA, partyB, partyC, partyD, partyE, partyF
@@ -1602,9 +1604,7 @@ describe.only('ETH/ERC20 exchanging in channels', () => {
 
   describe('register partyA and partyB with hub', () => {
     let maxBalance
-    
-    const token = new web3.eth.Contract(tokenAbi, tokenAddress)
-    
+        
     it('should set the maxBalance to be deposited in channels', async () => {
       const hubToken = await token.methods.balanceOf(ingridAddress).call()
       const partyAToken = await token.methods.balanceOf(partyA).call()
@@ -1661,7 +1661,7 @@ describe.only('ETH/ERC20 exchanging in channels', () => {
         expect(chanA.channelId).to.be.equal(subchanAI)
         expect(chanB.channelId).to.be.equal(subchanBI)
       }
-    ).timeout(85000)
+    ).timeout(105000)
 
     it('hub should have autojoined channels', async () => {
       await interval(async (iterationNumber, stop) => {
@@ -1683,7 +1683,270 @@ describe.only('ETH/ERC20 exchanging in channels', () => {
     })
   })
 
-  describe('exchanging ETH and ERC20', async () => {
+  describe('test untracked deposits', () => {
+    subchanAI = subchanAI 
+      ? subchanAI 
+      : '0x36d85e0225e7867b0001b87171947b957efe0c56868a07ea93712e7fb694e8e1'
+    const ethDeposit = Web3.utils.toBN(Web3.utils.toWei('1', 'ether'))
+    const tokenDeposit = Web3.utils.toBN('1')
+    
+    let expectedEthBalance, expectedTokenBalance, expectedNonce
+    let initialEthBalance, initialTokenBalance
+    before('set expected values after deposit', async () => {
+      chanA = await client.getChannelById(subchanAI)
+      chanB = await client.getChannelById(subchanBI)
+      console.log('Values before any deposits:')
+      console.log('ethBalanceA:', chanA.ethBalanceA)
+      console.log('tokenBalanceA:', chanA.tokenBalanceA)
+      console.log('nonce:', chanA.nonce)
+      initialEthBalance = Web3.utils.toBN(chanA.ethBalanceA)
+      initialTokenBalance = Web3.utils.toBN(chanA.tokenBalanceA)
+
+      expectedEthBalance = Web3.utils.toBN(chanA.ethBalanceA).add(ethDeposit)
+      expectedTokenBalance = Web3.utils.toBN(chanA.tokenBalanceA).add(tokenDeposit)
+      expectedNonce = chanA.nonce + 1
+      console.log('\nAnticipated values:')
+      console.log('ethBalanceA:', expectedEthBalance.toString())
+      console.log('tokenBalanceA:', expectedTokenBalance.toString())
+      console.log('nonce:', expectedNonce)
+    })
+
+    it('should deposit ETH on the channelManagerInstance without posting to hub', async () => {
+      const { transactionHash, status } = await client
+        .channelManagerInstance
+        .methods
+        .deposit(
+          subchanAI,
+          partyA,
+          ethDeposit,
+          false
+        )
+        .send({ from: partyA, value: ethDeposit, gas: 750000 })
+      expect(status).to.equal(true)
+      expect(transactionHash).to.exist
+    }).timeout(45000)
+
+    let untrackedDeposits
+    it('should get the untracked ETH deposits from hub', async () => {
+      await interval(async (iterationNumber, stop) => {
+        untrackedDeposits = await client.getUntrackedDeposits(subchanAI, partyA)
+        if (untrackedDeposits !== [] && untrackedDeposits.length == 1) {
+          stop()
+        }
+      }, 2000)
+      expect(Web3.utils.toBN(untrackedDeposits[0].deposit).eq(ethDeposit)).to.equal(true)
+      expect(untrackedDeposits[0].recipient).to.equal(partyA.toLowerCase())
+      console.log(`\nChannel values after chainsaw:`)
+      chanA = await client.getChannelById(subchanAI)
+      console.log(`ethBalanceA: ${chanA.ethBalanceA}`)
+      console.log(`tokenBalanceA: ${chanA.tokenBalanceA}`)
+      console.log(`nonce: ${chanA.nonce}`)
+    }).timeout(45000)
+
+    let response
+    it('should post signed updates to hub', async () => {
+      console.log(`\nFound ${untrackedDeposits.length} untracked deposits`)
+      response = await client.signUntrackedDeposits({
+        channelId: subchanAI, 
+        untrackedDeposits,
+        sender: partyA
+      })
+      // recover signer
+      chanA = await client.getChannelById(subchanAI)
+      
+      console.log('\nValues after deposits:')
+      console.log('ethBalanceA:', chanA.ethBalanceA)
+      console.log('tokenBalanceA:', chanA.tokenBalanceA)
+      console.log('nonce:', chanA.nonce)
+
+      console.log('\nsignUntrackedDeposits Response')
+      console.log(response)
+
+      expect(expectedEthBalance.eq(Web3.utils.toBN(chanA.ethBalanceA))).to.equal(true)
+      expect(chanA.nonce).to.equal(expectedNonce)
+    })
+
+    it('partyA and hub should sign the untracked ETH deposit as a state update', async () => {
+      // generate expected hash
+      chanA = await client.getChannelById(subchanAI)
+      const ethBalanceA = Web3.utils.toBN(chanA.ethBalanceA)
+      const tokenBalanceA = Web3.utils.toBN(chanA.tokenBalanceA)
+      let signer = Connext.recoverSignerFromChannelStateUpdate({
+        sig: response[0].sigA,
+        channelId: subchanAI,
+        isClose: false,
+        nonce: chanA.nonce,
+        openVcs: chanA.openVcs,
+        vcRootHash: chanA.vcRootHash,
+        partyA,
+        partyI: ingridAddress,
+        ethBalanceA,
+        ethBalanceI: Web3.utils.toBN(chanA.ethBalanceI),
+        tokenBalanceA: tokenBalanceA,
+        tokenBalanceI: Web3.utils.toBN(chanA.tokenBalanceI),
+      })
+      expect(signer.toLowerCase()).to.equal(partyA.toLowerCase())
+
+      signer = Connext.recoverSignerFromChannelStateUpdate({
+        sig: response[0].sigI,
+        channelId: subchanAI,
+        isClose: false,
+        nonce: chanA.nonce,
+        openVcs: chanA.openVcs,
+        vcRootHash: chanA.vcRootHash,
+        partyA,
+        partyI: ingridAddress,
+        ethBalanceA,
+        ethBalanceI: Web3.utils.toBN(chanA.ethBalanceI),
+        tokenBalanceA: tokenBalanceA,
+        tokenBalanceI: Web3.utils.toBN(chanA.tokenBalanceI),
+      })
+      expect(signer.toLowerCase()).to.equal(ingridAddress.toLowerCase())
+    })
+
+    it('should deposit tokens on the channelManagerInstance without posting to hub', async () => {
+      // approve contract token transfer
+      const { transactionHash } = await token.methods
+        .approve(contractAddress, tokenDeposit)
+        .send({ from: partyA})
+      expect(transactionHash).to.exist
+      const { status } = await client
+        .channelManagerInstance
+        .methods
+        .deposit(
+          subchanAI,
+          partyA,
+          tokenDeposit,
+          true
+        )
+        .send({ from: partyA, gas: 750000 })
+      expect(status).to.equal(true)
+    }).timeout(45000)
+
+    it('should get the untracked ERC20 deposits from hub', async () => {
+      await interval(async (iterationNumber, stop) => {
+        untrackedDeposits = await client.getUntrackedDeposits(subchanAI, partyA)
+        if (untrackedDeposits !== [] && untrackedDeposits.length == 1) {
+          stop()
+        }
+      }, 2000)
+      expect(Web3.utils.toBN(untrackedDeposits[0].deposit).eq(tokenDeposit)).to.equal(true)
+      expect(untrackedDeposits[0].recipient).to.equal(partyA.toLowerCase())
+      console.log(`\nChannel values after chainsaw:`)
+      chanA = await client.getChannelById(subchanAI)
+      console.log(`ethBalanceA: ${chanA.ethBalanceA}`)
+      console.log(`tokenBalanceA: ${chanA.tokenBalanceA}`)
+      console.log(`nonce: ${chanA.nonce}`)
+    }).timeout(45000)
+
+    it('should post signed updates to hub', async () => {
+      console.log(`\nFound ${untrackedDeposits.length} untracked deposits`)
+      expectedNonce = chanA.nonce + untrackedDeposits.length
+      response = await client.signUntrackedDeposits({
+        channelId: subchanAI, 
+        untrackedDeposits,
+        sender: partyA
+      })
+      // recover signer
+      chanA = await client.getChannelById(subchanAI)
+      
+      console.log('\nValues after deposits:')
+      console.log('ethBalanceA:', chanA.ethBalanceA)
+      console.log('tokenBalanceA:', chanA.tokenBalanceA)
+      console.log('nonce:', chanA.nonce)
+
+      console.log('\nsignUntrackedDeposits Response')
+      console.log(response)
+
+      expect(expectedTokenBalance.eq(Web3.utils.toBN(chanA.tokenBalanceA))).to.equal(true)
+      expect(chanA.nonce).to.equal(expectedNonce)
+    })
+
+    it('partyA and hub should sign the untracked ERC20 deposit as a state update', async () => {
+      // generate expected hash
+      chanA = await client.getChannelById(subchanAI)
+      const ethBalanceA = Web3.utils.toBN(chanA.ethBalanceA)
+      const tokenBalanceA = Web3.utils.toBN(chanA.tokenBalanceA)
+      let signer = Connext.recoverSignerFromChannelStateUpdate({
+        sig: response[0].sigA,
+        channelId: subchanAI,
+        isClose: false,
+        nonce: chanA.nonce,
+        openVcs: chanA.openVcs,
+        vcRootHash: chanA.vcRootHash,
+        partyA,
+        partyI: ingridAddress,
+        ethBalanceA,
+        ethBalanceI: Web3.utils.toBN(chanA.ethBalanceI),
+        tokenBalanceA,
+        tokenBalanceI: Web3.utils.toBN(chanA.tokenBalanceI),
+      })
+      expect(signer.toLowerCase()).to.equal(partyA.toLowerCase())
+
+      signer = Connext.recoverSignerFromChannelStateUpdate({
+        sig: response[0].sigI,
+        channelId: subchanAI,
+        isClose: false,
+        nonce: chanA.nonce,
+        openVcs: chanA.openVcs,
+        vcRootHash: chanA.vcRootHash,
+        partyA,
+        partyI: ingridAddress,
+        ethBalanceA,
+        ethBalanceI: Web3.utils.toBN(chanA.ethBalanceI),
+        tokenBalanceA,
+        tokenBalanceI: Web3.utils.toBN(chanA.tokenBalanceI),
+      })
+      expect(signer.toLowerCase()).to.equal(ingridAddress.toLowerCase())
+    })
+  })
+
+  describe('testing new deposit flow', () => {
+    subchanBI = subchanBI 
+      ? subchanBI 
+      : '0xf2fb578207baf9a19c0f8b21b1da6d592bb8585b6fc8c7d32eed21fbea06fe68'
+    const ethDeposit = Web3.utils.toBN(Web3.utils.toWei('1', 'ether'))
+    const tokenDeposit = Web3.utils.toBN('1')
+    
+    let expectedToken, expectedEth
+    before('set expected balances', async () => {
+      chanB = await client.getChannelById(subchanBI)
+      expectedToken = Web3.utils.toBN(chanB.tokenBalanceA).add(tokenDeposit)
+      expectedEth = Web3.utils.toBN(chanB.ethBalanceA).add(ethDeposit)
+      console.log('expectedEth:', expectedEth.toString())
+    })
+    
+    it('should deposit ETH into subchanBI and post to hub', async () => {
+      const response = await client.deposit(
+        { ethDeposit },
+        partyB
+      )
+      console.log('response:', response)
+      chanB = await client.getChannelById(subchanBI)
+      expect(expectedEth.eq(Web3.utils.toBN(chanB.ethBalanceA))).to.equal(true)    
+    }).timeout(45000)
+
+    it('should deposit ERC20 into subchanBI and post to hub', async () => {
+      // approve transfer
+      const { status } = await token.methods
+        .approve(contractAddress, tokenDeposit)
+        .send({ from: partyB })
+      expect(status).to.equal(true)
+      // call deposit
+      const response = await client.deposit(
+        { tokenDeposit },
+        partyB,
+        partyB,
+        tokenAddress
+      )
+      console.log('response:', response)
+      chanB = await client.getChannelById(subchanBI)
+      expect(expectedToken.eq(Web3.utils.toBN(chanB.tokenBalanceA))).to.equal(true)       
+    }).timeout(45000)
+
+  })
+
+  describe.skip('exchanging ETH and ERC20', async () => {
     const exchangeRate = Web3.utils.toBN('2') // units: WEI / ERC20
     const token = new web3.eth.Contract(tokenAbi, tokenAddress)
     it('request hub deposit right amount of tokens while endpoint down in chanA ETH --> ERC', async () => {
