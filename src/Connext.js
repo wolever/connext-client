@@ -521,10 +521,11 @@ class Connext {
     }
 
     // poll until untracked deposit appears
+    const initialUntrackedDeposits = (await this.getUntrackedDeposits(channel.channelId)).length
     let untrackedDeposits
     await interval(async (iterationNumber, stop) => {
       untrackedDeposits = await this.getUntrackedDeposits(channel.channelId)
-      if (untrackedDeposits !== [] && untrackedDeposits.length >= 1) {
+      if (untrackedDeposits !== [] && untrackedDeposits.length === initialUntrackedDeposits + 1) {
         stop()
       }
     }, 2000)
