@@ -623,27 +623,35 @@ class Connext {
             : channelEthBalance = channelEthBalance.add(amountDeposited)
           )
 
-      const sig = await this.createChannelStateUpdate({
-        channelId: channel.channelId,
-        nonce,
-        openVcs: channel.openVcs,
-        vcRootHash: channel.vcRootHash,
-        partyA: channel.partyA,
-        partyI: channel.partyI,
-        balanceA: {
-          ethDeposit: channelEthBalance,
-          tokenDeposit: channelTokenBalance
-        },
-        balanceI: {
-          ethDeposit: Web3.utils.toBN(channel.ethBalanceI),
-          tokenDeposit: Web3.utils.toBN(channel.tokenBalanceI),
-        },
-        deposit: {
-          tokenDeposit: totalTokenDeposit,
-          ethDeposit: totalEthDeposit
-        },
-        signer: sender
-      })
+      let sig
+      if (untrackedDeposit.recipient === channel.partyI) {
+        console.log('Not signing hub deposit.')
+        sig = ''
+      } else if (untrackedDeposit.recipient === channel.partyA) {
+        sig = await this.createChannelStateUpdate({
+          channelId: channel.channelId,
+          nonce,
+          openVcs: channel.openVcs,
+          vcRootHash: channel.vcRootHash,
+          partyA: channel.partyA,
+          partyI: channel.partyI,
+          balanceA: {
+            ethDeposit: channelEthBalance,
+            tokenDeposit: channelTokenBalance
+          },
+          balanceI: {
+            ethDeposit: Web3.utils.toBN(channel.ethBalanceI),
+            tokenDeposit: Web3.utils.toBN(channel.tokenBalanceI),
+          },
+          deposit: {
+            tokenDeposit: totalTokenDeposit,
+            ethDeposit: totalEthDeposit
+          },
+          signer: sender
+        })
+      } else {
+        throw new ChannelUpdateError(methodName, 'Deposit recipient is not channel member.')
+      }
       
       const obj = {
         sig,
@@ -653,6 +661,8 @@ class Connext {
       }
       signedDeposits.push(obj)
     }
+
+    signedDeposits = signedDeposits.filter(d => d.sig !== '')
     
     // post to hub
     let results = []
@@ -667,7 +677,7 @@ class Connext {
         console.log(`Successfully posted.`)
       } catch (e) {
         console.log(`Error posting update.`)
-        result = e
+        result = e.message
       }
       results.push(result)
     }
