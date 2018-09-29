@@ -407,8 +407,6 @@ class Connext {
     } else {
       throw new ChannelOpenError(methodName, `Error determining channel deposit types.`)
     }
-
-    console.log('channelType:', channelType)
   
     // verify channel does not exist between ingrid and sender
     let channel = await this.getChannelByPartyA(sender)
@@ -956,15 +954,15 @@ class Connext {
       return updatedPayment
     }))
 
-    return updatedPayments
+    // return updatedPayments
 
-    // const response = await this.networking.post(
-    //   `payments/`,
-    //   {
-    //     payments: updatedPayments
-    //   }
-    // )
-    // return response.data
+    const response = await this.networking.post(
+      `payments/`,
+      {
+        payments: updatedPayments
+      }
+    )
+    return response.data
   }
 
   async exchangeUpdateHandler ({ payment, meta }, sender = null) {
