@@ -524,7 +524,7 @@ class Connext {
     let untrackedDeposits
     await interval(async (iterationNumber, stop) => {
       untrackedDeposits = await this.getUntrackedDeposits(channel.channelId)
-      if (untrackedDeposits !== [] && untrackedDeposits.length === 1) {
+      if (untrackedDeposits !== [] && untrackedDeposits.length >= 1) {
         stop()
       }
     }, 2000)
