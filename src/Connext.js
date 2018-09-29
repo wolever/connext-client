@@ -593,7 +593,6 @@ class Connext {
     let totalTokenDeposit = Web3.utils.toBN('0')
     let totalEthDeposit = Web3.utils.toBN('0')
     for (const untrackedDeposit of untrackedDeposits) {
-      nonce = nonce + 1
       const amountDeposited = Web3.utils.toBN(untrackedDeposit.deposit)
       
       untrackedDeposit.isToken 
@@ -628,6 +627,7 @@ class Connext {
         console.log('Not signing hub deposit.')
         sig = ''
       } else if (untrackedDeposit.recipient === channel.partyA) {
+        nonce = nonce + 1
         sig = await this.createChannelStateUpdate({
           channelId: channel.channelId,
           nonce,
