@@ -24,7 +24,7 @@ let partyA
 
 // for initial ledger channel states
 let subchanAI, stubHub
-describe.only('createChannelContractHandler()', () => {
+describe('createChannelContractHandler()', () => {
   beforeEach('init client and create stubbed hub and contract', async () => {
     accounts = await web3.eth.getAccounts()
     hubAddress = accounts[0]
