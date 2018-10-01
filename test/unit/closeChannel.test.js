@@ -25,7 +25,7 @@ let partyB
 let partyC
 let partyD
 
-describe.only('closeChannel()', () => {
+describe('closeChannel()', () => {
   before('init client and accounts', async () => {
     accounts = await web3.eth.getAccounts()
     hubAddress = accounts[0]
