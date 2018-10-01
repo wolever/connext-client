@@ -14,7 +14,7 @@ const Connext = require('../../src/Connext')
 // on init
 const web3 = new Web3('http://localhost:8545')
 let client
-let ingridAddress
+let hubAddress
 let hubUrl = 'http://localhost:8080'
 let contractAddress = '0xdec16622bfe1f0cdaf6f7f20437d2a040cccb0a1'
 let watcherUrl = ''
@@ -26,7 +26,7 @@ let partyA, partyB, partyC, partyD
 describe('createThreadStateUpdate()', function () {
   before('init client and accounts', async () => {
     accounts = await web3.eth.getAccounts()
-    ingridAddress = accounts[0]
+    hubAddress = accounts[0]
     partyA = accounts[1]
     partyB = accounts[2]
     partyC = accounts[3]
@@ -36,7 +36,7 @@ describe('createThreadStateUpdate()', function () {
     // init client instance
     client = new Connext({
       web3,
-      ingridAddress,
+      hubAddress,
       watcherUrl,
       hubUrl,
       contractAddress
@@ -50,7 +50,10 @@ describe('createThreadStateUpdate()', function () {
       if (!nock.isActive()) nock.activate()
 
       // stub hub methods
-      stubHub = await createStubbedHub(`${client.hubUrl}`, 'OPEN_LC_OPEN_VC')
+      stubHub = await createStubbedHub(
+        `${client.hubUrl}`,
+        'OPEN_CHANNEL_OPEN_THREAD'
+      )
     })
 
     it('should sign the proposed TOKEN_ETH state update', async () => {
@@ -61,11 +64,11 @@ describe('createThreadStateUpdate()', function () {
         partyB,
         balanceA: {
           tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether')),
-          ethDeposit: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether'))
+          weiDeposit: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether'))
         },
         balanceB: {
           tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
-          ethDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
+          weiDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
         },
         updateType: 'TOKEN_ETH',
         signer: partyA
@@ -77,8 +80,8 @@ describe('createThreadStateUpdate()', function () {
         nonce: update.nonce,
         partyA,
         partyB,
-        ethBalanceA: update.balanceA.ethDeposit,
-        ethBalanceB: update.balanceB.ethDeposit,
+        weiBalanceA: update.balanceA.weiDeposit,
+        weiBalanceB: update.balanceB.weiDeposit,
         tokenBalanceA: update.balanceA.tokenDeposit,
         tokenBalanceB: update.balanceB.tokenDeposit
       }
@@ -93,11 +96,11 @@ describe('createThreadStateUpdate()', function () {
         partyA: partyC,
         partyB,
         balanceA: {
-          ethDeposit: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether')),
+          weiDeposit: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether')),
           tokenDeposit: null
         },
         balanceB: {
-          ethDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
+          weiDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
           tokenDeposit: null
         },
         updateType: 'ETH',
@@ -110,8 +113,8 @@ describe('createThreadStateUpdate()', function () {
         nonce: update.nonce,
         partyA: partyC,
         partyB,
-        ethBalanceA: update.balanceA.ethDeposit,
-        ethBalanceB: update.balanceB.ethDeposit,
+        weiBalanceA: update.balanceA.weiDeposit,
+        weiBalanceB: update.balanceB.weiDeposit,
         tokenBalanceA: Web3.utils.toBN('0'),
         tokenBalanceB: Web3.utils.toBN('0')
       }
@@ -127,11 +130,11 @@ describe('createThreadStateUpdate()', function () {
         partyB,
         balanceA: {
           tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether')),
-          ethDeposit: null
+          weiDeposit: null
         },
         balanceB: {
           tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
-          ethDeposit: null
+          weiDeposit: null
         },
         updateType: 'TOKEN',
         signer: partyD
@@ -143,8 +146,8 @@ describe('createThreadStateUpdate()', function () {
         nonce: update.nonce,
         partyA: partyD,
         partyB,
-        ethBalanceA: Web3.utils.toBN('0'),
-        ethBalanceB: Web3.utils.toBN('0'),
+        weiBalanceA: Web3.utils.toBN('0'),
+        weiBalanceB: Web3.utils.toBN('0'),
         tokenBalanceA: update.balanceA.tokenDeposit,
         tokenBalanceB: update.balanceB.tokenDeposit
       }
@@ -166,11 +169,11 @@ describe('createThreadStateUpdate()', function () {
         partyB,
         balanceA: {
           tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether')),
-          ethDeposit: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether'))
+          weiDeposit: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether'))
         },
         balanceB: {
           tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
-          ethDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
+          weiDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
         },
         sender: partyA
       }
@@ -189,11 +192,11 @@ describe('createThreadStateUpdate()', function () {
         partyB,
         balanceA: {
           tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether')),
-          ethDeposit: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether'))
+          weiDeposit: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether'))
         },
         balanceB: {
           tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
-          ethDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
+          weiDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
         },
         sender: partyA
       }
@@ -212,11 +215,11 @@ describe('createThreadStateUpdate()', function () {
         partyB,
         balanceA: {
           tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether')),
-          ethDeposit: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether'))
+          weiDeposit: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether'))
         },
         balanceB: {
           tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
-          ethDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
+          weiDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
         },
         sender: partyA
       }
@@ -234,11 +237,11 @@ describe('createThreadStateUpdate()', function () {
         partyB,
         balanceA: {
           tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether')),
-          ethDeposit: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether'))
+          weiDeposit: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether'))
         },
         balanceB: {
           tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
-          ethDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
+          weiDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
         },
         sender: partyA
       }
@@ -257,11 +260,11 @@ describe('createThreadStateUpdate()', function () {
         partyB,
         balanceA: {
           tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether')),
-          ethDeposit: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether'))
+          weiDeposit: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether'))
         },
         balanceB: {
           tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
-          ethDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
+          weiDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
         },
         sender: partyA
       }
@@ -280,11 +283,11 @@ describe('createThreadStateUpdate()', function () {
         partyB,
         balanceA: {
           tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether')),
-          ethDeposit: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether'))
+          weiDeposit: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether'))
         },
         balanceB: {
           tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
-          ethDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
+          weiDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
         },
         sender: partyA
       }
@@ -302,11 +305,11 @@ describe('createThreadStateUpdate()', function () {
         partyB,
         balanceA: {
           tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether')),
-          ethDeposit: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether'))
+          weiDeposit: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether'))
         },
         balanceB: {
           tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
-          ethDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
+          weiDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
         },
         sender: partyA
       }
@@ -325,11 +328,11 @@ describe('createThreadStateUpdate()', function () {
         partyB,
         balanceA: {
           tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether')),
-          ethDeposit: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether'))
+          weiDeposit: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether'))
         },
         balanceB: {
           tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
-          ethDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
+          weiDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
         },
         sender: partyA
       }
@@ -348,11 +351,11 @@ describe('createThreadStateUpdate()', function () {
         partyB,
         balanceA: {
           tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether')),
-          ethDeposit: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether'))
+          weiDeposit: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether'))
         },
         balanceB: {
           tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
-          ethDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
+          weiDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
         },
         sender: partyA
       }
@@ -370,11 +373,11 @@ describe('createThreadStateUpdate()', function () {
         partyA,
         balanceA: {
           tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether')),
-          ethDeposit: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether'))
+          weiDeposit: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether'))
         },
         balanceB: {
           tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
-          ethDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
+          weiDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
         },
         sender: partyA
       }
@@ -393,11 +396,11 @@ describe('createThreadStateUpdate()', function () {
         partyB: null,
         balanceA: {
           tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether')),
-          ethDeposit: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether'))
+          weiDeposit: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether'))
         },
         balanceB: {
           tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
-          ethDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
+          weiDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
         },
         sender: partyA
       }
@@ -416,11 +419,11 @@ describe('createThreadStateUpdate()', function () {
         partyB: 'fail',
         balanceA: {
           tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether')),
-          ethDeposit: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether'))
+          weiDeposit: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether'))
         },
         balanceB: {
           tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
-          ethDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
+          weiDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
         },
         sender: partyA
       }
@@ -439,7 +442,7 @@ describe('createThreadStateUpdate()', function () {
         partyB,
         balanceB: {
           tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
-          ethDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
+          weiDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
         },
         sender: partyA
       }
@@ -459,7 +462,7 @@ describe('createThreadStateUpdate()', function () {
         balanceA: null,
         balanceB: {
           tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
-          ethDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
+          weiDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
         },
         sender: partyA
       }
@@ -479,7 +482,7 @@ describe('createThreadStateUpdate()', function () {
         balanceA: 'fail',
         balanceB: {
           tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
-          ethDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
+          weiDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
         },
         sender: partyA
       }
@@ -499,7 +502,7 @@ describe('createThreadStateUpdate()', function () {
         balanceA: {},
         balanceB: {
           tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
-          ethDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
+          weiDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
         },
         sender: partyA
       }
@@ -518,11 +521,11 @@ describe('createThreadStateUpdate()', function () {
         partyB,
         balanceA: {
           tokenDeposit: null,
-          ethDeposit: null
+          weiDeposit: null
         },
         balanceB: {
           tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
-          ethDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
+          weiDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
         },
         sender: partyA
       }
@@ -541,11 +544,11 @@ describe('createThreadStateUpdate()', function () {
         partyB,
         balanceA: {
           tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('-0.9', 'ether')),
-          ethDeposit: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether'))
+          weiDeposit: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether'))
         },
         balanceB: {
           tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
-          ethDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
+          weiDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
         },
         sender: partyA
       }
@@ -556,7 +559,7 @@ describe('createThreadStateUpdate()', function () {
       }
     })
 
-    it('should fail if balanceA has negative ethDeposit', () => {
+    it('should fail if balanceA has negative weiDeposit', () => {
       let state = {
         channelId: '0x0100000000000000000000000000000000000000000000000000000000000000',
         nonce: 1,
@@ -564,11 +567,11 @@ describe('createThreadStateUpdate()', function () {
         partyB,
         balanceA: {
           tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether')),
-          ethDeposit: Web3.utils.toBN(Web3.utils.toWei('-0.9', 'ether'))
+          weiDeposit: Web3.utils.toBN(Web3.utils.toWei('-0.9', 'ether'))
         },
         balanceB: {
           tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
-          ethDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
+          weiDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
         },
         sender: partyA
       }
@@ -587,7 +590,7 @@ describe('createThreadStateUpdate()', function () {
         partyB,
         balanceA: {
           tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
-          ethDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
+          weiDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
         },
         sender: partyA
       }
@@ -607,7 +610,7 @@ describe('createThreadStateUpdate()', function () {
         balanceB: null,
         balanceA: {
           tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
-          ethDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
+          weiDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
         },
         sender: partyA
       }
@@ -627,7 +630,7 @@ describe('createThreadStateUpdate()', function () {
         balanceB: 'fail',
         balanceA: {
           tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
-          ethDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
+          weiDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
         },
         sender: partyA
       }
@@ -647,7 +650,7 @@ describe('createThreadStateUpdate()', function () {
         balanceB: {},
         balanceA: {
           tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
-          ethDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
+          weiDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
         },
         sender: partyA
       }
@@ -666,11 +669,11 @@ describe('createThreadStateUpdate()', function () {
         partyB,
         balanceB: {
           tokenDeposit: null,
-          ethDeposit: null
+          weiDeposit: null
         },
         balanceA: {
           tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
-          ethDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
+          weiDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
         },
         sender: partyA
       }
@@ -689,11 +692,11 @@ describe('createThreadStateUpdate()', function () {
         partyB,
         balanceB: {
           tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('-0.9', 'ether')),
-          ethDeposit: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether'))
+          weiDeposit: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether'))
         },
         balanceA: {
           tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
-          ethDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
+          weiDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
         },
         sender: partyA
       }
@@ -704,7 +707,7 @@ describe('createThreadStateUpdate()', function () {
       }
     })
 
-    it('should fail if balanceB has negative ethDeposit', () => {
+    it('should fail if balanceB has negative weiDeposit', () => {
       let state = {
         channelId: '0x0100000000000000000000000000000000000000000000000000000000000000',
         nonce: 1,
@@ -712,11 +715,11 @@ describe('createThreadStateUpdate()', function () {
         partyB,
         balanceB: {
           tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether')),
-          ethDeposit: Web3.utils.toBN(Web3.utils.toWei('-0.9', 'ether'))
+          weiDeposit: Web3.utils.toBN(Web3.utils.toWei('-0.9', 'ether'))
         },
         balanceA: {
           tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
-          ethDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
+          weiDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
         },
         sender: partyA
       }

@@ -13,7 +13,7 @@ const Connext = require('../../src/Connext')
 // on init
 const web3 = new Web3('http://localhost:8545')
 let client
-let ingridAddress
+let hubAddress
 let partyA
 let hubUrl = 'http://localhost:8080'
 let contractAddress = '0xdec16622bfe1f0cdaf6f7f20437d2a040cccb0a1'
@@ -21,18 +21,18 @@ let watcherUrl = ''
 let accounts
 let tokenAddress
 
-describe('deposit()', function () {
+describe.skip('deposit()', function () {
   this.timeout(120000)
   before('init client and create stubbed hub and contract', async () => {
     accounts = await web3.eth.getAccounts()
-    ingridAddress = accounts[0]
+    hubAddress = accounts[0]
     partyA = accounts[1]
     const authJson = { token: 'SwSNTnh3LlEJg1N9iiifFgOIKq998PGA' }
 
     // init client instance
     client = new Connext({
       web3,
-      ingridAddress,
+      hubAddress,
       watcherUrl,
       hubUrl,
       contractAddress
@@ -70,7 +70,10 @@ describe('deposit()', function () {
       client.channelManagerInstance.methods = createStubbedContract()
 
       // stub hub methods
-      stubHub = await createStubbedHub(`${client.hubUrl}`, 'OPEN_LC_NO_VC')
+      stubHub = await createStubbedHub(
+        `${client.hubUrl}`,
+        'OPEN_CHANNEL_NO_THREAD'
+      )
     })
 
     it('should create an ETH only deposit', async () => {

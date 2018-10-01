@@ -13,7 +13,7 @@ const Connext = require('../../src/Connext')
 // on init
 const web3 = new Web3('http://localhost:8545')
 let client
-let ingridAddress
+let hubAddress
 let hubUrl = 'http://localhost:8080'
 let contractAddress = '0xdec16622bfe1f0cdaf6f7f20437d2a040cccb0a1'
 let watcherUrl = ''
@@ -25,10 +25,10 @@ let partyB
 let partyC
 let partyD
 
-describe('initThreadContractHandler()', () => {
+describe.skip('initThreadContractHandler()', () => {
   before('init client and accounts', async () => {
     accounts = await web3.eth.getAccounts()
-    ingridAddress = accounts[0]
+    hubAddress = accounts[0]
     partyA = accounts[1]
     partyB = accounts[2]
     partyC = accounts[3]
@@ -39,7 +39,7 @@ describe('initThreadContractHandler()', () => {
     // init client instance
     client = new Connext({
       web3,
-      ingridAddress,
+      hubAddress,
       watcherUrl,
       hubUrl,
       contractAddress
@@ -75,7 +75,7 @@ describe('initThreadContractHandler()', () => {
         nonce: 0,
         partyA,
         partyB,
-        ethBalanceA: balanceA.ethDeposit,
+        weiBalanceA: balanceA.ethDeposit,
         ethBalanceB: Web3.utils.toBN('0'),
         tokenBalanceA: balanceA.tokenDeposit,
         tokenBalanceB: Web3.utils.toBN('0')
@@ -106,7 +106,7 @@ describe('initThreadContractHandler()', () => {
         nonce: 0,
         partyA: partyC,
         partyB,
-        ethBalanceA: balanceA.ethDeposit,
+        weiBalanceA: balanceA.ethDeposit,
         ethBalanceB: Web3.utils.toBN('0'),
         tokenBalanceA: balanceA.tokenDeposit,
         tokenBalanceB: Web3.utils.toBN('0')
@@ -137,7 +137,7 @@ describe('initThreadContractHandler()', () => {
         nonce: 0,
         partyA: partyD,
         partyB,
-        ethBalanceA: balanceA.ethDeposit,
+        weiBalanceA: balanceA.ethDeposit,
         ethBalanceB: Web3.utils.toBN('0'),
         tokenBalanceA: balanceA.tokenDeposit,
         tokenBalanceB: Web3.utils.toBN('0')

@@ -19,6 +19,8 @@ let hubAddress
 let hubUrl = 'http://localhost:8080'
 let contractAddress = '0xdec16622bfe1f0cdaf6f7f20437d2a040cccb0a1'
 let watcherUrl = ''
+const threadId =
+  '0x0100000000000000000000000000000000000000000000000000000000000000'
 
 // for accounts
 let accounts
@@ -50,15 +52,17 @@ describe('openThread()', function () {
       if (!nock.isActive()) nock.activate()
 
       // stub hub methods
-      stubHub = await createStubbedHub(`${client.hubUrl}`, 'OPEN_LC_NO_VC')
+      stubHub = await createStubbedHub(
+        `${client.hubUrl}`,
+        'OPEN_CHANNEL_NO_THREAD'
+      )
+      stubHub
+        .get(`/thread/a/${partyA.toLowerCase()}/b/${partyB.toLowerCase()}`)
+        .reply(200, [])
     })
 
     it('should create a new virtual channel', async () => {
-      stub = sinon
-        .stub(Connext, 'getNewChannelId')
-        .returns(
-          '0x0100000000000000000000000000000000000000000000000000000000000000'
-        )
+      stub = sinon.stub(Connext, 'getNewChannelId').returns(threadId)
       const to = partyB
       const deposit = {
         tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('1', 'ether')),
@@ -69,9 +73,7 @@ describe('openThread()', function () {
         deposit,
         sender: partyA
       })
-      expect(channelId).to.equal(
-        '0x0100000000000000000000000000000000000000000000000000000000000000'
-      )
+      expect(channelId).to.equal(threadId)
       expect(Connext.getNewChannelId.calledOnce).to.equal(true)
     })
 

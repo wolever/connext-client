@@ -86,8 +86,8 @@ describe('channelUpdateHandler()', function () {
       )
       // expect(updatedPayment.payment.tokenBalanceA).to.equal(payment.balanceA.tokenDeposit.toString())
       // expect(updatedPayment.payment.tokenBalanceI).to.equal(payment.balanceB.tokenDeposit.toString())
-      // expect(updatedPayment.payment.ethBalanceA).to.equal(payment.balanceA.weiDeposit.toString())
-      // expect(updatedPayment.payment.ethBalanceI).to.equal(payment.balanceB.weiDeposit.toString())
+      // expect(updatedPayment.payment.weiBalanceA).to.equal(payment.balanceA.weiDeposit.toString())
+      // expect(updatedPayment.payment.weiBalanceI).to.equal(payment.balanceB.weiDeposit.toString())
 
       expect(updatedPayment.payment.weiBalanceA).to.equal(payment.balanceA.weiDeposit.toString())
       expect(updatedPayment.payment.weiBalanceB).to.equal(payment.balanceB.weiDeposit.toString())
@@ -122,8 +122,8 @@ describe('channelUpdateHandler()', function () {
           { payment, meta },
           sender
         )
-        // expect(updatedPayment.payment.ethBalanceA).to.equal(payment.balanceA.weiDeposit.toString())
-        // expect(updatedPayment.payment.ethBalanceI).to.equal(payment.balanceB.weiDeposit.toString())
+        // expect(updatedPayment.payment.weiBalanceA).to.equal(payment.balanceA.weiDeposit.toString())
+        // expect(updatedPayment.payment.weiBalanceI).to.equal(payment.balanceB.weiDeposit.toString())
         // expect(updatedPayment.payment.tokenBalanceA).to.equal('0')
         // expect(updatedPayment.payment.tokenBalanceI).to.equal('0')
 
@@ -162,8 +162,8 @@ describe('channelUpdateHandler()', function () {
         )
         // expect(updatedPayment.payment.tokenBalanceA).to.equal(payment.balanceA.tokenDeposit.toString())
         // expect(updatedPayment.payment.tokenBalanceI).to.equal(payment.balanceB.tokenDeposit.toString())
-        // expect(updatedPayment.payment.ethBalanceA).to.equal('0')
-        // expect(updatedPayment.payment.ethBalanceI).to.equal('0')
+        // expect(updatedPayment.payment.weiBalanceA).to.equal('0')
+        // expect(updatedPayment.payment.weiBalanceI).to.equal('0')
       })
 
     afterEach('restore hub', () => {

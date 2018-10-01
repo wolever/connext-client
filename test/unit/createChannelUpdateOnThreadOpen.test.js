@@ -13,7 +13,7 @@ const Connext = require('../../src/Connext')
 // on init
 const web3 = new Web3('http://localhost:8545')
 let client
-let ingridAddress
+let hubAddress
 let hubUrl = 'http://localhost:8080'
 let contractAddress = '0xdec16622bfe1f0cdaf6f7f20437d2a040cccb0a1'
 let watcherUrl = ''
@@ -26,7 +26,7 @@ let partyB
 describe('createChannelUpdateOnThreadOpen()', () => {
   before('init client and accounts', async () => {
     accounts = await web3.eth.getAccounts()
-    ingridAddress = accounts[0]
+    hubAddress = accounts[0]
     partyA = accounts[1]
     partyB = accounts[2]
     const authJson = { token: 'SwSNTnh3LlEJg1N9iiifFgOIKq998PGA' }
@@ -34,7 +34,7 @@ describe('createChannelUpdateOnThreadOpen()', () => {
     // init client instance
     client = new Connext({
       web3,
-      ingridAddress,
+      hubAddress,
       watcherUrl,
       hubUrl,
       contractAddress
@@ -47,7 +47,10 @@ describe('createChannelUpdateOnThreadOpen()', () => {
       // activate nock
       if (!nock.isActive()) nock.activate()
       // stub hub methods
-      stubHub = await createStubbedHub(`${client.hubUrl}`, 'OPEN_LC_NO_VC')
+      stubHub = await createStubbedHub(
+        `${client.hubUrl}`,
+        'OPEN_CHANNEL_NO_THREAD'
+      )
     })
 
     it('should correctly generate and sign a channel update representing opening a new ETH/TOKEN thread', async () => {
@@ -56,13 +59,13 @@ describe('createChannelUpdateOnThreadOpen()', () => {
         channelId: '0x0100000000000000000000000000000000000000000000000000000000000000',
         partyA: partyA.toLowerCase(),
         partyB: partyB.toLowerCase(),
-        state: 'VCS_OPENING',
+        status: 'OPENED',
         balanceA: {
-          ethDeposit: Web3.utils.toBN(Web3.utils.toWei('1', 'ether')),
+          weiDeposit: Web3.utils.toBN(Web3.utils.toWei('1', 'ether')),
           tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('1', 'ether'))
         },
         balanceB: {
-          ethDeposit: Web3.utils.toBN('0'),
+          weiDeposit: Web3.utils.toBN('0'),
           tokenDeposit: Web3.utils.toBN('0')
         },
         nonce: 0
@@ -78,14 +81,14 @@ describe('createChannelUpdateOnThreadOpen()', () => {
         isClose: false,
         channelId: channel.channelId,
         nonce: 1,
-        openVcs: 1,
-        vcRootHash: Connext.generateThreadRootHash({
+        numOpenThread: 1,
+        threadRootHash: Connext.generateThreadRootHash({
           threadInitialStates: [threadInitialState]
         }),
         partyA,
-        partyI: ingridAddress,
-        ethBalanceA: Web3.utils.toBN(Web3.utils.toWei('4', 'ether')),
-        ethBalanceI: Web3.utils.toBN(Web3.utils.toWei('0', 'ether')),
+        partyI: hubAddress,
+        weiBalanceA: Web3.utils.toBN(Web3.utils.toWei('4', 'ether')),
+        weiBalanceI: Web3.utils.toBN(Web3.utils.toWei('0', 'ether')),
         tokenBalanceA: Web3.utils.toBN(Web3.utils.toWei('4', 'ether')),
         tokenBalanceI: Web3.utils.toBN(Web3.utils.toWei('0', 'ether'))
       }
@@ -99,13 +102,13 @@ describe('createChannelUpdateOnThreadOpen()', () => {
         channelId: '0x0100000000000000000000000000000000000000000000000000000000000000',
         partyA: partyA.toLowerCase(),
         partyB: partyB.toLowerCase(),
-        state: 'VCS_OPENING',
+        status: 'OPENED',
         balanceA: {
-          ethDeposit: Web3.utils.toBN(Web3.utils.toWei('1', 'ether')),
+          weiDeposit: Web3.utils.toBN(Web3.utils.toWei('1', 'ether')),
           tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0', 'ether'))
         },
         balanceB: {
-          ethDeposit: Web3.utils.toBN('0'),
+          weiDeposit: Web3.utils.toBN('0'),
           tokenDeposit: Web3.utils.toBN('0')
         },
         nonce: 0
@@ -121,14 +124,14 @@ describe('createChannelUpdateOnThreadOpen()', () => {
         isClose: false,
         channelId: channel.channelId,
         nonce: 1,
-        openVcs: 1,
-        vcRootHash: Connext.generateThreadRootHash({
+        numOpenThread: 1,
+        threadRootHash: Connext.generateThreadRootHash({
           threadInitialStates: [threadInitialState]
         }),
         partyA,
-        partyI: ingridAddress,
-        ethBalanceA: Web3.utils.toBN(Web3.utils.toWei('4', 'ether')),
-        ethBalanceI: Web3.utils.toBN(Web3.utils.toWei('0', 'ether')),
+        partyI: hubAddress,
+        weiBalanceA: Web3.utils.toBN(Web3.utils.toWei('4', 'ether')),
+        weiBalanceI: Web3.utils.toBN(Web3.utils.toWei('0', 'ether')),
         tokenBalanceA: Web3.utils.toBN(Web3.utils.toWei('5', 'ether')),
         tokenBalanceI: Web3.utils.toBN(Web3.utils.toWei('0', 'ether'))
       }
@@ -142,9 +145,9 @@ describe('createChannelUpdateOnThreadOpen()', () => {
         channelId: '0x0100000000000000000000000000000000000000000000000000000000000000',
         partyA: partyA.toLowerCase(),
         partyB: partyB.toLowerCase(),
-        state: 'VCS_OPENING',
+        status: 'OPENED',
         balanceA: {
-          ethDeposit: Web3.utils.toBN(Web3.utils.toWei('0', 'ether')),
+          weiDeposit: Web3.utils.toBN(Web3.utils.toWei('0', 'ether')),
           tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('1', 'ether'))
         },
         balanceB: {
@@ -164,14 +167,14 @@ describe('createChannelUpdateOnThreadOpen()', () => {
         isClose: false,
         channelId: channel.channelId,
         nonce: 1,
-        openVcs: 1,
-        vcRootHash: Connext.generateThreadRootHash({
+        numOpenThread: 1,
+        threadRootHash: Connext.generateThreadRootHash({
           threadInitialStates: [threadInitialState]
         }),
         partyA,
-        partyI: ingridAddress,
-        ethBalanceA: Web3.utils.toBN(Web3.utils.toWei('5', 'ether')),
-        ethBalanceI: Web3.utils.toBN(Web3.utils.toWei('0', 'ether')),
+        partyI: hubAddress,
+        weiBalanceA: Web3.utils.toBN(Web3.utils.toWei('5', 'ether')),
+        weiBalanceI: Web3.utils.toBN(Web3.utils.toWei('0', 'ether')),
         tokenBalanceA: Web3.utils.toBN(Web3.utils.toWei('4', 'ether')),
         tokenBalanceI: Web3.utils.toBN(Web3.utils.toWei('0', 'ether'))
       }

@@ -55,7 +55,7 @@ declare class Connext {
 declare namespace Connext {
   export interface ConnextOptions {
     web3: any;
-    ingridAddress: string;
+    hubAddress: string;
     watcherUrl: string;
     hubUrl: string;
     contractAddress: string;
@@ -86,12 +86,12 @@ declare namespace Connext {
     isClose: boolean;
     channelId: string;
     nonce: number;
-    openVcs: number;
-    vcRootHash: string;
+    numOpenThread: number;
+    threadRootHash: string;
     partyA: string;
     partyI: string;
-    ethBalanceA: BN;
-    ethBalanceI: BN;
+    weiBalanceA: BN;
+    weiBalanceI: BN;
     tokenBalanceA: BN;
     tokenBalanceI: BN;
   }
@@ -105,7 +105,7 @@ declare namespace Connext {
     nonce: number;
     partyA: string;
     partyB: string;
-    ethBalanceA: BN;
+    weiBalanceA: BN;
     ethBalanceB: BN;
     tokenBalanceA: BN;
     tokenBalanceB: BN;

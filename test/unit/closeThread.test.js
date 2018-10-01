@@ -13,7 +13,7 @@ const Connext = require('../../src/Connext')
 // on init
 const web3 = new Web3('http://localhost:8545')
 let client
-let ingridAddress
+let hubAddress
 let hubUrl = 'http://localhost:8080'
 let contractAddress = '0xdec16622bfe1f0cdaf6f7f20437d2a040cccb0a1'
 let watcherUrl = ''
@@ -28,7 +28,7 @@ let partyD
 describe('closeThread()', () => {
   before('init client and accounts', async () => {
     accounts = await web3.eth.getAccounts()
-    ingridAddress = accounts[0]
+    hubAddress = accounts[0]
     partyA = accounts[1]
     partyB = accounts[2]
     partyC = accounts[3]
@@ -39,7 +39,7 @@ describe('closeThread()', () => {
     // init client instance
     client = new Connext({
       web3,
-      ingridAddress,
+      hubAddress,
       watcherUrl,
       hubUrl,
       contractAddress
@@ -54,7 +54,7 @@ describe('closeThread()', () => {
       // stub hub methods
       stubHub = await createStubbedHub(
         `${client.hubUrl}`,
-        'OPEN_LC_OPEN_VC',
+        'OPEN_CHANNEL_OPEN_THREAD',
         'UPDATED'
       )
     })
@@ -71,17 +71,19 @@ describe('closeThread()', () => {
         sig: sigItoA,
         isClose: false,
         partyA: sender.toLowerCase(),
-        partyI: ingridAddress.toLowerCase(),
-        ethBalanceA: Web3.utils.toBN(Web3.utils.toWei('4.9', 'ether')),
-        ethBalanceI: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
+        partyI: hubAddress.toLowerCase(),
+        weiBalanceA: Web3.utils.toBN(Web3.utils.toWei('4.9', 'ether')),
+        weiBalanceI: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
         tokenBalanceA: Web3.utils.toBN(Web3.utils.toWei('4.9', 'ether')),
         tokenBalanceI: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
-        openVcs: 0,
+        numOpenThread: 0,
         nonce: 2,
-        vcRootHash: Connext.generateThreadRootHash({ threadInitialStates: [] })
+        threadRootHash: Connext.generateThreadRootHash({
+          threadInitialStates: []
+        })
       }
       const signer = Connext.recoverSignerFromChannelStateUpdate(sigParams)
-      expect(signer.toLowerCase()).to.equal(ingridAddress.toLowerCase())
+      expect(signer.toLowerCase()).to.equal(hubAddress.toLowerCase())
     })
 
     it('should close the channel with the given ETH threadId', async () => {
@@ -96,17 +98,19 @@ describe('closeThread()', () => {
         sig: sigItoA,
         isClose: false,
         partyA: sender.toLowerCase(),
-        partyI: ingridAddress.toLowerCase(),
-        ethBalanceA: Web3.utils.toBN(Web3.utils.toWei('4.9', 'ether')),
-        ethBalanceI: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
+        partyI: hubAddress.toLowerCase(),
+        weiBalanceA: Web3.utils.toBN(Web3.utils.toWei('4.9', 'ether')),
+        weiBalanceI: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
         tokenBalanceA: Web3.utils.toBN('0'),
         tokenBalanceI: Web3.utils.toBN('0'),
-        openVcs: 0,
+        numOpenThread: 0,
         nonce: 2,
-        vcRootHash: Connext.generateThreadRootHash({ threadInitialStates: [] })
+        threadRootHash: Connext.generateThreadRootHash({
+          threadInitialStates: []
+        })
       }
       const signer = Connext.recoverSignerFromChannelStateUpdate(sigParams)
-      expect(signer.toLowerCase()).to.equal(ingridAddress.toLowerCase())
+      expect(signer.toLowerCase()).to.equal(hubAddress.toLowerCase())
     })
 
     it('should close the channel with the given TOKEN threadId', async () => {
@@ -121,17 +125,19 @@ describe('closeThread()', () => {
         sig: sigItoA,
         isClose: false,
         partyA: sender.toLowerCase(),
-        partyI: ingridAddress.toLowerCase(),
-        ethBalanceA: Web3.utils.toBN('0'),
-        ethBalanceI: Web3.utils.toBN('0'),
+        partyI: hubAddress.toLowerCase(),
+        weiBalanceA: Web3.utils.toBN('0'),
+        weiBalanceI: Web3.utils.toBN('0'),
         tokenBalanceA: Web3.utils.toBN(Web3.utils.toWei('4.9', 'ether')),
         tokenBalanceI: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
-        openVcs: 0,
+        numOpenThread: 0,
         nonce: 2,
-        vcRootHash: Connext.generateThreadRootHash({ threadInitialStates: [] })
+        threadRootHash: Connext.generateThreadRootHash({
+          threadInitialStates: []
+        })
       }
       const signer = Connext.recoverSignerFromChannelStateUpdate(sigParams)
-      expect(signer.toLowerCase()).to.equal(ingridAddress.toLowerCase())
+      expect(signer.toLowerCase()).to.equal(hubAddress.toLowerCase())
     })
 
     afterEach('restore hub', () => {

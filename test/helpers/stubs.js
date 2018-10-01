@@ -627,7 +627,7 @@ export async function createStubbedHub (
 
     case 'OPEN_CHANNEL_NO_THREAD':
       // add initial states endpoints
-      stubHub.get(`/channel/${channelId1}/theadinitialstates`).reply(200, [])
+      stubHub.get(`/channel/${channelId1}/threadinitialstates`).reply(200, [])
       stubHub.get(`/channel/${channelId2}/threadinitialstates`).reply(200, [])
       stubHub.get(`/channel/${channelId3}/threadinitialstates`).reply(200, [])
       stubHub.get(`/channel/${channelId4}/threadinitialstates`).reply(200, [])
@@ -914,7 +914,7 @@ export async function createStubbedHub (
         partyI: partyI.toLowerCase(),
         subchanA: channelId1,
         subchanB: channelId2,
-        state: 'JOINED',
+        status: 'JOINED',
         weiBalanceA: Web3.utils.toWei('0.9', 'ether').toString(),
         weiBalanceB: Web3.utils.toWei('0.1', 'ether').toString(),
         tokenBalanceA: Web3.utils.toWei('0.9', 'ether').toString(),
@@ -930,7 +930,7 @@ export async function createStubbedHub (
         partyI: partyI.toLowerCase(),
         subchanA: channelId3,
         subchanB: channelId2,
-        state: 'JOINED',
+        status: 'JOINED',
         weiBalanceA: Web3.utils.toWei('0.9', 'ether').toString(),
         weiBalanceB: Web3.utils.toWei('0.1', 'ether').toString(),
         tokenBalanceA: '0',
@@ -946,7 +946,7 @@ export async function createStubbedHub (
         partyI: partyI.toLowerCase(),
         subchanA: channelId4,
         subchanB: channelId2,
-        state: 'JOINED',
+        status: 'JOINED',
         weiBalanceA: '0',
         weiBalanceB: '0',
         tokenBalanceA: Web3.utils.toWei('0.9', 'ether').toString(),
@@ -1170,6 +1170,7 @@ export async function createStubbedHub (
   let sigAFinal = await web3.eth.sign(hash, partyA)
   let sigIAFinal = await web3.eth.sign(hash, partyI)
   stubHub.post(`/channel/${channelId1}/close`).reply(200, {
+    isClose: true,
     nonce: 3,
     numOpenThread: 0,
     threadRootHash: Connext.generateThreadRootHash({ threadInitialStates: [] }),

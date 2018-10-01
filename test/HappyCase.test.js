@@ -14,7 +14,7 @@ const Connext = require('../src/Connext')
 // on init
 const web3 = new Web3('http://localhost:8545')
 let client
-let ingridAddress
+let hubAddress
 let hubUrl = 'http://localhost:8080'
 let contractAddress = '0xdec16622bfe1f0cdaf6f7f20437d2a040cccb0a1'
 let watcherUrl = ''
@@ -34,7 +34,7 @@ let vcA, vcC, vcD, vcE
 describe('Connext happy case testing flow', () => {
   before('authenticate', async () => {
     accounts = await web3.eth.getAccounts()
-    ingridAddress = accounts[0]
+    hubAddress = accounts[0]
     partyA = accounts[1]
     partyB = accounts[2]
     partyC = accounts[3]
@@ -51,7 +51,7 @@ describe('Connext happy case testing flow', () => {
     const nonce = challengeJson.nonce
 
     const hash = genAuthHash(nonce, origin)
-    const signature = await web3.eth.sign(hash, ingridAddress)
+    const signature = await web3.eth.sign(hash, hubAddress)
 
     const authRes = await fetch(`${hubUrl}/auth/response`, {
       method: 'POST',
@@ -64,7 +64,7 @@ describe('Connext happy case testing flow', () => {
         signature,
         nonce,
         origin,
-        address: ingridAddress.toLowerCase()
+        address: hubAddress.toLowerCase()
       })
     })
 
@@ -75,7 +75,7 @@ describe('Connext happy case testing flow', () => {
     // init client instance
     client = new Connext({
       web3,
-      ingridAddress,
+      hubAddress,
       watcherUrl,
       hubUrl,
       contractAddress
@@ -271,7 +271,7 @@ describe('Connext happy case testing flow', () => {
     ).timeout(45000)
 
     it('should throw an error if hub has insufficient funds', async () => {
-      const balance = await client.web3.eth.getBalance(ingridAddress)
+      const balance = await client.web3.eth.getBalance(hubAddress)
       const deposit = Web3.utils
         .toBN(balance)
         .add(Web3.utils.toBN(Web3.utils.toWei('1000', 'ether')))
@@ -315,14 +315,14 @@ describe('Connext happy case testing flow', () => {
           isClose: false,
           channelId: subchanAI,
           nonce: state.nonce,
-          openVcs: state.openVcs,
-          vcRootHash: state.vcRootHash,
+          numOpenThread: state.numOpenThread,
+          threadRootHash: state.threadRootHash,
           partyA: partyA,
-          partyI: ingridAddress,
+          partyI: hubAddress,
           balanceA: Web3.utils.toBN(state.balanceA),
           balanceI: Web3.utils.toBN(state.balanceI)
         })
-        expect(signer.toLowerCase()).to.equal(ingridAddress.toLowerCase())
+        expect(signer.toLowerCase()).to.equal(hubAddress.toLowerCase())
       })
 
       it('hub should create update for lcB', async () => {
@@ -333,14 +333,14 @@ describe('Connext happy case testing flow', () => {
           isClose: false,
           channelId: subchanBI,
           nonce: state.nonce,
-          openVcs: state.openVcs,
-          vcRootHash: state.vcRootHash,
+          numOpenThread: state.numOpenThread,
+          threadRootHash: state.threadRootHash,
           partyA: partyB,
-          partyI: ingridAddress,
+          partyI: hubAddress,
           balanceA: Web3.utils.toBN(state.balanceA),
           balanceI: Web3.utils.toBN(state.balanceI)
         })
-        expect(signer.toLowerCase()).to.equal(ingridAddress.toLowerCase())
+        expect(signer.toLowerCase()).to.equal(hubAddress.toLowerCase())
       })
 
       // error cases
@@ -850,7 +850,7 @@ describe('Connext happy case testing flow', () => {
 
     it(`should close partyA's LC with the fast close flag`, async () => {
       prevBalA = await client.web3.eth.getBalance(partyA)
-      prevBalI = await client.web3.eth.getBalance(ingridAddress)
+      prevBalI = await client.web3.eth.getBalance(hubAddress)
       // send tx
       const response = await client.closeChannel(partyA)
       const tx = await client.web3.eth.getTransaction(response)
@@ -877,13 +877,13 @@ describe('Connext happy case testing flow', () => {
         'ether'
       )
       finalBalI = Web3.utils.fromWei(
-        await client.web3.eth.getBalance(ingridAddress),
+        await client.web3.eth.getBalance(hubAddress),
         'ether'
       )
       expect(Math.round(expected)).to.equal(Math.round(finalBalI))
     })
 
-    it(`should not let you close an LC with openVCs`, async () => {
+    it(`should not let you close an LC with numOpenThread`, async () => {
       try {
         const response = await client.closeChannel(partyB) // + 7 ETH
       } catch (e) {

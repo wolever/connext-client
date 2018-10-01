@@ -95,7 +95,7 @@ describe('openChannel()', function () {
       client.channelManagerInstance.methods = createStubbedContract()
 
       // stub hub methods
-      stubHub = await createStubbedHub(`${client.hubUrl}`, 'NO_LC')
+      stubHub = await createStubbedHub(`${client.hubUrl}`, 'NO_CHANNEL')
       stubHub.get(`/channel/a/${partyA.toLowerCase()}`).reply(200, {
         data: []
       })
@@ -115,9 +115,9 @@ describe('openChannel()', function () {
       const challenge = 3000
       subchanAI = await client.openChannel(
         initialDeposits,
+        challenge,
         null,
-        partyA,
-        challenge
+        partyA
       )
       expect(subchanAI).to.equal(
         '0x1000000000000000000000000000000000000000000000000000000000000000'
@@ -141,9 +141,9 @@ describe('openChannel()', function () {
       const challenge = 3000
       subchanAI = await client.openChannel(
         initialDeposits,
+        challenge,
         tokenAddress,
-        partyA,
-        challenge
+        partyA
       )
       expect(subchanAI).to.equal(
         '0x2000000000000000000000000000000000000000000000000000000000000000'
@@ -167,9 +167,9 @@ describe('openChannel()', function () {
       const challenge = 3000
       subchanAI = await client.openChannel(
         initialDeposits,
+        challenge,
         tokenAddress,
-        partyA,
-        challenge
+        partyA
       )
       expect(subchanAI).to.equal(
         '0x3000000000000000000000000000000000000000000000000000000000000000'
@@ -320,9 +320,10 @@ describe('openChannel()', function () {
       weiDeposit: Web3.utils.toBN(Web3.utils.toWei('5', 'ether')),
       tokenDepsit: Web3.utils.toBN(Web3.utils.toWei('5', 'ether'))
     }
+    const challenge = 300
     const tokenAddress = 'fail'
     try {
-      await client.openChannel(initialDeposits, tokenAddress)
+      await client.openChannel(initialDeposits, challenge, tokenAddress)
     } catch (e) {
       expect(e.statusCode).to.equal(200)
     }
@@ -336,8 +337,9 @@ describe('openChannel()', function () {
     const tokenAddress = client.contractAddress
     const sender = 'fail'
     const message = `[openChannel][sender] : ${sender} is not address.`
+    const challenge = 300
     try {
-      await client.openChannel(initialDeposits, tokenAddress, sender)
+      await client.openChannel(initialDeposits, challenge, tokenAddress, sender)
     } catch (e) {
       expect(e.statusCode).to.equal(200)
       expect(e.message).to.equal(message)
@@ -354,7 +356,7 @@ describe('openChannel()', function () {
     const challenge = 'fail'
     const message = `[openChannel][challenge] : ${challenge} is not a positive integer.`
     try {
-      await client.openChannel(initialDeposits, tokenAddress, sender, challenge)
+      await client.openChannel(initialDeposits, challenge, tokenAddress, sender)
     } catch (e) {
       expect(e.statusCode).to.equal(200)
       expect(e.message).to.equal(message)
@@ -371,7 +373,7 @@ describe('openChannel()', function () {
     const challenge = -25
     const message = `[openChannel][challenge] : ${challenge} is not a positive integer.`
     try {
-      await client.openChannel(initialDeposits, tokenAddress, sender, challenge)
+      await client.openChannel(initialDeposits, challenge, tokenAddress, sender)
     } catch (e) {
       expect(e.statusCode).to.equal(200)
       expect(e.message).to.equal(message)

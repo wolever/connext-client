@@ -13,11 +13,6 @@ const Connext = require('../../src/Connext')
 // named variables
 // on init
 const web3 = new Web3('http://localhost:8545')
-let client
-let ingridAddress
-let hubUrl = 'http://localhost:8080'
-let contractAddress = '0xdec16622bfe1f0cdaf6f7f20437d2a040cccb0a1'
-let watcherUrl = ''
 
 // for accounts
 let accounts
@@ -27,19 +22,8 @@ let partyB
 describe('createThreadStateUpdateFingerprint()', function () {
   before('init client and accounts', async () => {
     accounts = await web3.eth.getAccounts()
-    ingridAddress = accounts[0]
     partyA = accounts[1]
     partyB = accounts[2]
-    const authJson = { token: 'SwSNTnh3LlEJg1N9iiifFgOIKq998PGA' }
-
-    // init client instance
-    client = new Connext({
-      web3,
-      ingridAddress,
-      watcherUrl,
-      hubUrl,
-      contractAddress
-    })
   })
 
   it('should generate a hash of the input data using Web3', () => {
@@ -48,13 +32,13 @@ describe('createThreadStateUpdateFingerprint()', function () {
       nonce: 0,
       partyA,
       partyB,
-      ethBalanceA: Web3.utils.toBN('1000'),
-      ethBalanceB: Web3.utils.toBN('0'),
+      weiBalanceA: Web3.utils.toBN('1000'),
+      weiBalanceB: Web3.utils.toBN('0'),
       tokenBalanceA: Web3.utils.toBN('1000'),
       tokenBalanceB: Web3.utils.toBN('0')
     }
     const hash = Connext.createThreadStateUpdateFingerprint(state)
-    const hubBondEth = state.ethBalanceA.add(state.ethBalanceB)
+    const hubBondEth = state.weiBalanceA.add(state.weiBalanceB)
     const hubBondToken = state.tokenBalanceA.add(state.tokenBalanceB)
     const expectedHash = Web3.utils.soliditySha3(
       { type: 'bytes32', value: state.channelId },
@@ -63,8 +47,8 @@ describe('createThreadStateUpdateFingerprint()', function () {
       { type: 'address', value: state.partyB },
       { type: 'uint256', value: hubBondEth },
       { type: 'uint256', value: hubBondToken },
-      { type: 'uint256', value: state.ethBalanceA },
-      { type: 'uint256', value: state.ethBalanceB },
+      { type: 'uint256', value: state.weiBalanceA },
+      { type: 'uint256', value: state.weiBalanceB },
       { type: 'uint256', value: state.tokenBalanceA },
       { type: 'uint256', value: state.tokenBalanceB }
     )
@@ -77,8 +61,8 @@ describe('createThreadStateUpdateFingerprint()', function () {
         nonce: 0,
         partyA,
         partyB,
-        ethBalanceA: Web3.utils.toBN('1000'),
-        ethBalanceB: Web3.utils.toBN('0'),
+        weiBalanceA: Web3.utils.toBN('1000'),
+        weiBalanceB: Web3.utils.toBN('0'),
         tokenBalanceA: Web3.utils.toBN('1000'),
         tokenBalanceB: Web3.utils.toBN('0')
       }
@@ -95,8 +79,8 @@ describe('createThreadStateUpdateFingerprint()', function () {
         nonce: 0,
         partyA,
         partyB,
-        ethBalanceA: Web3.utils.toBN('1000'),
-        ethBalanceB: Web3.utils.toBN('0'),
+        weiBalanceA: Web3.utils.toBN('1000'),
+        weiBalanceB: Web3.utils.toBN('0'),
         tokenBalanceA: Web3.utils.toBN('1000'),
         tokenBalanceB: Web3.utils.toBN('0')
       }
@@ -113,8 +97,8 @@ describe('createThreadStateUpdateFingerprint()', function () {
         nonce: 0,
         partyA,
         partyB,
-        ethBalanceA: Web3.utils.toBN('1000'),
-        ethBalanceB: Web3.utils.toBN('0'),
+        weiBalanceA: Web3.utils.toBN('1000'),
+        weiBalanceB: Web3.utils.toBN('0'),
         tokenBalanceA: Web3.utils.toBN('1000'),
         tokenBalanceB: Web3.utils.toBN('0')
       }
@@ -130,8 +114,8 @@ describe('createThreadStateUpdateFingerprint()', function () {
         channelId: '0x0100000000000000000000000000000000000000000000000000000000000000',
         partyA,
         partyB,
-        ethBalanceA: Web3.utils.toBN('1000'),
-        ethBalanceB: Web3.utils.toBN('0'),
+        weiBalanceA: Web3.utils.toBN('1000'),
+        weiBalanceB: Web3.utils.toBN('0'),
         tokenBalanceA: Web3.utils.toBN('1000'),
         tokenBalanceB: Web3.utils.toBN('0')
       }
@@ -148,8 +132,8 @@ describe('createThreadStateUpdateFingerprint()', function () {
         nonce: null,
         partyA,
         partyB,
-        ethBalanceA: Web3.utils.toBN('1000'),
-        ethBalanceB: Web3.utils.toBN('0'),
+        weiBalanceA: Web3.utils.toBN('1000'),
+        weiBalanceB: Web3.utils.toBN('0'),
         tokenBalanceA: Web3.utils.toBN('1000'),
         tokenBalanceB: Web3.utils.toBN('0')
       }
@@ -165,8 +149,8 @@ describe('createThreadStateUpdateFingerprint()', function () {
         nonce: 'fail',
         partyA,
         partyB,
-        ethBalanceA: Web3.utils.toBN('1000'),
-        ethBalanceB: Web3.utils.toBN('0'),
+        weiBalanceA: Web3.utils.toBN('1000'),
+        weiBalanceB: Web3.utils.toBN('0'),
         tokenBalanceA: Web3.utils.toBN('1000'),
         tokenBalanceB: Web3.utils.toBN('0')
       }
@@ -182,8 +166,8 @@ describe('createThreadStateUpdateFingerprint()', function () {
         channelId: '0x0100000000000000000000000000000000000000000000000000000000000000',
         nonce: 0,
         partyB,
-        ethBalanceA: Web3.utils.toBN('1000'),
-        ethBalanceB: Web3.utils.toBN('0'),
+        weiBalanceA: Web3.utils.toBN('1000'),
+        weiBalanceB: Web3.utils.toBN('0'),
         tokenBalanceA: Web3.utils.toBN('1000'),
         tokenBalanceB: Web3.utils.toBN('0')
       }
@@ -200,8 +184,8 @@ describe('createThreadStateUpdateFingerprint()', function () {
         nonce: 0,
         partyA: null,
         partyB,
-        ethBalanceA: Web3.utils.toBN('1000'),
-        ethBalanceB: Web3.utils.toBN('0'),
+        weiBalanceA: Web3.utils.toBN('1000'),
+        weiBalanceB: Web3.utils.toBN('0'),
         tokenBalanceA: Web3.utils.toBN('1000'),
         tokenBalanceB: Web3.utils.toBN('0')
       }
@@ -218,8 +202,8 @@ describe('createThreadStateUpdateFingerprint()', function () {
         nonce: 0,
         partyA: 'fail',
         partyB,
-        ethBalanceA: Web3.utils.toBN('1000'),
-        ethBalanceB: Web3.utils.toBN('0'),
+        weiBalanceA: Web3.utils.toBN('1000'),
+        weiBalanceB: Web3.utils.toBN('0'),
         tokenBalanceA: Web3.utils.toBN('1000'),
         tokenBalanceB: Web3.utils.toBN('0')
       }
@@ -235,8 +219,8 @@ describe('createThreadStateUpdateFingerprint()', function () {
         channelId: '0x0100000000000000000000000000000000000000000000000000000000000000',
         nonce: 0,
         partyA,
-        ethBalanceA: Web3.utils.toBN('1000'),
-        ethBalanceB: Web3.utils.toBN('0'),
+        weiBalanceA: Web3.utils.toBN('1000'),
+        weiBalanceB: Web3.utils.toBN('0'),
         tokenBalanceA: Web3.utils.toBN('1000'),
         tokenBalanceB: Web3.utils.toBN('0')
       }
@@ -253,8 +237,8 @@ describe('createThreadStateUpdateFingerprint()', function () {
         nonce: 0,
         partyA,
         partyB: null,
-        ethBalanceA: Web3.utils.toBN('1000'),
-        ethBalanceB: Web3.utils.toBN('0'),
+        weiBalanceA: Web3.utils.toBN('1000'),
+        weiBalanceB: Web3.utils.toBN('0'),
         tokenBalanceA: Web3.utils.toBN('1000'),
         tokenBalanceB: Web3.utils.toBN('0')
       }
@@ -271,8 +255,8 @@ describe('createThreadStateUpdateFingerprint()', function () {
         nonce: 0,
         partyA,
         partyB,
-        ethBalanceA: Web3.utils.toBN('1000'),
-        ethBalanceB: Web3.utils.toBN('0'),
+        weiBalanceA: Web3.utils.toBN('1000'),
+        weiBalanceB: Web3.utils.toBN('0'),
         tokenBalanceA: Web3.utils.toBN('1000'),
         tokenBalanceB: Web3.utils.toBN('0')
       }
@@ -283,13 +267,13 @@ describe('createThreadStateUpdateFingerprint()', function () {
       }
     })
 
-    it('should fail if ethBalanceA doesnt exist', () => {
+    it('should fail if weiBalanceA doesnt exist', () => {
       const state = {
         channelId: '0x0100000000000000000000000000000000000000000000000000000000000000',
         nonce: 0,
         partyA,
         partyB,
-        ethBalanceB: Web3.utils.toBN('0'),
+        weiBalanceB: Web3.utils.toBN('0'),
         tokenBalanceA: Web3.utils.toBN('1000'),
         tokenBalanceB: Web3.utils.toBN('0')
       }
@@ -300,14 +284,14 @@ describe('createThreadStateUpdateFingerprint()', function () {
       }
     })
 
-    it('should fail if ethBalanceA is null', () => {
+    it('should fail if weiBalanceA is null', () => {
       const state = {
         channelId: '0x0100000000000000000000000000000000000000000000000000000000000000',
         nonce: 0,
         partyA,
         partyB,
-        ethBalanceA: null,
-        ethBalanceB: Web3.utils.toBN('0'),
+        weiBalanceA: null,
+        weiBalanceB: Web3.utils.toBN('0'),
         tokenBalanceA: Web3.utils.toBN('1000'),
         tokenBalanceB: Web3.utils.toBN('0')
       }
@@ -318,14 +302,14 @@ describe('createThreadStateUpdateFingerprint()', function () {
       }
     })
 
-    it('should fail if ethBalanceA is invalid', () => {
+    it('should fail if weiBalanceA is invalid', () => {
       const state = {
         channelId: '0x0100000000000000000000000000000000000000000000000000000000000000',
         nonce: 0,
         partyA,
         partyB,
-        ethBalanceA: 'fail',
-        ethBalanceB: Web3.utils.toBN('0'),
+        weiBalanceA: 'fail',
+        weiBalanceB: Web3.utils.toBN('0'),
         tokenBalanceA: Web3.utils.toBN('1000'),
         tokenBalanceB: Web3.utils.toBN('0')
       }
@@ -336,13 +320,13 @@ describe('createThreadStateUpdateFingerprint()', function () {
       }
     })
 
-    it('should fail if ethBalanceB doesnt exist', () => {
+    it('should fail if weiBalanceB doesnt exist', () => {
       const state = {
         channelId: '0x0100000000000000000000000000000000000000000000000000000000000000',
         nonce: 0,
         partyA,
         partyB,
-        ethBalanceA: Web3.utils.toBN('1000'),
+        weiBalanceA: Web3.utils.toBN('1000'),
         tokenBalanceA: Web3.utils.toBN('1000'),
         tokenBalanceB: Web3.utils.toBN('0')
       }
@@ -353,14 +337,14 @@ describe('createThreadStateUpdateFingerprint()', function () {
       }
     })
 
-    it('should fail if ethBalanceB is null', () => {
+    it('should fail if weiBalanceB is null', () => {
       const state = {
         channelId: '0x0100000000000000000000000000000000000000000000000000000000000000',
         nonce: 0,
         partyA,
         partyB,
-        ethBalanceA: Web3.utils.toBN('1000'),
-        ethBalanceB: null,
+        weiBalanceA: Web3.utils.toBN('1000'),
+        weiBalanceB: null,
         tokenBalanceA: Web3.utils.toBN('1000'),
         tokenBalanceB: Web3.utils.toBN('0')
       }
@@ -371,14 +355,14 @@ describe('createThreadStateUpdateFingerprint()', function () {
       }
     })
 
-    it('should fail if ethBalanceB is invalid', () => {
+    it('should fail if weiBalanceB is invalid', () => {
       const state = {
         channelId: '0x0100000000000000000000000000000000000000000000000000000000000000',
         nonce: 0,
         partyA,
         partyB,
-        ethBalanceA: Web3.utils.toBN('1000'),
-        ethBalanceB: 'fail',
+        weiBalanceA: Web3.utils.toBN('1000'),
+        weiBalanceB: 'fail',
         tokenBalanceA: Web3.utils.toBN('1000'),
         tokenBalanceB: Web3.utils.toBN('0')
       }
@@ -395,8 +379,8 @@ describe('createThreadStateUpdateFingerprint()', function () {
         nonce: 0,
         partyA,
         partyB,
-        ethBalanceA: Web3.utils.toBN('1000'),
-        ethBalanceB: Web3.utils.toBN('0'),
+        weiBalanceA: Web3.utils.toBN('1000'),
+        weiBalanceB: Web3.utils.toBN('0'),
         tokenBalanceB: Web3.utils.toBN('0')
       }
       try {
@@ -412,8 +396,8 @@ describe('createThreadStateUpdateFingerprint()', function () {
         nonce: 0,
         partyA,
         partyB,
-        ethBalanceA: Web3.utils.toBN('1000'),
-        ethBalanceB: Web3.utils.toBN('0'),
+        weiBalanceA: Web3.utils.toBN('1000'),
+        weiBalanceB: Web3.utils.toBN('0'),
         tokenBalanceA: null,
         tokenBalanceB: Web3.utils.toBN('0')
       }
@@ -430,8 +414,8 @@ describe('createThreadStateUpdateFingerprint()', function () {
         nonce: 0,
         partyA,
         partyB,
-        ethBalanceA: Web3.utils.toBN('1000'),
-        ethBalanceB: Web3.utils.toBN('0'),
+        weiBalanceA: Web3.utils.toBN('1000'),
+        weiBalanceB: Web3.utils.toBN('0'),
         tokenBalanceA: 'fail',
         tokenBalanceB: Web3.utils.toBN('0')
       }
@@ -448,8 +432,8 @@ describe('createThreadStateUpdateFingerprint()', function () {
         nonce: 0,
         partyA,
         partyB,
-        ethBalanceA: Web3.utils.toBN('1000'),
-        ethBalanceB: Web3.utils.toBN('0'),
+        weiBalanceA: Web3.utils.toBN('1000'),
+        weiBalanceB: Web3.utils.toBN('0'),
         tokenBalanceA: Web3.utils.toBN('1000')
       }
       try {
@@ -465,8 +449,8 @@ describe('createThreadStateUpdateFingerprint()', function () {
         nonce: 0,
         partyA,
         partyB,
-        ethBalanceA: Web3.utils.toBN('1000'),
-        ethBalanceB: Web3.utils.toBN('0'),
+        weiBalanceA: Web3.utils.toBN('1000'),
+        weiBalanceB: Web3.utils.toBN('0'),
         tokenBalanceA: Web3.utils.toBN('1000'),
         tokenBalanceB: null
       }
@@ -483,8 +467,8 @@ describe('createThreadStateUpdateFingerprint()', function () {
         nonce: 0,
         partyA,
         partyB,
-        ethBalanceA: Web3.utils.toBN('1000'),
-        ethBalanceB: Web3.utils.toBN('0'),
+        weiBalanceA: Web3.utils.toBN('1000'),
+        weiBalanceB: Web3.utils.toBN('0'),
         tokenBalanceA: Web3.utils.toBN('1000'),
         tokenBalanceB: 'fail'
       }

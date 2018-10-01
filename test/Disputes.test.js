@@ -15,7 +15,7 @@ global.fetch = fetch
 // on init
 let web3
 let client
-let ingridAddress
+let hubAddress
 let watcherUrl = process.env.WATCHER_URL || ''
 let hubUrl = process.env.INGRID_URL || 'http://localhost:8080'
 let contractAddress = '0x31713144d9ae2501e644a418dd9035ed840b1660'
@@ -45,7 +45,7 @@ describe('Connext dispute cases', function () {
       web3 = new Web3(`ws://localhost:${port}`)
       // set account vars
       accounts = await web3.eth.getAccounts()
-      ingridAddress = accounts[0]
+      hubAddress = accounts[0]
       partyA = accounts[1]
       partyB = accounts[2]
       // generate hub auth
@@ -59,7 +59,7 @@ describe('Connext dispute cases', function () {
       const nonce = challengeJson.nonce
 
       const hash = genAuthHash(nonce, origin)
-      const signature = await web3.eth.sign(hash, ingridAddress)
+      const signature = await web3.eth.sign(hash, hubAddress)
 
       const authRes = await fetch(`${hubUrl}/auth/response`, {
         method: 'POST',
@@ -72,7 +72,7 @@ describe('Connext dispute cases', function () {
           signature,
           nonce,
           origin,
-          address: ingridAddress.toLowerCase()
+          address: hubAddress.toLowerCase()
         })
       })
 
@@ -82,7 +82,7 @@ describe('Connext dispute cases', function () {
       // init client instance
       client = new Connext({
         web3,
-        ingridAddress,
+        hubAddress,
         watcherUrl,
         hubUrl,
         contractAddress
@@ -333,7 +333,7 @@ describe('Connext dispute cases', function () {
       // }
       // get previous balances
       const prevBalA = await client.web3.eth.getBalance(partyA)
-      const prevBalI = await client.web3.eth.getBalance(ingridAddress)
+      const prevBalI = await client.web3.eth.getBalance(hubAddress)
 
       const response = await client.withdraw(partyA)
       console.log(response)
@@ -356,7 +356,7 @@ describe('Connext dispute cases', function () {
         'ether'
       )
       const finalBalI = Web3.utils.fromWei(
-        await client.web3.eth.getBalance(ingridAddress),
+        await client.web3.eth.getBalance(hubAddress),
         'ether'
       )
       expect(Math.round(expectedA)).to.equal(Math.round(finalBalA))

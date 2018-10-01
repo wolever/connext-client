@@ -281,7 +281,7 @@ class Connext {
    * const connext = new Connext(web3)
    * @param {Object} params - the constructor object
    * @param {Web3} params.web3 - the web3 instance
-   * @param {String} params.ingridAddress - ETH address of intermediary (defaults to Connext hub)
+   * @param {String} params.hubAddress - ETH address of intermediary (defaults to Connext hub)
    * @param {String} params.watcherUrl - url of watcher server (defaults to Connext hub)
    * @param {String} params.hubUrl - url of intermediary server (defaults to Connext hub)
    * @param {String} params.contractAddress - address of deployed contract (defaults to latest deployed contract)
@@ -338,11 +338,11 @@ class Connext {
    * @param {Object} initialDeposits - deposits in wei (must have at least one deposit)
    * @param {BN} initialDeposits.weiDeposit - deposit in eth (may be null)
    * @param {BN} initialDeposits.tokenDeposit - deposit in tokens (may be null)
+   * @param {Number} challenge - challenge period in seconds
    * @param {String} sender - (optional) counterparty with hub in ledger channel, defaults to accounts[0]
-   * @param {Number} challenge - (optional) challenge period in seconds
    * @returns {Promise} resolves to the ledger channel id of the created channel
    */
-  async openChannel (initialDeposits, tokenAddress = null, sender = null, challenge = null) {
+  async openChannel (initialDeposits, challenge, tokenAddress = null, sender = null) {
     // validate params
     const methodName = 'openChannel'
     const isValidDepositObject = { presence: true, isValidDepositObject: true }
@@ -353,9 +353,12 @@ class Connext {
       methodName,
       'initialDeposits'
     )
+    Connext.validatorsResponseToError(
+      validate.single(challenge, isPositiveInt),
+      methodName,
+      'challenge'
+    )
     if (tokenAddress) {
-      // should probably do a better check for contract specific addresses
-      // maybe a whitelisted token address array
       Connext.validatorsResponseToError(
         validate.single(tokenAddress, isAddress),
         methodName,
@@ -372,16 +375,7 @@ class Connext {
       const accounts = await this.web3.eth.getAccounts()
       sender = accounts[0].toLowerCase()
     }
-    if (challenge) {
-      Connext.validatorsResponseToError(
-        validate.single(challenge, isPositiveInt),
-        methodName,
-        'challenge'
-      )
-    } else {
-      // get challenge timer from ingrid
-      challenge = await this.getChallengeTimer()
-    }
+    
     // determine channel type
     const { weiDeposit, tokenDeposit } = initialDeposits
     let channelType
@@ -606,7 +600,9 @@ class Connext {
       )
     }
     // subchannels in right state
-    if (CHANNEL_STATES[subchanB.state] !== 1 || CHANNEL_STATES[subchanA.state] !== 1) {
+    if (
+      subchanB.status !== Object.keys(CHANNEL_STATES)[CHANNEL_STATES.JOINED] || subchanA.status !== Object.keys(CHANNEL_STATES)[CHANNEL_STATES.JOINED]
+      ) {
       throw new ThreadOpenError(
         methodName,
         'One or more required subchannels are in the incorrect state'
@@ -682,7 +678,7 @@ class Connext {
     // ingrid should add vc params to db
     let response
     try {
-      response = await this.networking.post(`virtualchannel/`, {
+      response = await this.networking.post(`thread/`, {
         channelId,
         partyA: sender.toLowerCase(),
         partyB: to.toLowerCase(),
@@ -1134,7 +1130,7 @@ class Connext {
       throw new ThreadCloseError(methodName, 'Thread not found')
     }
     // must be opened or opening
-    if (THREAD_STATES[thread.state] !== THREAD_STATES.VCS_OPENING && THREAD_STATES[thread.state] !== THREAD_STATES.VCS_OPENED) {
+    if (THREAD_STATES[thread.status] !== THREAD_STATES.OPENED && THREAD_STATES[thread.status] !== THREAD_STATES.JOINED) {
       throw new ThreadCloseError(methodName, 'Thread is in invalid state')
     }
     const latestThreadState = await this.getLatestThreadState(threadId)
@@ -2616,7 +2612,7 @@ class Connext {
   // ***************************************
 
   async createChannelContractHandler ({
-    ingridAddress = this.hubAddress,
+    hubAddress = this.hubAddress,
     channelId,
     initialDeposits,
     challenge,
@@ -2631,9 +2627,9 @@ class Connext {
     const isPositiveInt = { presence: true, isPositiveInt: true }
     const isValidDepositObject = { presence: true, isValidDepositObject: true}
     Connext.validatorsResponseToError(
-      validate.single(ingridAddress, isAddress),
+      validate.single(hubAddress, isAddress),
       methodName,
-      'ingridAddress'
+      'hubAddress'
     )
     Connext.validatorsResponseToError(
       validate.single(channelId, isHexStrict),
@@ -2669,7 +2665,7 @@ class Connext {
     }
 
     // verify partyA !== partyI
-    if (sender === ingridAddress) {
+    if (sender === hubAddress) {
       throw new ChannelOpenError(methodName, 'Cannot open a channel with yourself')
     }
 
@@ -2680,7 +2676,7 @@ class Connext {
         result = await this.channelManagerInstance.methods
           .createChannel(
             channelId, 
-            ingridAddress, 
+            hubAddress, 
             challenge, 
             tokenAddress, 
             [initialDeposits.weiDeposit, Web3.utils.toBN('0')]
@@ -2694,7 +2690,7 @@ class Connext {
       case CHANNEL_TYPES.TOKEN: // TOKEN
         // approve token transfer
         token = new this.web3.eth.Contract(tokenAbi, tokenAddress)
-        tokenApproval = await token.methods.approve(ingridAddress, initialDeposits.tokenDeposit).send( {
+        tokenApproval = await token.methods.approve(hubAddress, initialDeposits.tokenDeposit).send( {
           from: sender,
           gas: 750000
         })
@@ -2702,7 +2698,7 @@ class Connext {
           result = await this.channelManagerInstance.methods
           .createChannel(
             channelId, 
-            ingridAddress, 
+            hubAddress, 
             challenge, 
             tokenAddress, 
             [Web3.utils.toBN('0'), initialDeposits.tokenDeposit]
@@ -2718,14 +2714,14 @@ class Connext {
       case CHANNEL_TYPES.TOKEN_ETH: // ETH/TOKEN
         // approve token transfer
         token = new this.web3.eth.Contract(tokenAbi, tokenAddress)
-        tokenApproval = await token.approve.call(ingridAddress, initialDeposits.tokenDeposit, {
+        tokenApproval = await token.approve.call(hubAddress, initialDeposits.tokenDeposit, {
           from: sender
         })
         if (tokenApproval) {
           result = await this.channelManagerInstance.methods
             .createChannel(
               channelId, 
-              ingridAddress, 
+              hubAddress, 
               challenge, 
               tokenAddress, 
               [initialDeposits.weiDeposit, initialDeposits.tokenDeposit]
@@ -3764,7 +3760,7 @@ class Connext {
       'threadId'
     )
     try {
-      const response = await this.networking.get(`virtualchannel/${threadId}`)
+      const response = await this.networking.get(`thread/${threadId}`)
       return response.data
     } catch (e) {
       if (e.status === 400) {
@@ -3796,42 +3792,16 @@ class Connext {
       methodName,
       'partyB'
     )
-    let openResponse
-    try {
-      openResponse = await this.networking.get(
-        `virtualchannel/a/${partyA.toLowerCase()}/b/${partyB.toLowerCase()}/open`
-      )
-      if (openResponse.data.length === 0) {
-        openResponse = null
-      } else {
-        return openResponse.data
-      }
-    } catch (e) {
-      if (e.status === 400) {
-        // no open channel
-        openResponse = null
-      }
+    const openResponse = await this.networking.get(
+      `thread/a/${partyA.toLowerCase()}/b/${partyB.toLowerCase()}`
+    )
+    if (openResponse.data && openResponse.data.length === 0) {
+      return null
+    } else if (openResponse.data && openResponse.data.length === 1){
+      return openResponse.data[0]
+    } else {
+      return openResponse.data
     }
-
-    if (openResponse === null) {
-      // channel between parties is opening
-      try {
-        openResponse = await this.networking.get(
-          `virtualchannel/address/${partyA.toLowerCase()}/opening`
-        )
-        if (openResponse.data.length === 0) {
-          openResponse = null
-        } else {
-          return openResponse.data
-        }
-      } catch (e) {
-        if (e.status === 400) {
-          // no open channel
-          openResponse = null
-        }
-      }
-    }
-    return openResponse
   }
 
   async getOtherSubchanId (threadId) {
@@ -3904,11 +3874,6 @@ class Connext {
     }
   }
 
-  async getChallengeTimer () {
-    const response = await this.networking.get(`channel/challenge`)
-    return response.data.challenge
-  }
-
   async getLatestThreadState (channelId) {
     // validate params
     const methodName = 'getLatestThreadState'
@@ -3919,7 +3884,7 @@ class Connext {
       'channelId'
     )
     const response = await this.networking.get(
-      `virtualchannel/${channelId}/update/latest`
+      `thread/${channelId}/update/latest`
     )
     return response.data
   }
@@ -3934,7 +3899,7 @@ class Connext {
       'channelId'
     )
     const response = await this.networking.get(
-      `channel/${channelId}/vcinitialstates`
+      `channel/${channelId}/threadinitialstates`
     )
     return response.data
   }
@@ -4070,7 +4035,7 @@ class Connext {
     )
 
     const response = await this.networking.post(
-      `virtualchannel/${channelId}/close`,
+      `thread/${channelId}/close`,
       {
         sig,
         signer
@@ -4147,11 +4112,7 @@ class Connext {
     if (CHANNEL_STATES[channel.status] !== 1) {
       throw new ThreadOpenError(methodName, 'Invalid subchannel state')
     }
-    // vcId should be unique
-    let thread = await this.getThreadById(threadInitialState.channelId)
-    if (thread && THREAD_STATES[thread.state] !== 0) {
-      throw new ThreadOpenError(methodName, 'Invalid channel id in threadInitialState')
-    }
+
     // vc0 validation
     if (threadInitialState.nonce !== 0) {
       throw new ThreadOpenError(methodName, 'Thread nonce is nonzero')
