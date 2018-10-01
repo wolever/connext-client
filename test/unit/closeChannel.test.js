@@ -3,7 +3,7 @@ const expect = chai.expect
 const Web3 = require('web3')
 const fetch = require('fetch-cookie')(require('node-fetch'))
 const nock = require('nock')
-const { createStubbedHub } = require('../helpers/stubs')
+const { createStubbedContract, createStubbedHub } = require('../helpers/stubs')
 
 global.fetch = fetch
 
@@ -25,7 +25,7 @@ let partyB
 let partyC
 let partyD
 
-describe('closeThread()', () => {
+describe('closeChannel()', () => {
   before('init client and accounts', async () => {
     accounts = await web3.eth.getAccounts()
     ingridAddress = accounts[0]
@@ -49,132 +49,48 @@ describe('closeThread()', () => {
   describe('mocked hub and contract', () => {
     let stubHub
     beforeEach('create stubbed hub methods', async () => {
+      // stub contract methods
+      client.channelManagerInstance.methods = createStubbedContract()
       // activate nock
       if (!nock.isActive()) nock.activate()
       // stub hub methods
       stubHub = await createStubbedHub(
         `${client.hubUrl}`,
-        'OPEN_LC_OPEN_VC',
+        'OPEN_LC_CLOSED_VC',
         'UPDATED'
       )
     })
 
-    it('should close the channel with the given ETH/TOKEN threadId', async () => {
-      const threadId =
-        '0x0100000000000000000000000000000000000000000000000000000000000000'
-      const sender = partyA
-      const sigItoA = await client.closeThread(threadId, sender)
-      const channelId =
-        '0x1000000000000000000000000000000000000000000000000000000000000000'
-      const sigParams = {
-        channelId,
-        sig: sigItoA,
-        isClose: false,
-        partyA: sender.toLowerCase(),
-        partyI: ingridAddress.toLowerCase(),
-        ethBalanceA: Web3.utils.toBN(Web3.utils.toWei('4.9', 'ether')),
-        ethBalanceI: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
-        tokenBalanceA: Web3.utils.toBN(Web3.utils.toWei('4.9', 'ether')),
-        tokenBalanceI: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
-        openVcs: 0,
-        nonce: 2,
-        vcRootHash: Connext.generateThreadRootHash({ threadInitialStates: [] })
-      }
-      const signer = Connext.recoverSignerFromChannelStateUpdate(sigParams)
-      expect(signer.toLowerCase()).to.equal(ingridAddress.toLowerCase())
+    it('should closeChannel from the ETH/TOKEN channel', async () => {
+      const response = await client.closeChannel(partyA)
+      expect(response).to.equal('transactionHash')
     })
 
-    it('should close the channel with the given ETH threadId', async () => {
-      const threadId =
-        '0x0200000000000000000000000000000000000000000000000000000000000000'
-      const sender = partyC
-      const sigItoA = await client.closeThread(threadId, sender)
-      const channelId =
-        '0x3000000000000000000000000000000000000000000000000000000000000000'
-      const sigParams = {
-        channelId,
-        sig: sigItoA,
-        isClose: false,
-        partyA: sender.toLowerCase(),
-        partyI: ingridAddress.toLowerCase(),
-        ethBalanceA: Web3.utils.toBN(Web3.utils.toWei('4.9', 'ether')),
-        ethBalanceI: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
-        tokenBalanceA: Web3.utils.toBN('0'),
-        tokenBalanceI: Web3.utils.toBN('0'),
-        openVcs: 0,
-        nonce: 2,
-        vcRootHash: Connext.generateThreadRootHash({ threadInitialStates: [] })
-      }
-      const signer = Connext.recoverSignerFromChannelStateUpdate(sigParams)
-      expect(signer.toLowerCase()).to.equal(ingridAddress.toLowerCase())
+    it('should closeChannel from the ETH/TOKEN recipient channel', async () => {
+      const response = await client.closeChannel(partyB)
+      expect(response).to.equal('transactionHash')
     })
 
-    it('should close the channel with the given TOKEN threadId', async () => {
-      const threadId =
-        '0x0300000000000000000000000000000000000000000000000000000000000000'
-      const sender = partyD
-      const sigItoA = await client.closeThread(threadId, sender)
-      const channelId =
-        '0x4000000000000000000000000000000000000000000000000000000000000000'
-      const sigParams = {
-        channelId,
-        sig: sigItoA,
-        isClose: false,
-        partyA: sender.toLowerCase(),
-        partyI: ingridAddress.toLowerCase(),
-        ethBalanceA: Web3.utils.toBN('0'),
-        ethBalanceI: Web3.utils.toBN('0'),
-        tokenBalanceA: Web3.utils.toBN(Web3.utils.toWei('4.9', 'ether')),
-        tokenBalanceI: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
-        openVcs: 0,
-        nonce: 2,
-        vcRootHash: Connext.generateThreadRootHash({ threadInitialStates: [] })
-      }
-      const signer = Connext.recoverSignerFromChannelStateUpdate(sigParams)
-      expect(signer.toLowerCase()).to.equal(ingridAddress.toLowerCase())
+    it('should closeChannel from the ETH channel', async () => {
+      const response = await client.closeChannel(partyC)
+      expect(response).to.equal('transactionHash')
     })
 
-    afterEach('restore hub', () => {
+    it('should closeChannel from the TOKEN channel', async () => {
+      const response = await client.closeChannel(partyD)
+      expect(response).to.equal('transactionHash')
+    })
+
+    afterEach('restore hub and contract', () => {
       nock.restore()
       nock.cleanAll()
     })
   })
 
   describe('parameter validation', () => {
-    it('should fail if no threadId is provided', async () => {
+    it('should fail if an invalid sender is provided', async () => {
       try {
-        await client.closeThread()
-      } catch (e) {
-        expect(e.statusCode).to.equal(200)
-      }
-    })
-
-    it('should fail if null threadId is provided', async () => {
-      const threadId = null
-      const sender = partyD
-      try {
-        await client.closeThread(threadId, sender)
-      } catch (e) {
-        expect(e.statusCode).to.equal(200)
-      }
-    })
-
-    it('should fail if invalid threadId is provided', async () => {
-      const threadId = 'fail'
-      const sender = partyD
-      try {
-        await client.closeThread(threadId, sender)
-      } catch (e) {
-        expect(e.statusCode).to.equal(200)
-      }
-    })
-
-    it('should fail if invalid sender is provided', async () => {
-      const threadId =
-        '0x0300000000000000000000000000000000000000000000000000000000000000'
-      const sender = 'fail'
-      try {
-        await client.closeThread(threadId, sender)
+        await client.closeChannel('fail')
       } catch (e) {
         expect(e.statusCode).to.equal(200)
       }
