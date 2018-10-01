@@ -14,7 +14,7 @@ const Connext = require('../../src/Connext')
 // on init
 const web3 = new Web3('http://localhost:8545')
 let client
-let ingridAddress
+let hubAddress
 let hubUrl = 'http://localhost:8080'
 let contractAddress = '0xdec16622bfe1f0cdaf6f7f20437d2a040cccb0a1'
 let watcherUrl = ''
@@ -26,7 +26,7 @@ let partyA, partyB, partyC, partyD
 describe('createChannelStateUpdate()', function () {
   before('init client and accounts', async () => {
     accounts = await web3.eth.getAccounts()
-    ingridAddress = accounts[0]
+    hubAddress = accounts[0]
     partyA = accounts[1]
     partyB = accounts[2]
     partyC = accounts[3]
@@ -36,7 +36,7 @@ describe('createChannelStateUpdate()', function () {
     // init client instance
     client = new Connext({
       web3,
-      ingridAddress,
+      hubAddress,
       watcherUrl,
       hubUrl,
       contractAddress
@@ -50,24 +50,29 @@ describe('createChannelStateUpdate()', function () {
       if (!nock.isActive()) nock.activate()
 
       // stub hub methods
-      stubHub = await createStubbedHub(`${client.hubUrl}`, 'OPEN_LC_NO_VC')
+      stubHub = await createStubbedHub(
+        `${client.hubUrl}`,
+        'OPEN_CHANNEL_NO_THREAD'
+      )
     })
 
     it('should sign a TOKEN/ETH state update', async () => {
       const update = {
         channelId: '0x1000000000000000000000000000000000000000000000000000000000000000',
         nonce: 0,
-        openVcs: 0,
-        vcRootHash: Connext.generateThreadRootHash({ threadInitialStates: [] }),
+        numOpenThread: 0,
+        threadRootHash: Connext.generateThreadRootHash({
+          threadInitialStates: []
+        }),
         partyA,
-        partyI: ingridAddress,
+        partyI: hubAddress,
         balanceA: {
           tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('5', 'ether')),
-          ethDeposit: Web3.utils.toBN(Web3.utils.toWei('5', 'ether'))
+          weiDeposit: Web3.utils.toBN(Web3.utils.toWei('5', 'ether'))
         },
         balanceI: {
           tokenDeposit: Web3.utils.toBN('0'),
-          ethDeposit: Web3.utils.toBN('0')
+          weiDeposit: Web3.utils.toBN('0')
         },
         signer: partyA
       }
@@ -77,12 +82,12 @@ describe('createChannelStateUpdate()', function () {
         sig,
         isClose: false,
         nonce: update.nonce,
-        openVcs: update.openVcs,
-        vcRootHash: update.vcRootHash,
+        numOpenThread: update.numOpenThread,
+        threadRootHash: update.threadRootHash,
         partyA,
         partyI: update.partyI,
-        ethBalanceA: update.balanceA.ethDeposit,
-        ethBalanceI: update.balanceI.ethDeposit,
+        weiBalanceA: update.balanceA.weiDeposit,
+        weiBalanceI: update.balanceI.weiDeposit,
         tokenBalanceI: update.balanceI.tokenDeposit,
         tokenBalanceA: update.balanceA.tokenDeposit
       })
@@ -93,17 +98,19 @@ describe('createChannelStateUpdate()', function () {
       const update = {
         channelId: '0x3000000000000000000000000000000000000000000000000000000000000000',
         nonce: 0,
-        openVcs: 0,
-        vcRootHash: Connext.generateThreadRootHash({ threadInitialStates: [] }),
+        numOpenThread: 0,
+        threadRootHash: Connext.generateThreadRootHash({
+          threadInitialStates: []
+        }),
         partyA: partyC,
-        partyI: ingridAddress,
+        partyI: hubAddress,
         balanceA: {
           tokenDeposit: null,
-          ethDeposit: Web3.utils.toBN(Web3.utils.toWei('5', 'ether'))
+          weiDeposit: Web3.utils.toBN(Web3.utils.toWei('5', 'ether'))
         },
         balanceI: {
           tokenDeposit: null,
-          ethDeposit: Web3.utils.toBN('0')
+          weiDeposit: Web3.utils.toBN('0')
         },
         signer: partyC
       }
@@ -113,12 +120,12 @@ describe('createChannelStateUpdate()', function () {
         sig,
         isClose: false,
         nonce: update.nonce,
-        openVcs: update.openVcs,
-        vcRootHash: update.vcRootHash,
+        numOpenThread: update.numOpenThread,
+        threadRootHash: update.threadRootHash,
         partyA: partyC,
         partyI: update.partyI,
-        ethBalanceA: update.balanceA.ethDeposit,
-        ethBalanceI: update.balanceI.ethDeposit,
+        weiBalanceA: update.balanceA.weiDeposit,
+        weiBalanceI: update.balanceI.weiDeposit,
         tokenBalanceI: Web3.utils.toBN('0'),
         tokenBalanceA: Web3.utils.toBN('0')
       })
@@ -129,17 +136,19 @@ describe('createChannelStateUpdate()', function () {
       const update = {
         channelId: '0x4000000000000000000000000000000000000000000000000000000000000000',
         nonce: 0,
-        openVcs: 0,
-        vcRootHash: Connext.generateThreadRootHash({ threadInitialStates: [] }),
+        numOpenThread: 0,
+        threadRootHash: Connext.generateThreadRootHash({
+          threadInitialStates: []
+        }),
         partyA: partyD,
-        partyI: ingridAddress,
+        partyI: hubAddress,
         balanceA: {
           tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('5', 'ether')),
-          ethDeposit: null
+          weiDeposit: null
         },
         balanceI: {
           tokenDeposit: Web3.utils.toBN('0'),
-          ethDeposit: null
+          weiDeposit: null
         },
         signer: partyD
       }
@@ -149,12 +158,12 @@ describe('createChannelStateUpdate()', function () {
         sig,
         isClose: false,
         nonce: update.nonce,
-        openVcs: update.openVcs,
-        vcRootHash: update.vcRootHash,
+        numOpenThread: update.numOpenThread,
+        threadRootHash: update.threadRootHash,
         partyA: partyD,
         partyI: update.partyI,
-        ethBalanceA: Web3.utils.toBN('0'),
-        ethBalanceI: Web3.utils.toBN('0'),
+        weiBalanceA: Web3.utils.toBN('0'),
+        weiBalanceI: Web3.utils.toBN('0'),
         tokenBalanceI: update.balanceI.tokenDeposit,
         tokenBalanceA: update.balanceA.tokenDeposit
       })
