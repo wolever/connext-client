@@ -1264,8 +1264,9 @@ class Connext {
       sender = accounts[0].toLowerCase()
     }
     const channel = await this.getChannelByPartyA(sender.toLowerCase())
+    console.log('channel:', channel)
     // channel must be open
-    if (CHANNEL_STATES[channel.status] !== CHANNEL_STATES.LCS_OPENED) {
+    if (CHANNEL_STATES[channel.status] !== CHANNEL_STATES.JOINED) {
       throw new ChannelCloseError(methodName, 'Channel is in invalid state')
     }
     // sender must be channel member
@@ -1277,7 +1278,8 @@ class Connext {
     }
 
     // get latest i-signed lc state update
-    let channelState = await this.getLatestChannelState(channel.channelId, ['sigI'])
+    let channelState = await this.getLatestChannelState(channel.channelId)
+    console.log('channelState:', channelState)
     if (channelState) {
       // numOpenThread?
       if (Number(channelState.numOpenThread) !== 0) {
@@ -1296,13 +1298,13 @@ class Connext {
         numOpenThread: channelState.numOpenThread,
         threadRootHash: channelState.threadRootHash,
         partyA: channel.partyA,
-        partyI: this.hubAddress,
+        partyI: channel.partyI,
         weiBalanceA: Web3.utils.toBN(channelState.weiBalanceA),
         weiBalanceI: Web3.utils.toBN(channelState.weiBalanceI),
         tokenBalanceA: Web3.utils.toBN(channelState.tokenBalanceA),
         tokenBalanceI: Web3.utils.toBN(channelState.tokenBalanceI),
       })
-      if (signer.toLowerCase() !== this.hubAddress.toLowerCase()) {
+      if (signer.toLowerCase() !== channel.partyI.toLowerCase()) {
         throw new ChannelCloseError(methodName, 'Hub did not sign update')
       }
     } else {
@@ -1315,7 +1317,7 @@ class Connext {
         numOpenThread: 0,
         threadRootHash: Connext.generateThreadRootHash({ threadInitialStates: [] }),
         partyA: channel.partyA,
-        partyI: this.hubAddress,
+        partyI: channel.partyI,
         weiBalanceA: Web3.utils.toBN(channel.weiBalanceA),
         weiBalanceI: Web3.utils.toBN(channel.weiBalanceI),
         tokenBalanceA: Web3.utils.toBN(channel.tokenBalanceA),
@@ -1331,7 +1333,7 @@ class Connext {
       numOpenThread: channelState.numOpenThread,
       threadRootHash: channelState.threadRootHash,
       partyA: channel.partyA,
-      partyI: this.hubAddress,
+      partyI: channel.partyI,
       balanceA: {
         tokenDeposit: Web3.utils.toBN(channelState.tokenBalanceA),
         weiDeposit: Web3.utils.toBN(channelState.weiBalanceA),
@@ -3667,7 +3669,7 @@ class Connext {
     return response.data
   }
 
-  async getLatestChannelState (channelId, sigs = null) {
+  async getLatestChannelState (channelId) {
     // lcState == latest ingrid signed state
     const methodName = 'getLatestChannelState'
     const isHexStrict = { presence: true, isHexStrict: true }
@@ -3676,12 +3678,9 @@ class Connext {
       methodName,
       'channelId'
     )
-    if (!sigs) {
-      sigs = ['sigI', 'sigA']
-    }
 
     const response = await this.networking.get(
-      `channel/${channelId}/update/latest?sig[]=sigI`
+      `channel/${channelId}/update/latest`
     )
     return response.data
   }
@@ -3880,12 +3879,10 @@ class Connext {
    * Returns object representing the ledger channel between partyA and Ingrid
    *
    * @param {String} partyA - (optional) partyA in ledger channel. Default is accounts[0]
-   * @param {Number} status - (optional) state of virtual channel, can be 0 (opening), 1 (opened), 2 (settling), or 3 (settled). Defaults to open channel.
    * @returns {Promise} resolves to ledger channel object
    */
-  async getChannelByPartyA (partyA = null, status = null) {
+  async getChannelByPartyA (partyA = null) {
     const methodName = 'getChannelByPartyA'
-    const isChannelStatus = { presence: true, isChannelStatus: true }
     const isAddress = { presence: true, isAddress: true }
     if (partyA !== null) {
       Connext.validatorsResponseToError(
@@ -3897,21 +3894,11 @@ class Connext {
       const accounts = await this.web3.eth.getAccounts()
       partyA = accounts[0]
     }
-    if (status !== null) {
-      Connext.validatorsResponseToError(
-        validate.single(status, isChannelStatus),
-        methodName,
-        'status'
-      )
-    } else {
-      status = Object.keys(CHANNEL_STATES)[1]
-    }
 
     const response = await this.networking.get(
-      `channel/a/${partyA.toLowerCase()}?status=${status}`
+      `channel/a/${partyA.toLowerCase()}`
     )
-    if (status === Object.keys(CHANNEL_STATES)[1]) {
-      // has list length of 1, return obj
+    if (response.data.length === 1) {
       return response.data[0]
     } else {
       return response.data
@@ -4113,7 +4100,7 @@ class Connext {
       'channelId'
     )
     const response = await this.networking.post(
-      `channel/${channelId}/fastclose`,
+      `channel/${channelId}/close`,
       {
         sig
       }

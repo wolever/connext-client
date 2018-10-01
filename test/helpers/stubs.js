@@ -1268,152 +1268,152 @@ export async function createStubbedHub (
     sigI: sigIDFinal
   })
 
-  // // add get latest i-signed channel state endpoint
-  // // ETH/TOKEN (viewer)
-  // hash = Connext.createChannelStateUpdateFingerprint({
-  //   channelId: channelId1,
-  //   partyA,
-  //   partyI: partyI,
-  //   isClose: false,
-  //   nonce: 2,
-  //   numOpenThread: 0,
-  //   threadRootHash: Connext.generateThreadRootHash({ threadInitialStates: [] }),
-  //   weiBalanceA: Web3.utils.toBN(Web3.utils.toWei('4.9', 'ether')),
-  //   weiBalanceI: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
-  //   tokenBalanceA: Web3.utils.toBN(Web3.utils.toWei('4.9', 'ether')),
-  //   tokenBalanceI: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
-  // })
-  // sigAFinal = await web3.eth.sign(hash, partyA)
-  // sigIAFinal = await web3.eth.sign(hash, partyI)
-  // stubHub
-  //   .get(`/channel/${channelId1}/update/latest?sig[]=sigI`)
-  //   .reply(200, {
-  //     isClose: false,
-  //     partyA,
-  //     partyI: partyI,
-  //     nonce: 2,
-  //     numOpenThread: 0,
-  //     threadRootHash: Connext.generateThreadRootHash({ threadInitialStates: [] }),
-  //     weiBalanceA: Web3.utils.toBN(Web3.utils.toWei('4.9', 'ether')).toString(),
-  //     weiBalanceI: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')).toString(),
-  //     tokenBalanceA: Web3.utils
-  //       .toBN(Web3.utils.toWei('4.9', 'ether'))
-  //       .toString(),
-  //     tokenBalanceI: Web3.utils
-  //       .toBN(Web3.utils.toWei('0.1', 'ether'))
-  //       .toString(),
-  //     sigI: sigIAFinal,
-  //     sigA: sigAFinal
-  //   })
+  // add get latest i-signed channel state endpoint
+  // ETH/TOKEN (viewer)
+  hash = Connext.createChannelStateUpdateFingerprint({
+    channelId: channelId1,
+    partyA,
+    partyI: partyI,
+    isClose: false,
+    nonce: 2,
+    numOpenThread: 0,
+    threadRootHash: Connext.generateThreadRootHash({ threadInitialStates: [] }),
+    weiBalanceA: Web3.utils.toBN(Web3.utils.toWei('4.9', 'ether')),
+    weiBalanceI: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
+    tokenBalanceA: Web3.utils.toBN(Web3.utils.toWei('4.9', 'ether')),
+    tokenBalanceI: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
+  })
+  sigAFinal = await web3.eth.sign(hash, partyA)
+  sigIAFinal = await web3.eth.sign(hash, partyI)
+  stubHub
+    .get(`/channel/${channelId1}/update/latest`)
+    .reply(200, {
+      isClose: false,
+      partyA,
+      partyI: partyI,
+      nonce: 2,
+      numOpenThread: 0,
+      threadRootHash: Connext.generateThreadRootHash({ threadInitialStates: [] }),
+      weiBalanceA: Web3.utils.toBN(Web3.utils.toWei('4.9', 'ether')).toString(),
+      weiBalanceI: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')).toString(),
+      tokenBalanceA: Web3.utils
+        .toBN(Web3.utils.toWei('4.9', 'ether'))
+        .toString(),
+      tokenBalanceI: Web3.utils
+        .toBN(Web3.utils.toWei('0.1', 'ether'))
+        .toString(),
+      sigI: sigIAFinal,
+      sigA: sigAFinal
+    })
 
-  // // ETH/TOKEN (recipient)
-  // hash = Connext.createChannelStateUpdateFingerprint({
-  //   channelId: channelId2,
-  //   partyA: partyB,
-  //   partyI: partyI,
-  //   isClose: false,
-  //   nonce: 6,
-  //   numOpenThread: 0,
-  //   threadRootHash: Connext.generateThreadRootHash({ threadInitialStates: [] }),
-  //   weiBalanceA: Web3.utils.toBN(Web3.utils.toWei('0.2', 'ether')),
-  //   weiBalanceI: Web3.utils.toBN(Web3.utils.toWei('0', 'ether')),
-  //   tokenBalanceA: Web3.utils.toBN(Web3.utils.toWei('0.2', 'ether')),
-  //   tokenBalanceI: Web3.utils.toBN(Web3.utils.toWei('0', 'ether'))
-  // })
-  // sigBFinal = await web3.eth.sign(hash, partyB)
-  // sigIBFinal = await web3.eth.sign(hash, partyI)
-  // stubHub
-  //   .get(`/ledgerchannel/${channelId2}/update/latest?sig[]=sigI`)
-  //   .reply(200, {
-  //     isClose: false,
-  //     partyA: partyB,
-  //     partyI: partyI,
-  //     nonce: 6,
-  //     numOpenThread: 0,
-  //     threadRootHash: Connext.generateThreadRootHash({ threadInitialStates: [] }),
-  //     weiBalanceA: Web3.utils.toBN(Web3.utils.toWei('0.2', 'ether')).toString(),
-  //     weiBalanceI: '0',
-  //     tokenBalanceA: Web3.utils
-  //       .toBN(Web3.utils.toWei('0.2', 'ether'))
-  //       .toString(),
-  //     tokenBalanceI: '0',
-  //     sigI: sigIBFinal,
-  //     sigA: sigBFinal
-  //   })
+  // ETH/TOKEN (recipient)
+  hash = Connext.createChannelStateUpdateFingerprint({
+    channelId: channelId2,
+    partyA: partyB,
+    partyI: partyI,
+    isClose: false,
+    nonce: 6,
+    numOpenThread: 0,
+    threadRootHash: Connext.generateThreadRootHash({ threadInitialStates: [] }),
+    weiBalanceA: Web3.utils.toBN(Web3.utils.toWei('0.2', 'ether')),
+    weiBalanceI: Web3.utils.toBN(Web3.utils.toWei('0', 'ether')),
+    tokenBalanceA: Web3.utils.toBN(Web3.utils.toWei('0.2', 'ether')),
+    tokenBalanceI: Web3.utils.toBN(Web3.utils.toWei('0', 'ether'))
+  })
+  sigBFinal = await web3.eth.sign(hash, partyB)
+  sigIBFinal = await web3.eth.sign(hash, partyI)
+  stubHub
+    .get(`/channel/${channelId2}/update/latest`)
+    .reply(200, {
+      isClose: false,
+      partyA: partyB,
+      partyI: partyI,
+      nonce: 6,
+      numOpenThread: 0,
+      threadRootHash: Connext.generateThreadRootHash({ threadInitialStates: [] }),
+      weiBalanceA: Web3.utils.toBN(Web3.utils.toWei('0.2', 'ether')).toString(),
+      weiBalanceI: '0',
+      tokenBalanceA: Web3.utils
+        .toBN(Web3.utils.toWei('0.2', 'ether'))
+        .toString(),
+      tokenBalanceI: '0',
+      sigI: sigIBFinal,
+      sigA: sigBFinal
+    })
 
-  // // ETH (viewer)
-  // hash = Connext.createChannelStateUpdateFingerprint({
-  //   channelId: channelId3,
-  //   partyA: partyC,
-  //   partyI: partyI,
-  //   isClose: false,
-  //   nonce: 2,
-  //   numOpenThread: 0,
-  //   threadRootHash: Connext.generateThreadRootHash({ threadInitialStates: [] }),
-  //   weiBalanceA: Web3.utils.toBN(Web3.utils.toWei('4.9', 'ether')),
-  //   weiBalanceI: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
-  //   tokenBalanceA: Web3.utils.toBN(Web3.utils.toWei('0', 'ether')),
-  //   tokenBalanceI: Web3.utils.toBN(Web3.utils.toWei('0', 'ether'))
-  // })
-  // sigCFinal = await web3.eth.sign(hash, partyC)
-  // sigICFinal = await web3.eth.sign(hash, partyI)
-  // stubHub
-  //   .get(`/ledgerchannel/${channelId3}/update/latest?sig[]=sigI`)
-  //   .reply(200, {
-  //     isClose: false,
-  //     partyA: partyC,
-  //     partyI: partyI,
-  //     nonce: 2,
-  //     numOpenThread: 0,
-  //     threadRootHash: Connext.generateThreadRootHash({ threadInitialStates: [] }),
-  //     weiBalanceA: Web3.utils.toBN(Web3.utils.toWei('4.9', 'ether')).toString(),
-  //     weiBalanceI: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')).toString(),
-  //     tokenBalanceA: '0',
-  //     tokenBalanceI: '0',
-  //     sigI: sigICFinal,
-  //     sigA: sigCFinal
-  //   })
+  // ETH (viewer)
+  hash = Connext.createChannelStateUpdateFingerprint({
+    channelId: channelId3,
+    partyA: partyC,
+    partyI: partyI,
+    isClose: false,
+    nonce: 2,
+    numOpenThread: 0,
+    threadRootHash: Connext.generateThreadRootHash({ threadInitialStates: [] }),
+    weiBalanceA: Web3.utils.toBN(Web3.utils.toWei('4.9', 'ether')),
+    weiBalanceI: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
+    tokenBalanceA: Web3.utils.toBN(Web3.utils.toWei('0', 'ether')),
+    tokenBalanceI: Web3.utils.toBN(Web3.utils.toWei('0', 'ether'))
+  })
+  sigCFinal = await web3.eth.sign(hash, partyC)
+  sigICFinal = await web3.eth.sign(hash, partyI)
+  stubHub
+    .get(`/channel/${channelId3}/update/latest`)
+    .reply(200, {
+      isClose: false,
+      partyA: partyC,
+      partyI: partyI,
+      nonce: 2,
+      numOpenThread: 0,
+      threadRootHash: Connext.generateThreadRootHash({ threadInitialStates: [] }),
+      weiBalanceA: Web3.utils.toBN(Web3.utils.toWei('4.9', 'ether')).toString(),
+      weiBalanceI: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')).toString(),
+      tokenBalanceA: '0',
+      tokenBalanceI: '0',
+      sigI: sigICFinal,
+      sigA: sigCFinal
+    })
 
-  // // TOKEN (viewer)
-  // hash = Connext.createChannelStateUpdateFingerprint({
-  //   channelId: channelId4,
-  //   partyA: partyD,
-  //   partyI: partyI,
-  //   isClose: false,
-  //   nonce: 2,
-  //   numOpenThread: 0,
-  //   threadRootHash: Connext.generateThreadRootHash({ threadInitialStates: [] }),
-  //   tokenBalanceA: Web3.utils.toBN(Web3.utils.toWei('4.9', 'ether')),
-  //   tokenBalanceI: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
-  //   weiBalanceA: Web3.utils.toBN(Web3.utils.toWei('0', 'ether')),
-  //   weiBalanceI: Web3.utils.toBN(Web3.utils.toWei('0', 'ether'))
-  // })
-  // sigDFinal = await web3.eth.sign(hash, partyD)
-  // sigIDFinal = await web3.eth.sign(hash, partyI)
-  // stubHub
-  //   .get(`/ledgerchannel/${channelId4}/update/latest?sig[]=sigI`)
-  //   .reply(200, {
-  //     isClose: false,
-  //     partyA: partyD,
-  //     partyI: partyI,
-  //     nonce: 2,
-  //     numOpenThread: 0,
-  //     threadRootHash: Connext.generateThreadRootHash({ threadInitialStates: [] }),
-  //     tokenBalanceA: Web3.utils
-  //       .toBN(Web3.utils.toWei('4.9', 'ether'))
-  //       .toString(),
-  //     tokenBalanceI: Web3.utils
-  //       .toBN(Web3.utils.toWei('0.1', 'ether'))
-  //       .toString(),
-  //     weiBalanceA: '0',
-  //     weiBalanceI: '0',
-  //     sigI: sigIDFinal,
-  //     sigA: sigDFinal
-  //   })
+  // TOKEN (viewer)
+  hash = Connext.createChannelStateUpdateFingerprint({
+    channelId: channelId4,
+    partyA: partyD,
+    partyI: partyI,
+    isClose: false,
+    nonce: 2,
+    numOpenThread: 0,
+    threadRootHash: Connext.generateThreadRootHash({ threadInitialStates: [] }),
+    tokenBalanceA: Web3.utils.toBN(Web3.utils.toWei('4.9', 'ether')),
+    tokenBalanceI: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
+    weiBalanceA: Web3.utils.toBN(Web3.utils.toWei('0', 'ether')),
+    weiBalanceI: Web3.utils.toBN(Web3.utils.toWei('0', 'ether'))
+  })
+  sigDFinal = await web3.eth.sign(hash, partyD)
+  sigIDFinal = await web3.eth.sign(hash, partyI)
+  stubHub
+    .get(`/channel/${channelId4}/update/latest`)
+    .reply(200, {
+      isClose: false,
+      partyA: partyD,
+      partyI: partyI,
+      nonce: 2,
+      numOpenThread: 0,
+      threadRootHash: Connext.generateThreadRootHash({ threadInitialStates: [] }),
+      tokenBalanceA: Web3.utils
+        .toBN(Web3.utils.toWei('4.9', 'ether'))
+        .toString(),
+      tokenBalanceI: Web3.utils
+        .toBN(Web3.utils.toWei('0.1', 'ether'))
+        .toString(),
+      weiBalanceA: '0',
+      weiBalanceI: '0',
+      sigI: sigIDFinal,
+      sigA: sigDFinal
+    })
 
   // request hub join
   stubHub
-    .post(`/ledgerchannel/${channelId1}/join`)
+    .post(`/channel/${channelId1}/join`)
     .reply(200, {
       channelId: channelId1,
       partyA: partyA.toLowerCase(),
@@ -1429,7 +1429,7 @@ export async function createStubbedHub (
       numOpenThread: 0
     })
   stubHub
-    .post(`/ledgerchannel/${channelId2}/join`)
+    .post(`/channel/${channelId2}/join`)
     .reply(200, {
       channelId: channelId2,
       partyA: partyA.toLowerCase(),
@@ -1445,7 +1445,7 @@ export async function createStubbedHub (
       numOpenThread: 0
     })
   stubHub
-    .post(`/ledgerchannel/${channelId3}/join`)
+    .post(`/channel/${channelId3}/join`)
     .reply(200, {
       channelId: channelId3,
       partyA: partyA.toLowerCase(),
@@ -1461,7 +1461,7 @@ export async function createStubbedHub (
       numOpenThread: 0
     })
   stubHub
-    .post(`/ledgerchannel/${channelId4}/join`)
+    .post(`/channel/${channelId4}/join`)
     .reply(200, {
       channelId: channelId3,
       partyA: partyA.toLowerCase(),
