@@ -13,7 +13,7 @@ const Connext = require('../../src/Connext')
 // on init
 const web3 = new Web3('http://localhost:8545')
 let client
-let ingridAddress
+let hubAddress
 let hubUrl = 'http://localhost:8080'
 let contractAddress = '0xdec16622bfe1f0cdaf6f7f20437d2a040cccb0a1'
 let watcherUrl = ''
@@ -28,7 +28,7 @@ let partyD
 describe('consensusCloseChannelContractHandler()', () => {
   before('init client and accounts', async () => {
     accounts = await web3.eth.getAccounts()
-    ingridAddress = accounts[0]
+    hubAddress = accounts[0]
     partyA = accounts[1]
     partyB = accounts[2]
     partyC = accounts[3]
@@ -39,7 +39,7 @@ describe('consensusCloseChannelContractHandler()', () => {
     // init client instance
     client = new Connext({
       web3,
-      ingridAddress,
+      hubAddress,
       watcherUrl,
       hubUrl,
       contractAddress
@@ -66,28 +66,30 @@ describe('consensusCloseChannelContractHandler()', () => {
         '0x1000000000000000000000000000000000000000000000000000000000000000'
       const balanceA = {
         tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('4.9', 'ether')),
-        ethDeposit: Web3.utils.toBN(Web3.utils.toWei('4.9', 'ether'))
+        weiDeposit: Web3.utils.toBN(Web3.utils.toWei('4.9', 'ether'))
       }
       const balanceI = {
         tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
-        ethDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
+        weiDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
       }
       const sigParams = {
         isClose: true,
         channelId,
         nonce: 3,
-        openVcs: 0,
-        vcRootHash: Connext.generateThreadRootHash({ threadInitialStates: [] }),
+        numOpenThread: 0,
+        threadRootHash: Connext.generateThreadRootHash({
+          threadInitialStates: []
+        }),
         partyA: partyA,
-        partyI: ingridAddress,
-        ethBalanceA: balanceA.ethDeposit,
-        ethBalanceI: balanceI.ethDeposit,
+        partyI: hubAddress,
+        weiBalanceA: balanceA.weiDeposit,
+        weiBalanceI: balanceI.weiDeposit,
         tokenBalanceA: balanceA.tokenDeposit,
         tokenBalanceI: balanceI.tokenDeposit
       }
       const hash = Connext.createChannelStateUpdateFingerprint(sigParams)
       const sigA = await web3.eth.sign(hash, partyA)
-      const sigI = await web3.eth.sign(hash, ingridAddress)
+      const sigI = await web3.eth.sign(hash, hubAddress)
       const response = await client.consensusCloseChannelContractHandler({
         channelId,
         nonce: sigParams.nonce,
@@ -108,28 +110,30 @@ describe('consensusCloseChannelContractHandler()', () => {
         '0x3000000000000000000000000000000000000000000000000000000000000000'
       const balanceA = {
         tokenDeposit: Web3.utils.toBN('0'),
-        ethDeposit: Web3.utils.toBN(Web3.utils.toWei('4.9', 'ether'))
+        weiDeposit: Web3.utils.toBN(Web3.utils.toWei('4.9', 'ether'))
       }
       const balanceI = {
         tokenDeposit: Web3.utils.toBN('0'),
-        ethDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
+        weiDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
       }
       const sigParams = {
         isClose: true,
         channelId,
         nonce: 3,
-        openVcs: 0,
-        vcRootHash: Connext.generateThreadRootHash({ threadInitialStates: [] }),
+        numOpenThread: 0,
+        threadRootHash: Connext.generateThreadRootHash({
+          threadInitialStates: []
+        }),
         partyA: partyC,
-        partyI: ingridAddress,
-        ethBalanceA: balanceA.ethDeposit,
-        ethBalanceI: balanceI.ethDeposit,
+        partyI: hubAddress,
+        weiBalanceA: balanceA.weiDeposit,
+        weiBalanceI: balanceI.weiDeposit,
         tokenBalanceA: balanceA.tokenDeposit,
         tokenBalanceI: balanceI.tokenDeposit
       }
       const hash = Connext.createChannelStateUpdateFingerprint(sigParams)
       const sigA = await web3.eth.sign(hash, partyC)
-      const sigI = await web3.eth.sign(hash, ingridAddress)
+      const sigI = await web3.eth.sign(hash, hubAddress)
       const response = await client.consensusCloseChannelContractHandler({
         channelId,
         nonce: sigParams.nonce,
@@ -150,28 +154,30 @@ describe('consensusCloseChannelContractHandler()', () => {
         '0x4000000000000000000000000000000000000000000000000000000000000000'
       const balanceA = {
         tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('4.9', 'ether')),
-        ethDeposit: Web3.utils.toBN('0')
+        weiDeposit: Web3.utils.toBN('0')
       }
       const balanceI = {
         tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
-        ethDeposit: Web3.utils.toBN('0')
+        weiDeposit: Web3.utils.toBN('0')
       }
       const sigParams = {
         isClose: true,
         channelId,
         nonce: 3,
-        openVcs: 0,
-        vcRootHash: Connext.generateThreadRootHash({ threadInitialStates: [] }),
+        numOpenThread: 0,
+        threadRootHash: Connext.generateThreadRootHash({
+          threadInitialStates: []
+        }),
         partyA: partyD,
-        partyI: ingridAddress,
-        ethBalanceA: balanceA.ethDeposit,
-        ethBalanceI: balanceI.ethDeposit,
+        partyI: hubAddress,
+        weiBalanceA: balanceA.weiDeposit,
+        weiBalanceI: balanceI.weiDeposit,
         tokenBalanceA: balanceA.tokenDeposit,
         tokenBalanceI: balanceI.tokenDeposit
       }
       const hash = Connext.createChannelStateUpdateFingerprint(sigParams)
       const sigA = await web3.eth.sign(hash, partyD)
-      const sigI = await web3.eth.sign(hash, ingridAddress)
+      const sigI = await web3.eth.sign(hash, hubAddress)
       const response = await client.consensusCloseChannelContractHandler({
         channelId,
         nonce: sigParams.nonce,
@@ -198,11 +204,11 @@ describe('consensusCloseChannelContractHandler()', () => {
       const nonce = 3
       const balanceA = {
         tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('4.9', 'ether')),
-        ethDeposit: Web3.utils.toBN(Web3.utils.toWei('4.9', 'ether'))
+        weiDeposit: Web3.utils.toBN(Web3.utils.toWei('4.9', 'ether'))
       }
       const balanceI = {
         tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
-        ethDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
+        weiDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
       }
       const sigA = '0x10000000'
       const sigI = '0x10000000'
@@ -226,11 +232,11 @@ describe('consensusCloseChannelContractHandler()', () => {
       const nonce = 3
       const balanceA = {
         tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('4.9', 'ether')),
-        ethDeposit: Web3.utils.toBN(Web3.utils.toWei('4.9', 'ether'))
+        weiDeposit: Web3.utils.toBN(Web3.utils.toWei('4.9', 'ether'))
       }
       const balanceI = {
         tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
-        ethDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
+        weiDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
       }
       const sigA = '0x10000000'
       const sigI = '0x10000000'
@@ -255,11 +261,11 @@ describe('consensusCloseChannelContractHandler()', () => {
       const nonce = 3
       const balanceA = {
         tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('4.9', 'ether')),
-        ethDeposit: Web3.utils.toBN(Web3.utils.toWei('4.9', 'ether'))
+        weiDeposit: Web3.utils.toBN(Web3.utils.toWei('4.9', 'ether'))
       }
       const balanceI = {
         tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
-        ethDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
+        weiDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
       }
       const sigA = '0x10000000'
       const sigI = '0x10000000'
@@ -284,11 +290,11 @@ describe('consensusCloseChannelContractHandler()', () => {
         '0x1000000000000000000000000000000000000000000000000000000000000000'
       const balanceA = {
         tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('4.9', 'ether')),
-        ethDeposit: Web3.utils.toBN(Web3.utils.toWei('4.9', 'ether'))
+        weiDeposit: Web3.utils.toBN(Web3.utils.toWei('4.9', 'ether'))
       }
       const balanceI = {
         tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
-        ethDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
+        weiDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
       }
       const sigA = '0x10000000'
       const sigI = '0x10000000'
@@ -313,11 +319,11 @@ describe('consensusCloseChannelContractHandler()', () => {
       const nonce = null
       const balanceA = {
         tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('4.9', 'ether')),
-        ethDeposit: Web3.utils.toBN(Web3.utils.toWei('4.9', 'ether'))
+        weiDeposit: Web3.utils.toBN(Web3.utils.toWei('4.9', 'ether'))
       }
       const balanceI = {
         tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
-        ethDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
+        weiDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
       }
       const sigA = '0x10000000'
       const sigI = '0x10000000'
@@ -343,11 +349,11 @@ describe('consensusCloseChannelContractHandler()', () => {
       const nonce = 'fail'
       const balanceA = {
         tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('4.9', 'ether')),
-        ethDeposit: Web3.utils.toBN(Web3.utils.toWei('4.9', 'ether'))
+        weiDeposit: Web3.utils.toBN(Web3.utils.toWei('4.9', 'ether'))
       }
       const balanceI = {
         tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
-        ethDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
+        weiDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
       }
       const sigA = '0x10000000'
       const sigI = '0x10000000'
@@ -373,7 +379,7 @@ describe('consensusCloseChannelContractHandler()', () => {
       const nonce = 3
       const balanceI = {
         tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
-        ethDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
+        weiDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
       }
       const sigA = '0x10000000'
       const sigI = '0x10000000'
@@ -399,7 +405,7 @@ describe('consensusCloseChannelContractHandler()', () => {
       const balanceA = null
       const balanceI = {
         tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
-        ethDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
+        weiDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
       }
       const sigA = '0x10000000'
       const sigI = '0x10000000'
@@ -426,7 +432,7 @@ describe('consensusCloseChannelContractHandler()', () => {
       const balanceA = {}
       const balanceI = {
         tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
-        ethDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
+        weiDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
       }
       const sigA = '0x10000000'
       const sigI = '0x10000000'
@@ -452,7 +458,7 @@ describe('consensusCloseChannelContractHandler()', () => {
       const nonce = 3
       const balanceA = {
         tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
-        ethDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
+        weiDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
       }
       const sigA = '0x10000000'
       const sigI = '0x10000000'
@@ -478,7 +484,7 @@ describe('consensusCloseChannelContractHandler()', () => {
       const balanceI = null
       const balanceA = {
         tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
-        ethDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
+        weiDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
       }
       const sigA = '0x10000000'
       const sigI = '0x10000000'
@@ -505,7 +511,7 @@ describe('consensusCloseChannelContractHandler()', () => {
       const balanceI = {}
       const balanceA = {
         tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
-        ethDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
+        weiDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
       }
       const sigA = '0x10000000'
       const sigI = '0x10000000'
@@ -531,11 +537,11 @@ describe('consensusCloseChannelContractHandler()', () => {
       const nonce = 3
       const balanceI = {
         tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
-        ethDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
+        weiDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
       }
       const balanceA = {
         tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
-        ethDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
+        weiDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
       }
       const sigI = '0x10000000'
       const sender = partyA
@@ -559,11 +565,11 @@ describe('consensusCloseChannelContractHandler()', () => {
       const nonce = 3
       const balanceI = {
         tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
-        ethDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
+        weiDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
       }
       const balanceA = {
         tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
-        ethDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
+        weiDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
       }
       const sigA = null
       const sigI = '0x10000000'
@@ -589,11 +595,11 @@ describe('consensusCloseChannelContractHandler()', () => {
       const nonce = 3
       const balanceI = {
         tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
-        ethDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
+        weiDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
       }
       const balanceA = {
         tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
-        ethDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
+        weiDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
       }
       const sigA = 'fail'
       const sigI = '0x10000000'
@@ -619,11 +625,11 @@ describe('consensusCloseChannelContractHandler()', () => {
       const nonce = 3
       const balanceI = {
         tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
-        ethDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
+        weiDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
       }
       const balanceA = {
         tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
-        ethDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
+        weiDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
       }
       const sigA = '0x10000000'
       const sender = partyA
@@ -647,11 +653,11 @@ describe('consensusCloseChannelContractHandler()', () => {
       const nonce = 3
       const balanceI = {
         tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
-        ethDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
+        weiDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
       }
       const balanceA = {
         tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
-        ethDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
+        weiDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
       }
       const sigI = null
       const sigA = '0x10000000'
@@ -677,11 +683,11 @@ describe('consensusCloseChannelContractHandler()', () => {
       const nonce = 3
       const balanceI = {
         tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
-        ethDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
+        weiDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
       }
       const balanceA = {
         tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
-        ethDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
+        weiDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
       }
       const sigI = 'fail'
       const sigA = '0x10000000'
@@ -707,11 +713,11 @@ describe('consensusCloseChannelContractHandler()', () => {
       const nonce = 3
       const balanceI = {
         tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
-        ethDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
+        weiDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
       }
       const balanceA = {
         tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
-        ethDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
+        weiDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
       }
       const sigI = '0x10000000'
       const sigA = '0x10000000'
