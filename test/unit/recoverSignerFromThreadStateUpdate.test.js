@@ -10,7 +10,7 @@ const Connext = require('../../src/Connext')
 
 // named variables
 // on init
-const web3 = new Web3('http://localhost:8545')
+const web3 = new Web3(process.env.ETH_NODE_URL)
 
 // for accounts
 let accounts

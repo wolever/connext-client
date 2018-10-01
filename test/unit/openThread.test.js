@@ -13,11 +13,11 @@ const Connext = require('../../src/Connext')
 
 // named variables
 // on init
-const web3 = new Web3('http://localhost:8545')
+const web3 = new Web3(process.env.ETH_NODE_URL)
 let client
 let hubAddress
-let hubUrl = 'http://localhost:8080'
-let contractAddress = '0xdec16622bfe1f0cdaf6f7f20437d2a040cccb0a1'
+let hubUrl = process.env.HUB_URL
+let contractAddress = process.env.CONTRACT_ADDRESS
 let watcherUrl = ''
 const threadId =
   '0x0100000000000000000000000000000000000000000000000000000000000000'

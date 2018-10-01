@@ -18,7 +18,7 @@ let client
 let hubAddress
 let watcherUrl = process.env.WATCHER_URL || ''
 let hubUrl = process.env.INGRID_URL || 'http://localhost:8080'
-let contractAddress = '0x31713144d9ae2501e644a418dd9035ed840b1660'
+let contractAddress = process.env.CONTRACT_ADDRESS
 
 // for accounts
 let accounts

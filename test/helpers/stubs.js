@@ -32,7 +32,7 @@ export async function createStubbedHub (
   channelType,
   threadType = 'NOT_UPDATED'
 ) {
-  const web3 = new Web3('http://localhost:8545')
+  const web3 = new Web3(process.env.ETH_NODE_URL)
   const accounts = await web3.eth.getAccounts()
   const partyI = accounts[0]
   const partyA = accounts[1]
