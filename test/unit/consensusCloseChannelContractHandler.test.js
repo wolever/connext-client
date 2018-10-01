@@ -57,7 +57,7 @@ describe('consensusCloseChannelContractHandler()', () => {
       stubHub = await createStubbedHub(
         `${client.hubUrl}`,
         'OPEN_LC_OPEN_VC',
-        'OPEN_LC_CLOSED_VC'
+        'OPEN_CHANNEL_CLOSED_THREAD'
       )
     })
 

@@ -25,7 +25,7 @@ let partyB
 let partyC
 let partyD
 
-describe('closeChannel()', () => {
+describe.only('closeChannel()', () => {
   before('init client and accounts', async () => {
     accounts = await web3.eth.getAccounts()
     ingridAddress = accounts[0]
@@ -56,7 +56,7 @@ describe('closeChannel()', () => {
       // stub hub methods
       stubHub = await createStubbedHub(
         `${client.hubUrl}`,
-        'OPEN_LC_CLOSED_VC',
+        'OPEN_CHANNEL_CLOSED_THREAD',
         'UPDATED'
       )
     })
