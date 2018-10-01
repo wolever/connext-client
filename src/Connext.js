@@ -1264,7 +1264,6 @@ class Connext {
       sender = accounts[0].toLowerCase()
     }
     const channel = await this.getChannelByPartyA(sender.toLowerCase())
-    console.log('channel:', channel)
     // channel must be open
     if (CHANNEL_STATES[channel.status] !== CHANNEL_STATES.JOINED) {
       throw new ChannelCloseError(methodName, 'Channel is in invalid state')
@@ -1279,7 +1278,6 @@ class Connext {
 
     // get latest i-signed lc state update
     let channelState = await this.getLatestChannelState(channel.channelId)
-    console.log('channelState:', channelState)
     if (channelState) {
       // numOpenThread?
       if (Number(channelState.numOpenThread) !== 0) {
