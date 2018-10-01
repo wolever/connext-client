@@ -31,7 +31,7 @@ let partyA, partyB, partyC, partyD, partyE
 // for initial ledger channel states
 let subchanAI
 
-describe.only('openChannel()', function () {
+describe('openChannel()', function () {
   this.timeout(120000)
   before('authenticate', async () => {
     accounts = await web3.eth.getAccounts()
@@ -96,14 +96,12 @@ describe.only('openChannel()', function () {
 
       // stub hub methods
       stubHub = await createStubbedHub(`${client.hubUrl}`, 'NO_LC')
+      stubHub.get(`/channel/a/${partyA.toLowerCase()}`).reply(200, {
+        data: []
+      })
     })
 
     it('should return create an ETH only subchanAI', async () => {
-      stubHub
-        .get(`/ledgerchannel/a/${partyA.toLowerCase()}?status=LCS_OPENED`)
-        .reply(200, {
-          data: []
-        })
       // control for lcId
       stub = sinon
         .stub(Connext, 'getNewChannelId')
@@ -111,10 +109,16 @@ describe.only('openChannel()', function () {
           '0x1000000000000000000000000000000000000000000000000000000000000000'
         )
       const initialDeposits = {
-        ethDeposit: Web3.utils.toBN(Web3.utils.toWei('5', 'ether')),
+        weiDeposit: Web3.utils.toBN(Web3.utils.toWei('5', 'ether')),
         tokenDepsit: null
       }
-      subchanAI = await client.openChannel(initialDeposits, null, partyA)
+      const challenge = 3000
+      subchanAI = await client.openChannel(
+        initialDeposits,
+        null,
+        partyA,
+        challenge
+      )
       expect(subchanAI).to.equal(
         '0x1000000000000000000000000000000000000000000000000000000000000000'
       )
@@ -131,13 +135,15 @@ describe.only('openChannel()', function () {
           '0x2000000000000000000000000000000000000000000000000000000000000000'
         )
       const initialDeposits = {
-        ethDeposit: null,
+        weiDeposit: null,
         tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('1', 'ether'))
       }
+      const challenge = 3000
       subchanAI = await client.openChannel(
         initialDeposits,
         tokenAddress,
-        partyA
+        partyA,
+        challenge
       )
       expect(subchanAI).to.equal(
         '0x2000000000000000000000000000000000000000000000000000000000000000'
@@ -155,13 +161,15 @@ describe.only('openChannel()', function () {
           '0x3000000000000000000000000000000000000000000000000000000000000000'
         )
       const initialDeposits = {
-        ethDeposit: Web3.utils.toBN(Web3.utils.toWei('5', 'ether')),
+        weiDeposit: Web3.utils.toBN(Web3.utils.toWei('5', 'ether')),
         tokenDepsit: Web3.utils.toBN(Web3.utils.toWei('1', 'ether'))
       }
+      const challenge = 3000
       subchanAI = await client.openChannel(
         initialDeposits,
         tokenAddress,
-        partyA
+        partyA,
+        challenge
       )
       expect(subchanAI).to.equal(
         '0x3000000000000000000000000000000000000000000000000000000000000000'
@@ -200,7 +208,7 @@ describe.only('openChannel()', function () {
 
     it('should fail if initialDeposits contains null balances', async () => {
       const initialDeposits = {
-        ethDeposit: null,
+        weiDeposit: null,
         tokenDeposit: null
       }
       try {
@@ -210,9 +218,9 @@ describe.only('openChannel()', function () {
       }
     })
 
-    it('should fail if initialDeposits.ethDeposit is not a BN', async () => {
+    it('should fail if initialDeposits.weiDeposit is not a BN', async () => {
       const initialDeposits = {
-        ethDeposit: 'fail',
+        weiDeposit: 'fail',
         tokenDeposit: null
       }
       try {
@@ -222,9 +230,9 @@ describe.only('openChannel()', function () {
       }
     })
 
-    it('should fail if initialDeposits.ethDeposit is negative', async () => {
+    it('should fail if initialDeposits.weiDeposit is negative', async () => {
       const initialDeposits = {
-        ethDeposit: Web3.utils.toBN('-5'),
+        weiDeposit: Web3.utils.toBN('-5'),
         tokenDeposit: null
       }
       try {
@@ -238,7 +246,7 @@ describe.only('openChannel()', function () {
   it('should fail if initialDeposits.tokenDeposit is not a BN', async () => {
     const initialDeposits = {
       tokenDeposit: 'fail',
-      ethDeposit: null
+      weiDeposit: null
     }
     try {
       await client.openChannel(initialDeposits)
@@ -250,7 +258,7 @@ describe.only('openChannel()', function () {
   it('should fail if initialDeposits.tokenDeposit is negative', async () => {
     const initialDeposits = {
       tokenDeposit: Web3.utils.toBN('-5'),
-      ethDeposit: null
+      weiDeposit: null
     }
     try {
       await client.openChannel(initialDeposits)
@@ -259,10 +267,10 @@ describe.only('openChannel()', function () {
     }
   })
 
-  it('should fail if initialDeposits.tokenDeposit is negative and initialDeposits.ethDeposit is valid', async () => {
+  it('should fail if initialDeposits.tokenDeposit is negative and initialDeposits.weiDeposit is valid', async () => {
     const initialDeposits = {
       tokenDeposit: Web3.utils.toBN('-5'),
-      ethDeposit: Web3.utils.toBN(Web3.utils.toWei('5', 'ether'))
+      weiDeposit: Web3.utils.toBN(Web3.utils.toWei('5', 'ether'))
     }
     try {
       await client.openChannel(initialDeposits)
@@ -271,9 +279,9 @@ describe.only('openChannel()', function () {
     }
   })
 
-  it('should fail if initialDeposits.ethDeposit is negative and initialDeposits.tokenDeposit is valid', async () => {
+  it('should fail if initialDeposits.weiDeposit is negative and initialDeposits.tokenDeposit is valid', async () => {
     const initialDeposits = {
-      ethDeposit: Web3.utils.toBN('-5'),
+      weiDeposit: Web3.utils.toBN('-5'),
       tokenDepsit: Web3.utils.toBN(Web3.utils.toWei('5', 'ether'))
     }
     try {
@@ -283,10 +291,10 @@ describe.only('openChannel()', function () {
     }
   })
 
-  it('should fail if initialDeposits.tokenDeposit is not BN and initialDeposits.ethDeposit is valid', async () => {
+  it('should fail if initialDeposits.tokenDeposit is not BN and initialDeposits.weiDeposit is valid', async () => {
     const initialDeposits = {
       tokenDeposit: 'fail',
-      ethDeposit: Web3.utils.toBN(Web3.utils.toWei('5', 'ether'))
+      weiDeposit: Web3.utils.toBN(Web3.utils.toWei('5', 'ether'))
     }
     try {
       await client.openChannel(initialDeposits)
@@ -295,9 +303,9 @@ describe.only('openChannel()', function () {
     }
   })
 
-  it('should fail if initialDeposits.ethDeposit is not BN and initialDeposits.tokenDeposit is valid', async () => {
+  it('should fail if initialDeposits.weiDeposit is not BN and initialDeposits.tokenDeposit is valid', async () => {
     const initialDeposits = {
-      ethDeposit: 'fail',
+      weiDeposit: 'fail',
       tokenDepsit: Web3.utils.toBN(Web3.utils.toWei('5', 'ether'))
     }
     try {
@@ -309,7 +317,7 @@ describe.only('openChannel()', function () {
 
   it('should fail if invalid token address is supplied', async () => {
     const initialDeposits = {
-      ethDeposit: Web3.utils.toBN(Web3.utils.toWei('5', 'ether')),
+      weiDeposit: Web3.utils.toBN(Web3.utils.toWei('5', 'ether')),
       tokenDepsit: Web3.utils.toBN(Web3.utils.toWei('5', 'ether'))
     }
     const tokenAddress = 'fail'
@@ -322,45 +330,51 @@ describe.only('openChannel()', function () {
 
   it('should fail if invalid sender address is supplied', async () => {
     const initialDeposits = {
-      ethDeposit: Web3.utils.toBN(Web3.utils.toWei('5', 'ether')),
+      weiDeposit: Web3.utils.toBN(Web3.utils.toWei('5', 'ether')),
       tokenDepsit: Web3.utils.toBN(Web3.utils.toWei('5', 'ether'))
     }
     const tokenAddress = client.contractAddress
     const sender = 'fail'
+    const message = `[openChannel][sender] : ${sender} is not address.`
     try {
       await client.openChannel(initialDeposits, tokenAddress, sender)
     } catch (e) {
       expect(e.statusCode).to.equal(200)
+      expect(e.message).to.equal(message)
     }
   })
 
   it('should fail if invalid challenge period type is supplied', async () => {
     const initialDeposits = {
-      ethDeposit: Web3.utils.toBN(Web3.utils.toWei('5', 'ether')),
+      weiDeposit: Web3.utils.toBN(Web3.utils.toWei('5', 'ether')),
       tokenDepsit: Web3.utils.toBN(Web3.utils.toWei('5', 'ether'))
     }
     const tokenAddress = client.contractAddress
     const sender = partyA
     const challenge = 'fail'
+    const message = `[openChannel][challenge] : ${challenge} is not a positive integer.`
     try {
       await client.openChannel(initialDeposits, tokenAddress, sender, challenge)
     } catch (e) {
       expect(e.statusCode).to.equal(200)
+      expect(e.message).to.equal(message)
     }
   })
 
   it('should fail if negative challenge period is supplied', async () => {
     const initialDeposits = {
-      ethDeposit: Web3.utils.toBN(Web3.utils.toWei('5', 'ether')),
+      weiDeposit: Web3.utils.toBN(Web3.utils.toWei('5', 'ether')),
       tokenDepsit: Web3.utils.toBN(Web3.utils.toWei('5', 'ether'))
     }
     const tokenAddress = client.contractAddress
     const sender = partyA
     const challenge = -25
+    const message = `[openChannel][challenge] : ${challenge} is not a positive integer.`
     try {
       await client.openChannel(initialDeposits, tokenAddress, sender, challenge)
     } catch (e) {
       expect(e.statusCode).to.equal(200)
+      expect(e.message).to.equal(message)
     }
   })
 })

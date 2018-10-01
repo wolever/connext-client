@@ -376,12 +376,11 @@ class Connext {
       Connext.validatorsResponseToError(
         validate.single(challenge, isPositiveInt),
         methodName,
-        'isPositiveInt'
+        'challenge'
       )
     } else {
       // get challenge timer from ingrid
       challenge = await this.getChallengeTimer()
-
     }
     // determine channel type
     const { weiDeposit, tokenDeposit } = initialDeposits
@@ -398,7 +397,7 @@ class Connext {
     }
     // verify channel does not exist between ingrid and sender
     let channel = await this.getChannelByPartyA(sender)
-    if (channel != null && CHANNEL_STATES[channel.status] === 1) {
+    if (channel != null && CHANNEL_STATES[channel.status] === CHANNEL_STATES.JOINED) {
       throw new ChannelOpenError(
         methodName,
         401,
@@ -3896,7 +3895,9 @@ class Connext {
     const response = await this.networking.get(
       `channel/a/${partyA.toLowerCase()}`
     )
-    if (response.data.length === 1) {
+    if (response.data && response.data.length === 0) {
+      return null
+    } else if (response.data.length === 1) {
       return response.data[0]
     } else {
       return response.data
