@@ -993,11 +993,7 @@ class Connext {
     const { exchangeRate } = meta
     // validate inputs
     Connext.validatorsResponseToError(validate.single(sender, isAddress), methodName, 'sender')
-    Connext.validatorsResponseToError(
-      validate.single(exchangeRate, isBN),
-      methodName,
-      'exchangeRate'
-    )
+
     Connext.validatorsResponseToError(
       validate.single(channelId, isHexStrict),
       methodName,
@@ -1026,15 +1022,13 @@ class Connext {
     // false if previous wei balance less than proposed
     const eth2erc = oldEthA.gt(balanceA.ethDeposit)
 
-    let exchangedWei, exchangedTokens
-    eth2erc 
-      ? ( exchangedWei = oldEthA.sub(balanceA.ethDeposit) )
-      : ( exchangedTokens = oldTokenA.sub(balanceA.tokenDeposit) )
-    
-    // calculate corr. value with exchange rate
-    eth2erc
-      ? ( exchangedTokens = exchangedWei.div(exchangeRate) )
-      : ( exchangedWei = exchangedTokens.mul(exchangeRate) )
+    const exchangedTokens = eth2erc 
+      ? balanceA.tokenDeposit.sub(oldTokensA) 
+      : oldTokensA.sub(balanceA.tokenDeposit)
+
+    const exchangedWei = eth2erc 
+      ? oldEthA.sub(balanceA.ethDeposit) 
+      : balanceA.ethDeposit.sub(oldEthA)
 
     const newChannelTokenA = eth2erc 
       ? oldTokenA.add(exchangedTokens) 
