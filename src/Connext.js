@@ -1134,6 +1134,10 @@ class Connext {
       throw new ThreadCloseError(methodName, 'Thread is in invalid state')
     }
     const latestThreadState = await this.getLatestThreadState(threadId)
+    const weiBalanceA = Web3.utils.toBN(latestThreadState.weiBalanceA)
+    const weiBalanceB = Web3.utils.toBN(latestThreadState.weiBalanceB)
+    const tokenBalanceA = Web3.utils.toBN(latestThreadState.tokenBalanceA)
+    const tokenBalanceB = Web3.utils.toBN(latestThreadState.tokenBalanceB)
     // verify latestThreadState was signed by agentA
     const signer = Connext.recoverSignerFromThreadStateUpdate({
       sig: latestThreadState.sigA,
@@ -1141,10 +1145,12 @@ class Connext {
       nonce: latestThreadState.nonce,
       partyA: thread.partyA,
       partyB: thread.partyB,
-      weiBalanceA: Web3.utils.toBN(latestThreadState.weiBalanceA),
-      weiBalanceB: Web3.utils.toBN(latestThreadState.weiBalanceB),
-      tokenBalanceA: Web3.utils.toBN(latestThreadState.tokenBalanceA),
-      tokenBalanceB: Web3.utils.toBN(latestThreadState.tokenBalanceB),
+      weiBalanceA,
+      weiBalanceB,
+      tokenBalanceA,
+      tokenBalanceB,
+      weiBond: weiBalanceA.add(weiBalanceB),
+      tokenBond: tokenBalanceA.add(tokenBalanceB),
     })
     if (signer.toLowerCase() !== thread.partyA.toLowerCase()) {
       throw new ThreadCloseError(
@@ -1837,7 +1843,9 @@ class Connext {
     weiBalanceA,
     weiBalanceB,
     tokenBalanceA,
-    tokenBalanceB
+    tokenBalanceB,
+    weiBond,
+    tokenBond
   }) {
     const methodName = 'createThreadStateUpdateFingerprint'
     // typecast balances incase chained
@@ -1862,10 +1870,22 @@ class Connext {
       methodName,
       'tokenBalanceB'
     )
+    Connext.validatorsResponseToError(
+      validate.single(weiBond, isPositiveBnString),
+      methodName,
+      'weiBond'
+    )
+    Connext.validatorsResponseToError(
+      validate.single(tokenBond, isPositiveBnString),
+      methodName,
+      'tokenBond'
+    )
     weiBalanceA = Web3.utils.toBN(weiBalanceA)
     weiBalanceB = Web3.utils.toBN(weiBalanceB)
     tokenBalanceA = Web3.utils.toBN(tokenBalanceA)
     tokenBalanceB = Web3.utils.toBN(tokenBalanceB)
+    weiBond = Web3.utils.toBN(weiBond)
+    tokenBond = Web3.utils.toBN(tokenBond)
     // validate
     const isHexStrict = { presence: true, isHexStrict: true }
     const isAddress = { presence: true, isAddress: true }
@@ -1892,8 +1912,16 @@ class Connext {
       'partyB'
     )
 
-    const hubBondEth = weiBalanceA.add(weiBalanceB)
+    const hubBondWei = weiBalanceA.add(weiBalanceB)
     const hubBondToken = tokenBalanceA.add(tokenBalanceB)
+
+    if (!hubBondWei.eq(weiBond)) {
+      throw new ThreadUpdateError(methodName, `Invalid weiBond supplied: ${weiBond.toString()}. Expected: ${hubBondWei.toString()}`)
+    }
+
+    if (!hubBondToken.eq(tokenBond)) {
+      throw new ThreadUpdateError(methodName, `Invalid weiBond supplied: ${tokenBond.toString()}. Expected: ${hubBondToken.toString()}`)
+    }
 
     // generate state update to sign
     const hash = Web3.utils.soliditySha3(
@@ -1901,8 +1929,8 @@ class Connext {
       { type: 'uint256', value: nonce },
       { type: 'address', value: partyA },
       { type: 'address', value: partyB },
-      { type: 'uint256', value: hubBondEth },
-      { type: 'uint256', value: hubBondToken },
+      { type: 'uint256', value: tokenBond },
+      { type: 'uint256', value: hubBondWei },
       { type: 'uint256', value: weiBalanceA },
       { type: 'uint256', value: weiBalanceB },
       { type: 'uint256', value: tokenBalanceA },
@@ -1933,7 +1961,9 @@ class Connext {
     weiBalanceA,
     weiBalanceB,
     tokenBalanceA,
-    tokenBalanceB
+    tokenBalanceB,
+    weiBond,
+    tokenBond
   }) {
     const methodName = 'recoverSignerFromThreadStateUpdate'
     // validate
@@ -1959,10 +1989,22 @@ class Connext {
       methodName,
       'tokenBalanceB'
     )
+    Connext.validatorsResponseToError(
+      validate.single(weiBond, isPositiveBnString),
+      methodName,
+      'weiBond'
+    )
+    Connext.validatorsResponseToError(
+      validate.single(tokenBond, isPositiveBnString),
+      methodName,
+      'tokenBond'
+    )
     weiBalanceA = Web3.utils.toBN(weiBalanceA)
     weiBalanceB = Web3.utils.toBN(weiBalanceB)
     tokenBalanceA = Web3.utils.toBN(tokenBalanceA)
     tokenBalanceB = Web3.utils.toBN(tokenBalanceB)
+    weiBond = Web3.utils.toBN(weiBond)
+    tokenBond = Web3.utils.toBN(tokenBond)
     // validatorOpts'
     const isHex = { presence: true, isHex: true }
     const isHexStrict = { presence: true, isHexStrict: true }
@@ -1999,6 +2041,17 @@ class Connext {
       'partyB'
     )
 
+    const expectedWeiBond = weiBalanceA.add(weiBalanceB)
+    const expectedTokenBond = tokenBalanceA.add(tokenBalanceB)
+    
+    if (!expectedWeiBond.eq(weiBond)) {
+      throw new ThreadUpdateError(`Invalid weiBond supplied: ${weiBond.toString()}. Expected: ${expectedWeiBond.toString()}`)
+    }
+
+    if (!expectedTokenBond.eq(tokenBond)) {
+      throw new ThreadUpdateError(`Invalid weiBond supplied: ${tokenBond.toString()}. Expected: ${expectedTokenBond.toString()}`)
+    }
+
     console.log('recovering signer from:', JSON.stringify({
       sig,
       channelId,
@@ -2008,7 +2061,9 @@ class Connext {
       weiBalanceA: weiBalanceA.toString(),
       weiBalanceB: weiBalanceB.toString(),
       tokenBalanceA: tokenBalanceA.toString(),
-      tokenBalanceB: tokenBalanceB.toString()
+      tokenBalanceB: tokenBalanceB.toString(),
+      weiBond: weiBond.toString(),
+      tokenBond: tokenBond.toString()
     }))
     let fingerprint = Connext.createThreadStateUpdateFingerprint({
       channelId,
@@ -2018,7 +2073,9 @@ class Connext {
       weiBalanceA,
       weiBalanceB,
       tokenBalanceA,
-      tokenBalanceB
+      tokenBalanceB,
+      weiBond,
+      tokenBond
     })
     fingerprint = util.toBuffer(fingerprint)
     const prefix = Buffer.from('\x19Ethereum Signed Message:\n')
@@ -2510,34 +2567,19 @@ class Connext {
         : thread 
         ? Web3.utils.toBN(thread.tokenBalanceB) 
         : Web3.utils.toBN('0'),
+      weiBond: proposedWeiBalance ? proposedWeiBalance : Web3.utils.toBN('0'),
+      tokenBond: proposedTokenBalance ? proposedTokenBalance : Web3.utils.toBN('0')
     }
+    console.log('&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&')
+    console.log('weiBalanceA:', state.weiBalanceA.toString())
+    console.log('weiBalanceB:', state.weiBalanceB.toString())
+    console.log('tokenBalanceA:', state.tokenBalanceA.toString())
+    console.log('tokenBalanceB:', state.tokenBalanceB.toString(), '\n')
+
+    console.log('weiBond:', proposedWeiBalance ? proposedWeiBalance.toString() : '0')
+    console.log('tokenBond:', proposedTokenBalance ? proposedTokenBalance.toString() : '0')
     const hash = Connext.createThreadStateUpdateFingerprint(state)
-    console.log('signing:', JSON.stringify({
-      channelId,
-      nonce,
-      partyA,
-      partyB,
-      weiBalanceA: proposedWeiBalance 
-        ? balanceA.weiDeposit.toString() 
-        : thread 
-        ? Web3.utils.toBN(thread.weiBalanceA).toString() 
-        : Web3.utils.toBN('0').toString(),
-      weiBalanceB: proposedWeiBalance 
-        ? balanceB.weiDeposit.toString() 
-        : thread 
-        ? Web3.utils.toBN(thread.weiBalanceB).toString() 
-        : Web3.utils.toBN('0').toString(),
-      tokenBalanceA: proposedTokenBalance 
-        ? balanceA.tokenDeposit.toString() 
-        : thread 
-        ? Web3.utils.toBN(thread.tokenBalanceA).toString() 
-        : Web3.utils.toBN('0').toString(),
-      tokenBalanceB: proposedTokenBalance 
-        ? balanceB.tokenDeposit.toString() 
-        : thread 
-        ? Web3.utils.toBN(thread.tokenBalanceB).toString() 
-        : Web3.utils.toBN('0').toString(),
-    }))
+    console.log('signing:', JSON.stringify(state))
     let sig
     if (signer && unlockedAccountPresent) {
       sig = await this.web3.eth.sign(hash, signer)
@@ -3328,6 +3370,8 @@ class Connext {
         weiBalanceB: Web3.utils.toBN('0'),
         tokenBalanceA,
         tokenBalanceB: Web3.utils.toBN('0'),
+        weiBond: weiBalanceA,
+        tokenBond: tokenBalanceA
       })
       const threadInitialStates = await this.getThreadInitialStates(subchanId)
       merkle = Connext.generateMerkleTree(threadInitialStates)
@@ -4136,6 +4180,9 @@ class Connext {
     threadInitialState.weiBalanceB = Web3.utils.toBN('0')
     threadInitialState.tokenBalanceA = threadInitialState.balanceA.tokenDeposit ? threadInitialState.balanceA.tokenDeposit : Web3.utils.toBN('0')
     threadInitialState.tokenBalanceB = Web3.utils.toBN('0')
+
+    threadInitialState.weiBond = threadInitialState.weiBalanceA.add(threadInitialState.weiBalanceB)
+    threadInitialState.tokenBond = threadInitialState.tokenBalanceA.add(threadInitialState.tokenBalanceB)
 
     let threadInitialStates = await this.getThreadInitialStates(channel.channelId)
     threadInitialStates.push(threadInitialState) // add new vc state to hash

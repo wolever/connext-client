@@ -840,7 +840,7 @@ export async function createStubbedHub (
           weiBalanceB: Web3.utils.toBN('0'),
           tokenBalanceA: Web3.utils.toWei('1', 'ether').toString(),
           tokenBalanceB: Web3.utils.toBN('0'),
-          nonce: 0
+          nonce: 0,
         }),
         partyA
       )

@@ -33,7 +33,9 @@ describe('recoverSignerFromThreadStateUpdate()', function () {
       weiBalanceA: Web3.utils.toBN('1000'),
       weiBalanceB: Web3.utils.toBN('0'),
       tokenBalanceA: Web3.utils.toBN('1000'),
-      tokenBalanceB: Web3.utils.toBN('0')
+      tokenBalanceB: Web3.utils.toBN('0'),
+      weiBond: Web3.utils.toBN('1000'),
+      tokenBond: Web3.utils.toBN('1000')
     }
     const hash = Connext.createThreadStateUpdateFingerprint(state)
     const sig = await web3.eth.sign(hash, partyA)

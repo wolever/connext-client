@@ -82,7 +82,9 @@ describe.skip('settleThreadContractHandler()', () => {
         weiBalanceA: balanceA.ethDeposit,
         ethBalanceB: balanceB.ethDeposit,
         tokenBalanceA: balanceA.tokenDeposit,
-        tokenBalanceB: balanceB.tokenDeposit
+        tokenBalanceB: balanceB.tokenDeposit,
+        weiBond: balanceA.ethDeposit.add(balanceB.ethDeposit),
+        tokenBond: balanceA.tokenDeposit.add(balanceB.tokenDeposit)
       })
       const sigA = await client.web3.eth.sign(hash, partyA)
       const results = await client.settleThreadContractHandler({
@@ -119,7 +121,9 @@ describe.skip('settleThreadContractHandler()', () => {
         weiBalanceA: balanceA.ethDeposit,
         ethBalanceB: balanceB.ethDeposit,
         tokenBalanceA: balanceA.tokenDeposit,
-        tokenBalanceB: balanceB.tokenDeposit
+        tokenBalanceB: balanceB.tokenDeposit,
+        weiBond: balanceA.ethDeposit.add(balanceB.ethDeposit),
+        tokenBond: balanceA.tokenDeposit.add(balanceB.tokenDeposit)
       })
       const sigA = await client.web3.eth.sign(hash, partyC)
       const results = await client.settleThreadContractHandler({
@@ -156,7 +160,9 @@ describe.skip('settleThreadContractHandler()', () => {
         weiBalanceA: balanceA.ethDeposit,
         ethBalanceB: balanceB.ethDeposit,
         tokenBalanceA: balanceA.tokenDeposit,
-        tokenBalanceB: balanceB.tokenDeposit
+        tokenBalanceB: balanceB.tokenDeposit,
+        weiBond: balanceA.ethDeposit.add(balanceB.ethDeposit),
+        tokenBond: balanceA.tokenDeposit.add(balanceB.tokenDeposit)
       })
       const sigA = await client.web3.eth.sign(hash, partyD)
       const results = await client.settleThreadContractHandler({

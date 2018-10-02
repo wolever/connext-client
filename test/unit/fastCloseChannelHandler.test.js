@@ -96,7 +96,6 @@ describe('fastCloseChannelHandler()', () => {
         sigA,
         sigI
       }
-      console.log(response)
       expect(response).to.deep.equal(channelFinal)
     })
 
@@ -137,7 +136,6 @@ describe('fastCloseChannelHandler()', () => {
         sigA,
         sigI
       }
-      console.log(response)
       expect(response).to.deep.equal(channelFinal)
     })
 

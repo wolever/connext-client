@@ -66,7 +66,7 @@ describe('openThread()', function () {
       const to = partyB
       const deposit = {
         tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('1', 'ether')),
-        ethDeposit: Web3.utils.toBN(Web3.utils.toWei('1', 'ether'))
+        weiDeposit: Web3.utils.toBN(Web3.utils.toWei('1', 'ether'))
       }
       const channelId = await client.openThread({
         to,

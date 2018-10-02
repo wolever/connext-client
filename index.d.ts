@@ -109,6 +109,8 @@ declare namespace Connext {
     ethBalanceB: BN;
     tokenBalanceA: BN;
     tokenBalanceB: BN;
+    weiBond: BN;
+    tokenBond: BN;
   }
 
   export interface RecoverThreadUpdate extends FingerprintThreadUpdate {

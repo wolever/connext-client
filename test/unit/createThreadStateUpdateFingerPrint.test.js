@@ -35,7 +35,9 @@ describe('createThreadStateUpdateFingerprint()', function () {
       weiBalanceA: Web3.utils.toBN('1000'),
       weiBalanceB: Web3.utils.toBN('0'),
       tokenBalanceA: Web3.utils.toBN('1000'),
-      tokenBalanceB: Web3.utils.toBN('0')
+      tokenBalanceB: Web3.utils.toBN('0'),
+      weiBond: Web3.utils.toBN('1000'),
+      tokenBond: Web3.utils.toBN('1000')
     }
     const hash = Connext.createThreadStateUpdateFingerprint(state)
     const hubBondEth = state.weiBalanceA.add(state.weiBalanceB)
@@ -64,7 +66,9 @@ describe('createThreadStateUpdateFingerprint()', function () {
         weiBalanceA: Web3.utils.toBN('1000'),
         weiBalanceB: Web3.utils.toBN('0'),
         tokenBalanceA: Web3.utils.toBN('1000'),
-        tokenBalanceB: Web3.utils.toBN('0')
+        tokenBalanceB: Web3.utils.toBN('0'),
+        weiBond: Web3.utils.toBN('1000'),
+        tokenBond: Web3.utils.toBN('1000')
       }
       try {
         Connext.createThreadStateUpdateFingerprint(state)
@@ -82,7 +86,9 @@ describe('createThreadStateUpdateFingerprint()', function () {
         weiBalanceA: Web3.utils.toBN('1000'),
         weiBalanceB: Web3.utils.toBN('0'),
         tokenBalanceA: Web3.utils.toBN('1000'),
-        tokenBalanceB: Web3.utils.toBN('0')
+        tokenBalanceB: Web3.utils.toBN('0'),
+        weiBond: Web3.utils.toBN('1000'),
+        tokenBond: Web3.utils.toBN('1000')
       }
       try {
         Connext.createThreadStateUpdateFingerprint(state)
@@ -100,7 +106,9 @@ describe('createThreadStateUpdateFingerprint()', function () {
         weiBalanceA: Web3.utils.toBN('1000'),
         weiBalanceB: Web3.utils.toBN('0'),
         tokenBalanceA: Web3.utils.toBN('1000'),
-        tokenBalanceB: Web3.utils.toBN('0')
+        tokenBalanceB: Web3.utils.toBN('0'),
+        weiBond: Web3.utils.toBN('1000'),
+        tokenBond: Web3.utils.toBN('1000')
       }
       try {
         Connext.createThreadStateUpdateFingerprint(state)
@@ -117,7 +125,9 @@ describe('createThreadStateUpdateFingerprint()', function () {
         weiBalanceA: Web3.utils.toBN('1000'),
         weiBalanceB: Web3.utils.toBN('0'),
         tokenBalanceA: Web3.utils.toBN('1000'),
-        tokenBalanceB: Web3.utils.toBN('0')
+        tokenBalanceB: Web3.utils.toBN('0'),
+        weiBond: Web3.utils.toBN('1000'),
+        tokenBond: Web3.utils.toBN('1000')
       }
       try {
         Connext.createThreadStateUpdateFingerprint(state)
@@ -135,7 +145,9 @@ describe('createThreadStateUpdateFingerprint()', function () {
         weiBalanceA: Web3.utils.toBN('1000'),
         weiBalanceB: Web3.utils.toBN('0'),
         tokenBalanceA: Web3.utils.toBN('1000'),
-        tokenBalanceB: Web3.utils.toBN('0')
+        tokenBalanceB: Web3.utils.toBN('0'),
+        weiBond: Web3.utils.toBN('1000'),
+        tokenBond: Web3.utils.toBN('1000')
       }
       try {
         Connext.createThreadStateUpdateFingerprint(state)
@@ -152,7 +164,9 @@ describe('createThreadStateUpdateFingerprint()', function () {
         weiBalanceA: Web3.utils.toBN('1000'),
         weiBalanceB: Web3.utils.toBN('0'),
         tokenBalanceA: Web3.utils.toBN('1000'),
-        tokenBalanceB: Web3.utils.toBN('0')
+        tokenBalanceB: Web3.utils.toBN('0'),
+        weiBond: Web3.utils.toBN('1000'),
+        tokenBond: Web3.utils.toBN('1000')
       }
       try {
         Connext.createThreadStateUpdateFingerprint(state)
@@ -169,7 +183,9 @@ describe('createThreadStateUpdateFingerprint()', function () {
         weiBalanceA: Web3.utils.toBN('1000'),
         weiBalanceB: Web3.utils.toBN('0'),
         tokenBalanceA: Web3.utils.toBN('1000'),
-        tokenBalanceB: Web3.utils.toBN('0')
+        tokenBalanceB: Web3.utils.toBN('0'),
+        weiBond: Web3.utils.toBN('1000'),
+        tokenBond: Web3.utils.toBN('1000')
       }
       try {
         Connext.createThreadStateUpdateFingerprint(state)
@@ -187,7 +203,9 @@ describe('createThreadStateUpdateFingerprint()', function () {
         weiBalanceA: Web3.utils.toBN('1000'),
         weiBalanceB: Web3.utils.toBN('0'),
         tokenBalanceA: Web3.utils.toBN('1000'),
-        tokenBalanceB: Web3.utils.toBN('0')
+        tokenBalanceB: Web3.utils.toBN('0'),
+        weiBond: Web3.utils.toBN('1000'),
+        tokenBond: Web3.utils.toBN('1000')
       }
       try {
         Connext.createThreadStateUpdateFingerprint(state)
@@ -205,7 +223,9 @@ describe('createThreadStateUpdateFingerprint()', function () {
         weiBalanceA: Web3.utils.toBN('1000'),
         weiBalanceB: Web3.utils.toBN('0'),
         tokenBalanceA: Web3.utils.toBN('1000'),
-        tokenBalanceB: Web3.utils.toBN('0')
+        tokenBalanceB: Web3.utils.toBN('0'),
+        weiBond: Web3.utils.toBN('1000'),
+        tokenBond: Web3.utils.toBN('1000')
       }
       try {
         Connext.createThreadStateUpdateFingerprint(state)
@@ -222,7 +242,9 @@ describe('createThreadStateUpdateFingerprint()', function () {
         weiBalanceA: Web3.utils.toBN('1000'),
         weiBalanceB: Web3.utils.toBN('0'),
         tokenBalanceA: Web3.utils.toBN('1000'),
-        tokenBalanceB: Web3.utils.toBN('0')
+        tokenBalanceB: Web3.utils.toBN('0'),
+        weiBond: Web3.utils.toBN('1000'),
+        tokenBond: Web3.utils.toBN('1000')
       }
       try {
         Connext.createThreadStateUpdateFingerprint(state)
@@ -240,7 +262,9 @@ describe('createThreadStateUpdateFingerprint()', function () {
         weiBalanceA: Web3.utils.toBN('1000'),
         weiBalanceB: Web3.utils.toBN('0'),
         tokenBalanceA: Web3.utils.toBN('1000'),
-        tokenBalanceB: Web3.utils.toBN('0')
+        tokenBalanceB: Web3.utils.toBN('0'),
+        weiBond: Web3.utils.toBN('1000'),
+        tokenBond: Web3.utils.toBN('1000')
       }
       try {
         Connext.createThreadStateUpdateFingerprint(state)
@@ -258,7 +282,9 @@ describe('createThreadStateUpdateFingerprint()', function () {
         weiBalanceA: Web3.utils.toBN('1000'),
         weiBalanceB: Web3.utils.toBN('0'),
         tokenBalanceA: Web3.utils.toBN('1000'),
-        tokenBalanceB: Web3.utils.toBN('0')
+        tokenBalanceB: Web3.utils.toBN('0'),
+        weiBond: Web3.utils.toBN('1000'),
+        tokenBond: Web3.utils.toBN('1000')
       }
       try {
         Connext.createThreadStateUpdateFingerprint(state)
@@ -275,7 +301,9 @@ describe('createThreadStateUpdateFingerprint()', function () {
         partyB,
         weiBalanceB: Web3.utils.toBN('0'),
         tokenBalanceA: Web3.utils.toBN('1000'),
-        tokenBalanceB: Web3.utils.toBN('0')
+        tokenBalanceB: Web3.utils.toBN('0'),
+        weiBond: Web3.utils.toBN('1000'),
+        tokenBond: Web3.utils.toBN('1000')
       }
       try {
         Connext.createThreadStateUpdateFingerprint(state)
@@ -293,7 +321,9 @@ describe('createThreadStateUpdateFingerprint()', function () {
         weiBalanceA: null,
         weiBalanceB: Web3.utils.toBN('0'),
         tokenBalanceA: Web3.utils.toBN('1000'),
-        tokenBalanceB: Web3.utils.toBN('0')
+        tokenBalanceB: Web3.utils.toBN('0'),
+        weiBond: Web3.utils.toBN('1000'),
+        tokenBond: Web3.utils.toBN('1000')
       }
       try {
         Connext.createThreadStateUpdateFingerprint(state)
@@ -311,7 +341,9 @@ describe('createThreadStateUpdateFingerprint()', function () {
         weiBalanceA: 'fail',
         weiBalanceB: Web3.utils.toBN('0'),
         tokenBalanceA: Web3.utils.toBN('1000'),
-        tokenBalanceB: Web3.utils.toBN('0')
+        tokenBalanceB: Web3.utils.toBN('0'),
+        weiBond: Web3.utils.toBN('1000'),
+        tokenBond: Web3.utils.toBN('1000')
       }
       try {
         Connext.createThreadStateUpdateFingerprint(state)
@@ -328,7 +360,9 @@ describe('createThreadStateUpdateFingerprint()', function () {
         partyB,
         weiBalanceA: Web3.utils.toBN('1000'),
         tokenBalanceA: Web3.utils.toBN('1000'),
-        tokenBalanceB: Web3.utils.toBN('0')
+        tokenBalanceB: Web3.utils.toBN('0'),
+        weiBond: Web3.utils.toBN('1000'),
+        tokenBond: Web3.utils.toBN('1000')
       }
       try {
         Connext.createThreadStateUpdateFingerprint(state)
@@ -346,7 +380,9 @@ describe('createThreadStateUpdateFingerprint()', function () {
         weiBalanceA: Web3.utils.toBN('1000'),
         weiBalanceB: null,
         tokenBalanceA: Web3.utils.toBN('1000'),
-        tokenBalanceB: Web3.utils.toBN('0')
+        tokenBalanceB: Web3.utils.toBN('0'),
+        weiBond: Web3.utils.toBN('1000'),
+        tokenBond: Web3.utils.toBN('1000')
       }
       try {
         Connext.createThreadStateUpdateFingerprint(state)
@@ -364,7 +400,9 @@ describe('createThreadStateUpdateFingerprint()', function () {
         weiBalanceA: Web3.utils.toBN('1000'),
         weiBalanceB: 'fail',
         tokenBalanceA: Web3.utils.toBN('1000'),
-        tokenBalanceB: Web3.utils.toBN('0')
+        tokenBalanceB: Web3.utils.toBN('0'),
+        weiBond: Web3.utils.toBN('1000'),
+        tokenBond: Web3.utils.toBN('1000')
       }
       try {
         Connext.createThreadStateUpdateFingerprint(state)
@@ -381,7 +419,9 @@ describe('createThreadStateUpdateFingerprint()', function () {
         partyB,
         weiBalanceA: Web3.utils.toBN('1000'),
         weiBalanceB: Web3.utils.toBN('0'),
-        tokenBalanceB: Web3.utils.toBN('0')
+        tokenBalanceB: Web3.utils.toBN('0'),
+        weiBond: Web3.utils.toBN('1000'),
+        tokenBond: Web3.utils.toBN('1000')
       }
       try {
         Connext.createThreadStateUpdateFingerprint(state)
@@ -399,7 +439,9 @@ describe('createThreadStateUpdateFingerprint()', function () {
         weiBalanceA: Web3.utils.toBN('1000'),
         weiBalanceB: Web3.utils.toBN('0'),
         tokenBalanceA: null,
-        tokenBalanceB: Web3.utils.toBN('0')
+        tokenBalanceB: Web3.utils.toBN('0'),
+        weiBond: Web3.utils.toBN('1000'),
+        tokenBond: Web3.utils.toBN('1000')
       }
       try {
         Connext.createThreadStateUpdateFingerprint(state)
@@ -417,7 +459,9 @@ describe('createThreadStateUpdateFingerprint()', function () {
         weiBalanceA: Web3.utils.toBN('1000'),
         weiBalanceB: Web3.utils.toBN('0'),
         tokenBalanceA: 'fail',
-        tokenBalanceB: Web3.utils.toBN('0')
+        tokenBalanceB: Web3.utils.toBN('0'),
+        weiBond: Web3.utils.toBN('1000'),
+        tokenBond: Web3.utils.toBN('1000')
       }
       try {
         Connext.createThreadStateUpdateFingerprint(state)
@@ -434,7 +478,9 @@ describe('createThreadStateUpdateFingerprint()', function () {
         partyB,
         weiBalanceA: Web3.utils.toBN('1000'),
         weiBalanceB: Web3.utils.toBN('0'),
-        tokenBalanceA: Web3.utils.toBN('1000')
+        tokenBalanceA: Web3.utils.toBN('1000'),
+        weiBond: Web3.utils.toBN('1000'),
+        tokenBond: Web3.utils.toBN('1000')
       }
       try {
         Connext.createThreadStateUpdateFingerprint(state)
@@ -452,7 +498,9 @@ describe('createThreadStateUpdateFingerprint()', function () {
         weiBalanceA: Web3.utils.toBN('1000'),
         weiBalanceB: Web3.utils.toBN('0'),
         tokenBalanceA: Web3.utils.toBN('1000'),
-        tokenBalanceB: null
+        tokenBalanceB: null,
+        weiBond: Web3.utils.toBN('1000'),
+        tokenBond: Web3.utils.toBN('1000')
       }
       try {
         Connext.createThreadStateUpdateFingerprint(state)
@@ -470,7 +518,127 @@ describe('createThreadStateUpdateFingerprint()', function () {
         weiBalanceA: Web3.utils.toBN('1000'),
         weiBalanceB: Web3.utils.toBN('0'),
         tokenBalanceA: Web3.utils.toBN('1000'),
-        tokenBalanceB: 'fail'
+        tokenBalanceB: 'fail',
+        weiBond: Web3.utils.toBN('1000'),
+        tokenBond: Web3.utils.toBN('1000')
+      }
+      try {
+        Connext.createThreadStateUpdateFingerprint(state)
+      } catch (e) {
+        expect(e.statusCode).to.equal(200)
+      }
+    })
+
+    it('should fail if tokenBond doesnt exist', () => {
+      const state = {
+        channelId: '0x0100000000000000000000000000000000000000000000000000000000000000',
+        nonce: 0,
+        partyA,
+        partyB,
+        weiBalanceA: Web3.utils.toBN('1000'),
+        tokenBalanceA: Web3.utils.toBN('1000'),
+        weiBalanceB: Web3.utils.toBN('0'),
+        tokenBalanceB: Web3.utils.toBN('0'),
+        weiBond: Web3.utils.toBN('1000')
+      }
+      try {
+        Connext.createThreadStateUpdateFingerprint(state)
+      } catch (e) {
+        expect(e.statusCode).to.equal(200)
+      }
+    })
+
+    it('should fail if tokenBond is null', () => {
+      const state = {
+        channelId: '0x0100000000000000000000000000000000000000000000000000000000000000',
+        nonce: 0,
+        partyA,
+        partyB,
+        weiBalanceA: Web3.utils.toBN('1000'),
+        tokenBalanceA: Web3.utils.toBN('1000'),
+        weiBalanceB: Web3.utils.toBN('0'),
+        tokenBalanceB: Web3.utils.toBN('0'),
+        weiBond: Web3.utils.toBN('1000'),
+        tokenBond: null
+      }
+      try {
+        Connext.createThreadStateUpdateFingerprint(state)
+      } catch (e) {
+        expect(e.statusCode).to.equal(200)
+      }
+    })
+
+    it('should fail if tokenBond is invalid', () => {
+      const state = {
+        channelId: '0x0100000000000000000000000000000000000000000000000000000000000000',
+        nonce: 0,
+        partyA,
+        partyB,
+        weiBalanceA: Web3.utils.toBN('1000'),
+        tokenBalanceA: Web3.utils.toBN('1000'),
+        weiBalanceB: Web3.utils.toBN('0'),
+        tokenBalanceB: Web3.utils.toBN('0'),
+        weiBond: Web3.utils.toBN('1000'),
+        tokenBond: 'fail'
+      }
+      try {
+        Connext.createThreadStateUpdateFingerprint(state)
+      } catch (e) {
+        expect(e.statusCode).to.equal(200)
+      }
+    })
+
+    it('should fail if weiBond doesnt exist', () => {
+      const state = {
+        channelId: '0x0100000000000000000000000000000000000000000000000000000000000000',
+        nonce: 0,
+        partyA,
+        partyB,
+        weiBalanceA: Web3.utils.toBN('1000'),
+        tokenBalanceA: Web3.utils.toBN('1000'),
+        weiBalanceB: Web3.utils.toBN('0'),
+        tokenBalanceB: Web3.utils.toBN('0'),
+        tokenBond: Web3.utils.toBN('1000')
+      }
+      try {
+        Connext.createThreadStateUpdateFingerprint(state)
+      } catch (e) {
+        expect(e.statusCode).to.equal(200)
+      }
+    })
+
+    it('should fail if weiBond is null', () => {
+      const state = {
+        channelId: '0x0100000000000000000000000000000000000000000000000000000000000000',
+        nonce: 0,
+        partyA,
+        partyB,
+        weiBalanceA: Web3.utils.toBN('1000'),
+        tokenBalanceA: Web3.utils.toBN('1000'),
+        weiBalanceB: Web3.utils.toBN('0'),
+        tokenBalanceB: Web3.utils.toBN('0'),
+        weiBond: null,
+        tokenBond: Web3.utils.toBN('1000')
+      }
+      try {
+        Connext.createThreadStateUpdateFingerprint(state)
+      } catch (e) {
+        expect(e.statusCode).to.equal(200)
+      }
+    })
+
+    it('should fail if tokenBalanceB is invalid', () => {
+      const state = {
+        channelId: '0x0100000000000000000000000000000000000000000000000000000000000000',
+        nonce: 0,
+        partyA,
+        partyB,
+        weiBalanceA: Web3.utils.toBN('1000'),
+        tokenBalanceA: Web3.utils.toBN('1000'),
+        weiBalanceB: Web3.utils.toBN('0'),
+        tokenBalanceB: Web3.utils.toBN('0'),
+        weiBond: 'fail',
+        tokenBond: Web3.utils.toBN('1000')
       }
       try {
         Connext.createThreadStateUpdateFingerprint(state)

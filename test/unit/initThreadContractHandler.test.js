@@ -78,7 +78,9 @@ describe.skip('initThreadContractHandler()', () => {
         weiBalanceA: balanceA.ethDeposit,
         ethBalanceB: Web3.utils.toBN('0'),
         tokenBalanceA: balanceA.tokenDeposit,
-        tokenBalanceB: Web3.utils.toBN('0')
+        tokenBalanceB: Web3.utils.toBN('0'),
+        weiBond: balanceA.ethDeposit,
+        tokenBond: balanceA.tokenDeposit
       })
       const sigA = await client.web3.eth.sign(hash, partyA)
       const response = await client.initThreadContractHandler({
@@ -109,7 +111,9 @@ describe.skip('initThreadContractHandler()', () => {
         weiBalanceA: balanceA.ethDeposit,
         ethBalanceB: Web3.utils.toBN('0'),
         tokenBalanceA: balanceA.tokenDeposit,
-        tokenBalanceB: Web3.utils.toBN('0')
+        tokenBalanceB: Web3.utils.toBN('0'),
+        weiBond: balanceA.ethDeposit,
+        tokenBond: balanceA.tokenDeposit
       })
       const sigA = await client.web3.eth.sign(hash, partyC)
       const response = await client.initThreadContractHandler({
@@ -140,7 +144,9 @@ describe.skip('initThreadContractHandler()', () => {
         weiBalanceA: balanceA.ethDeposit,
         ethBalanceB: Web3.utils.toBN('0'),
         tokenBalanceA: balanceA.tokenDeposit,
-        tokenBalanceB: Web3.utils.toBN('0')
+        tokenBalanceB: Web3.utils.toBN('0'),
+        weiBond: balanceA.ethDeposit,
+        tokenBond: balanceA.tokenDeposit
       })
       const sigA = await client.web3.eth.sign(hash, partyD)
       const response = await client.initThreadContractHandler({

@@ -83,7 +83,11 @@ describe('createThreadStateUpdate()', function () {
         weiBalanceA: update.balanceA.weiDeposit,
         weiBalanceB: update.balanceB.weiDeposit,
         tokenBalanceA: update.balanceA.tokenDeposit,
-        tokenBalanceB: update.balanceB.tokenDeposit
+        tokenBalanceB: update.balanceB.tokenDeposit,
+        weiBond: update.balanceA.weiDeposit.add(update.balanceB.weiDeposit),
+        tokenBond: update.balanceA.tokenDeposit.add(
+          update.balanceB.tokenDeposit
+        )
       }
       const signer = Connext.recoverSignerFromThreadStateUpdate(sigParams)
       expect(signer.toLowerCase()).to.equal(update.signer.toLowerCase())
@@ -116,7 +120,9 @@ describe('createThreadStateUpdate()', function () {
         weiBalanceA: update.balanceA.weiDeposit,
         weiBalanceB: update.balanceB.weiDeposit,
         tokenBalanceA: Web3.utils.toBN('0'),
-        tokenBalanceB: Web3.utils.toBN('0')
+        tokenBalanceB: Web3.utils.toBN('0'),
+        weiBond: update.balanceA.weiDeposit.add(update.balanceB.weiDeposit),
+        tokenBond: Web3.utils.toBN('0')
       }
       const signer = Connext.recoverSignerFromThreadStateUpdate(sigParams)
       expect(signer.toLowerCase()).to.equal(update.signer.toLowerCase())
@@ -149,7 +155,11 @@ describe('createThreadStateUpdate()', function () {
         weiBalanceA: Web3.utils.toBN('0'),
         weiBalanceB: Web3.utils.toBN('0'),
         tokenBalanceA: update.balanceA.tokenDeposit,
-        tokenBalanceB: update.balanceB.tokenDeposit
+        tokenBalanceB: update.balanceB.tokenDeposit,
+        weiBond: Web3.utils.toBN('0'),
+        tokenBond: update.balanceA.tokenDeposit.add(
+          update.balanceB.tokenDeposit
+        )
       }
       const signer = Connext.recoverSignerFromThreadStateUpdate(sigParams)
       expect(signer.toLowerCase()).to.equal(update.signer.toLowerCase())
@@ -167,14 +177,12 @@ describe('createThreadStateUpdate()', function () {
         nonce: 1,
         partyA,
         partyB,
-        balanceA: {
-          tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether')),
-          weiDeposit: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether'))
-        },
-        balanceB: {
-          tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
-          weiDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
-        },
+        tokenBalanceA: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether')),
+        weiBalanceA: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether')),
+        tokenBalanceB: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
+        weiBalanceB: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
+        weiBond: Web3.utils.toBN(Web3.utils.toWei('1', 'ether')),
+        tokenBond: Web3.utils.toBN(Web3.utils.toWei('1', 'ether')),
         sender: partyA
       }
       try {
@@ -190,14 +198,12 @@ describe('createThreadStateUpdate()', function () {
         nonce: 1,
         partyA,
         partyB,
-        balanceA: {
-          tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether')),
-          weiDeposit: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether'))
-        },
-        balanceB: {
-          tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
-          weiDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
-        },
+        tokenBalanceA: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether')),
+        weiBalanceA: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether')),
+        tokenBalanceB: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
+        weiBalanceB: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
+        weiBond: Web3.utils.toBN(Web3.utils.toWei('1', 'ether')),
+        tokenBond: Web3.utils.toBN(Web3.utils.toWei('1', 'ether')),
         sender: partyA
       }
       try {
@@ -213,14 +219,12 @@ describe('createThreadStateUpdate()', function () {
         nonce: 1,
         partyA,
         partyB,
-        balanceA: {
-          tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether')),
-          weiDeposit: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether'))
-        },
-        balanceB: {
-          tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
-          weiDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
-        },
+        tokenBalanceA: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether')),
+        weiBalanceA: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether')),
+        tokenBalanceB: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
+        weiBalanceB: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
+        weiBond: Web3.utils.toBN(Web3.utils.toWei('1', 'ether')),
+        tokenBond: Web3.utils.toBN(Web3.utils.toWei('1', 'ether')),
         sender: partyA
       }
       try {
@@ -235,14 +239,12 @@ describe('createThreadStateUpdate()', function () {
         channelId: '0x0100000000000000000000000000000000000000000000000000000000000000',
         partyA,
         partyB,
-        balanceA: {
-          tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether')),
-          weiDeposit: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether'))
-        },
-        balanceB: {
-          tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
-          weiDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
-        },
+        tokenBalanceA: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether')),
+        weiBalanceA: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether')),
+        tokenBalanceB: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
+        weiBalanceB: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
+        weiBond: Web3.utils.toBN(Web3.utils.toWei('1', 'ether')),
+        tokenBond: Web3.utils.toBN(Web3.utils.toWei('1', 'ether')),
         sender: partyA
       }
       try {
@@ -258,14 +260,12 @@ describe('createThreadStateUpdate()', function () {
         nonce: null,
         partyA,
         partyB,
-        balanceA: {
-          tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether')),
-          weiDeposit: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether'))
-        },
-        balanceB: {
-          tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
-          weiDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
-        },
+        tokenBalanceA: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether')),
+        weiBalanceA: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether')),
+        tokenBalanceB: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
+        weiBalanceB: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
+        weiBond: Web3.utils.toBN(Web3.utils.toWei('1', 'ether')),
+        tokenBond: Web3.utils.toBN(Web3.utils.toWei('1', 'ether')),
         sender: partyA
       }
       try {
@@ -281,14 +281,12 @@ describe('createThreadStateUpdate()', function () {
         nonce: 'fail',
         partyA,
         partyB,
-        balanceA: {
-          tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether')),
-          weiDeposit: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether'))
-        },
-        balanceB: {
-          tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
-          weiDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
-        },
+        tokenBalanceA: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether')),
+        weiBalanceA: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether')),
+        tokenBalanceB: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
+        weiBalanceB: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
+        weiBond: Web3.utils.toBN(Web3.utils.toWei('1', 'ether')),
+        tokenBond: Web3.utils.toBN(Web3.utils.toWei('1', 'ether')),
         sender: partyA
       }
       try {
@@ -303,14 +301,12 @@ describe('createThreadStateUpdate()', function () {
         channelId: '0x0100000000000000000000000000000000000000000000000000000000000000',
         nonce: 1,
         partyB,
-        balanceA: {
-          tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether')),
-          weiDeposit: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether'))
-        },
-        balanceB: {
-          tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
-          weiDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
-        },
+        tokenBalanceA: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether')),
+        weiBalanceA: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether')),
+        tokenBalanceB: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
+        weiBalanceB: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
+        weiBond: Web3.utils.toBN(Web3.utils.toWei('1', 'ether')),
+        tokenBond: Web3.utils.toBN(Web3.utils.toWei('1', 'ether')),
         sender: partyA
       }
       try {
@@ -326,14 +322,12 @@ describe('createThreadStateUpdate()', function () {
         nonce: 1,
         partyA: null,
         partyB,
-        balanceA: {
-          tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether')),
-          weiDeposit: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether'))
-        },
-        balanceB: {
-          tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
-          weiDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
-        },
+        tokenBalanceA: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether')),
+        weiBalanceA: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether')),
+        tokenBalanceB: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
+        weiBalanceB: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
+        weiBond: Web3.utils.toBN(Web3.utils.toWei('1', 'ether')),
+        tokenBond: Web3.utils.toBN(Web3.utils.toWei('1', 'ether')),
         sender: partyA
       }
       try {
@@ -349,14 +343,12 @@ describe('createThreadStateUpdate()', function () {
         nonce: 1,
         partyA: 'fail',
         partyB,
-        balanceA: {
-          tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether')),
-          weiDeposit: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether'))
-        },
-        balanceB: {
-          tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
-          weiDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
-        },
+        tokenBalanceA: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether')),
+        weiBalanceA: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether')),
+        tokenBalanceB: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
+        weiBalanceB: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
+        weiBond: Web3.utils.toBN(Web3.utils.toWei('1', 'ether')),
+        tokenBond: Web3.utils.toBN(Web3.utils.toWei('1', 'ether')),
         sender: partyA
       }
       try {
@@ -371,14 +363,12 @@ describe('createThreadStateUpdate()', function () {
         channelId: '0x0100000000000000000000000000000000000000000000000000000000000000',
         nonce: 1,
         partyA,
-        balanceA: {
-          tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether')),
-          weiDeposit: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether'))
-        },
-        balanceB: {
-          tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
-          weiDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
-        },
+        tokenBalanceA: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether')),
+        weiBalanceA: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether')),
+        tokenBalanceB: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
+        weiBalanceB: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
+        weiBond: Web3.utils.toBN(Web3.utils.toWei('1', 'ether')),
+        tokenBond: Web3.utils.toBN(Web3.utils.toWei('1', 'ether')),
         sender: partyA
       }
       try {
@@ -393,15 +383,12 @@ describe('createThreadStateUpdate()', function () {
         channelId: '0x0100000000000000000000000000000000000000000000000000000000000000',
         nonce: 1,
         partyA,
-        partyB: null,
-        balanceA: {
-          tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether')),
-          weiDeposit: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether'))
-        },
-        balanceB: {
-          tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
-          weiDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
-        },
+        tokenBalanceA: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether')),
+        weiBalanceA: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether')),
+        tokenBalanceB: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
+        weiBalanceB: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
+        weiBond: Web3.utils.toBN(Web3.utils.toWei('1', 'ether')),
+        tokenBond: Web3.utils.toBN(Web3.utils.toWei('1', 'ether')),
         sender: partyA
       }
       try {
@@ -417,14 +404,12 @@ describe('createThreadStateUpdate()', function () {
         nonce: 1,
         partyA,
         partyB: 'fail',
-        balanceA: {
-          tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether')),
-          weiDeposit: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether'))
-        },
-        balanceB: {
-          tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
-          weiDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
-        },
+        tokenBalanceA: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether')),
+        weiBalanceA: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether')),
+        tokenBalanceB: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
+        weiBalanceB: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
+        weiBond: Web3.utils.toBN(Web3.utils.toWei('1', 'ether')),
+        tokenBond: Web3.utils.toBN(Web3.utils.toWei('1', 'ether')),
         sender: partyA
       }
       try {
@@ -434,16 +419,17 @@ describe('createThreadStateUpdate()', function () {
       }
     })
 
-    it('should fail if it is missing balanceA', () => {
+    it('should fail if it is missing tokenBalanceA', () => {
       let state = {
         channelId: '0x0100000000000000000000000000000000000000000000000000000000000000',
         nonce: 1,
         partyA,
         partyB,
-        balanceB: {
-          tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
-          weiDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
-        },
+        weiBalanceA: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether')),
+        tokenBalanceB: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
+        weiBalanceB: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
+        weiBond: Web3.utils.toBN(Web3.utils.toWei('1', 'ether')),
+        tokenBond: Web3.utils.toBN(Web3.utils.toWei('1', 'ether')),
         sender: partyA
       }
       try {
@@ -453,17 +439,18 @@ describe('createThreadStateUpdate()', function () {
       }
     })
 
-    it('should fail if balanceA is null', () => {
+    it('should fail if tokenBalanceA is null', () => {
       let state = {
         channelId: '0x0100000000000000000000000000000000000000000000000000000000000000',
         nonce: 1,
         partyA,
         partyB,
-        balanceA: null,
-        balanceB: {
-          tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
-          weiDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
-        },
+        tokenBalanceA: null,
+        weiBalanceA: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether')),
+        tokenBalanceB: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
+        weiBalanceB: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
+        weiBond: Web3.utils.toBN(Web3.utils.toWei('1', 'ether')),
+        tokenBond: Web3.utils.toBN(Web3.utils.toWei('1', 'ether')),
         sender: partyA
       }
       try {
@@ -473,17 +460,18 @@ describe('createThreadStateUpdate()', function () {
       }
     })
 
-    it('should fail if balanceA is invalid', () => {
+    it('should fail if tokenBalanceA is invalid', () => {
       let state = {
         channelId: '0x0100000000000000000000000000000000000000000000000000000000000000',
         nonce: 1,
         partyA,
         partyB,
-        balanceA: 'fail',
-        balanceB: {
-          tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
-          weiDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
-        },
+        tokenBalanceA: 'fail',
+        weiBalanceA: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether')),
+        tokenBalanceB: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
+        weiBalanceB: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
+        weiBond: Web3.utils.toBN(Web3.utils.toWei('1', 'ether')),
+        tokenBond: Web3.utils.toBN(Web3.utils.toWei('1', 'ether')),
         sender: partyA
       }
       try {
@@ -493,17 +481,18 @@ describe('createThreadStateUpdate()', function () {
       }
     })
 
-    it('should fail if balanceA is malformed', () => {
+    it('should fail if tokenBalanceA is negative', () => {
       let state = {
         channelId: '0x0100000000000000000000000000000000000000000000000000000000000000',
         nonce: 1,
         partyA,
         partyB,
-        balanceA: {},
-        balanceB: {
-          tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
-          weiDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
-        },
+        tokenBalanceA: Web3.utils.toBN(Web3.utils.toWei('-0.9', 'ether')),
+        weiBalanceA: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether')),
+        tokenBalanceB: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
+        weiBalanceB: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
+        weiBond: Web3.utils.toBN(Web3.utils.toWei('1', 'ether')),
+        tokenBond: Web3.utils.toBN(Web3.utils.toWei('1', 'ether')),
         sender: partyA
       }
       try {
@@ -513,20 +502,17 @@ describe('createThreadStateUpdate()', function () {
       }
     })
 
-    it('should fail if balanceA has 2 null values', () => {
+    it('should fail if it is missing weiBalanceA', () => {
       let state = {
         channelId: '0x0100000000000000000000000000000000000000000000000000000000000000',
         nonce: 1,
         partyA,
         partyB,
-        balanceA: {
-          tokenDeposit: null,
-          weiDeposit: null
-        },
-        balanceB: {
-          tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
-          weiDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
-        },
+        tokenBalanceA: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether')),
+        tokenBalanceB: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
+        weiBalanceB: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
+        weiBond: Web3.utils.toBN(Web3.utils.toWei('1', 'ether')),
+        tokenBond: Web3.utils.toBN(Web3.utils.toWei('1', 'ether')),
         sender: partyA
       }
       try {
@@ -536,20 +522,18 @@ describe('createThreadStateUpdate()', function () {
       }
     })
 
-    it('should fail if balanceA has negative tokenDeposit', () => {
+    it('should fail if weiBalanceA is null', () => {
       let state = {
         channelId: '0x0100000000000000000000000000000000000000000000000000000000000000',
         nonce: 1,
         partyA,
         partyB,
-        balanceA: {
-          tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('-0.9', 'ether')),
-          weiDeposit: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether'))
-        },
-        balanceB: {
-          tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
-          weiDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
-        },
+        tokenBalanceA: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether')),
+        weiBalanceA: null,
+        tokenBalanceB: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
+        weiBalanceB: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
+        weiBond: Web3.utils.toBN(Web3.utils.toWei('1', 'ether')),
+        tokenBond: Web3.utils.toBN(Web3.utils.toWei('1', 'ether')),
         sender: partyA
       }
       try {
@@ -559,20 +543,18 @@ describe('createThreadStateUpdate()', function () {
       }
     })
 
-    it('should fail if balanceA has negative weiDeposit', () => {
+    it('should fail if weiBalanceA is invalid', () => {
       let state = {
         channelId: '0x0100000000000000000000000000000000000000000000000000000000000000',
         nonce: 1,
         partyA,
         partyB,
-        balanceA: {
-          tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether')),
-          weiDeposit: Web3.utils.toBN(Web3.utils.toWei('-0.9', 'ether'))
-        },
-        balanceB: {
-          tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
-          weiDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
-        },
+        tokenBalanceA: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether')),
+        weiBalanceA: 'fail',
+        tokenBalanceB: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
+        weiBalanceB: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
+        weiBond: Web3.utils.toBN(Web3.utils.toWei('1', 'ether')),
+        tokenBond: Web3.utils.toBN(Web3.utils.toWei('1', 'ether')),
         sender: partyA
       }
       try {
@@ -582,16 +564,18 @@ describe('createThreadStateUpdate()', function () {
       }
     })
 
-    it('should fail if it is missing balanceB', () => {
+    it('should fail if weiBalanceA is negative', () => {
       let state = {
         channelId: '0x0100000000000000000000000000000000000000000000000000000000000000',
         nonce: 1,
         partyA,
         partyB,
-        balanceA: {
-          tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
-          weiDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
-        },
+        tokenBalanceA: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether')),
+        weiBalanceA: Web3.utils.toBN(Web3.utils.toWei('-0.9', 'ether')),
+        tokenBalanceB: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
+        weiBalanceB: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
+        weiBond: Web3.utils.toBN(Web3.utils.toWei('1', 'ether')),
+        tokenBond: Web3.utils.toBN(Web3.utils.toWei('1', 'ether')),
         sender: partyA
       }
       try {
@@ -601,17 +585,17 @@ describe('createThreadStateUpdate()', function () {
       }
     })
 
-    it('should fail if balanceB is null', () => {
+    it('should fail if it is missing tokenBalanceB', () => {
       let state = {
         channelId: '0x0100000000000000000000000000000000000000000000000000000000000000',
         nonce: 1,
         partyA,
         partyB,
-        balanceB: null,
-        balanceA: {
-          tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
-          weiDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
-        },
+        tokenBalanceA: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether')),
+        weiBalanceA: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether')),
+        weiBalanceB: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
+        weiBond: Web3.utils.toBN(Web3.utils.toWei('1', 'ether')),
+        tokenBond: Web3.utils.toBN(Web3.utils.toWei('1', 'ether')),
         sender: partyA
       }
       try {
@@ -621,17 +605,18 @@ describe('createThreadStateUpdate()', function () {
       }
     })
 
-    it('should fail if balanceB is invalid', () => {
+    it('should fail if tokenBalanceB is null', () => {
       let state = {
         channelId: '0x0100000000000000000000000000000000000000000000000000000000000000',
         nonce: 1,
         partyA,
         partyB,
-        balanceB: 'fail',
-        balanceA: {
-          tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
-          weiDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
-        },
+        tokenBalanceA: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether')),
+        weiBalanceA: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether')),
+        tokenBalanceB: null,
+        weiBalanceB: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
+        weiBond: Web3.utils.toBN(Web3.utils.toWei('1', 'ether')),
+        tokenBond: Web3.utils.toBN(Web3.utils.toWei('1', 'ether')),
         sender: partyA
       }
       try {
@@ -641,17 +626,18 @@ describe('createThreadStateUpdate()', function () {
       }
     })
 
-    it('should fail if balanceB is malformed', () => {
+    it('should fail if tokenBalanceB is invalid', () => {
       let state = {
         channelId: '0x0100000000000000000000000000000000000000000000000000000000000000',
         nonce: 1,
         partyA,
         partyB,
-        balanceB: {},
-        balanceA: {
-          tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
-          weiDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
-        },
+        tokenBalanceA: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether')),
+        weiBalanceA: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether')),
+        tokenBalanceB: 'fail',
+        weiBalanceB: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
+        weiBond: Web3.utils.toBN(Web3.utils.toWei('1', 'ether')),
+        tokenBond: Web3.utils.toBN(Web3.utils.toWei('1', 'ether')),
         sender: partyA
       }
       try {
@@ -661,20 +647,18 @@ describe('createThreadStateUpdate()', function () {
       }
     })
 
-    it('should fail if balanceB has 2 null values', () => {
+    it('should fail if tokenBalanceB is negative', () => {
       let state = {
         channelId: '0x0100000000000000000000000000000000000000000000000000000000000000',
         nonce: 1,
         partyA,
         partyB,
-        balanceB: {
-          tokenDeposit: null,
-          weiDeposit: null
-        },
-        balanceA: {
-          tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
-          weiDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
-        },
+        tokenBalanceA: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether')),
+        weiBalanceA: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether')),
+        tokenBalanceB: Web3.utils.toBN(Web3.utils.toWei('-0.1', 'ether')),
+        weiBalanceB: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
+        weiBond: Web3.utils.toBN(Web3.utils.toWei('1', 'ether')),
+        tokenBond: Web3.utils.toBN(Web3.utils.toWei('1', 'ether')),
         sender: partyA
       }
       try {
@@ -684,20 +668,17 @@ describe('createThreadStateUpdate()', function () {
       }
     })
 
-    it('should fail if balanceB has negative tokenDeposit', () => {
+    it('should fail if it is missing weiBalanceB', () => {
       let state = {
         channelId: '0x0100000000000000000000000000000000000000000000000000000000000000',
         nonce: 1,
         partyA,
         partyB,
-        balanceB: {
-          tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('-0.9', 'ether')),
-          weiDeposit: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether'))
-        },
-        balanceA: {
-          tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
-          weiDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
-        },
+        tokenBalanceA: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether')),
+        weiBalanceA: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether')),
+        tokenBalanceB: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
+        weiBond: Web3.utils.toBN(Web3.utils.toWei('1', 'ether')),
+        tokenBond: Web3.utils.toBN(Web3.utils.toWei('1', 'ether')),
         sender: partyA
       }
       try {
@@ -707,20 +688,226 @@ describe('createThreadStateUpdate()', function () {
       }
     })
 
-    it('should fail if balanceB has negative weiDeposit', () => {
+    it('should fail if weiBalanceB is null', () => {
       let state = {
         channelId: '0x0100000000000000000000000000000000000000000000000000000000000000',
         nonce: 1,
         partyA,
         partyB,
-        balanceB: {
-          tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether')),
-          weiDeposit: Web3.utils.toBN(Web3.utils.toWei('-0.9', 'ether'))
-        },
-        balanceA: {
-          tokenDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
-          weiDeposit: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether'))
-        },
+        tokenBalanceA: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether')),
+        weiBalanceA: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether')),
+        tokenBalanceB: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
+        weiBalanceB: null,
+        weiBond: Web3.utils.toBN(Web3.utils.toWei('1', 'ether')),
+        tokenBond: Web3.utils.toBN(Web3.utils.toWei('1', 'ether')),
+        sender: partyA
+      }
+      try {
+        Connext.createThreadStateUpdateFingerprint(state)
+      } catch (e) {
+        expect(e.statusCode).to.equal(200)
+      }
+    })
+
+    it('should fail if weiBalanceB is invalid', () => {
+      let state = {
+        channelId: '0x0100000000000000000000000000000000000000000000000000000000000000',
+        nonce: 1,
+        partyA,
+        partyB,
+        tokenBalanceA: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether')),
+        weiBalanceA: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether')),
+        tokenBalanceB: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
+        weiBalanceB: 'fail',
+        weiBond: Web3.utils.toBN(Web3.utils.toWei('1', 'ether')),
+        tokenBond: Web3.utils.toBN(Web3.utils.toWei('1', 'ether')),
+        sender: partyA
+      }
+      try {
+        Connext.createThreadStateUpdateFingerprint(state)
+      } catch (e) {
+        expect(e.statusCode).to.equal(200)
+      }
+    })
+
+    it('should fail if weiBalanceB is negative', () => {
+      let state = {
+        channelId: '0x0100000000000000000000000000000000000000000000000000000000000000',
+        nonce: 1,
+        partyA,
+        partyB,
+        tokenBalanceA: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether')),
+        weiBalanceA: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether')),
+        tokenBalanceB: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
+        weiBalanceB: Web3.utils.toBN(Web3.utils.toWei('-0.1', 'ether')),
+        weiBond: Web3.utils.toBN(Web3.utils.toWei('1', 'ether')),
+        tokenBond: Web3.utils.toBN(Web3.utils.toWei('1', 'ether')),
+        sender: partyA
+      }
+      try {
+        Connext.createThreadStateUpdateFingerprint(state)
+      } catch (e) {
+        expect(e.statusCode).to.equal(200)
+      }
+    })
+
+    it('should fail if it is missing tokenBond', () => {
+      let state = {
+        channelId: '0x0100000000000000000000000000000000000000000000000000000000000000',
+        nonce: 1,
+        partyA,
+        partyB,
+        tokenBalanceA: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether')),
+        weiBalanceA: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether')),
+        tokenBalanceB: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
+        weiBalanceB: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
+        weiBond: Web3.utils.toBN(Web3.utils.toWei('1', 'ether')),
+        sender: partyA
+      }
+      try {
+        Connext.createThreadStateUpdateFingerprint(state)
+      } catch (e) {
+        expect(e.statusCode).to.equal(200)
+      }
+    })
+
+    it('should fail if tokenBond is null', () => {
+      let state = {
+        channelId: '0x0100000000000000000000000000000000000000000000000000000000000000',
+        nonce: 1,
+        partyA,
+        partyB,
+        tokenBalanceA: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether')),
+        weiBalanceA: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether')),
+        tokenBalanceB: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
+        weiBalanceB: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
+        weiBond: Web3.utils.toBN(Web3.utils.toWei('1', 'ether')),
+        tokenBond: null,
+        sender: partyA
+      }
+      try {
+        Connext.createThreadStateUpdateFingerprint(state)
+      } catch (e) {
+        expect(e.statusCode).to.equal(200)
+      }
+    })
+
+    it('should fail if tokenBond is invalid', () => {
+      let state = {
+        channelId: '0x0100000000000000000000000000000000000000000000000000000000000000',
+        nonce: 1,
+        partyA,
+        partyB,
+        tokenBalanceA: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether')),
+        weiBalanceA: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether')),
+        tokenBalanceB: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
+        weiBalanceB: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
+        weiBond: Web3.utils.toBN(Web3.utils.toWei('1', 'ether')),
+        tokenBond: 'fail',
+        sender: partyA
+      }
+      try {
+        Connext.createThreadStateUpdateFingerprint(state)
+      } catch (e) {
+        expect(e.statusCode).to.equal(200)
+      }
+    })
+
+    it('should fail if tokenBond is negative', () => {
+      let state = {
+        channelId: '0x0100000000000000000000000000000000000000000000000000000000000000',
+        nonce: 1,
+        partyA,
+        partyB,
+        tokenBalanceA: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether')),
+        weiBalanceA: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether')),
+        tokenBalanceB: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
+        weiBalanceB: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
+        weiBond: Web3.utils.toBN(Web3.utils.toWei('1', 'ether')),
+        tokenBond: Web3.utils.toBN(Web3.utils.toWei('-1', 'ether')),
+        sender: partyA
+      }
+      try {
+        Connext.createThreadStateUpdateFingerprint(state)
+      } catch (e) {
+        expect(e.statusCode).to.equal(200)
+      }
+    })
+
+    it('should fail if it is missing weiBond', () => {
+      let state = {
+        channelId: '0x0100000000000000000000000000000000000000000000000000000000000000',
+        nonce: 1,
+        partyA,
+        partyB,
+        tokenBalanceA: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether')),
+        weiBalanceA: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether')),
+        tokenBalanceB: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
+        weiBalanceB: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
+        tokenBond: Web3.utils.toBN(Web3.utils.toWei('1', 'ether')),
+        sender: partyA
+      }
+      try {
+        Connext.createThreadStateUpdateFingerprint(state)
+      } catch (e) {
+        expect(e.statusCode).to.equal(200)
+      }
+    })
+
+    it('should fail if weiBond is null', () => {
+      let state = {
+        channelId: '0x0100000000000000000000000000000000000000000000000000000000000000',
+        nonce: 1,
+        partyA,
+        partyB,
+        tokenBalanceA: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether')),
+        weiBalanceA: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether')),
+        tokenBalanceB: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
+        weiBalanceB: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
+        weiBond: null,
+        tokenBond: Web3.utils.toBN(Web3.utils.toWei('1', 'ether')),
+        sender: partyA
+      }
+      try {
+        Connext.createThreadStateUpdateFingerprint(state)
+      } catch (e) {
+        expect(e.statusCode).to.equal(200)
+      }
+    })
+
+    it('should fail if weiBond is invalid', () => {
+      let state = {
+        channelId: '0x0100000000000000000000000000000000000000000000000000000000000000',
+        nonce: 1,
+        partyA,
+        partyB,
+        tokenBalanceA: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether')),
+        weiBalanceA: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether')),
+        tokenBalanceB: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
+        weiBalanceB: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
+        weiBond: 'fail',
+        tokenBond: Web3.utils.toBN(Web3.utils.toWei('1', 'ether')),
+        sender: partyA
+      }
+      try {
+        Connext.createThreadStateUpdateFingerprint(state)
+      } catch (e) {
+        expect(e.statusCode).to.equal(200)
+      }
+    })
+
+    it('should fail if weiBond is negative', () => {
+      let state = {
+        channelId: '0x0100000000000000000000000000000000000000000000000000000000000000',
+        nonce: 1,
+        partyA,
+        partyB,
+        tokenBalanceA: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether')),
+        weiBalanceA: Web3.utils.toBN(Web3.utils.toWei('0.9', 'ether')),
+        tokenBalanceB: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
+        weiBalanceB: Web3.utils.toBN(Web3.utils.toWei('0.1', 'ether')),
+        weiBond: Web3.utils.toBN(Web3.utils.toWei('-1', 'ether')),
+        tokenBond: Web3.utils.toBN(Web3.utils.toWei('1', 'ether')),
         sender: partyA
       }
       try {
