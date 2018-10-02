@@ -1113,10 +1113,10 @@ class Connext {
     }
 
     const finalState = {
-      ethBalanceA: balanceA.ethDeposit, // final eth in partyA
-      ethBalanceB: balanceB.ethDeposit, // final eth in hub
-      tokenBalanceA: balanceA.tokenDeposit, // final token in partyA
-      tokenBalanceB: balanceB.tokenDeposit, // final token in hub
+      ethBalanceA: balanceA.ethDeposit.toString(), // final eth in partyA
+      ethBalanceB: balanceB.ethDeposit.toString(), // final eth in hub
+      tokenBalanceA: balanceA.tokenDeposit.toString(), // final token in partyA
+      tokenBalanceB: balanceB.tokenDeposit.toString(), // final token in hub
       channelId,
       nonce: needsHubDeposit ? channel.nonce + 2 : channel.nonce + 1,
       sig: exchangeSig
