@@ -1029,7 +1029,7 @@ class Connext {
 
     const exchangedTokens = eth2erc 
       ? balanceA.tokenDeposit.sub(oldTokensA) 
-      : oldTokensA.sub(balanceA.tokenDeposit)
+      : oldTokenA.sub(balanceA.tokenDeposit)
 
     const exchangedWei = eth2erc 
       ? oldEthA.sub(balanceA.ethDeposit) 
