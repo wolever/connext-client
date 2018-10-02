@@ -1106,10 +1106,13 @@ class Connext {
       signer: sender,
     })
 
+    const merge = (...objects) => ({ ...objects });
     const exchangeMeta = {
       depositSig: depositSig ? depositSig : '',
       exchangeSig,
     }
+
+    const finalMeta = merge(exchangeMeta, meta)
 
     const finalState = {
       ethBalanceA: balanceA.ethDeposit.toString(), // final eth in partyA
@@ -1121,7 +1124,7 @@ class Connext {
       sig: exchangeSig
     }
 
-    return { payment: finalState, meta: { exchangeMeta, ...meta } }
+    return { payment: finalState, meta: finalMeta }
   }
 
   async channelUpdateHandler ({ payment, meta }, sender = null) {
