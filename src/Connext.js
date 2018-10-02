@@ -1107,9 +1107,8 @@ class Connext {
     })
 
     const exchangeMeta = {
-      exchangeRate: exchangeRate.toString(),
       depositSig: depositSig ? depositSig : '',
-      exchangeSig
+      exchangeSig,
     }
 
     const finalState = {
@@ -1122,7 +1121,7 @@ class Connext {
       sig: exchangeSig
     }
 
-    return { payment: finalState, meta: exchangeMeta }
+    return { payment: finalState, meta: { exchangeMeta, ...meta } }
   }
 
   async channelUpdateHandler ({ payment, meta }, sender = null) {
