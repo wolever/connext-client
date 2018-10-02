@@ -3122,14 +3122,19 @@ class Connext {
     // determine deposit type
     const { ethDeposit, tokenDeposit } = deposits
     let depositType
-    if (ethDeposit && tokenDeposit) {
+    if (
+      ethDeposit && 
+      !ethDeposit.isZero() && 
+      tokenDeposit && 
+      !tokenDeposit.isZero()
+    ) {
       // token and eth
       tokenAddress = tokenAddress ? tokenAddress : channel.tokenAddress
       depositType = Object.keys(CHANNEL_TYPES)[2]
-    } else if (tokenDeposit) {
+    } else if (tokenDeposit && !tokenDeposit.isZero()) {
       tokenAddress = tokenAddress ? tokenAddress : channel.tokenAddress
       depositType = Object.keys(CHANNEL_TYPES)[1]
-    } else if (ethDeposit) {
+    } else if (ethDeposit && !ethDeposit.isZero()) {
       depositType = Object.keys(CHANNEL_TYPES)[0]
     }
 
