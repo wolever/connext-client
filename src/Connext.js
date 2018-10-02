@@ -981,7 +981,7 @@ class Connext {
     const isHexStrict = { presence: true, isHexStrict: true }
     const isValidDepositObject = { presence: true, isValidDepositObject: true }
     const isObj = { presence: true, isObj: true }
-    const isBN = { presence: true, isBN: true }
+    const isPresent = { presence: true }
 
     if (!sender) {
       const accounts = await this.web3.eth.getAccounts()
@@ -994,6 +994,11 @@ class Connext {
     // validate inputs
     Connext.validatorsResponseToError(validate.single(sender, isAddress), methodName, 'sender')
 
+    Connext.validatorsResponseToError(
+      validate.single(exchangeRate, isPresent),
+      methodName,
+      'exchangeRate'
+    )
     Connext.validatorsResponseToError(
       validate.single(channelId, isHexStrict),
       methodName,
