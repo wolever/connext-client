@@ -1022,9 +1022,7 @@ class Connext {
     const oldTokenA = Web3.utils.toBN(channel.tokenBalanceA)
     const oldEthI = Web3.utils.toBN(channel.ethBalanceI)
     const oldTokenI = Web3.utils.toBN(channel.tokenBalanceI)
-
-    // true if previous wei balance greater than proposed
-    // false if previous wei balance less than proposed
+    
     const eth2erc = oldEthA.gt(balanceA.ethDeposit)
 
     const exchangedTokens = eth2erc 
