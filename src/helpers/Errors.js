@@ -182,6 +182,10 @@ export function validateWithdrawalPurchaseMeta (meta) {
   if (!meta.fields) {
     return false
   }
-  const { recipient: recipient } = meta.fields
+  const { recipient } = meta.fields
   return !!recipient && Web3.utils.isAddress(recipient)
+}
+
+export function validateExchangePurchaseMeta (meta) {
+  return !!meta.exchangeRate
 }
