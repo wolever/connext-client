@@ -4,7 +4,7 @@
   "description": "Containerized state channels",
   "main": "dist/index.js",
   "scripts": {
-    "build": "eslint src/ && babel src -d dist",
+    "build": "eslint src/ ; babel src -d dist",
     "eslint": "eslint src/",
     "prepublishOnly": "npm run build",
     "docs:api": "jsdoc2md src/*.js > docs/api.md --configure docs/jsdoc.json --partial docs/templates/header.hbs --global-index-format none",
@@ -61,6 +61,7 @@
     "babel-preset-es2015": "^6.24.1",
     "babel-preset-react": "^6.24.1",
     "chai": "^4.1.2",
+    "eslint": "^5.0.1",
     "fetch-cookie": "^0.7.0",
     "gitbook": "^3.2.3",
     "gitbook-cli": "^2.3.2",
