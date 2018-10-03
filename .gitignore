@@ -5,3 +5,5 @@ test/tests.txt
 test/apiRoutes.txt
 test/tests.txt
 .env
+*.sw[opq]
+tags
