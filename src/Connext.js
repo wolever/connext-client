@@ -435,6 +435,23 @@ class Connext {
       sender
     })
     console.log('tx hash:', contractResult.transactionHash)
+    console.log('getting untracked deposit')
+    const initialUntrackedDeposits = (await this.getUntrackedDeposits(channel.channelId)).length
+    let untrackedDeposits
+    await interval(async (iterationNumber, stop) => {
+      untrackedDeposits = await this.getUntrackedDeposits(channel.channelId)
+      if (untrackedDeposits !== [] && untrackedDeposits.length === initialUntrackedDeposits + 1) {
+        stop()
+      }
+    }, 2000)
+
+    if (untrackedDeposits) {
+      await this.signUntrackedDeposits({
+        untrackedDeposits,
+        channelId: channel.channelId,
+        sender
+      })
+    }
 
     return channelId
   }
