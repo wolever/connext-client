@@ -1106,7 +1106,7 @@ class Connext {
       signer: sender,
     })
 
-    const merge = (...objects) => ({ ...objects });
+    const merge = function() { return Object.assign.apply(null, [{}].concat(Array.prototype.slice.call(arguments))) }
     const exchangeMeta = {
       depositSig: depositSig ? depositSig : '',
       exchangeSig,
